@@ -243,8 +243,10 @@ $ ./deploy/check-audit-owner.sh -U kap_app ...  # non-owner role
 OK: app role does not own audit_events (exit=0)
 # Staging/production MUST run this as the app role and get OK (RUNBOOK step 3/5)
 ```
-**Verdict:** PASS. Local stack healthy (7 services incl. clamav); CI mirrors these
-exact commands.
+**Verdict:** PASS. Local stack healthy (7 services incl. clamav). CI mirrors these
+exact commands EXCEPT the four real-clamd tests, which skip visibly in CI — no
+clamav service there yet (§5 item 9, routed to S01). Full scan coverage currently
+exists only locally and, per the runbook, on staging.
 
 ## 7. Invariant check
 | BI | Touched? | Evidence (test/assertion name) |
