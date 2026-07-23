@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuditEventController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CapabilityController;
+use App\Http\Controllers\LinkController;
 use App\Http\Controllers\OnboardingController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,6 +28,15 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->middleware('permission:operations.manage');
     Route::post('/my/students', [OnboardingController::class, 'createStudent'])
         ->middleware('role:guardian');
+
+    // Linking flows (B4) + continuity (2.2)
+    Route::post('/my/pairing-codes', [LinkController::class, 'generateCode'])->middleware('role:student');
+    Route::post('/pairing-codes/redeem', [LinkController::class, 'redeemCode'])
+        ->middleware(['role:guardian', 'throttle:pairing']);
+    Route::post('/my/guardian-requests/{id}/confirm', [LinkController::class, 'confirm'])->middleware('role:student');
+    Route::post('/my/link-requests', [LinkController::class, 'requestByEmail'])->middleware('role:guardian');
+    Route::post('/school/guardian-links', [LinkController::class, 'schoolVouch'])->middleware('role:school_admin');
+    Route::post('/guardian-links/{id}/revoke', [LinkController::class, 'revoke']);
 });
 
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:auth');

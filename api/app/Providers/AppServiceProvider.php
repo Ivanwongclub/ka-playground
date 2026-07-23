@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Services\Identity\AuthService;
+use App\Services\Identity\EnrolmentStatusPort;
+use App\Services\Identity\NoEnrolmentsYet;
 use App\Services\Uploads\ClamAvScanner;
 use App\Services\Uploads\VirusScanner;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -18,6 +20,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // 2.2 continuity condition: real adapter arrives with enrolments (S04A)
+        $this->app->bind(EnrolmentStatusPort::class, NoEnrolmentsYet::class);
         $this->app->bind(VirusScanner::class, fn (): VirusScanner => new ClamAvScanner(
             host: config('uploads.clamav.host'),
             port: config('uploads.clamav.port'),
