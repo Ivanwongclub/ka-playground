@@ -18,10 +18,11 @@ class ReconciliationRunnerTest extends TestCase
         $this->artisan('reconcile:run')
             ->expectsOutputToContain('PASS  audit.immutability')
             ->expectsOutputToContain('PASS  audit.trigger_enabled')
-            ->expectsOutputToContain('RECONCILE PASS — 2 assertion(s), 2 passed, 0 failed')
+            ->expectsOutputToContain('PASS  authz.permission_matrix')
+            ->expectsOutputToContain('RECONCILE PASS — 3 assertion(s), 3 passed, 0 failed')
             ->assertExitCode(0);
 
-        $this->assertSame(2, DB::table('reconciliation_log')->where('passed', true)->where('assertion_key', '!=', '_run')->count());
+        $this->assertSame(3, DB::table('reconciliation_log')->where('passed', true)->where('assertion_key', '!=', '_run')->count());
         $this->assertSame(1, DB::table('reconciliation_log')->where('assertion_key', '_run')->count());
     }
 

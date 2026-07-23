@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\Reconciliation\Assertions\AuditImmutabilityProbe;
 use App\Services\Reconciliation\Assertions\AuditTriggerEnabledProbe;
+use App\Services\Reconciliation\Assertions\PermissionMatrixProbe;
 use App\Services\Reconciliation\ReconciliationRegistry;
 use Illuminate\Support\ServiceProvider;
 
@@ -21,6 +22,9 @@ class ReconciliationServiceProvider extends ServiceProvider
             // S00
             $registry->register(new AuditImmutabilityProbe);
             $registry->register(new AuditTriggerEnabledProbe);
+
+            // S01
+            $registry->register(new PermissionMatrixProbe);
 
             return $registry;
         });
