@@ -33,7 +33,8 @@ Ant Design 5 = seed → map → alias tokens via `ConfigProvider`. **One theme o
 | `--primary-hover` | `#D4B876` | `colorPrimaryHover` |
 | `--muted` | `#1E1729` | `colorFillTertiary` |
 | `--muted-foreground` | `#A1A1AA` | `colorTextSecondary` |
-| `--border` | `#2A2235` | `colorBorder` |
+| `--border` | `#2A2235` | `colorBorderSecondary` — **decorative separators only**: dividers, card edges, table lines (WCAG 1.4.11-exempt) |
+| `--border-strong` | `#726889` | `colorBorder` — **control boundaries**: inputs, selects, buttons, checkboxes (3.48:1 on card, 3.76:1 on background — passes 1.4.11) |
 | `--success` | `#22C55E` | `colorSuccess` (brightened for dark) |
 | `--warning` | `#FBBF24` | `colorWarning` (brightened) |
 
@@ -52,6 +53,8 @@ Not themed via algorithm — fixed `Menu`/`Layout` component tokens (§5): shell
 | Failed / Error | red | `<Tag color="error">` |
 
 Category accents (programme coding, unchanged): Language `#6366F1` · STEM `#A855F7` · Arts `#EC4899` · Maths `#F97316` · Featured `#06B6D4`.
+
+**Accents as text (measured on card `#1A1326`, 23 Jul 2026):** STEM 4.56 · Arts 5.11 · Maths 6.43 · Featured 7.42 — all pass AA as text. **Language 4.04 fails and is never used as body text** — chips, bars and borders only. The palette itself is unchanged.
 
 ## 4. Typography
 
@@ -75,19 +78,24 @@ Category accents (programme coding, unchanged): Language `#6366F1` · STEM `#A85
 import { theme as antdTheme, ThemeConfig } from 'antd';
 
 const shared = {
-  borderRadius: 10,           // brief rounded-lg; sm=6 md=8 via component tokens
-  fontFamily: "Inter, 'Noto Sans HK', system-ui, sans-serif",
+  borderRadius: 10,           // brief rounded-lg; md=8 stays component-level
+  borderRadiusSM: 6,
+  fontFamily: "Inter, 'Noto Sans HK', 'Noto Sans SC', system-ui, sans-serif",
   fontSize: 14,
+  fontSizeHeading1: 32, fontSizeHeading2: 24, fontSizeHeading3: 18,  // §4 type scale
 };
 
-export const kaTheme: ThemeConfig  // the only theme = {
+export const kaTheme: ThemeConfig = {  // the only theme
   cssVar: true, hashed: false,
   algorithm: antdTheme.darkAlgorithm,
   token: { ...shared,
     colorPrimary: '#C9A962', colorInfo: '#C9A962',       // gold leads in dark
     colorError: '#EF4444', colorSuccess: '#22C55E', colorWarning: '#FBBF24',
     colorBgLayout: '#0F0B15', colorBgContainer: '#1A1326',
-    colorBorder: '#2A2235', controlOutline: 'rgba(201,169,98,0.35)',
+    colorBorder: '#726889',           // controls — 1.4.11 compliant (§3.1)
+    colorBorderSecondary: '#2A2235',  // decorative separators (§3.1)
+    controlOutline: '#C9A962',        // solid gold focus ring — 8.01:1 on card
+    colorTextSecondary: '#A1A1AA',    // §3.1 mapping made explicit
   },
   components: {
     Layout: { siderBg: '#0F0B15', headerBg: '#1A1326' },
@@ -163,6 +171,8 @@ Rules of thumb: hover means *"this responds"* — purely informational surfaces 
 **11.4 Voice.** English: concise, assured, no exclamation marks, no jargon (FRIENDLY label map applies). Chinese: 繁體 default, formal register (敬語 in parent-facing consent/payment copy), 简体 via i18n toggle only.
 
 **11.5 Accessibility floor.** Text contrast ≥4.5:1 (verified: `#1A1326` on white = 16.9:1; white on `#1A1326` = 16.9:1; `#0F0B15` on gold `#C9A962` = 8.1:1 — all pass AA/AAA); gold on white is decorative-only (2.2:1 — never body text); focus-visible never suppressed; all charts label-carrying per §7.
+
+**Non-text contrast (WCAG 1.4.11, reviewed 23 Jul 2026).** Control boundaries and focus indicators need ≥3.0:1; decorative separators are exempt. Verified: control border `#726889` = 3.48:1 on card / 3.76:1 on background · focus ring solid gold `#C9A962` = 8.01:1 on card (the original `rgba(201,169,98,0.35)` blended to 2.06 and was replaced) · decorative `#2A2235` intentionally quiet, exempt · category accents as text per §3.3 note. Surface-on-surface (card 1.08:1 on background) relies on spacing and elevation, not edge contrast — by design.
 
 With §11, the design system is complete for corporate-image purposes: tokens, components, layout, charts, motion, logo, imagery, voice, accessibility.
 
