@@ -80,8 +80,11 @@ services:
       POSTGRES_DB: kap
       POSTGRES_USER: kap
       POSTGRES_PASSWORD: kap_local_only
+    ports:
+      - '54329:5432' # host access for the phpunit suite (kap_test)
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./deploy/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U kap -d kap']
       interval: 5s

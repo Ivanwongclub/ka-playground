@@ -111,7 +111,10 @@ Result: PASS
 | 1 | `hero-tiles` holds only sc1/sc3/sc5 and `featured` only sc5 — consistent with manifest §4; the §12 gradient fallback must cover the empty slots | Low | S00 STEP 6 (fallback wiring) / S02 (catalogue) |
 | 2 | Web bundle is one 2.9 MB chunk (charts lib dominates) — route-level code-splitting would fix; not in the S00 card | Low | S01+ (when routes multiply) |
 | 3 | PWA manifest references `/assets/icons/icon-192.png` / `icon-512.png` — files generated from the rescued logo/favicon in STEP 6 | Low | S00 STEP 6 |
-| 4 | Approved unnamed deps (Leo, this session): react-router-dom, i18next + react-i18next, @fontsource self-hosted fonts. Playwright used for VERIFY lives in the scratchpad only — not a project dependency | Info | — |
+| 4 | Approved unnamed deps (Leo, this session): react-router-dom, i18next + react-i18next, @fontsource self-hosted fonts, @ant-design/v5-patch-for-react-19. Playwright used for VERIFY lives in the scratchpad only — not a project dependency | Info | — |
+| 5 | **STEP 5 MUST register (Leo, 23 Jul):** nightly assertion that the BI-1 trigger is still ENABLED (`pg_trigger.tgenabled = 'O'` for `audit_events_immutable_guard`) — a disabled trigger is a silent breach. Phpunit already guards it; the nightly probe repeats it | High | S00 STEP 5 |
+| 6 | Test suite moved SQLite → Postgres (Leo, 23 Jul): `kap_test` DB in the compose postgres, host port 54329, phpunit env updated. SQLite trigger branch kept in the migration (costs nothing; any future sqlite use inherits enforcement). For an already-initialised pg volume, `CREATE DATABASE kap_test OWNER kap;` — the init script only runs on fresh volumes. CI (STEP 6) needs a pg service for tests | Info | S00 STEP 6 (CI) |
+| 7 | **actor_role permanence:** `audit_events` is immutable, so rows written before S01 wires the role model carry `actor_role = NULL` forever — they cannot be backfilled. Confirmed: every row written so far is synthetic (factory users, test data); no non-synthetic data will be written before S01. No production deploy exists | Info | S01 wires actor_role |
 
 ## 6. Exit gate
 ```

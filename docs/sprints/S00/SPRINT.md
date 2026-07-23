@@ -92,6 +92,10 @@ php artisan test
 php artisan reconcile:run          # immutability probe green
 docker compose config -q
 cd web && npx tsc --noEmit && npm run build   # build embeds i18n:check + bundle budget (no chunk >1 MB gzipped)
+
+# staging/production only — the app DB role must NOT own audit_events (BI-1 owner-bypass guard).
+# Run as the APP's connection; must return t:
+#   SELECT tableowner <> current_user AS app_is_not_owner FROM pg_tables WHERE tablename = 'audit_events';
 ```
 + audit viewer shows the events generated during this sprint
 + rescued asset inventory count recorded in AUDIT.md

@@ -74,6 +74,18 @@ class AuditSpineTest extends TestCase
         ]);
     }
 
+    public function test_bi1_trigger_exists_and_is_enabled(): void
+    {
+        // 'O' = enabled (fires in origin/local session). A disabled trigger is a
+        // silent BI-1 breach; the nightly reconciliation probe repeats this check.
+        $trigger = DB::selectOne(
+            "SELECT tgenabled FROM pg_trigger WHERE tgname = 'audit_events_immutable_guard' AND NOT tgisinternal"
+        );
+
+        $this->assertNotNull($trigger, 'BI-1 trigger audit_events_immutable_guard is missing');
+        $this->assertSame('O', $trigger->tgenabled, 'BI-1 trigger exists but is not enabled');
+    }
+
     public function test_auth_event_types_are_reserved_per_2_11(): void
     {
         $this->assertSame(

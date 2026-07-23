@@ -23,8 +23,16 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <!-- Tests run on Postgres (Leo, 23 Jul 2026): SQLite cannot prove
+             SELECT ... FOR UPDATE (BI-3) or in-transaction gapless sequences (BI-2).
+             kap_test lives in the compose postgres, host-mapped on 54329.
+             Values are local-only credentials, mirrored in compose.yaml. -->
+        <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="54329"/>
+        <env name="DB_DATABASE" value="kap_test"/>
+        <env name="DB_USERNAME" value="kap"/>
+        <env name="DB_PASSWORD" value="kap_local_only"/>
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
