@@ -1,6 +1,9 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App as AntApp, ConfigProvider } from 'antd';
+// React 19 compatibility: antd v5 officially supports React 16–18; this patch restores
+// the removed ReactDOM.render/unmount internals antd uses for Wave and static rendering
+import '@ant-design/v5-patch-for-react-19';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 // Self-hosted fonts (§4) — no runtime CDN calls

@@ -91,7 +91,7 @@ Admin › Audit — Audit Log viewer, filterable by actor/entity/action/date.
 php artisan test
 php artisan reconcile:run          # immutability probe green
 docker compose config -q
-cd web && npx tsc --noEmit && npm run build
+cd web && npx tsc --noEmit && npm run build   # build embeds i18n:check + bundle budget (no chunk >1 MB gzipped)
 ```
 + audit viewer shows the events generated during this sprint
 + rescued asset inventory count recorded in AUDIT.md
