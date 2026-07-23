@@ -144,10 +144,35 @@ Both full-path tests assert: intake accepts (status pending, correct MIME) →
 real clamd flags `KAP.TestSig.Marker.UNOFFICIAL` → quarantined + audit event.
 Result: PASS
 
+### STEP 5 — Reconciliation runner · commit (this step)
+```
+$ docker compose exec app php artisan reconcile:run
+  PASS  audit.immutability           [BI-1] audit_events rejects UPDATE and DELETE at the database level
+  PASS  audit.trigger_enabled        [BI-1] the BI-1 trigger audit_events_immutable_guard exists and is enabled (tgenabled = 'O')
+RECONCILE PASS — 2 assertion(s), 2 passed, 0 failed
+exit=0
+$ docker compose exec app php artisan reconcile:run --tag=S00        # exit=0
+$ docker compose exec app php artisan reconcile:run --tag=NOSUCHTAG
+RECONCILE FAIL — tag 'NOSUCHTAG' matches no registered assertion. Zero assertions is a failure, not a pass.
+empty-match exit=1
+# reconciliation_log: per-assertion rows + '_run' summary rows; empty match logged failed
+# audit_events: reconciliation.empty_match written (SR010)
+$ php artisan test → 25 passed (74 assertions)
+```
+Runner properties (Leo's six requirements): empty match = failure (exit 1 + log + audit + alert) ·
+exit 0 only when ≥1 ran and all passed · no skip/disable/known-failing affordance (tested) ·
+assertions read-only AND every check wrapped in an always-rolled-back transaction (tested with a
+deliberately defective writer) · each assertion declares proves() + cites() · results to
+reconciliation_log, mismatch → audit event + CRITICAL alert (K-engine notification lands S09).
+Nightly schedule 03:00 HKT in routes/console.php. Probes fail (never skip) on a non-pgsql driver —
+the host CLI's sqlite .env therefore fails honestly; canonical runs happen on the platform DB.
+Result: PASS
+
 ## 3. Assertions registered this sprint
 | Assertion | Tag | First green run output pasted? |
 |-----------|-----|-------------------------------|
-| (audit immutability probe — due in STEP 5) | S00 | pending |
+| `audit.immutability` (BI-1) | S00 | Yes — §2 STEP 5 |
+| `audit.trigger_enabled` (BI-1) | S00 | Yes — §2 STEP 5 |
 
 ## 4. Deviations from SPRINT.md
 | # | Card said | Actually happened | Why | Status |
@@ -163,7 +188,7 @@ Result: PASS
 | 2 | Web bundle is one 2.9 MB chunk (charts lib dominates) — route-level code-splitting would fix; not in the S00 card | Low | S01+ (when routes multiply) |
 | 3 | PWA manifest references `/assets/icons/icon-192.png` / `icon-512.png` — files generated from the rescued logo/favicon in STEP 6 | Low | S00 STEP 6 |
 | 4 | Approved unnamed deps (Leo, this session): react-router-dom, i18next + react-i18next, @fontsource self-hosted fonts, @ant-design/v5-patch-for-react-19. Playwright used for VERIFY lives in the scratchpad only — not a project dependency | Info | — |
-| 5 | **STEP 5 MUST register (Leo, 23 Jul):** nightly assertion that the BI-1 trigger is still ENABLED (`pg_trigger.tgenabled = 'O'` for `audit_events_immutable_guard`) — a disabled trigger is a silent breach. Phpunit already guards it; the nightly probe repeats it | High | S00 STEP 5 |
+| 5 | ~~STEP 5 MUST register: BI-1 trigger-enabled nightly assertion~~ **CLOSED in STEP 5** — `audit.trigger_enabled` registered and green (closes review item STEP 3·2) | Closed | — |
 | 6 | Test suite moved SQLite → Postgres (Leo, 23 Jul): `kap_test` DB in the compose postgres, host port 54329, phpunit env updated. SQLite trigger branch kept in the migration (costs nothing; any future sqlite use inherits enforcement). For an already-initialised pg volume, `CREATE DATABASE kap_test OWNER kap;` — the init script only runs on fresh volumes. CI (STEP 6) needs a pg service for tests | Info | S00 STEP 6 (CI) |
 | 7 | **actor_role permanence:** `audit_events` is immutable, so rows written before S01 wires the role model carry `actor_role = NULL` forever — they cannot be backfilled. Confirmed: every row written so far is synthetic (factory users, test data); no non-synthetic data will be written before S01. No production deploy exists | Info | S01 wires actor_role |
 
