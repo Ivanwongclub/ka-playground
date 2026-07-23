@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuditEventController;
 use App\Http\Controllers\CapabilityController;
+use App\Http\Controllers\OnboardingController;
 use Illuminate\Support\Facades\Route;
 
 // Permission-guarded resource surfaces. The guarded routes exist from S01 STEP 1
@@ -20,7 +21,17 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::post('/admin/capabilities/grant', [CapabilityController::class, 'grant']);
     Route::post('/admin/capabilities/revoke', [CapabilityController::class, 'revoke']);
+
+    Route::post('/admin/invitations', [OnboardingController::class, 'issue'])
+        ->middleware('permission:operations.manage');
+    Route::post('/my/students', [OnboardingController::class, 'createStudent'])
+        ->middleware('role:guardian');
 });
+
+// Guest onboarding surface (2.11) — throttling arrives with step 4
+Route::post('/onboarding/accept', [OnboardingController::class, 'accept']);
+Route::get('/onboarding/verify-email/{id}/{hash}', [OnboardingController::class, 'verifyEmail'])
+    ->middleware('signed')->name('verification.verify');
 
 // S00 surface — goes behind auth:sanctum + audit_read in S01 STEP 6 (card step 6)
 Route::get('/audit-events', [AuditEventController::class, 'index']);
