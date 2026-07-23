@@ -11,7 +11,8 @@ export const kaColors = {
   goldHover: '#D4B876',
   muted: '#1E1729',
   mutedForeground: '#A1A1AA',
-  border: '#2A2235',
+  border: '#2A2235', // decorative separators: dividers, card edges, table lines (1.4.11-exempt)
+  borderStrong: '#726889', // control boundaries: inputs, selects, buttons — 3.48:1 on card, 3.76:1 on bg
   success: '#22C55E',
   warning: '#FBBF24',
   danger: '#EF4444',
@@ -27,9 +28,14 @@ export const kaCategoryAccents = {
 } as const;
 
 const shared = {
-  borderRadius: 10, // brief rounded-lg; sm=6 md=8 via component tokens
+  borderRadius: 10, // brief rounded-lg; md=8 stays component-level (no antd token slot)
+  borderRadiusSM: 6,
   fontFamily: "Inter, 'Noto Sans HK', 'Noto Sans SC', system-ui, sans-serif",
   fontSize: 14,
+  // §4 type scale — H1/H2/H3 32/24/18; without these antd derives 38/30/24
+  fontSizeHeading1: 32,
+  fontSizeHeading2: 24,
+  fontSizeHeading3: 18,
 };
 
 export const kaTheme: ThemeConfig = {
@@ -45,8 +51,12 @@ export const kaTheme: ThemeConfig = {
     colorWarning: kaColors.warning,
     colorBgLayout: kaColors.background,
     colorBgContainer: kaColors.card,
-    colorBorder: kaColors.border,
-    controlOutline: 'rgba(201,169,98,0.35)',
+    // 1.4.11 split (design review, 23 Jul 2026): controls get the 3.0-compliant
+    // boundary; decorative separators keep the quiet aubergine line
+    colorBorder: kaColors.borderStrong,
+    colorBorderSecondary: kaColors.border,
+    controlOutline: kaColors.gold, // solid — 8.01:1 on card; 0.35 alpha blended to 2.06
+    colorTextSecondary: kaColors.mutedForeground, // §3.1 mapping — one source of truth
     fontFamilyCode: "'JetBrains Mono', monospace",
   },
   components: {

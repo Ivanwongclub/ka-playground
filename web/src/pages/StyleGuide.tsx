@@ -36,6 +36,7 @@ const PALETTE = [
   ['goldHover', kaColors.goldHover],
   ['muted', kaColors.muted],
   ['border', kaColors.border],
+  ['borderStrong', kaColors.borderStrong],
   ['success', kaColors.success],
   ['warning', kaColors.warning],
   ['danger', kaColors.danger],
