@@ -71,6 +71,28 @@ all §9 component variants, themed toast + confirm (App.useApp — no default bl
 gold line chart + Viridis heatmap on kaChartTheme, TC sample at 1.8 line-height.
 Result: PASS
 
+### STEP 3 — Audit spine · commit (this step)
+```
+$ php artisan test
+   PASS  Tests\Feature\AuditSpineTest
+  ✓ update on audit events fails at the database
+  ✓ delete on audit events fails at the database
+  ✓ model layer also refuses updates
+  ✓ service writes event carrying actor identity
+  ✓ auth event types are reserved per 2 11
+  Tests:    7 passed (9 assertions)
+
+$ docker compose exec postgres psql -U kap -d kap -c "UPDATE audit_events SET action='tampered';"
+ERROR:  audit_events is INSERT-only (BI-1): UPDATE blocked
+CONTEXT:  PL/pgSQL function audit_events_immutable() line 3 at RAISE
+# DELETE and TRUNCATE rejected identically (statement-level trigger — fires even on 0 rows)
+
+$ tinker: AuditService->record(...) as synthetic user →
+written: 019f8f94-6375-72c7-bcd9-da69c9c58541
+psql SELECT → event row visible with actor_id 1, action audit_spine.smoke
+```
+Result: PASS
+
 ## 3. Assertions registered this sprint
 | Assertion | Tag | First green run output pasted? |
 |-----------|-----|-------------------------------|
