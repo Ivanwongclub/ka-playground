@@ -20,7 +20,8 @@
     "notifications": "Notifications",
     "settings": "Settings",
     "help": "Help",
-    "audit": "Audit"
+    "audit": "Audit",
+    "accessIdentity": "Access & Identity"
   },
   "shell": {
     "openNavigation": "Open navigation",
@@ -138,5 +139,23 @@
     "errorNetwork": "Connection problem — please try again.",
     "quote": "My son built a model F1 car — and stood on a stage to pitch it. We watched him find a voice we had not heard before.",
     "quoteAttribution": "— Mrs. Yip, parent"
+  },
+  "accessReport": {
+    "title": "Access & Identity Report",
+    "subtitle": "Invitation funnel, auth events, links and capability grants (S01)",
+    "funnel": "Invitation funnel",
+    "issued": "Issued",
+    "accepted": "Accepted",
+    "verified": "Verified",
+    "authLog": "Auth events",
+    "links": "Active links per student",
+    "student": "Student",
+    "activeLinks": "Active links",
+    "soleGuardian": "Sole-guardian students",
+    "exceptions": "Guardian replacement exceptions",
+    "deadline": "Deadline",
+    "capabilityLog": "Capability grants & revocations",
+    "grantor": "Grantor",
+    "none": "None"
   }
 }

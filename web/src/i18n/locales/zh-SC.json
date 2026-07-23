@@ -20,7 +20,8 @@
     "notifications": "通知",
     "settings": "设置",
     "help": "帮助",
-    "audit": "审计"
+    "audit": "审计",
+    "accessIdentity": "访问与身份"
   },
   "shell": {
     "openNavigation": "打开导航",
@@ -138,5 +139,23 @@
     "errorNetwork": "连接问题 — 请再试一次。",
     "quote": "儿子亲手制作了一辆F1模型车,并站上舞台介绍它。我们看见他找到了从未展现过的自信。",
     "quoteAttribution": "— 叶太太,家长"
+  },
+  "accessReport": {
+    "title": "访问与身份报告",
+    "subtitle": "邀请漏斗、认证事件、链接与权能授予(S01)",
+    "funnel": "邀请漏斗",
+    "issued": "已发出",
+    "accepted": "已接受",
+    "verified": "已验证",
+    "authLog": "认证事件",
+    "links": "每位学生的有效链接",
+    "student": "学生",
+    "activeLinks": "有效链接",
+    "soleGuardian": "仅一位监护人的学生",
+    "exceptions": "监护人替补例外",
+    "deadline": "期限",
+    "capabilityLog": "权能授予与撤销",
+    "grantor": "授予者",
+    "none": "无"
   }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccessIdentityReportController;
 use App\Http\Controllers\AuditEventController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CapabilityController;
@@ -55,4 +56,6 @@ Route::get('/onboarding/verify-email/{id}/{hash}', [OnboardingController::class,
 
 // S00 surface, secured in S01 STEP 6: Sanctum + the audit_read capability (OD-17)
 Route::get('/audit-events', [AuditEventController::class, 'index'])
+    ->middleware(['auth:sanctum', 'permission:audit.read']);
+Route::get('/reports/access-identity', [AccessIdentityReportController::class, 'index'])
     ->middleware(['auth:sanctum', 'permission:audit.read']);

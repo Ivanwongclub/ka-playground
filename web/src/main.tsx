@@ -29,6 +29,7 @@ import './index.css';
 const StyleGuide = lazy(() => import('./pages/StyleGuide').then((m) => ({ default: m.StyleGuide })));
 const AdminAudit = lazy(() => import('./pages/AdminAudit').then((m) => ({ default: m.AdminAudit })));
 const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })));
+const AccessIdentity = lazy(() => import('./pages/AccessIdentity').then((m) => ({ default: m.AccessIdentity })));
 
 function Root() {
   const { i18n } = useTranslation();
@@ -57,6 +58,7 @@ function Root() {
               <Route path="/profile" element={<Placeholder titleKey="empty.title" />} />
               <Route path="/style-guide" element={<StyleGuide />} />
               <Route path="/admin/audit" element={<AdminAudit />} />
+              <Route path="/admin/access-identity" element={<AccessIdentity />} />
             </Route>
           </Routes>
           </Suspense>

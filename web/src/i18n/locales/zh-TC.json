@@ -20,7 +20,8 @@
     "notifications": "通知",
     "settings": "設定",
     "help": "說明",
-    "audit": "審計"
+    "audit": "審計",
+    "accessIdentity": "存取與身分"
   },
   "shell": {
     "openNavigation": "開啟導覽",
@@ -138,5 +139,23 @@
     "errorNetwork": "連線問題 — 請再試一次。",
     "quote": "兒子親手製作了一輛F1模型車,並站上舞台介紹它。我們看見他找到了從未展現過的自信。",
     "quoteAttribution": "— 葉太太,家長"
+  },
+  "accessReport": {
+    "title": "存取與身分報告",
+    "subtitle": "邀請漏斗、認證事件、連結與權能授予(S01)",
+    "funnel": "邀請漏斗",
+    "issued": "已發出",
+    "accepted": "已接受",
+    "verified": "已驗證",
+    "authLog": "認證事件",
+    "links": "每位學生的有效連結",
+    "student": "學生",
+    "activeLinks": "有效連結",
+    "soleGuardian": "僅一位監護人的學生",
+    "exceptions": "監護人替補例外",
+    "deadline": "期限",
+    "capabilityLog": "權能授予與撤銷",
+    "grantor": "授予者",
+    "none": "無"
   }
 }
