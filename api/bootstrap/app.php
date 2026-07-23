@@ -12,6 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->throttleApi(); // 2.13: API default 60/min/user (limiter in AppServiceProvider)
         $middleware->alias([
             'permission' => \App\Http\Middleware\EnsurePermission::class,
             'role' => \App\Http\Middleware\EnsureRole::class,

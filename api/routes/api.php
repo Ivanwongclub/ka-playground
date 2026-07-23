@@ -29,9 +29,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->middleware('role:guardian');
 });
 
-Route::post('/auth/login', [AuthController::class, 'login']);
-Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:auth');
+Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:auth');
+Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:auth');
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::post('/admin/users/{id}/unlock', [AuthController::class, 'unlock'])
@@ -39,7 +39,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
 });
 
 // Guest onboarding surface (2.11) — throttling arrives with step 4
-Route::post('/onboarding/accept', [OnboardingController::class, 'accept']);
+Route::post('/onboarding/accept', [OnboardingController::class, 'accept'])->middleware('throttle:auth');
 Route::get('/onboarding/verify-email/{id}/{hash}', [OnboardingController::class, 'verifyEmail'])
     ->middleware('signed')->name('verification.verify');
 

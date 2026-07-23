@@ -57,7 +57,9 @@ class AuthLifecycleTest extends TestCase
         $user = $this->verifiedUser('locked@example.test');
 
         for ($i = 1; $i <= AuthService::MAX_FAILURES; $i++) {
-            $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'wrong'])
+            // Rotate IPs: lockout is per ACCOUNT; the per-IP throttle (2.13) is separate
+            $this->withServerVariables(['REMOTE_ADDR' => "10.0.0.{$i}"])
+                ->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'wrong'])
                 ->assertStatus(422);
         }
 
@@ -67,7 +69,8 @@ class AuthLifecycleTest extends TestCase
         $this->assertNotNull($user->fresh()->locked_until);
 
         // 6th attempt — even the CORRECT password is refused while locked
-        $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'password'])
+        $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.6'])
+            ->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'password'])
             ->assertStatus(423);
     }
 
