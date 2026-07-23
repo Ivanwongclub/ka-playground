@@ -38,7 +38,7 @@ Run from the repo root on a machine with open network (Claude Code environment o
 #!/usr/bin/env bash
 # rescue-mvp-assets.sh — pull all imagery out of the MVP's Supabase Storage
 set -euo pipefail
-source ./build-reference/mvp/.env   # SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY
+source ./build-reference/.env   # SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY
 KEY="$VITE_SUPABASE_PUBLISHABLE_KEY"; BASE="$SUPABASE_URL/storage/v1"
 OUT="build-reference/assets"; mkdir -p "$OUT"
 
