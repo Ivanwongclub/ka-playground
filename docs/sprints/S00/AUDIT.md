@@ -118,6 +118,32 @@ VERIFY therefore demonstrates both layers separately: intake rejection of the ra
 file, and queued-scan quarantine of EICAR bytes in the pending store.
 Result: PASS
 
+### STEP 4 addendum — full-path verification (Leo review, 24 Jul)
+Gap found in review: the two layers were only demonstrated separately; the
+production case — a file that PASSES the allow-list and is malicious — was
+untested. Fix in two parts:
+1. **Pipeline reorder:** the scan now runs on ORIGINAL bytes; images are
+   hardened (re-encoded) only after a clean verdict. Previously re-encode ran
+   first, so a metadata-borne signature would be neutralised without ever being
+   detected or alerted. Hardening failure on a clean file → quarantined, never
+   published.
+2. **Test-environment signature** `deploy/clamav/kap-test.ndb` (harmless marker
+   string) mounted into the compose clamav — local/test only, never in the
+   staging/production compose variants.
+```
+$ php artisan test
+   PASS  Tests\Feature\ClamAvIntegrationTest
+  ✓ valid pdf with marker passes intake and is quarantined by scan     0.06s
+  ✓ valid jpeg with marker passes intake and is quarantined by scan    0.03s
+   PASS  Tests\Feature\UploadServiceTest
+  ✓ scan sees original bytes and clean image is hardened
+  ✓ undecodable image is quarantined not published
+  Tests:    19 passed (52 assertions)
+```
+Both full-path tests assert: intake accepts (status pending, correct MIME) →
+real clamd flags `KAP.TestSig.Marker.UNOFFICIAL` → quarantined + audit event.
+Result: PASS
+
 ## 3. Assertions registered this sprint
 | Assertion | Tag | First green run output pasted? |
 |-----------|-----|-------------------------------|

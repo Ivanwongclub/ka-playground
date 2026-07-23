@@ -84,6 +84,10 @@ services:
       - '3310:3310' # host access for the phpunit integration tests
     volumes:
       - clamavdata:/var/lib/clamav
+      # Test-environment signature: flags the harmless KAP marker string so the
+      # intake-accepts → scan-quarantines path is testable. Never ships to
+      # staging/production (their compose variants mount no such file — 2.14/2.26).
+      - ./deploy/clamav/kap-test.ndb:/var/lib/clamav/kap-test.ndb # rw: image entrypoint chowns the db dir
     healthcheck:
       test: ['CMD-SHELL', 'clamdscan --ping 1 || exit 1']
       interval: 30s

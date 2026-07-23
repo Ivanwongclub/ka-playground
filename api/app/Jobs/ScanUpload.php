@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Upload;
 use App\Services\Audit\AuditService;
+use App\Services\Uploads\ImageHardener;
 use App\Services\Uploads\VirusScanner;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -26,7 +27,7 @@ class ScanUpload implements ShouldQueue
 
     public function __construct(public readonly string $uploadId) {}
 
-    public function handle(VirusScanner $scanner, AuditService $audit): void
+    public function handle(VirusScanner $scanner, AuditService $audit, ImageHardener $hardener): void
     {
         $upload = Upload::query()->find($this->uploadId);
         if ($upload === null || $upload->status !== Upload::STATUS_PENDING) {
@@ -34,18 +35,36 @@ class ScanUpload implements ShouldQueue
         }
 
         $disk = Storage::disk($upload->disk);
-        $signature = $scanner->scan((string) $disk->get($upload->path));
+        $original = (string) $disk->get($upload->path);
+        // The scanner sees the ORIGINAL bytes — hardening runs only after a
+        // clean verdict, or a metadata-borne signature would be silently erased
+        $signature = $scanner->scan($original);
 
         if ($signature === null) {
+            $contents = $original;
+            if (str_starts_with($upload->mime_type, 'image/')) {
+                try {
+                    $contents = $hardener->harden($original, $upload->mime_type);
+                } catch (\RuntimeException $e) {
+                    // Scanned clean but cannot be neutralised — refuse visibility
+                    $this->quarantine($upload, $audit, "image hardening failed: {$e->getMessage()}");
+
+                    return;
+                }
+            }
+
             $cleanPath = str_replace(
                 config('uploads.paths.pending'),
                 config('uploads.paths.clean'),
                 $upload->path,
             );
-            $disk->move($upload->path, $cleanPath);
+            $disk->put($cleanPath, $contents);
+            $disk->delete($upload->path);
             $upload->update([
                 'path' => $cleanPath,
                 'status' => Upload::STATUS_CLEAN,
+                'size_bytes' => strlen($contents),
+                'sha256' => hash('sha256', $contents),
                 'scanned_at' => now(),
             ]);
             $audit->record(
@@ -59,6 +78,12 @@ class ScanUpload implements ShouldQueue
             return;
         }
 
+        $this->quarantine($upload, $audit, "ClamAV hit: {$signature}", $signature);
+    }
+
+    private function quarantine(Upload $upload, AuditService $audit, string $reason, ?string $signature = null): void
+    {
+        $disk = Storage::disk($upload->disk);
         $quarantinePath = str_replace(
             config('uploads.paths.pending'),
             config('uploads.paths.quarantine'),
@@ -77,12 +102,13 @@ class ScanUpload implements ShouldQueue
             action: 'upload.quarantined',
             fromState: Upload::STATUS_PENDING,
             toState: Upload::STATUS_QUARANTINED,
-            reason: "ClamAV hit: {$signature}",
+            reason: $reason,
             payloadAfter: ['signature' => $signature, 'context' => $upload->context],
         );
         // Admin alert: critical log now; the K-engine notification channel lands in S09
-        Log::critical('Upload quarantined by ClamAV', [
+        Log::critical('Upload quarantined', [
             'upload_id' => $upload->id,
+            'reason' => $reason,
             'signature' => $signature,
             'context' => $upload->context,
         ]);

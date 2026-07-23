@@ -42,10 +42,10 @@ class UploadService
             ]);
         }
 
+        // Original bytes are stored and scanned as-is; images are hardened
+        // (re-encoded) by the scan job AFTER a clean verdict, so the scanner
+        // sees exactly what was uploaded (see ImageHardener).
         $contents = (string) file_get_contents($file->getRealPath());
-        if (str_starts_with($mime, 'image/')) {
-            $contents = $this->reencodeImage($contents, $mime);
-        }
 
         $id = (string) Str::uuid7();
         $extension = match ($mime) {
@@ -98,26 +98,4 @@ class UploadService
         return (string) Storage::disk($upload->disk)->get($upload->path);
     }
 
-    /**
-     * Decode and re-export the image via GD: EXIF, comment blocks and any
-     * appended payloads do not survive a pixel-level re-encode (O2).
-     */
-    private function reencodeImage(string $contents, string $mime): string
-    {
-        $image = @imagecreatefromstring($contents);
-        if ($image === false) {
-            throw ValidationException::withMessages(['file' => ['Image could not be decoded']]);
-        }
-
-        ob_start();
-        match ($mime) {
-            'image/jpeg' => imagejpeg($image, null, 90),
-            'image/png' => imagepng($image, null, 6),
-            'image/webp' => imagewebp($image, null, 90),
-            default => throw new RuntimeException("Unexpected image mime {$mime}"),
-        };
-        imagedestroy($image);
-
-        return (string) ob_get_clean();
-    }
 }

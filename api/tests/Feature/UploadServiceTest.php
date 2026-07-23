@@ -39,6 +39,15 @@ class UploadServiceTest extends TestCase
         $this->app->bind(VirusScanner::class, EicarOnlyScanner::class);
     }
 
+    private function runScanJob(string $uploadId): void
+    {
+        (new ScanUpload($uploadId))->handle(
+            app(VirusScanner::class),
+            app(\App\Services\Audit\AuditService::class),
+            app(\App\Services\Uploads\ImageHardener::class),
+        );
+    }
+
     private function jpeg(string $name = 'photo.jpg'): UploadedFile
     {
         $img = imagecreatetruecolor(24, 24);
@@ -85,15 +94,44 @@ class UploadServiceTest extends TestCase
         app(UploadService::class)->intake($this->jpeg(), 'not_a_context');
     }
 
-    public function test_image_reencode_strips_embedded_metadata(): void
+    public function test_scan_sees_original_bytes_and_clean_image_is_hardened(): void
     {
         Queue::fake();
         $upload = app(UploadService::class)->intake($this->jpeg(), 'image');
 
+        // Pending store holds the ORIGINAL — the scanner must see the payload
+        $pending = Storage::disk('local')->get($upload->path);
+        $this->assertStringContainsString('KAP_PAYLOAD_MARKER_SHOULD_NOT_SURVIVE', $pending);
+
+        // After a clean verdict the visible file is re-encoded: payload gone
+        $this->runScanJob($upload->id);
+        $upload->refresh();
         $stored = Storage::disk('local')->get($upload->path);
         $this->assertStringNotContainsString('KAP_PAYLOAD_MARKER_SHOULD_NOT_SURVIVE', $stored);
-        $this->assertNotFalse(@imagecreatefromstring($stored), 're-encoded file is a valid image');
+        $this->assertNotFalse(@imagecreatefromstring($stored), 'hardened file is a valid image');
         $this->assertSame(hash('sha256', $stored), $upload->sha256);
+        $this->assertSame(strlen($stored), $upload->size_bytes);
+    }
+
+    public function test_undecodable_image_is_quarantined_not_published(): void
+    {
+        Queue::fake();
+        // Valid JPEG magic (finfo says image/jpeg) but undecodable garbage after
+        $tmp = tempnam(sys_get_temp_dir(), 'kap');
+        file_put_contents($tmp, "\xFF\xD8\xFF\xE0".str_repeat('garbage', 64));
+        $file = new UploadedFile($tmp, 'broken.jpg', 'image/jpeg', null, true);
+
+        $upload = app(UploadService::class)->intake($file, 'image');
+        $this->runScanJob($upload->id);
+
+        $upload->refresh();
+        $this->assertSame(Upload::STATUS_QUARANTINED, $upload->status);
+        $this->assertFalse($upload->isVisible());
+        $this->assertDatabaseHas('audit_events', [
+            'entity_type' => 'upload',
+            'entity_id' => $upload->id,
+            'action' => 'upload.quarantined',
+        ]);
     }
 
     public function test_clean_file_is_invisible_until_scan_passes(): void
@@ -114,7 +152,7 @@ class UploadServiceTest extends TestCase
         }
 
         // Run the scan job: clean → visible, moved out of pending
-        (new ScanUpload($upload->id))->handle(app(VirusScanner::class), app(\App\Services\Audit\AuditService::class));
+        $this->runScanJob($upload->id);
         $upload->refresh();
         $this->assertSame(Upload::STATUS_CLEAN, $upload->status);
         $this->assertTrue($upload->isVisible());
@@ -136,7 +174,7 @@ class UploadServiceTest extends TestCase
 
         $service = app(UploadService::class);
         $upload = $service->intake($file, 'document');
-        (new ScanUpload($upload->id))->handle(app(VirusScanner::class), app(\App\Services\Audit\AuditService::class));
+        $this->runScanJob($upload->id);
 
         $upload->refresh();
         $this->assertSame(Upload::STATUS_QUARANTINED, $upload->status);
