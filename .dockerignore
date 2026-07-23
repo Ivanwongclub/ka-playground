@@ -1,0 +1,10 @@
+# CLAUDE.md §5 — the MVP reference and docs never enter a build context or image
+build-reference/
+docs/
+
+# Local artifacts
+**/node_modules/
+**/.git/
+web/dist/
+api/vendor/
+api/.env

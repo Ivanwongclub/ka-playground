@@ -45,6 +45,32 @@ $ grep -c '^| FR' docs/requirements/REGISTER.md
 GR004–GR007, SR004–SR018, FR001–FR067, OR001–OR003 assigned; amendment map 2.1–2.27 complete.
 Result: PASS
 
+### STEP 2 — Scaffold + theme · commit (this step)
+```
+$ php artisan --version
+Laravel Framework 12.64.0
+$ cd api && php artisan test
+  Tests:    2 passed (2 assertions)
+$ cd web && node scripts/i18n-check.mjs
+OK   en.json — 86 keys, parity complete
+OK   zh-TC.json — 86 keys, parity complete
+OK   zh-SC.json — 86 keys, parity complete
+i18n:check PASSED — parity complete, no hardcoded user-facing strings
+$ npx tsc -b            # clean, no output
+$ npm run build         # ✓ built in 1.55s (chunk-size warning — see §5)
+$ docker compose config -q && docker compose up -d --build
+kap-app-1 / kap-horizon-1 / kap-nginx-1 / kap-postgres-1 / kap-redis-1 — all (healthy)
+$ curl -s -o /dev/null -w 'HTTP %{http_code}' http://localhost:8080/up
+HTTP 200
+# Headless-Chromium locale cycle (Playwright, scratchpad-only tooling):
+EN: style-guide rendered · 繁體中文: nav = 總覽 · 简体中文: nav = 总览 · back to English
+console lines: 0 · MISSING KEY: 0 · errors: 0 → LOCALE CYCLE VERIFY: PASS
+```
+Screenshots verified by eye: dark-only shell, gold-active sidebar, palette,
+all §9 component variants, themed toast + confirm (App.useApp — no default blue),
+gold line chart + Viridis heatmap on kaChartTheme, TC sample at 1.8 line-height.
+Result: PASS
+
 ## 3. Assertions registered this sprint
 | Assertion | Tag | First green run output pasted? |
 |-----------|-----|-------------------------------|
@@ -60,6 +86,9 @@ Result: PASS
 | # | Item | Severity | Proposed sprint |
 |---|------|----------|-----------------|
 | 1 | `hero-tiles` holds only sc1/sc3/sc5 and `featured` only sc5 — consistent with manifest §4; the §12 gradient fallback must cover the empty slots | Low | S00 STEP 6 (fallback wiring) / S02 (catalogue) |
+| 2 | Web bundle is one 2.9 MB chunk (charts lib dominates) — route-level code-splitting would fix; not in the S00 card | Low | S01+ (when routes multiply) |
+| 3 | PWA manifest references `/assets/icons/icon-192.png` / `icon-512.png` — files generated from the rescued logo/favicon in STEP 6 | Low | S00 STEP 6 |
+| 4 | Approved unnamed deps (Leo, this session): react-router-dom, i18next + react-i18next, @fontsource self-hosted fonts. Playwright used for VERIFY lives in the scratchpad only — not a project dependency | Info | — |
 
 ## 6. Exit gate
 ```

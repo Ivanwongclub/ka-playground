@@ -1,0 +1,285 @@
+/* KA Playground base styles — Design System v2.1. Dark only; tokens live in theme.ts,
+   this file carries only what AntD tokens cannot express (shell, mobile, samples). */
+
+:root {
+  color-scheme: dark;
+  --ka-bg: #0f0b15;
+  --ka-card: #1a1326;
+  --ka-fg: #f4f4f5;
+  --ka-gold: #c9a962;
+  --ka-gold-hover: #d4b876;
+  --ka-muted: #1e1729;
+  --ka-muted-fg: #a1a1aa;
+  --ka-border: #2a2235;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--ka-bg);
+  color: var(--ka-fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3 {
+  font-family: Montserrat, Inter, 'Noto Sans HK', 'Noto Sans SC', system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* §18 — CJK: 1.8 line-height, minimum 13px, no italics (weight for emphasis) */
+:lang(zh-Hant-HK),
+:lang(zh-Hans),
+.ka-tc-sample {
+  line-height: 1.8;
+  font-size: max(1em, 13px);
+  font-style: normal;
+}
+
+/* §14 — finance always tabular */
+.ka-tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Form labels — §15: labels always visible, 13px */
+.ka-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+/* Logo mark — styled component per ASSET-MANIFEST §4, not an image */
+.ka-logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ka-gold);
+  color: var(--ka-bg);
+  font-family: Montserrat, sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+/* Gold CTA — §5/§8: shadow escalates + lift on hover, scale on press */
+.ka-cta {
+  box-shadow: 0 4px 16px rgba(201, 169, 98, 0.3);
+  transition:
+    box-shadow 150ms ease,
+    transform 150ms ease;
+}
+.ka-cta:hover {
+  box-shadow: 0 8px 24px rgba(201, 169, 98, 0.45);
+  transform: translateY(-1px);
+}
+.ka-cta:active {
+  transform: scale(0.98);
+}
+
+/* §12.1 empty state */
+.ka-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 64px 16px;
+  text-align: center;
+}
+.ka-empty h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.ka-empty p {
+  margin: 0;
+  color: var(--ka-muted-fg);
+  font-size: 13px;
+}
+
+/* Style-guide swatches */
+.ka-swatch {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  width: 96px;
+}
+.ka-swatch-chip {
+  height: 48px;
+  border-radius: 8px;
+  border: 1px solid var(--ka-border);
+}
+
+/* ── Mobile shell (§17) ────────────────────────────────────────────── */
+
+.ka-mobile-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.ka-mobile-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  padding-top: calc(8px + env(safe-area-inset-top));
+  background: var(--ka-card);
+  border-bottom: 1px solid var(--ka-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.ka-mobile-avatar {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.ka-mobile-title {
+  flex: 1;
+  font-family: Montserrat, sans-serif;
+  font-weight: 600;
+}
+.ka-mobile-content {
+  flex: 1;
+  padding: 16px;
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+
+/* §17.2 — bottom tab bar: 56px + safe area, z 20 */
+.ka-tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(56px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  display: flex;
+  background: var(--ka-card);
+  border-top: 1px solid var(--ka-border);
+  z-index: 20;
+}
+.ka-tabbar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  min-height: 44px;
+}
+.ka-tabbar-label {
+  font-size: 11px;
+  color: var(--ka-gold);
+}
+
+/* Nav drawer user card */
+.ka-drawer-usercard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: calc(16px + env(safe-area-inset-top)) 16px 16px;
+  border-bottom: 1px solid var(--ka-border);
+}
+.ka-drawer-username {
+  font-weight: 600;
+}
+.ka-drawer-usermeta {
+  font-size: 12px;
+  color: var(--ka-muted-fg);
+}
+
+/* §17.3 — bottom sheet, z 100 (drawer/sheet layer) */
+.ka-sheet-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+}
+.ka-sheet {
+  width: 100%;
+  background: var(--ka-card);
+  border-radius: 16px 16px 0 0;
+  border: 1px solid var(--ka-border);
+  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.ka-sheet-handle-zone {
+  padding: 10px 0 6px;
+  touch-action: none;
+  cursor: grab;
+}
+.ka-sheet-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ka-border);
+  margin: 0 auto;
+}
+.ka-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--ka-border);
+}
+.ka-sheet-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+.ka-sheet-close {
+  background: none;
+  border: none;
+  color: var(--ka-gold);
+  cursor: pointer;
+  font-size: 13px;
+  min-height: 44px;
+}
+.ka-sheet-body {
+  padding: 16px;
+  overflow-y: auto;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+
+/* §8/§19 — reduced motion kills transforms */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    transform: none !important;
+  }
+}
+
+/* §19 — higher-contrast preference steps borders and muted text up */
+@media (prefers-contrast: more) {
+  :root {
+    --ka-border: #3a3147;
+    --ka-muted-fg: #c4c4cc;
+  }
+}
