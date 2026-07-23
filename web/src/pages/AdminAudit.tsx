@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Button, DatePicker, Flex, Input, Table, Tag, Typography } from 'antd';
 import type { Dayjs } from 'dayjs';
 import { useTranslation } from 'react-i18next';
+import { authFetch } from '../auth/session';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -58,7 +59,7 @@ export function AdminAudit() {
     if (f.range?.[0]) params.set('from', f.range[0].toISOString());
     if (f.range?.[1]) params.set('to', f.range[1].toISOString());
     try {
-      const res = await fetch(`/api/audit-events?${params.toString()}`);
+      const res = await authFetch(`/api/audit-events?${params.toString()}`);
       if (!res.ok) throw new Error(String(res.status));
       const body = (await res.json()) as { data: AuditRow[]; total: number };
       setRows(body.data);

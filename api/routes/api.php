@@ -53,5 +53,6 @@ Route::post('/onboarding/accept', [OnboardingController::class, 'accept'])->midd
 Route::get('/onboarding/verify-email/{id}/{hash}', [OnboardingController::class, 'verifyEmail'])
     ->middleware('signed')->name('verification.verify');
 
-// S00 surface — goes behind auth:sanctum + audit_read in S01 STEP 6 (card step 6)
-Route::get('/audit-events', [AuditEventController::class, 'index']);
+// S00 surface, secured in S01 STEP 6: Sanctum + the audit_read capability (OD-17)
+Route::get('/audit-events', [AuditEventController::class, 'index'])
+    ->middleware(['auth:sanctum', 'permission:audit.read']);

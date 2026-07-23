@@ -9,8 +9,7 @@ use Illuminate\Http\Request;
 /**
  * S00 audit element: Admin › Audit log viewer, filterable by
  * actor / entity / action / date. Read-only — the table is INSERT-only (BI-1).
- * Authorisation: Sanctum + audit_read capability arrive in S01 (OD-17); until
- * then the stack is local-only and undeployed (flagged in AUDIT S00 §5).
+ * Secured in S01 STEP 6: auth:sanctum + permission:audit.read (OD-17).
  */
 class AuditEventController extends Controller
 {
