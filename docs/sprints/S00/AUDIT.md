@@ -53,7 +53,7 @@ $ grep -c '^| FR' docs/requirements/REGISTER.md
 GR004–GR007, SR004–SR018, FR001–FR067, OR001–OR003 assigned; amendment map 2.1–2.27 complete.
 Result: PASS
 
-### STEP 2 — Scaffold + theme · commit (this step)
+### STEP 2 — Scaffold + theme · commit `bcc0614` (+ token review `7b6df6a`/`5379a9a`, review items `ad93314`)
 ```
 $ php artisan --version
 Laravel Framework 12.64.0
@@ -79,7 +79,7 @@ all §9 component variants, themed toast + confirm (App.useApp — no default bl
 gold line chart + Viridis heatmap on kaChartTheme, TC sample at 1.8 line-height.
 Result: PASS
 
-### STEP 3 — Audit spine · commit (this step)
+### STEP 3 — Audit spine · commit `5db115d` (+ pg tests / trigger guard `a9bd657`)
 ```
 $ php artisan test
    PASS  Tests\Feature\AuditSpineTest
@@ -101,7 +101,7 @@ psql SELECT → event row visible with actor_id 1, action audit_spine.smoke
 ```
 Result: PASS
 
-### STEP 4 — Shared upload service · commit (this step)
+### STEP 4 — Shared upload service · commit `4a76d94`
 ```
 $ php artisan test
    PASS  Tests\Feature\ClamAvIntegrationTest
@@ -126,7 +126,7 @@ VERIFY therefore demonstrates both layers separately: intake rejection of the ra
 file, and queued-scan quarantine of EICAR bytes in the pending store.
 Result: PASS
 
-### STEP 4 addendum — full-path verification (Leo review, 24 Jul)
+### STEP 4 addendum — full-path verification (Leo review, 24 Jul) · commit `ea84556`
 Gap found in review: the two layers were only demonstrated separately; the
 production case — a file that PASSES the allow-list and is malicious — was
 untested. Fix in two parts:
@@ -152,7 +152,7 @@ Both full-path tests assert: intake accepts (status pending, correct MIME) →
 real clamd flags `KAP.TestSig.Marker.UNOFFICIAL` → quarantined + audit event.
 Result: PASS
 
-### STEP 5 — Reconciliation runner · commit (this step)
+### STEP 5 — Reconciliation runner · commit `643bbae`
 ```
 $ docker compose exec app php artisan reconcile:run
   PASS  audit.immutability           [BI-1] audit_events rejects UPDATE and DELETE at the database level
@@ -207,11 +207,15 @@ Result: PASS
 | # | Item | Severity | Proposed sprint |
 |---|------|----------|-----------------|
 | 1 | `hero-tiles` holds only sc1/sc3/sc5 and `featured` only sc5 — consistent with manifest §4; the §12 gradient fallback must cover the empty slots | Low | S00 STEP 6 (fallback wiring) / S02 (catalogue) |
-| 2 | Web bundle is one 2.9 MB chunk (charts lib dominates) — route-level code-splitting would fix; not in the S00 card | Low | S01+ (when routes multiply) |
-| 3 | PWA manifest references `/assets/icons/icon-192.png` / `icon-512.png` — files generated from the rescued logo/favicon in STEP 6 | Low | S00 STEP 6 |
+| 2 | Web bundle 871.3 kB gz against the 1 MB budget — **85% consumed with zero features**. Route-level code-splitting is a REQUIREMENT of S01 (its own gate fails the budget otherwise), not a someday item | **Medium** | **S01** |
+| 3 | ~~PWA manifest icon files~~ **CLOSED in STEP 6** — icons generated from the rescued logo (`a44c12c`) | Closed | — |
 | 4 | Approved unnamed deps (Leo, this session): react-router-dom, i18next + react-i18next, @fontsource self-hosted fonts, @ant-design/v5-patch-for-react-19. Playwright used for VERIFY lives in the scratchpad only — not a project dependency | Info | — |
 | 5 | ~~STEP 5 MUST register: BI-1 trigger-enabled nightly assertion~~ **CLOSED in STEP 5** — `audit.trigger_enabled` registered and green (closes review item STEP 3·2) | Closed | — |
 | 6 | Test suite moved SQLite → Postgres (Leo, 23 Jul): `kap_test` DB in the compose postgres, host port 54329, phpunit env updated. SQLite trigger branch kept in the migration (costs nothing; any future sqlite use inherits enforcement). For an already-initialised pg volume, `CREATE DATABASE kap_test OWNER kap;` — the init script only runs on fresh volumes. CI (STEP 6) needs a pg service for tests | Info | S00 STEP 6 (CI) |
+| 8 | `/admin/audit` (+ `/api/audit-events`) is **unauthenticated** — acceptable only while local-only and undeployed; must go behind Sanctum + `audit_read` (OD-17) | **Medium** | **S01** |
+| 9 | CI has **no clamav service**, so the four real-clamd tests (incl. the full-path custom-signature quarantine) never run in CI — they skip visibly. Proposed fix: clamav service + actions/cache on the signature DB | **Medium** | **S01** (proposed) |
+| 10 | Login split-screen background is staged and rendered on the style guide only — the actual login page (and AA-logo-on-login per manifest §4) is S01 scope | Low | S01 |
+| 11 | This machine's Docker engine is **colima** (context `colima`), not Docker Desktop — VM resources are set via `colima start --memory …`; Desktop settings have no effect here | Info | — |
 | 7 | **actor_role permanence:** `audit_events` is immutable, so rows written before S01 wires the role model carry `actor_role = NULL` forever — they cannot be backfilled. Confirmed: every row written so far is synthetic (factory users, test data); no non-synthetic data will be written before S01. No production deploy exists | Info | S01 wires actor_role |
 
 ## 6. Exit gate
