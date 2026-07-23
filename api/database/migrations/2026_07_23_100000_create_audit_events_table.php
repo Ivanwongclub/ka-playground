@@ -41,7 +41,8 @@ return new class extends Migration
         // zero-row UPDATE/DELETE/TRUNCATE is rejected; row-level on sqlite (tests).
         match (DB::getDriverName()) {
             'pgsql' => DB::unprepared(<<<'SQL'
-                CREATE FUNCTION audit_events_immutable() RETURNS trigger
+                -- OR REPLACE: db:wipe/migrate:fresh drop tables but not functions
+                CREATE OR REPLACE FUNCTION audit_events_immutable() RETURNS trigger
                 LANGUAGE plpgsql AS $$
                 BEGIN
                     RAISE EXCEPTION 'audit_events is INSERT-only (BI-1): % blocked', TG_OP;

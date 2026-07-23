@@ -93,6 +93,31 @@ psql SELECT → event row visible with actor_id 1, action audit_spine.smoke
 ```
 Result: PASS
 
+### STEP 4 — Shared upload service · commit (this step)
+```
+$ php artisan test
+   PASS  Tests\Feature\ClamAvIntegrationTest
+  ✓ real clamd flags eicar · ✓ real clamd passes clean content
+   PASS  Tests\Feature\UploadServiceTest
+  ✓ disallowed mime is rejected · ✓ oversize file is rejected
+  ✓ unknown context is refused · ✓ image reencode strips embedded metadata
+  ✓ clean file is invisible until scan passes · ✓ eicar is quarantined with audit event
+  Tests:    16 passed (36 assertions)
+
+# End-to-end on the compose stack (Horizon + real clamd):
+layer1 intake rejection: {"file":["File type text/plain is not accepted here"]}
+ document | quarantined | Eicar-Test-Signature | uploads/quarantine/0
+ image    | clean       |                      | uploads/clean/019f8f
+ upload.quarantined | pending | quarantined | ClamAV hit: Eicar-Test-Signature
+[laravel.log] local.CRITICAL: Upload quarantined by ClamAV {"upload_id":"019f8fc1-…","signature":"Eicar-Test-Signature"}
+clean image: intake → pending (visible=false) → Horizon scan → clean (visible)
+```
+Note: EICAR is by design only detectable at byte 0 of a file, and a raw EICAR file
+finfo-types as text/plain — which the MIME allow-list rejects before any scan. The
+VERIFY therefore demonstrates both layers separately: intake rejection of the raw
+file, and queued-scan quarantine of EICAR bytes in the pending store.
+Result: PASS
+
 ## 3. Assertions registered this sprint
 | Assertion | Tag | First green run output pasted? |
 |-----------|-----|-------------------------------|

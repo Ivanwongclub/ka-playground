@@ -19,6 +19,7 @@ services:
       REDIS_HOST: redis
       QUEUE_CONNECTION: redis
       CACHE_STORE: redis
+      CLAMAV_HOST: clamav
     depends_on:
       postgres:
         condition: service_healthy
@@ -46,6 +47,7 @@ services:
       REDIS_CLIENT: phpredis
       REDIS_HOST: redis
       QUEUE_CONNECTION: redis
+      CLAMAV_HOST: clamav
     depends_on:
       redis:
         condition: service_healthy
@@ -73,6 +75,21 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+
+  clamav:
+    # clamav/clamav:stable publishes no arm64 manifest; the official debian
+    # variant is multi-arch. Deploy images are version-pinned in the 2.26 runbook.
+    image: clamav/clamav-debian:latest
+    ports:
+      - '3310:3310' # host access for the phpunit integration tests
+    volumes:
+      - clamavdata:/var/lib/clamav
+    healthcheck:
+      test: ['CMD-SHELL', 'clamdscan --ping 1 || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 180s
 
   postgres:
     image: postgres:17-alpine
@@ -104,3 +121,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  clamavdata:
