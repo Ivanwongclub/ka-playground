@@ -1,0 +1,1 @@
+revoke execute on function public.refresh_enrolled_count() from public, anon, authenticated;
