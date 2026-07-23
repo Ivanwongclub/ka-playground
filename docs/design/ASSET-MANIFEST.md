@@ -100,6 +100,6 @@ The hero headline pattern — white Montserrat with **one gold accent word** ("f
 
 ### Two caveats these screens surface
 1. **Copy vs positioning.** "Built for Hong Kong learners aged 6 to 19", public "Request access", social sign-in on the login, and "Family satisfaction" read as mass-market. The confirmed positioning (Global Elite Summer Program, invitation-only, spec L3–L4) means the *visuals* carry over but this copy does not — S01 copy comes from the spec's register (understated, invitation-led), and social sign-in binds to invitation tokens only (B10).
-2. **Two marks in play.** The gold "AA Armour Academy" logo is the education-facing mark; "KA / Kings Armour" is the holding brand. Both appear in the MVP. Until the client supplies brand guidance (OD-5), the rule: **AA logo on user-facing surfaces (login, certificates), KA mark in the platform shell** — matching what the MVP already does.
+2. **Two marks in play.** The gold "AA Armour Academy" logo is the education-facing mark; "KA / Kings Armour" is the holding brand. Both appear in the MVP. Until the client supplies brand guidance (OD-3), the rule: **AA logo on user-facing surfaces (login, certificates), KA mark in the platform shell** — matching what the MVP already does.
 
 **S00 definition-of-done addition:** `rescue-mvp-assets.sh` run, tree committed, inventory count recorded in AUDIT.md, logo/favicon/login-bg rendering in the style-guide route.
