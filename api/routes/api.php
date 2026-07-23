@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuditEventController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CapabilityController;
 use App\Http\Controllers\OnboardingController;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,15 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->middleware('permission:operations.manage');
     Route::post('/my/students', [OnboardingController::class, 'createStudent'])
         ->middleware('role:guardian');
+});
+
+Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+Route::middleware('auth:sanctum')->group(function (): void {
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::post('/admin/users/{id}/unlock', [AuthController::class, 'unlock'])
+        ->middleware('permission:operations.manage');
 });
 
 // Guest onboarding surface (2.11) — throttling arrives with step 4

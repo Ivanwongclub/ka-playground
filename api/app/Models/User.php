@@ -46,6 +46,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'locked_until' => 'immutable_datetime',
             'password' => 'hashed',
         ];
     }

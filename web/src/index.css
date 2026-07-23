@@ -283,3 +283,57 @@ h3 {
     --ka-muted-fg: #c4c4cc;
   }
 }
+
+/* ── Login split-screen (S01, manifest §4) ── */
+.ka-login {
+  display: flex;
+  min-height: 100dvh;
+}
+.ka-login-form {
+  width: min(440px, 100%);
+  padding: 48px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--ka-bg);
+}
+.ka-login-logo {
+  height: 44px;
+  align-self: flex-start;
+  margin-bottom: 24px;
+}
+.ka-login-hero {
+  flex: 1;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+.ka-login-hero::before {
+  /* §11.2 duotone: aubergine 60–80% over photography */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(26, 19, 38, 0.82) 0%, rgba(26, 19, 38, 0.55) 100%);
+}
+.ka-login-quote {
+  position: relative;
+  margin: 0 48px 48px;
+  max-width: 480px;
+  color: var(--ka-fg);
+}
+.ka-login-quote p {
+  font-family: Montserrat, sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.ka-login-quote footer {
+  color: var(--ka-gold);
+  font-size: 13px;
+}
+@media (max-width: 767px) {
+  .ka-login-hero { display: none; }
+  .ka-login-form { width: 100%; }
+}

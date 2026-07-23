@@ -122,5 +122,21 @@
     "loginBg": "Login background (auth-assets)",
     "card": "Programme card image",
     "fallback": "Missing slot → category gradient (never a broken image)"
+  },
+  "login": {
+    "logoAlt": "Armour Academy",
+    "title": "Welcome back",
+    "subtitle": "Sign in to KA Playground",
+    "email": "Email",
+    "password": "Password",
+    "remember": "Keep me signed in for 30 days",
+    "signIn": "Sign in",
+    "invitationOnly": "Access is by academy invitation only.",
+    "errorUnverified": "Your email is not verified yet — open the verification link we sent you, then sign in.",
+    "errorLocked": "This account is temporarily locked after repeated failed attempts. Try again later or contact the academy.",
+    "errorCredentials": "These credentials do not match our records.",
+    "errorNetwork": "Connection problem — please try again.",
+    "quote": "My son built a model F1 car — and stood on a stage to pitch it. We watched him find a voice we had not heard before.",
+    "quoteAttribution": "— Mrs. Yip, parent"
   }
 }

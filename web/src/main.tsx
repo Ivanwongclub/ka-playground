@@ -23,6 +23,7 @@ import { kaTheme } from './theme/theme';
 import { AppShell } from './AppShell';
 import { StyleGuide } from './pages/StyleGuide';
 import { AdminAudit } from './pages/AdminAudit';
+import { Login } from './pages/Login';
 import { Placeholder } from './pages/Placeholder';
 import './index.css';
 
@@ -43,6 +44,7 @@ function Root() {
       <AntApp>
         <BrowserRouter>
           <Routes>
+            <Route path="/login" element={<Login />} />
             <Route element={<AppShell />}>
               <Route index element={<Placeholder titleKey="empty.title" />} />
               <Route path="/tracker" element={<Placeholder titleKey="empty.title" />} />

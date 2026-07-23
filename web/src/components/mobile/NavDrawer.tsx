@@ -50,6 +50,11 @@ export function NavDrawer({ open, onClose }: NavDrawerProps) {
         style={{ background: 'transparent', border: 'none' }}
         onClick={({ key }) => {
           if (key === 'style-guide') void navigate('/style-guide');
+          if (key === 'sign-out') {
+            void fetch('/api/auth/logout', { method: 'POST', headers: { Accept: 'application/json' } });
+            localStorage.removeItem('ka.token');
+            void navigate('/login');
+          }
           onClose();
         }}
         items={[

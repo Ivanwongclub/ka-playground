@@ -122,5 +122,21 @@
     "loginBg": "登录背景(auth-assets)",
     "card": "课程卡片图片",
     "fallback": "缺图时 → 类别渐变(绝不显示破图)"
+  },
+  "login": {
+    "logoAlt": "Armour Academy",
+    "title": "欢迎回来",
+    "subtitle": "登录 KA Playground",
+    "email": "邮箱",
+    "password": "密码",
+    "remember": "保持登录 30 天",
+    "signIn": "登录",
+    "invitationOnly": "本平台仅限学院邀请使用。",
+    "errorUnverified": "您的邮箱尚未验证 — 请先打开验证链接,再登录。",
+    "errorLocked": "多次登录失败,账户已暂时锁定。请稍后再试或联系学院。",
+    "errorCredentials": "账号或密码不正确。",
+    "errorNetwork": "连接问题 — 请再试一次。",
+    "quote": "儿子亲手制作了一辆F1模型车,并站上舞台介绍它。我们看见他找到了从未展现过的自信。",
+    "quoteAttribution": "— 叶太太,家长"
   }
 }
