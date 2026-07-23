@@ -47,7 +47,7 @@ continuity rule — for a platform where the account holder is often not the sub
 
 ## NON-SCOPE
 Enrolments (S04A) · programmes (S02) · Logto or any OIDC (S11) · social login · public registration ·
-**Member surfaces — event list, RSVP, directory (OD-22: unassigned; S01 seeds the role only)**.
+**Member surfaces — event list, RSVP, directory (OD-22 resolved: S06). S01 seeds the role and enforces its denials, but issues NO Member invitations and wires NO Member invitation path — nobody is onboarded into Member until S06 gives them something to log into.**
 
 ## KEY VERIFICATIONS
 - Unverified account cannot complete first login (paste the refusal).
