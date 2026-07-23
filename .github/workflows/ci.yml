@@ -58,15 +58,45 @@ jobs:
       - name: Create test database
         run: PGPASSWORD=kap_local_only psql -h 127.0.0.1 -p 54329 -U kap -d kap -c 'CREATE DATABASE kap_test OWNER kap;'
 
+      - name: Cache ClamAV signature database
+        uses: actions/cache@v4
+        with:
+          path: clamav-db
+          key: clamav-db-${{ github.run_number }}
+          restore-keys: clamav-db-
+
+      - name: Start ClamAV (cached signatures + KAP test signature)
+        run: |
+          mkdir -p clamav-db
+          cp deploy/clamav/kap-test.ndb clamav-db/kap-test.ndb
+          sudo chown -R 100:101 clamav-db || true
+          docker run -d --name clamav -p 3310:3310 \
+            -v "$PWD/clamav-db:/var/lib/clamav" clamav/clamav-debian:latest
+          for i in $(seq 1 60); do
+            if docker exec clamav clamdscan --ping 1 2>/dev/null; then echo ready; break; fi
+            sleep 5
+          done
+          docker exec clamav clamdscan --ping 1 || { docker logs clamav | tail -20; exit 1; }
+          printf 'KAP-CUSTOM-TEST-SIGNATURE-6a8f2c' | docker exec -i clamav clamdscan - | head -1
+
       - name: Migration gate (2.15)
         working-directory: api
         run: |
           php artisan migrate --force
           php artisan migrate --pretend
 
-      - name: API tests
+      - name: API tests (incl. the four real-clamd tests — must EXECUTE, not skip)
         working-directory: api
-        run: php artisan test
+        env:
+          CLAMAV_HOST: 127.0.0.1
+          CLAMAV_PORT: 3310
+        run: |
+          php artisan test
+          php artisan test --filter=ClamAvIntegrationTest 2>&1 | tee clamd-tests.log
+          if grep -qi 'skipped' clamd-tests.log; then
+            echo 'FAIL: real-clamd tests skipped in CI — clamav service not reachable'
+            exit 1
+          fi
 
       - name: Reconciliation suite
         working-directory: api
