@@ -1,6 +1,6 @@
 # AUDIT KAP-S00 — Foundation & kickoff
 
-**Result:** IN PROGRESS · **Date:** started 2026-07-23 · **HEAD at gate:** `<pending — sprint not gated>`
+**Result:** PASS · **Date:** 2026-07-23 → 2026-07-24 · **HEAD at gate:** gate commit itself; last content commit `a44c12c`
 
 > Written by Claude Code at the sprint's end. Honesty outranks looking good — a documented FAIL is
 > worth more than an untrue PASS. This is the BUILD audit; the in-product audit element is separate.
@@ -15,6 +15,14 @@
 | `docs/design/ASSET-MANIFEST.md` | M | §2 `.env` path corrected to `build-reference/.env` (authorised by Leo, commit `KAP-S00-0a`) |
 | `docs/requirements/REGISTER.md` | M | STEP 1 — FR/SR/GR/OR IDs assigned from Spec v4.2; amendment map added |
 | `docs/sprints/S00/AUDIT.md` | A | This file, opened early per Leo |
+| `api/**` | A/M | STEPS 2–6: Laravel 12 + Horizon; audit spine (BI-1); shared upload service (BI-10); reconciliation runner; audit-events API |
+| `web/**` | A/M | STEPS 2, 6: React/Vite/AntD Pro dark-only shell, i18n EN/TC/SC, mobile primitives, style guide, audit viewer, asset tree + AssetImage |
+| `compose.yaml` · `compose.staging.yaml` · `api/Dockerfile` | A/M | Local stack (app, horizon, nginx, postgres, redis, clamav) + staging variant (2.14) |
+| `deploy/**` | A | nginx conf, RUNBOOK.md (2.26), check-audit-owner.sh, postgres init, kap-test.ndb (local-only signature) |
+| `.github/workflows/ci.yml` | A | CI running the exact exit-gate commands |
+| `.dockerignore` | A | Excludes build-reference/ and docs/ from any build context |
+| `docs/design/DESIGN-SYSTEM.md` | M | Authorised: 1.4.11 review folded in (KAP-S00-2b) |
+| `docs/sprints/S00/SPRINT.md` | M | Authorised gate additions: bundle budget line, owner-guard query |
 
 ## 2. Step-by-step verification (real output, pasted)
 
@@ -168,6 +176,20 @@ Nightly schedule 03:00 HKT in routes/console.php. Probes fail (never skip) on a 
 the host CLI's sqlite .env therefore fails honestly; canonical runs happen on the platform DB.
 Result: PASS
 
+### STEP 6 — Asset wiring, CI, environments, runbooks · commit `a44c12c`
+```
+Asset tree: 36 files under web/public/assets (33 rescued + logo + 2 PWA icons),
+served behind VITE_ASSET_BASE_URL. Browser-verified on /style-guide: AA logo,
+login background, card-sc5, and the §12 category-gradient fallback for a
+deliberately missing slot. favicon.ico wired; PWA icons generated from the logo
+(closes §5 item 3).
+Audit element: /admin/audit renders the sprint's 7 real events; action filter
+upload.quarantined → 1 row; times rendered HKT; zero console errors.
+build-reference/ absent from any image: build context is ./api (tree outside it)
+and the root .dockerignore excludes it besides.
+```
+Result: PASS
+
 ## 3. Assertions registered this sprint
 | Assertion | Tag | First green run output pasted? |
 |-----------|-----|-------------------------------|
@@ -194,11 +216,36 @@ Result: PASS
 
 ## 6. Exit gate
 ```
-(pending — sprint in progress)
+$ php artisan test
+  Tests:    25 passed (74 assertions)
+$ php artisan reconcile:run
+RECONCILE PASS — 2 assertion(s), 2 passed, 0 failed   (exit=0)
+$ php artisan migrate --pretend
+   INFO  Nothing to migrate.          # all 3 sprint migrations Ran; reversible
+$ docker compose config -q            # OK
+$ cd web && npx tsc --noEmit && npm run build
+ok      871.3 kB gz  index-DeFn0kzk.js
+ok      222.4 kB gz  index-CfFt_Gs_.css
+bundle-budget PASSED
+$ node scripts/i18n-check.mjs
+OK   en/zh-TC/zh-SC — 108 keys each, parity complete; no hardcoded strings
+# Locale cycle EN→TC→SC browser-verified (0 missing keys, 0 errors) — §2 STEP 2
+# Audit viewer shows this sprint's events — §2 STEP 6 screenshot
+
+# BI-1 owner guard (executable, both branches demonstrated):
+$ ./deploy/check-audit-owner.sh -U kap ...      # owner connection
+FAIL: the app role OWNS audit_events — ... (exit=1)   ← local dev, expected
+$ ./deploy/check-audit-owner.sh -U kap_app ...  # non-owner role
+OK: app role does not own audit_events (exit=0)
+# Staging/production MUST run this as the app role and get OK (RUNBOOK step 3/5)
 ```
-**Verdict:** pending.
+**Verdict:** PASS. Local stack healthy (7 services incl. clamav); CI mirrors these
+exact commands.
 
 ## 7. Invariant check
 | BI | Touched? | Evidence (test/assertion name) |
 |----|----------|-------------------------------|
-| (none yet — STEPS 0–1 were assets and documentation only) | | |
+| BI-1 | Built | AuditSpineTest (4 DB tests) · `audit.immutability` + `audit.trigger_enabled` assertions · check-audit-owner.sh |
+| BI-8 | Partially (service captures actor) | AuditSpineTest::service_writes_event_carrying_actor_identity; actor_role NULL until S01 (§5 item 7) |
+| BI-10 | Built | UploadServiceTest (7) + ClamAvIntegrationTest (4, real clamd incl. full-path custom-signature quarantine) |
+| BI-2..7, BI-9 | Not yet — their modules land S02–S04B | Runner + audit spine ready to receive their assertions |
