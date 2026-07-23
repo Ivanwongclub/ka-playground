@@ -22,6 +22,7 @@ import type { KaLocale } from './i18n';
 import { kaTheme } from './theme/theme';
 import { AppShell } from './AppShell';
 import { StyleGuide } from './pages/StyleGuide';
+import { AdminAudit } from './pages/AdminAudit';
 import { Placeholder } from './pages/Placeholder';
 import './index.css';
 
@@ -49,6 +50,7 @@ function Root() {
               <Route path="/learn" element={<Placeholder titleKey="empty.title" />} />
               <Route path="/profile" element={<Placeholder titleKey="empty.title" />} />
               <Route path="/style-guide" element={<StyleGuide />} />
+              <Route path="/admin/audit" element={<AdminAudit />} />
             </Route>
           </Routes>
         </BrowserRouter>

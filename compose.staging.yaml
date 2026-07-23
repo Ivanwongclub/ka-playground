@@ -1,0 +1,66 @@
+# Staging (2.14): same topology as production — tagged images, external
+# ApsaraDB RDS + OSS, secrets via .env.staging (never committed).
+# No postgres service (RDS), no test signature mount, no host DB port.
+# Deploy/rollback per deploy/RUNBOOK.md; ${TAG} is the annotated release tag.
+name: kap-staging
+
+services:
+  app:
+    image: ${REGISTRY}/kap-api:${TAG}
+    env_file: .env.staging
+    healthcheck:
+      test: ['CMD-SHELL', 'pgrep php-fpm || exit 1']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  horizon:
+    image: ${REGISTRY}/kap-api:${TAG}
+    command: php artisan horizon
+    env_file: .env.staging
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'php artisan horizon:status | grep -q running']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: ${REGISTRY}/kap-web:${TAG} # nginx serving the built web + fastcgi to app
+    ports:
+      - '80:80'
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1/ || exit 1']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli ping | grep -q PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  clamav:
+    image: clamav/clamav-debian:${CLAMAV_TAG:-latest}
+    volumes:
+      - clamavdata:/var/lib/clamav # signatures only — NO kap-test.ndb here
+    healthcheck:
+      test: ['CMD-SHELL', 'clamdscan --ping 1 || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 180s
+
+volumes:
+  redisdata:
+  clamavdata:

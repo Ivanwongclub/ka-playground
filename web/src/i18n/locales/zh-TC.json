@@ -19,7 +19,8 @@
     "signOut": "登出",
     "notifications": "通知",
     "settings": "設定",
-    "help": "說明"
+    "help": "說明",
+    "audit": "審計"
   },
   "shell": {
     "openNavigation": "開啟導覽",
@@ -96,5 +97,30 @@
   "empty": {
     "title": "尚無內容",
     "caption": "此模組將於後續衝刺推出"
+  },
+  "audit": {
+    "title": "審計日誌",
+    "subtitle": "每次狀態變更,僅可追加(BI-1)",
+    "colTime": "時間(香港)",
+    "colActor": "操作者",
+    "colEntity": "實體",
+    "colAction": "動作",
+    "colStates": "狀態轉換",
+    "colReason": "原因",
+    "filterActor": "操作者編號",
+    "filterEntityType": "實體類型",
+    "filterAction": "動作",
+    "filterDates": "日期範圍",
+    "apply": "套用篩選",
+    "reset": "重設",
+    "system": "系統",
+    "loadError": "無法載入 — 請確認 API 正在執行"
+  },
+  "sgAssets": {
+    "title": "資產(ASSET_BASE_URL)",
+    "logo": "Armour Academy 標誌(已救援)",
+    "loginBg": "登入背景(auth-assets)",
+    "card": "課程卡片圖片",
+    "fallback": "缺圖時 → 類別漸層(絕不顯示破圖)"
   }
 }

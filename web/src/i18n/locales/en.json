@@ -19,7 +19,8 @@
     "signOut": "Sign out",
     "notifications": "Notifications",
     "settings": "Settings",
-    "help": "Help"
+    "help": "Help",
+    "audit": "Audit"
   },
   "shell": {
     "openNavigation": "Open navigation",
@@ -96,5 +97,30 @@
   "empty": {
     "title": "Nothing here yet",
     "caption": "This module arrives in a later sprint"
+  },
+  "audit": {
+    "title": "Audit Log",
+    "subtitle": "Every state change, append-only (BI-1)",
+    "colTime": "Time (HKT)",
+    "colActor": "Actor",
+    "colEntity": "Entity",
+    "colAction": "Action",
+    "colStates": "Transition",
+    "colReason": "Reason",
+    "filterActor": "Actor ID",
+    "filterEntityType": "Entity type",
+    "filterAction": "Action",
+    "filterDates": "Date range",
+    "apply": "Apply filters",
+    "reset": "Reset",
+    "system": "System",
+    "loadError": "Couldn't load — check the API is running"
+  },
+  "sgAssets": {
+    "title": "Assets (ASSET_BASE_URL)",
+    "logo": "Armour Academy logo (rescued)",
+    "loginBg": "Login background (auth-assets)",
+    "card": "Programme card image",
+    "fallback": "Missing slot → category gradient (never a broken image)"
   }
 }

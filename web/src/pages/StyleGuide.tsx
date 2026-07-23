@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next';
 import { kaCategoryAccents, kaColors } from '../theme/theme';
 import { kaChartDefaults, viridis } from '../theme/chartTheme';
 import { BottomSheet } from '../components/mobile/BottomSheet';
+import { AssetImage } from '../components/shared/AssetImage';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -283,6 +284,43 @@ export function StyleGuide() {
       <Paragraph lang="zh-Hant-HK" className="ka-tc-sample">
         {t('styleGuide.tcSample')}
       </Paragraph>
+
+      <Divider />
+      <Title level={2}>{t('sgAssets.title')}</Title>
+      <Flex wrap gap={24}>
+        <div>
+          <Text type="secondary">{t('sgAssets.logo')}</Text>
+          <div style={{ background: kaColors.card, padding: 16, borderRadius: 10 }}>
+            <AssetImage path="brand/armour-academy-logo.webp" alt={t('sgAssets.logo')} style={{ height: 48 }} />
+          </div>
+        </div>
+        <div>
+          <Text type="secondary">{t('sgAssets.loginBg')}</Text>
+          <AssetImage
+            path="auth/featured-sc5.jpg"
+            alt={t('sgAssets.loginBg')}
+            style={{ width: 220, borderRadius: 10, display: 'block' }}
+          />
+        </div>
+        <div>
+          <Text type="secondary">{t('sgAssets.card')}</Text>
+          <AssetImage
+            path="programmes/cards/card-sc5.jpg"
+            alt={t('sgAssets.card')}
+            category="stem"
+            style={{ width: 160, borderRadius: 10, display: 'block' }}
+          />
+        </div>
+        <div>
+          <Text type="secondary">{t('sgAssets.fallback')}</Text>
+          <AssetImage
+            path="programmes/cards/card-missing.jpg"
+            alt={t('sgAssets.fallback')}
+            category="arts"
+            style={{ width: 160, height: 90, borderRadius: 10, display: 'block' }}
+          />
+        </div>
+      </Flex>
 
       <Divider />
       <Title level={2}>{t('styleGuide.mobile')}</Title>

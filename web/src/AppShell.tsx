@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Palette,
   Route as RouteIcon,
+  ShieldCheck,
   User,
   Users,
 } from 'lucide-react';
@@ -103,6 +104,7 @@ export function AppShell() {
           { path: '/learn', name: t('nav.learn'), icon: <GraduationCap size={16} aria-hidden /> },
           { path: '/profile', name: t('nav.profile'), icon: <User size={16} aria-hidden /> },
           { path: '/style-guide', name: t('nav.styleGuide'), icon: <Palette size={16} aria-hidden /> },
+          { path: '/admin/audit', name: t('nav.audit'), icon: <ShieldCheck size={16} aria-hidden /> },
         ],
       }}
       menuItemRender={(item, dom) => (

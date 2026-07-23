@@ -4,4 +4,8 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  server: {
+    // Dev convenience: API served by the compose nginx
+    proxy: { '/api': 'http://localhost:8080' },
+  },
 })

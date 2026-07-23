@@ -1,0 +1,86 @@
+# CI runs the SAME commands as the S00 exit gate — if CI and the gate can
+# disagree, the gate is decorative (Leo, S00 STEP 6).
+# Note: no clamav service here (large signature download per run); the four
+# real-clamd integration tests skip VISIBLY in CI and run locally + on staging.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: kap
+          POSTGRES_PASSWORD: kap_local_only
+          POSTGRES_DB: kap
+        ports:
+          - 54329:5432 # same host port as local, so phpunit.xml works unchanged
+        options: >-
+          --health-cmd "pg_isready -U kap -d kap"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, pgsql, gd, exif, redis
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install API dependencies
+        working-directory: api
+        run: |
+          composer install --no-interaction --prefer-dist
+          cp .env.example .env
+          php artisan key:generate --force
+
+      - name: Create test database
+        run: PGPASSWORD=kap_local_only psql -h 127.0.0.1 -p 54329 -U kap -d kap -c 'CREATE DATABASE kap_test OWNER kap;'
+
+      - name: Migration gate (2.15)
+        working-directory: api
+        run: |
+          php artisan migrate --force
+          php artisan migrate --pretend
+
+      - name: API tests
+        working-directory: api
+        run: php artisan test
+
+      - name: Reconciliation suite
+        working-directory: api
+        run: php artisan reconcile:run
+
+      - name: Web install
+        working-directory: web
+        run: npm ci
+
+      - name: Web typecheck + build (i18n:check + bundle budget embedded)
+        working-directory: web
+        run: |
+          npx tsc --noEmit
+          npm run build
+
+      - name: Compose config validates
+        run: docker compose config -q
