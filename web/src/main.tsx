@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useState } from 'react';
+import { StrictMode, Suspense, lazy, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App as AntApp, ConfigProvider } from 'antd';
 // React 19 compatibility: antd v5 officially supports React 16–18; this patch restores
@@ -21,11 +21,14 @@ import { antdLocaleFor, htmlLangFor, storedLocale } from './i18n';
 import type { KaLocale } from './i18n';
 import { kaTheme } from './theme/theme';
 import { AppShell } from './AppShell';
-import { StyleGuide } from './pages/StyleGuide';
-import { AdminAudit } from './pages/AdminAudit';
-import { Login } from './pages/Login';
 import { Placeholder } from './pages/Placeholder';
 import './index.css';
+
+// Route-level code-splitting (S01 step 7): heavy pages load on navigation.
+// The charts library rides only the style-guide chunk.
+const StyleGuide = lazy(() => import('./pages/StyleGuide').then((m) => ({ default: m.StyleGuide })));
+const AdminAudit = lazy(() => import('./pages/AdminAudit').then((m) => ({ default: m.AdminAudit })));
+const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })));
 
 function Root() {
   const { i18n } = useTranslation();
@@ -43,6 +46,7 @@ function Root() {
       {/* §2 — App wrapper so message/notification/Modal inherit the theme */}
       <AntApp>
         <BrowserRouter>
+          <Suspense fallback={<div className="ka-route-loading" aria-hidden />}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route element={<AppShell />}>
@@ -55,6 +59,7 @@ function Root() {
               <Route path="/admin/audit" element={<AdminAudit />} />
             </Route>
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </AntApp>
     </ConfigProvider>

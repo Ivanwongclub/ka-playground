@@ -337,3 +337,16 @@ h3 {
   .ka-login-hero { display: none; }
   .ka-login-form { width: 100%; }
 }
+
+/* §12.2 — route transition: quiet shimmer block, never a full-page spinner */
+.ka-route-loading {
+  min-height: 40vh;
+  margin: 24px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--ka-muted) 25%, var(--ka-card) 50%, var(--ka-muted) 75%);
+  background-size: 200% 100%;
+  animation: ka-shimmer 1.2s infinite linear;
+}
+@keyframes ka-shimmer {
+  to { background-position: -200% 0; }
+}
