@@ -4,7 +4,10 @@ namespace App\Providers;
 
 use App\Services\Reconciliation\Assertions\AuditImmutabilityProbe;
 use App\Services\Reconciliation\Assertions\AuditTriggerEnabledProbe;
+use App\Services\Reconciliation\Assertions\ConsentHashIntegrityAssertion;
+use App\Services\Reconciliation\Assertions\ConsentLanguageCompletenessAssertion;
 use App\Services\Reconciliation\Assertions\ConsentSignExclusivityAssertion;
+use App\Services\Reconciliation\Assertions\SupersededVersionReconsentAssertion;
 use App\Services\Reconciliation\Assertions\DefaultLobbyAssertion;
 use App\Services\Reconciliation\Assertions\PublishedProgrammeCompletenessAssertion;
 use App\Services\Reconciliation\Assertions\GuardianLinkCoverageAssertion;
@@ -43,6 +46,11 @@ class ReconciliationServiceProvider extends ServiceProvider
             // S02B
             $registry->register(new PublishedProgrammeCompletenessAssertion);
             $registry->register(new DefaultLobbyAssertion);
+
+            // S03
+            $registry->register(new ConsentHashIntegrityAssertion);
+            $registry->register(new ConsentLanguageCompletenessAssertion);
+            $registry->register(new SupersededVersionReconsentAssertion);
 
             return $registry;
         });

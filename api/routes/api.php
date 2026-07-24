@@ -111,6 +111,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->middleware('role:guardian');
     Route::post('/consent-requests/{id}/sign', [ConsentRequestController::class, 'sign'])
         ->middleware('permission:consent.sign');
+    Route::post('/consent-requests/{id}/decline', [ConsentRequestController::class, 'decline'])
+        ->middleware('role:guardian');
 
     // Reads shaped by RLS alone (S05 formation will consume these)
     Route::get('/programmes/{id}/team-categories', [ProgrammeConfigController::class, 'categories']);

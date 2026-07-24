@@ -29,7 +29,7 @@ class ConsentSigningService
      * narrow the INSERT policy back to system-only — AUDIT §5). Manual issuance
      * always audits the operator AND their reason (Leo ruling 1).
      */
-    public function issueRequest(string $templateId, int $programmeId, int $studentId, int $signerId, User $actor, ?string $reason = null): string
+    public function issueRequest(string $templateId, int $programmeId, int $studentId, int $signerId, User $actor, ?string $reason = null, bool $duringMaterialUpdate = false): string
     {
         $template = DB::table('consent_templates')->where('id', $templateId)->first();
         $programme = DB::table('programmes')->where('id', $programmeId)->first();
@@ -53,9 +53,15 @@ class ConsentSigningService
             // FR036: a request is only ever addressed to an ACTIVE guardian of the student
             throw ValidationException::withMessages(['signer' => ['Signer must be an active guardian of the student']]);
         }
-        $parity = app(ConsentTemplateService::class)->languageParity($templateId);
-        if (! $parity['complete'] || $parity['drift']) {
-            throw ValidationException::withMessages(['template' => ['Template language versions are incomplete or drifted (OD-20/OD-20a)']]);
+        // OD-20a: drift is EXPECTED mid-material-update — the re-consent
+        // fan-out issues through it (the guardian renders whatever is current
+        // at read time; the staleness guard and the nightly parity assertion
+        // keep the pressure on). Manual issuance still refuses drift.
+        if (! $duringMaterialUpdate) {
+            $parity = app(ConsentTemplateService::class)->languageParity($templateId);
+            if (! $parity['complete'] || $parity['drift']) {
+                throw ValidationException::withMessages(['template' => ['Template language versions are incomplete or drifted (OD-20/OD-20a)']]);
+            }
         }
 
         $guardianName = DB::table('users')->where('id', $signerId)->value('name');
@@ -274,6 +280,15 @@ class ConsentSigningService
         if ($version === null || $version->sha256 !== $renderMeta['template_sha256']) {
             throw ValidationException::withMessages(['version' => ['Rendered version hash no longer matches its template version (BI-6)']]);
         }
+        // FR037 staleness guard: published versions are immutable ROWS, so the
+        // old row still hash-matches after a new version publishes — a signature
+        // must never land on anything but the CURRENT version of its language.
+        $latest = (int) DB::table('consent_template_versions')
+            ->where('template_id', $request->template_id)->where('language', $version->language)
+            ->where('status', 'published')->max('version');
+        if ((int) $version->version !== $latest) {
+            abort(409, 'The document has been updated since it was read — re-open it to read the current version');
+        }
 
         $imageUploadId = null;
         if ($method === 'drawn' && ($input['image_base64'] ?? '') !== '') {
@@ -326,6 +341,23 @@ class ConsentSigningService
 
             return $id;
         });
+    }
+
+    /**
+     * FR037 decline: terminal, reasoned, audited, fast (E4 release semantics
+     * arrive with S04A — the state machine ships now).
+     */
+    public function decline(object $request, string $reason, User $signer): void
+    {
+        $this->assertSigner($request, $signer);
+        $this->assertOpen($request);
+
+        $this->appendEvent($request->id, 'declined', ['reason' => $reason]);
+        DB::table('consent_requests')->where('id', $request->id)
+            ->update(['status' => 'declined', 'updated_at' => now()]);
+        $this->audit->record('consent_request', $request->id, 'consent_request.declined',
+            fromState: $request->status, toState: 'declined', reason: $reason,
+            programmeId: (int) $request->programme_id, actor: $signer);
     }
 
     /**

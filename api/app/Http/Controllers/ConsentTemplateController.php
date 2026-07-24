@@ -36,7 +36,9 @@ class ConsentTemplateController extends Controller
 
     public function publishVersion(Request $request, string $id, string $versionId): JsonResponse
     {
-        $this->templates->publishVersion($versionId, $request->user());
+        // FR037: materiality is declared at publish; material → OD-20a fan-out
+        $data = $request->validate(['material' => ['sometimes', 'boolean']]);
+        $this->templates->publishVersion($versionId, $request->user(), (bool) ($data['material'] ?? false));
 
         return response()->json(['status' => 'published']);
     }

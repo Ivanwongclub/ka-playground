@@ -205,6 +205,62 @@ Result: PASS (one documented PDF/A deviation, §4)
 - {{today}} now resolves from the request's ISSUANCE date (was wall-clock) — the
   PDF re-render must reproduce rendered_sha256 byte-exactly on any later day.
 
+### STEP 3a — PDF/A ruling (Leo): option (b) — no conformance claim · commit caec110
+Chose (b): the pdfaid XMP block is gone; the document claims nothing a free
+validator can disprove. Still self-contained (fonts subset-embedded, empty
+stream-wrapper whitelist, no external references) — tested: bytes contain
+FontFile2, contain NO 'pdfaid'. Certificate page wording updated. Real PDF/A
+remains the S10 decision (§5 item 5, ghostscript evaluation).
+
+### STEP 4 — Versioning · language-aware re-consent (OD-20a) · decline · commit (this step)
+```
+$ php artisan test → 173 passed (1361 assertions)   (6 new in ConsentReconsentTest;
+  ReconciliationRunnerTest totals 10→13 — the only change to a previously-green test,
+  caused by registering the three S03 assertions)
+$ reconcile:run --tag=S03  → RECONCILE PASS — 3 assertion(s), 3 passed, 0 failed
+$ reconcile:run --tag=S02A → RECONCILE PASS — 2 assertion(s), 2 passed, 0 failed
+
+MATERIALITY: declared at publish (is_material, migration 2026_07_25_170000);
+non-material publish supersedes nothing (tested).
+
+LANGUAGE-AWARE RE-CONSENT (OD-20a), LIVE on the demo template (3 signed: 2×en, 1×zh-TC):
+ material zh-TC v2 published →
+   zh-TC-signed request  → superseded  + fresh request issued (sent)
+   BOTH en-signed requests → signed, untouched
+ audit: consent_request.superseded actor=24 reason="material change to zh-TC v2 (OD-20a)"
+        consent_request.issued     actor=24 reason="re-consent: material change to zh-TC v2"
+ Fan-out runs under a NEW allowlisted elevation (ConsentTemplateService::
+ supersedeForLanguage) — the publishing admin's context cannot read guardians'
+ requests; only status writes + fresh issuance leave it, each audited.
+ Mid-update DRIFT is expected: fan-out issuance bypasses the parity check
+ (duringMaterialUpdate) — manual issuance still refuses drift; parity restored
+ live: {"en":2,"zh-TC":2,"zh-SC":2} (en material v2 superseded the 2 en requests).
+
+STALENESS GUARD (new, closes a hole the immutable-version design left open):
+ published version rows never change, so an OLD row still hash-matches after a
+ new version publishes. sign() now refuses (409) unless the rendered version is
+ the CURRENT one for its language; re-read → sign records the new hash (tested).
+
+DECLINE (FR037), LIVE: fresh request declined by its signer →
+ status declined · audit: actor=26 (guardian) sent→declined
+ reason="不同意攝影條款 (photography clause declined)"
+ Terminal (render/sign/re-decline all 409, tested) · reason REQUIRED (422, tested)
+ · non-addressee 404 (tested) · does not satisfy consent (tested).
+
+ASSERTIONS (--tag=S03) registered: consent.bi6_hash_language_scoped ·
+ consent.language_completeness · consent.superseded_reconsent (vacuous-aware).
+ DELIBERATE FAILURE, LIVE: one signature's stored hash tampered (synthetic dev row,
+ trigger disabled as owner, restored byte-identically after) →
+   FAIL consent.bi6_hash_language_scoped — "1 signature(s) with hash or language
+   mismatch: 019f9232-90b7…" · RECONCILE FAIL — 2 passed, 1 failed
+ restore → RECONCILE PASS 3/3. Assertion-teeth also unit-tested (missed fan-out
+ simulation → consent.superseded_reconsent fails naming the request).
+ Runner exit codes re-proven: --tag=NOPE (empty match) → exit 1; --tag=S03 → exit 0.
+ (Note: the exit shown inline during the tamper demo was the grep pipeline's, not
+ the runner's — the runner's fail-exit is covered by ReconciliationRunnerTest.)
+```
+Result: PASS
+
 ## 5. Leftovers & newly discovered risks
 | # | Item | Severity | Proposed sprint |
 |---|------|----------|-----------------|

@@ -105,6 +105,15 @@ class ConsentRequestController extends Controller
             ->get(['id', 'request_id', 'signer_id', 'language', 'template_sha256', 'rendered_sha256', 'method', 'signed_at'])]);
     }
 
+    /** FR037 decline: terminal, reasoned, audited. Signer only. */
+    public function decline(Request $request, string $id): JsonResponse
+    {
+        $reason = $request->validate(['reason' => ['required', 'string', 'min:5']])['reason'];
+        $this->signing->decline($this->findOr404($id), $reason, $request->user());
+
+        return response()->json(['status' => 'declined']);
+    }
+
     /** Evidence documents — RLS-shaped: signer's own + compliance staff. */
     public function documents(): JsonResponse
     {

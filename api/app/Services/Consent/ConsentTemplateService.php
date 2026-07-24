@@ -62,7 +62,7 @@ class ConsentTemplateService
         return $id;
     }
 
-    public function publishVersion(string $versionId, User $actor): void
+    public function publishVersion(string $versionId, User $actor, bool $isMaterial = false): void
     {
         $row = DB::table('consent_template_versions')->where('id', $versionId)->first();
         if ($row === null || $row->status !== 'draft') {
@@ -76,11 +76,62 @@ class ConsentTemplateService
         DB::table('consent_template_versions')->where('id', $versionId)->update([
             'sha256' => hash('sha256', $row->body_html), // THIS language's own hash (OD-20)
             'status' => 'published', 'published_at' => now(), 'updated_at' => now(),
+            'is_material' => $isMaterial,
         ]);
         $this->audit->record('consent_template_version', $versionId, 'consent_version.published',
             fromState: 'draft', toState: 'published',
-            payloadAfter: ['language' => $row->language, 'version' => $row->version, 'is_placeholder' => $row->is_placeholder],
+            payloadAfter: ['language' => $row->language, 'version' => $row->version,
+                'is_placeholder' => $row->is_placeholder, 'is_material' => $isMaterial],
             actor: $actor);
+
+        if ($isMaterial) {
+            $this->supersedeForLanguage($row->template_id, $row->language, (int) $row->version, $actor);
+        }
+    }
+
+    /**
+     * OD-20a re-consent, LANGUAGE-AWARE: a material change to one language
+     * supersedes signed requests whose signature is in THAT language only —
+     * untouched languages' signatures stand. Each superseded request gets a
+     * fresh one (new merge snapshot). Elevated: the publishing admin's context
+     * cannot see the guardians' requests, and must not — only status writes
+     * and fresh issuance leave the elevation, each individually audited.
+     */
+    private function supersedeForLanguage(string $templateId, string $language, int $newVersion, User $actor): void
+    {
+        app(\App\Services\Authz\ScopeContext::class)->asSystem(
+            'OD-20a re-consent fan-out (S03): a material template change must supersede signed requests in the changed language across ALL guardians — rows the publishing admin\'s context rightly cannot read. Status transitions and fresh issuance only, each audited with the publishing admin as actor.',
+            function () use ($templateId, $language, $newVersion, $actor): void {
+                $stale = DB::table('consent_requests as r')
+                    ->join('consent_signatures as s', 's.request_id', '=', 'r.id')
+                    ->where('r.template_id', $templateId)->where('r.status', 'signed')
+                    ->where('s.language', $language)
+                    ->get(['r.id', 'r.programme_id', 'r.student_id', 'r.signer_id', 'r.template_id']);
+
+                foreach ($stale as $request) {
+                    DB::table('consent_requests')->where('id', $request->id)
+                        ->update(['status' => 'superseded', 'updated_at' => now()]);
+                    $this->audit->record('consent_request', $request->id, 'consent_request.superseded',
+                        fromState: 'signed', toState: 'superseded',
+                        reason: "material change to {$language} v{$newVersion} (OD-20a)",
+                        programmeId: (int) $request->programme_id, actor: $actor);
+
+                    try {
+                        app(ConsentSigningService::class)->issueRequest(
+                            $request->template_id, (int) $request->programme_id,
+                            (int) $request->student_id, (int) $request->signer_id, $actor,
+                            reason: "re-consent: material change to {$language} v{$newVersion} (OD-20a)",
+                            duringMaterialUpdate: true,
+                        );
+                    } catch (ValidationException $e) {
+                        // e.g. programme meanwhile unpublished — never silent (P4)
+                        $this->audit->record('consent_request', $request->id, 'consent_request.reconsent_blocked',
+                            reason: implode('; ', array_map(fn ($m) => implode(' ', $m), $e->errors())),
+                            programmeId: (int) $request->programme_id, actor: $actor);
+                    }
+                }
+            },
+        );
     }
 
     /**
