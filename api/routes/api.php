@@ -4,6 +4,7 @@ use App\Http\Controllers\AccessIdentityReportController;
 use App\Http\Controllers\AuditEventController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CapabilityController;
+use App\Http\Controllers\ConsentRequestController;
 use App\Http\Controllers\ConsentTemplateController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\OnboardingController;
@@ -90,6 +91,20 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('/admin/consent-templates/{id}/versions', [ConsentTemplateController::class, 'draftVersion']);
         Route::post('/admin/consent-templates/{id}/versions/{versionId}/publish', [ConsentTemplateController::class, 'publishVersion']);
     });
+
+    // S03 step 2 — signing flow (FR036). Issuance is ops; the signing acts are
+    // the addressed guardian's alone: consent.sign is held by NO capability
+    // (S01 defect 1 fix), and the service 404s any non-addressee on top of RLS.
+    Route::post('/admin/consent-requests', [ConsentRequestController::class, 'issue'])
+        ->middleware('permission:operations.manage');
+    Route::get('/consent-requests', [ConsentRequestController::class, 'index']); // RLS-shaped
+    Route::get('/consent-signatures', [ConsentRequestController::class, 'signatures']); // RLS-shaped
+    Route::get('/consent-requests/{id}/document', [ConsentRequestController::class, 'document'])
+        ->middleware('role:guardian');
+    Route::post('/consent-requests/{id}/scrolled', [ConsentRequestController::class, 'scrolled'])
+        ->middleware('role:guardian');
+    Route::post('/consent-requests/{id}/sign', [ConsentRequestController::class, 'sign'])
+        ->middleware('permission:consent.sign');
 
     // Reads shaped by RLS alone (S05 formation will consume these)
     Route::get('/programmes/{id}/team-categories', [ProgrammeConfigController::class, 'categories']);

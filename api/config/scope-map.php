@@ -18,6 +18,8 @@ return [
         'users',
         'personal_access_tokens',
         'consent_template_versions',
+        'consent_requests',
+        'consent_signatures',
         'team_categories',
         'fee_items',
         'withdrawal_policies',
