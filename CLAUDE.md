@@ -34,7 +34,7 @@
   not done until it conforms
 - `docs/design/ASSET-MANIFEST.md` — where the MVP imagery lives and how to rescue it. Consumed by S00
 - `docs/design/IMAGE-PROMPTS.md` — upgrade path for client-supplied imagery. Reference only
-- `docs/sprints/<ID>/SPRINT.md` — your execution card. **Work only from the current card**
+- `docs/sprints/<ID>/SPRINT.md` — your execution card (fourteen cards: S00–S11, with S02 and S04 each split into A/B). **Work only from the current card**
 - `docs/requirements/REGISTER.md` — requirement IDs; cite them in commits where relevant
 - `docs/OPEN-DECISIONS.md` — undecided items. **If your current step depends on one, STOP**
 

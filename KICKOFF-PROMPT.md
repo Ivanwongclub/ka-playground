@@ -14,7 +14,7 @@ consent, money, audit. This repository contains your complete working context.
 - `docs/design/ASSET-MANIFEST.md` — the MVP imagery and how to rescue it
 - `docs/design/IMAGE-PROMPTS.md` — reference only
 - `docs/OPEN-DECISIONS.md` — if a step depends on an OPEN row, stop and ask me
-- `docs/sprints/S00 … S11/SPRINT.md` — pre-written cards. Work strictly one card, one step at a time
+- `docs/sprints/S00 … S11/SPRINT.md` — pre-written cards (fourteen: S02 and S04 are each split into A/B). Work strictly one card, one step at a time
 - `docs/requirements/REGISTER.md` — requirement IDs; you complete it in S00 STEP 1
 - `build-reference/` — the old MVP. Read-only, and only when a step names an asset to extract
 
