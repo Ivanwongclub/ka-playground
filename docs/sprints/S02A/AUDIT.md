@@ -11,6 +11,19 @@ Live: REFUSED (pre-existing synthetic grant, exit 1) → created after synthetic
 (user id 14, audit rows `bootstrap.super_admin` + `capability.granted{bootstrap:true}`) →
 REFUSED again (exit 1). 79 tests passing. Result: PASS
 
+### STEP 2 — Schools + programme entity + versioning · commit (this step)
+```
+$ php artisan test → 86 passed (342 assertions)
+Live: school {"id":1} (trilingual enforced — EN-only 422 in tests)
+      programme id 1 (STEM-CAR-2026, jurisdiction HK, status draft, hold 7d)
+      snapshots v1, v2 (sequential, programme-row lock serialises numbering)
+$ psql UPDATE programme_versions SET version = 99;
+ERROR:  programme_versions is INSERT-only (D5 snapshot immutability): UPDATE blocked
+```
+jurisdiction CHECK-constrained (HK|CN) at API and DB (UK rejected both layers, tested).
+Found: Postgres refuses FOR UPDATE with aggregates — numbering serialised via the
+programme row lock instead. Result: PASS
+
 ## 5. Leftovers & newly discovered risks
 | # | Item | Severity | Proposed sprint |
 |---|------|----------|-----------------|

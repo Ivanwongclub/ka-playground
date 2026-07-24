@@ -6,6 +6,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CapabilityController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\ProgrammeController;
+use App\Http\Controllers\SchoolController;
 use Illuminate\Support\Facades\Route;
 
 // Permission-guarded resource surfaces. The guarded routes exist from S01 STEP 1
@@ -39,6 +41,17 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/my/link-requests', [LinkController::class, 'requestByEmail'])->middleware('role:guardian');
     Route::post('/school/guardian-links', [LinkController::class, 'schoolVouch'])->middleware('role:school_admin');
     Route::post('/guardian-links/{id}/revoke', [LinkController::class, 'revoke']);
+
+    // S02A step 2 — configuration surfaces (OD-17: configuration capability)
+    Route::middleware('permission:configuration.manage')->group(function (): void {
+        Route::get('/admin/schools', [SchoolController::class, 'index']);
+        Route::post('/admin/schools', [SchoolController::class, 'store']);
+        Route::put('/admin/schools/{id}', [SchoolController::class, 'update']);
+        Route::get('/admin/programmes', [ProgrammeController::class, 'index']);
+        Route::post('/admin/programmes', [ProgrammeController::class, 'store']);
+        Route::put('/admin/programmes/{id}', [ProgrammeController::class, 'update']);
+        Route::post('/admin/programmes/{id}/versions', [ProgrammeController::class, 'snapshot']);
+    });
 });
 
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:auth');
