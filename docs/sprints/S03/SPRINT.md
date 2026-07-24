@@ -51,8 +51,15 @@ amend the plan.
    NTP timestamp, IP, UA, version id + hash IN THE SIGNED LANGUAGE, event sequence) ·
    per-programme `consent_requires_all_guardians` honoured (OD-10; default any-one). The signing
    UI renders the version in the signer's chosen language and RECORDS which language was signed.
+   **DUAL-HASH BINDING (Leo, mid-sprint): the signature record carries BOTH the template version
+   hash (BI-6/OD-20) AND the rendered-document hash — the guardian signed the RENDERED document
+   (template + resolved merge fields), and if merge resolution ever changes, the template hash
+   would still match while the document differs from what was signed. Two hashes, two distinct
+   claims.**
 3. **Signed-PDF generation + audit certificate page (FR038)**; storage via the S00 upload service
-   (BI-10); document hash recorded; evidence bundle export.
+   (BI-10); rendered-document hash recorded alongside the template hash; **the evidence bundle
+   presents the RENDERED PDF as the primary artifact** (the thing the guardian actually saw and
+   signed), with the template version + both hashes as provenance.
 4. **Versioning / re-consent / decline (FR037)**: material vs non-material changes; material →
    supersede + fresh requests; decline reaches a terminal state, audits the reason, releases
    fast (E4 semantics arrive with S04A; the state machine ships now). Re-consent is
@@ -89,6 +96,9 @@ gate) · Member anything (OD-22).
   refusal (§16 signature pad; paste the three refusals).
 - Material TC change → TC signatures superseded + fresh requests; EN signatures untouched (paste).
 - Decline → terminal state + audited reason (paste).
+- **Dual-hash distinctness: re-rendering the same template version with DIFFERENT merge data
+  produces a different rendered-document hash while the template hash is unchanged — proving the
+  two are distinct claims (paste both pairs).**
 - Evidence bundle export from seed: PDF + hash + audit trail, inspected (gate).
 
 ## AUDIT ELEMENT
