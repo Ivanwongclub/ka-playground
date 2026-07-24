@@ -31,7 +31,7 @@ capabilities.grant       |    ·         ·         ·         ·            · 
 configuration.manage     |    ·         ·         ·         ·            ·            ·     ||     ✓          ✓          ·        ·          ·
 consent.sign             |    ·         ✓        ·         ·            ·            ·     ||     ·          ·           ·        ·          ·
 consent.view             |    ✓        ✓        ·         ✓           ·            ·     ||     ✓          ·           ·        ✓         ·
-directory.view           |    ·         ·         ·         ·            ✓           ✓    ||     ✓          ·           ·        ·          ·
+member_directory.view    |    ·         ·         ·         ·            ✓           ✓    ||     ✓          ·           ·        ·          ·   (renamed 24 Jul, §4a)
 enrolment.create         |    ·         ✓        ·         ✓           ·            ·     ||     ✓          ·           ·        ✓         ·
 enrolment.view           |    ✓        ✓        ✓        ✓           ·            ·     ||     ✓          ·           ·        ✓         ·
 events.rsvp              |    ✓        ·         ·         ·            ·            ✓    ||     ✓          ·           ·        ·          ·
@@ -113,6 +113,7 @@ session + audit_read:    [200]
 | `authz.permission_matrix` (OD-1 · OD-17 · B7) | Yes — §2 STEP 5 live run + gate |
 | `links.guardian_coverage` (B8 · 2.2) | Yes — vacuous-by-construction until S04A (card wording); self-activates when `enrolments` exists |
 | `authz.consent_sign_exclusive` (FR036 · BI-6 · ETO Cap. 553) | Yes — §4a; proven to catch an unfixed DB before the corrective migration ran |
+| `authz.member_directory_exclusive` (FR056 · FR058 · OD-1) | Yes — holder set exactly {member, academy_admin} + {super_admin}; widening by a later sprint = nightly alarm |
 
 ## 4. Deviations from SPRINT.md
 | # | Card said | Actually happened | Why | Status |
@@ -135,8 +136,10 @@ before the corrective migration ran — first live catch.
 (grep-verified; it is a seeded permission key only). Its doctrine is now written into the matrix
 source: MEMBER directory only (first-generation adults, FR058/OD-1, surfaces S06); students never
 appear; any future student/peer directory requires its OWN permission, default-off per FR056.
-Proposal for Leo: rename to `member_directory.view` to make the boundary structural — not applied
-without approval.
+**Rename APPROVED and applied (Leo, 24 Jul): `directory.view` → `member_directory.view`** — matrix
+source, permission key, and an FK-safe corrective migration (insert new → repoint children → delete
+old; no-op on freshly-seeded DBs; deliberately irreversible). Live: roles [academy_admin, member],
+capabilities [super_admin], zero old-key rows. Guarded by `authz.member_directory_exclusive`.
 **Q1 — first super_admin:** NO seeder mints it. Local/dev instances were created ad hoc via tinker
 (synthetic). There is currently no production bootstrap path — see §5 item 7.
 **Q2 — FR006 scope layer:** does NOT exist yet. The matrix is global; school_admin's
@@ -163,7 +166,7 @@ register — no delivery to a student address that is not independently verified
 | 5 | Guardian replacement exception has no scheduled 14-day suspension job yet — the deadline is recorded; the enforcement job belongs with enrolment suspension (2.2 step 3, needs enrolments) | Medium | S04A |
 | 6 | `schools` table is seeded empty; school link flows tested with synthetic rows. School CRUD arrives with programme/school admin surfaces | Low | S02 |
 | 7 | **No first-super_admin bootstrap exists** (Q1). Proposal: an `artisan bootstrap:super-admin` command (refuses if any super_admin exists, audited). Once created in any real environment it is a **standing credential — rotate or remove before go-live (S10 readiness item)** | **High** | S02 (build) · S10 (rotation check) |
-| 8 | **FR006 scope layer absent** (Q2): permissions are global; per-link overrides column exists but no scoping query layer or school-isolation test. Must land WITH the first real data surfaces — a school_admin must never reach another school's students | **High** | **S02** |
+| 8 | **FR006 scope layer absent** (Q2): permissions are global; per-link overrides column exists but no scoping query layer or school-isolation test. **Must be a STEP in the S02 card, not a note** (Leo, 24 Jul): it lands WITH the first real data surfaces or it never lands at all — a school_admin must never reach another school's students | **High** | **S02 (card step)** |
 | 9 | SR019 (student delivery gating) recorded in the register — S09's pipeline must enforce delivery-verification at the send layer | Medium | S09 |
 
 ## 6. Exit gate

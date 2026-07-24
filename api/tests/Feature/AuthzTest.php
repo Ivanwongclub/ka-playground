@@ -47,7 +47,7 @@ class AuthzTest extends TestCase
         $member = $this->user('member');
 
         $this->assertSame(
-            ['directory.view', 'events.rsvp', 'events.view'],
+            ['events.rsvp', 'events.view', 'member_directory.view'],
             app(PermissionResolver::class)->effectivePermissions($member),
         );
     }

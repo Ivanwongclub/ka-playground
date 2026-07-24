@@ -21,10 +21,11 @@ class ReconciliationRunnerTest extends TestCase
             ->expectsOutputToContain('PASS  authz.permission_matrix')
             ->expectsOutputToContain('PASS  links.guardian_coverage')
             ->expectsOutputToContain('PASS  authz.consent_sign_exclusive')
-            ->expectsOutputToContain('RECONCILE PASS — 5 assertion(s), 5 passed, 0 failed')
+            ->expectsOutputToContain('PASS  authz.member_directory_exclusive')
+            ->expectsOutputToContain('RECONCILE PASS — 6 assertion(s), 6 passed, 0 failed')
             ->assertExitCode(0);
 
-        $this->assertSame(5, DB::table('reconciliation_log')->where('passed', true)->where('assertion_key', '!=', '_run')->count());
+        $this->assertSame(6, DB::table('reconciliation_log')->where('passed', true)->where('assertion_key', '!=', '_run')->count());
         $this->assertSame(1, DB::table('reconciliation_log')->where('assertion_key', '_run')->count());
     }
 

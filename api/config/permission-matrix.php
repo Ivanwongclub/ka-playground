@@ -21,10 +21,12 @@ return [
         'teams.approve',
         'events.view',
         'events.rsvp',
-        // directory.view = the MEMBER directory only (first-generation adults,
-        // FR058/OD-1, surfaces in S06). It never includes students. Any future
-        // student/peer directory needs its OWN permission, default-off per FR056.
-        'directory.view',
+        // The MEMBER directory only (first-generation adults, FR058/OD-1,
+        // surfaces in S06) — the name carries the boundary (Leo, 24 Jul).
+        // It never includes students. Any future student/peer directory needs
+        // its OWN permission, default-off per FR056. Holder set guarded by the
+        // authz.member_directory_exclusive nightly assertion.
+        'member_directory.view',
         'audit.read',
         'configuration.manage',
         'operations.manage',
@@ -52,12 +54,12 @@ return [
         ],
         // Academy Administrator: thin base; power arrives via capability groups (OD-17)
         'academy_admin' => [
-            'events.view', 'directory.view',
+            'events.view', 'member_directory.view',
         ],
         // Member (OD-1): events, RSVP, directory — NOTHING else. The absence of
         // every student_records/consent/enrolment/finance permission IS the control.
         'member' => [
-            'events.view', 'events.rsvp', 'directory.view',
+            'events.view', 'events.rsvp', 'member_directory.view',
         ],
     ],
 
