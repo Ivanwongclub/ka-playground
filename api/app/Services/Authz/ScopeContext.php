@@ -85,16 +85,42 @@ class ScopeContext
 
     /**
      * Run a platform integrity check under system context, restoring the
-     * caller's context after. Server-side only — for business rules that must
-     * see across scopes (e.g. "is this the student's LAST active link", 2.2)
-     * without exposing the rows to the actor.
+     * caller's context after. THE SANCTIONED BYPASS — constrained (Leo, S02A):
+     * the call site must appear in config/scope-elevations.php with a matching
+     * reason, or this throws; every elevation writes a scope.elevated audit
+     * event carrying the call site and reason.
      */
-    public function asSystem(\Closure $fn): mixed
+    public function asSystem(string $reason, \Closure $fn): mixed
     {
+        $frame = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1] ?? [];
+        $caller = ($frame['class'] ?? '?').'::'.($frame['function'] ?? '?');
+
+        $allowlist = config('scope-elevations', []);
+        if (! array_key_exists($caller, $allowlist)) {
+            throw new \LogicException(
+                "asSystem() call site '{$caller}' is NOT in the scope-elevations allowlist — declare it with a reason or do not elevate"
+            );
+        }
+        if ($allowlist[$caller] !== $reason) {
+            throw new \LogicException(
+                "asSystem() reason at '{$caller}' does not match the declared allowlist reason"
+            );
+        }
+
         $saved = $this->snapshot();
         $this->setSystem();
         try {
-            return $fn();
+            $result = $fn();
+            // Audited AFTER the closure, still under system (scoped reads inside
+            // the elevation are what we are recording)
+            app(\App\Services\Audit\AuditService::class)->record(
+                'scope_elevation', $caller, 'scope.elevated',
+                reason: $reason,
+                payloadAfter: ['caller' => $caller, 'restored_context' => $saved['app.context'] ?? ''],
+                actor: \Illuminate\Support\Facades\Auth::user(),
+            );
+
+            return $result;
         } finally {
             $this->restore($saved);
         }

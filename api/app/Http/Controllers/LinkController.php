@@ -6,6 +6,7 @@ use App\Models\GuardianLink;
 use App\Models\User;
 use App\Services\Identity\LinkRevocationService;
 use App\Services\Identity\PairingService;
+use App\Services\Authz\ScopeContext;
 use App\Services\Audit\AuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class LinkController extends Controller
         private readonly PairingService $pairing,
         private readonly LinkRevocationService $revocation,
         private readonly AuditService $audit,
+        private readonly ScopeContext $scope,
     ) {}
 
     public function generateCode(Request $request): JsonResponse
@@ -53,8 +55,11 @@ class LinkController extends Controller
     public function requestByEmail(Request $request): JsonResponse
     {
         $validated = $request->validate(['student_email' => ['required', 'email']]);
-        $student = User::query()->where('email', $validated['student_email'])
-            ->where('role', 'student')->first();
+        $student = $this->scope->asSystem(
+            'B4 parent-initiated flow: pre-link student lookup by exact email — the target is by definition outside the guardian\'s scope until the link exists. Response is identical whether or not the account exists; only a pending link (student-confirmable) results.',
+            fn () => User::query()->where('email', $validated['student_email'])
+                ->where('role', 'student')->first(),
+        );
         if ($student === null) {
             // Identical response either way — never confirm account existence
             return response()->json(['status' => 'processed'], 202);
@@ -99,8 +104,11 @@ class LinkController extends Controller
             abort(404);
         }
 
-        $guardian = User::query()->where('email', $validated['guardian_email'])
-            ->where('role', 'guardian')->firstOrFail();
+        $guardian = $this->scope->asSystem(
+            'B4 school-mediated flow: guardian lookup by exact email for a student already verified to be in the acting school. The guardian is outside the school\'s scope until this link creates the relationship.',
+            fn () => User::query()->where('email', $validated['guardian_email'])
+                ->where('role', 'guardian')->firstOrFail(),
+        );
         try {
             // Savepoint: if the RLS backstop refuses, the connection stays
             // healthy and the refusal becomes an audited 403, never a 500

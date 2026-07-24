@@ -1,6 +1,6 @@
 # AUDIT KAP-S02A — Access foundation
 
-**Result:** IN PROGRESS · **Date:** started 2026-07-24 · **HEAD at gate:** `<pending>`
+**Result:** PASS · **Date:** 2026-07-24 · **HEAD at gate:** gate commit; steps `4e81387` · `170dde3` · `3aacd3b` · `3499434` + gate-review fixes (this commit)
 
 > Opened early to record STEP 1 findings while fresh (S00/S01 pattern). Filled per step;
 > gate verdict last.
@@ -66,10 +66,61 @@ checks — RLS itself caught two service bugs during the build (sole-guardian ch
 actor's view; unaffiliated vouch), both hardened. Immutability probes now accept either DB
 rejection layer (privilege revoke 42501 fires before the trigger for kap_app). Result: PASS
 
+### Gate review (Leo) — asSystem constrained · users under RLS
+**Item 1 — the sanctioned bypass, constrained:** `asSystem(reason, fn)` now REFUSES any call site
+absent from `config/scope-elevations.php` (runtime LogicException), refuses a reason that does not
+match the declared one, and writes a `scope.elevated` audit event on every elevation (call site +
+reason + restored context). A phpunit scan fails when app/ contains an asSystem call site not in
+the allowlist (or a stale entry). Six sanctioned sites, each with its recorded justification:
+sole-guardian check (2.2) · parent-initiated lookup (B4) · school-vouch guardian lookup (B4) ·
+guardian-led student creation (L4; INSERT..RETURNING checks SELECT policies on the new row) ·
+login token issuance (bootstrap act; account switching) · invitation acceptance (2.11 bootstrap).
+```
+✓ unlisted call site throws · ✓ reason mismatch throws · ✓ sanctioned elevation runs and audits
+✓ every asSystem call site in the codebase is allowlisted
+live: scope.elevated | LinkController::requestByEmail | 'B4 parent-initiated flow: pre-link…'
+```
+**Item 2 — users was a data-protection defect; fixed this sprint.** Before: every authenticated
+session could read ALL users (names+emails platform-wide) at the DB layer, though HTTP surfaces
+were link-bounded. Now `users` and `personal_access_tokens` are `scoped` with RLS: self ·
+academy staff (ops/audit/super; academy peers) · guardian→their students · school_admin/teacher→
+their school's students, teachers and co-admins · guest/auth-bootstrap phase (empty context) ·
+system. Live answer to "what can a school_admin session read from users":
+```
+context: request / actor 16 / school_admin / school_ids 2
+users_visible_to_school_admin = 2   →  (16, Synthetic AdminA)  (18, Student Alpha)
+users_total_platform (system) = 20
+```
+RLS's INSERT..RETURNING semantics surfaced three legitimate bootstrap flows that became
+allowlisted elevations rather than policy holes. Result: PASS
+
+## 6. Exit gate
+```
+$ php artisan test                        →  102 passed (388 assertions)
+$ php artisan reconcile:run               →  RECONCILE PASS — 8 assertion(s), 8 passed, 0 failed
+$ php artisan reconcile:run --tag=S02A    →  2 assertions green (scope.coverage · version_immutability)
+$ php artisan migrate --pretend           →  Nothing to migrate (all S02A migrations Ran)
+$ npm run build                           →  i18n:check PASSED · bundle-budget PASSED
+$ docker compose config -q                →  OK
+$ check-audit-owner.sh (kap_app on kap)   →  OK: app role does not own audit_events
+Full STEP 3 battery incl. deliberate assertion failure: §2.
+```
+**Verdict:** PASS.
+
+## 7. Invariant check
+| BI | Touched? | Evidence |
+|----|----------|----------|
+| BI-1 | Strengthened | Runtime is now the non-owner kap_app everywhere; owner-guard passes locally; probes accept revoke-layer rejection |
+| BI-8 | Extended | scope.denied, scope.elevated, permission.denied — every boundary event audited with actor |
+| BI-10 | Untouched (guarded) | Upload suite green under RLS (uploads scoped: owner/ops/system) |
+| FR006 | Built | This sprint's centrepiece — RLS + context lifecycle + structural coverage assertion |
+
 ## 5. Leftovers & newly discovered risks
 | # | Item | Severity | Proposed sprint |
 |---|------|----------|-----------------|
 | 1 | **Bootstrap credential is a standing go-live item**: rotate or remove before production | High | S10 readiness |
 | 2 | **STEP 1 one-time password appeared UNREDACTED in local verify output** (redaction pattern missed special chars). Burned, synthetic, local-only DB — but on the record alongside the rotation item. Verify tooling must redact BEFORE display, not after | Medium (hygiene) | Now noted; redact-first in future verifies |
-| 3 | `users` and the token-gated tables are classified `global` with recorded justifications (auth bootstrap precedes context). Every sprint adding user-adjacent or student-profile tables must classify them `scoped` — the assertion forces the conversation but the RIGHT classification is a review point each gate | Medium | every gate, explicit at S03 |
+| 3 | ~~users/tokens global~~ **RESOLVED at gate review** — both now `scoped` (see gate-review section). Standing rule unchanged: every sprint classifies its new tables, and the RIGHT classification is a review point each gate | Closed | — |
+| 3a | **Auth-bootstrap window (residual):** users/personal_access_tokens policies admit the EMPTY context — required for Sanctum resolution and guest flows, replaced by middleware before controllers on every authenticated request. A context-free direct DB session can read users. Hardening option: move token→user resolution behind SECURITY DEFINER functions and drop the bootstrap clause | Medium | hardening review, S10 window |
+| 3b | Six sanctioned asSystem elevations exist (allowlist + audit + CI scan). Review the list at every gate — additions need the same scrutiny as a new `global` classification | Medium | every gate |
 | 4 | Local nginx resolves the app container IP at start — recreating `app` needs `docker compose restart nginx` (bit us in verify). Consider a resolver directive in the nginx conf | Low | S02B or whenever nginx conf next opens |

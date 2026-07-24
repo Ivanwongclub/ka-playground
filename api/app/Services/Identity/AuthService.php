@@ -4,6 +4,7 @@ namespace App\Services\Identity;
 
 use App\Models\User;
 use App\Services\Audit\AuditService;
+use App\Services\Authz\ScopeContext;
 use App\Services\Audit\AuthEventType;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -25,7 +26,10 @@ class AuthService
 
     public const REMEMBER_DAYS = 30;
 
-    public function __construct(private readonly AuditService $audit) {}
+    public function __construct(
+        private readonly AuditService $audit,
+        private readonly ScopeContext $scope,
+    ) {}
 
     /** @return array{token: string, user: User} */
     public function login(string $email, string $password, bool $remember, ?string $ip): array
@@ -76,7 +80,10 @@ class AuthService
         }
 
         $user->forceFill(['failed_login_attempts' => 0, 'locked_until' => null])->save();
-        $token = $user->createToken($remember ? 'remember' : 'session');
+        $token = $this->scope->asSystem(
+            'Credential-verified token issuance: login is an auth-bootstrap act regardless of any pre-existing session (account switching); the token belongs to the just-verified credential holder, not the ambient actor.',
+            fn () => $user->createToken($remember ? 'remember' : 'session'),
+        );
         $this->audit->record(
             'user', (string) $user->id, AuthEventType::Login->value,
             payloadAfter: ['remember' => $remember, 'ip' => $ip], actor: $user,

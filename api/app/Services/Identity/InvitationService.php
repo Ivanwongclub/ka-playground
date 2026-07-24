@@ -5,6 +5,7 @@ namespace App\Services\Identity;
 use App\Models\Invitation;
 use App\Models\User;
 use App\Services\Audit\AuditService;
+use App\Services\Authz\ScopeContext;
 use App\Services\Audit\AuthEventType;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -22,7 +23,10 @@ class InvitationService
 {
     public const INVITABLE_ROLES = ['guardian', 'teacher', 'school_admin', 'academy_admin'];
 
-    public function __construct(private readonly AuditService $audit) {}
+    public function __construct(
+        private readonly AuditService $audit,
+        private readonly ScopeContext $scope,
+    ) {}
 
     /** @return array{invitation: Invitation, plain_token: string} */
     public function issue(User $actor, string $email, string $role, ?int $schoolId = null): array
@@ -61,6 +65,14 @@ class InvitationService
 
     public function accept(string $plainToken, string $password): User
     {
+        return $this->scope->asSystem(
+            'Invitation acceptance is a pre-authentication bootstrap act by design (2.11): creates the invited account and activates any school-vouched teacher affiliation — single-use token-gated writes no scoped context could perform.',
+            fn (): User => $this->doAccept($plainToken, $password),
+        );
+    }
+
+    private function doAccept(string $plainToken, string $password): User
+    {
         $invitation = Invitation::query()
             ->where('token_hash', hash('sha256', $plainToken))
             ->first();
@@ -85,7 +97,8 @@ class InvitationService
 
         if ($invitation->school_id !== null && $invitation->role === 'teacher') {
             // The issuing school admin vouched — the affiliation activates now
-            \App\Models\GuardianLink::query()->getConnection()->table('teacher_links')->insert([
+            // (already under the accept() elevation)
+            \Illuminate\Support\Facades\DB::table('teacher_links')->insert([
                 'id' => (string) Str::uuid7(),
                 'teacher_id' => $user->id,
                 'school_id' => $invitation->school_id,

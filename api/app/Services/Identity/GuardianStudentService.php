@@ -5,6 +5,7 @@ namespace App\Services\Identity;
 use App\Models\GuardianLink;
 use App\Models\User;
 use App\Services\Audit\AuditService;
+use App\Services\Authz\ScopeContext;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -18,9 +19,20 @@ use Illuminate\Support\Str;
  */
 class GuardianStudentService
 {
-    public function __construct(private readonly AuditService $audit) {}
+    public function __construct(
+        private readonly AuditService $audit,
+        private readonly ScopeContext $scope,
+    ) {}
 
     public function createStudent(User $guardian, string $name, string $email, string $password): User
+    {
+        return $this->scope->asSystem(
+            'L4 guardian-led student creation: the child account is outside the guardian\'s scope until the link this very operation creates exists (INSERT..RETURNING checks SELECT policies on the new row). Creates exactly one student + one active link, both audited.',
+            fn (): User => $this->doCreate($guardian, $name, $email, $password),
+        );
+    }
+
+    private function doCreate(User $guardian, string $name, string $email, string $password): User
     {
         $student = User::query()->create([
             'name' => $name,

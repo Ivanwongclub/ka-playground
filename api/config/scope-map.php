@@ -10,6 +10,13 @@
 return [
     // RLS-enforced; policies keyed on the app.* session context
     'scoped' => [
+        // Reclassified from global at the S02A gate review (Leo item 2): a
+        // school_admin session could read every account platform-wide. Policies
+        // admit ONLY the auth-bootstrap phase (empty context — Sanctum/guest
+        // flows precede context by construction), system, self, academy staff,
+        // and link-derived scope. Residual bootstrap window: AUDIT §5.
+        'users',
+        'personal_access_tokens',
         'guardian_links',
         'school_links',
         'teacher_links',
@@ -22,8 +29,6 @@ return [
 
     // Deliberately unscoped — each with its recorded reason
     'global' => [
-        'users' => 'Identity/auth bootstrap: Sanctum must resolve the user row before any context exists, so RLS here would dead-lock login (fail-closed blocks the very query that creates context). Child-sensitive data beyond name/email lives in scoped tables; user LISTINGS are scope-filtered at the application layer and student profile tables arriving in S03+ will be scoped. Revisit at each sprint that adds user-adjacent data.',
-        'personal_access_tokens' => 'Sanctum token lookup precedes context for the same bootstrap reason as users; rows contain only hashed tokens and ids.',
         'password_reset_tokens' => 'Guest flow by design (2.11): the emailed token IS the access control; rows are (email, hashed token, timestamp) only.',
         'invitations' => 'Guest acceptance precedes authentication by design (2.11): the sha256 single-use token IS the access control. Rows carry invitee email and role only; issuance is permission-gated at the route.',
         'pairing_codes' => 'The 6-char code IS the bearer secret (B4): redemption happens before any link exists, so a link-derived policy cannot admit the legitimate redeemer. Rows carry only student linkage; failure ledger and throttles guard brute force (2.13).',

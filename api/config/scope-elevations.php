@@ -1,0 +1,20 @@
+<?php
+
+// The asSystem() allowlist (Leo, S02A gate review). Every sanctioned elevation
+// is declared here: call site => the reason it exists. asSystem() REFUSES any
+// call site not listed (runtime LogicException) and audits every elevation.
+// A phpunit scan additionally fails when the code contains an asSystem() call
+// site absent from this list — by S07 the justifications are on the record,
+// not in anyone's memory.
+return [
+    'App\Services\Identity\LinkRevocationService::revoke' => 'Sole-guardian integrity check (2.2): sole-ness must count ALL active links, while RLS correctly hides co-guardians from each other. Read-only count; result never exposes the hidden rows.',
+
+    'App\Http\Controllers\LinkController::requestByEmail' => 'B4 parent-initiated flow: pre-link student lookup by exact email — the target is by definition outside the guardian\'s scope until the link exists. Response is identical whether or not the account exists; only a pending link (student-confirmable) results.',
+
+    'App\Http\Controllers\LinkController::schoolVouch' => 'B4 school-mediated flow: guardian lookup by exact email for a student already verified to be in the acting school. The guardian is outside the school\'s scope until this link creates the relationship.',
+    'App\Services\Identity\GuardianStudentService::createStudent' => 'L4 guardian-led student creation: the child account is outside the guardian\'s scope until the link this very operation creates exists (INSERT..RETURNING checks SELECT policies on the new row). Creates exactly one student + one active link, both audited.',
+
+    'App\Services\Identity\AuthService::login' => 'Credential-verified token issuance: login is an auth-bootstrap act regardless of any pre-existing session (account switching); the token belongs to the just-verified credential holder, not the ambient actor.',
+
+    'App\Services\Identity\InvitationService::accept' => 'Invitation acceptance is a pre-authentication bootstrap act by design (2.11): creates the invited account and activates any school-vouched teacher affiliation — single-use token-gated writes no scoped context could perform.',
+];

@@ -36,11 +36,14 @@ class LinkRevocationService
 
         // Platform integrity check: sole-ness must see ALL links, not the
         // actor's scoped view (RLS hides co-guardians from each other)
-        $isSoleLink = $this->scope->asSystem(fn (): bool => GuardianLink::query()
+        $isSoleLink = $this->scope->asSystem(
+            'Sole-guardian integrity check (2.2): sole-ness must count ALL active links, while RLS correctly hides co-guardians from each other. Read-only count; result never exposes the hidden rows.',
+            fn (): bool => GuardianLink::query()
             ->where('student_id', $link->student_id)
             ->where('status', 'active')
             ->where('id', '!=', $link->id)
             ->doesntExist());
+
         $guarded = $isSoleLink && $this->enrolments->hasNonTerminalEnrolments($link->student_id);
 
         if ($guarded) {
