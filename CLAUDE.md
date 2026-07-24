@@ -34,7 +34,7 @@
   not done until it conforms
 - `docs/design/ASSET-MANIFEST.md` — where the MVP imagery lives and how to rescue it. Consumed by S00
 - `docs/design/IMAGE-PROMPTS.md` — upgrade path for client-supplied imagery. Reference only
-- `docs/sprints/<ID>/SPRINT.md` — your execution card (fourteen cards: S00–S11, with S02 and S04 each split into A/B). **Work only from the current card**
+- `docs/sprints/<ID>/SPRINT.md` — your execution card (fifteen cards: S00–S11, with S02 and S04 each split into A/B, plus S06B per OD-23). **Work only from the current card**
 - `docs/requirements/REGISTER.md` — requirement IDs; cite them in commits where relevant
 - `docs/OPEN-DECISIONS.md` — undecided items. **If your current step depends on one, STOP**
 
@@ -42,11 +42,14 @@
 `docs/TEAM-CATEGORIES.md` (team categories only) → `docs/AMENDMENTS.md` →
 `docs/design/DESIGN-SYSTEM.md` → `docs/spec/` → `docs/BUILD-PLAN.md`.
 
-Two known supersessions you will otherwise trip over:
+Known supersessions you will otherwise trip over:
 - Build Plan Part 4 item 2 ("one working branch per sprint") — superseded by OD-8, all work on `main`.
 - Spec and Build Plan references to "School Team / Armour Team" as fixed types — superseded by
   `docs/TEAM-CATEGORIES.md`. They were example labels. There is no hard-coded school or armour type.
 - Spec line 1842 (HKUST co-powered certification) — struck. Certificates are academy-issued only.
+- Spec L4, B10 and R2 ("invitation-only, no public sign-up, ever") — superseded by OD-23. A single
+  public surface exists: the school-routed registration REQUEST (creates no account); accounts still
+  come into being only through the S01 invitation flow.
 
 ---
 
@@ -155,7 +158,11 @@ If a command listed here doesn't exist yet, it is being built in S00 — say so 
 - **Team finance is record-only.** Money moves offline; the platform records and verifies evidence.
 - **Consent e-sign is in-house** (no DocuSign): scroll-to-end, affirmation, drawn/typed capture,
   signed PDF + audit certificate page, SHA-256 versioning.
-- **Invitation-only onboarding.** There is no public sign-up, ever — including after Logto.
+- **Invitation-led onboarding (OD-23).** The only public surface is a school-routed registration
+  **request**: it creates no account, grants no session, reads nothing, and is visible only to the
+  routed school's administrators and academy ops. Approval issues the standard S01 guardian
+  invitation — the invitation flow remains the only way an account comes into being. No other
+  public write exists; no public read of any roster beyond opt-in listed school names.
 - **No partial payments** (OD-5). Offline payments are recorded only when received in full; a payment
   record carries 1..n evidence images. No payment splitting, no allocation across orders, no balances.
   An underpayment is **not recorded at all** — the admin waits for full payment, then records once

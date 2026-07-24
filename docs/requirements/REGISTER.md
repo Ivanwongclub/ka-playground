@@ -32,7 +32,7 @@ cited in Source is the origin, not necessarily the current rule.
 
 | ID | Origin | Requirement | Source |
 |----|--------|-------------|--------|
-| SR001 | L4 | Invitation-only onboarding; no public sign-up, ever — including after Logto. Guardian registers first by academy invitation, then creates/links the student | Spec L4 · R2 |
+| SR001 | L4 | **Invitation-led onboarding (amended by OD-23, 2026-07-24; original "no public sign-up, ever" superseded).** Accounts come into being ONLY through the invitation flow. The single public surface is the school-routed registration REQUEST (FR068): no account, no session, no reads. Approval issues the standard guardian invitation; guardian then creates/links the student | Spec L4 · R2 · **OD-23** |
 | SR002 | O | Logto migration only after UAT (S11); Sanctum behind an auth interface until then | Spec Part O |
 | SR003 | O | Alibaba Cloud HK hosting; ApsaraDB RDS (Postgres) + OSS; ECS + Docker Compose | Spec Part O |
 | SR004 | N | Schema per Part N including the N12 database-level constraints: immutability by revoked UPDATE/DELETE, gapless receipt sequence in-transaction, consent/guardian checks, partial unique indexes, FOR UPDATE seat locks | Spec N1–N12 |
@@ -122,7 +122,8 @@ cited in Source is the origin, not necessarily the current rule.
 | FR064 | N7 | Avatars: library only in Phase 1 (R12); upload moderation machine Pending → Approved / Rejected (reason) → Appealed → Final, atomic swap, one appeal | 2.4 |
 | FR065 | N7a | Announcements with audience scoping (role/programme/school); message threads role-checked — a guardian may open a thread only to staff of their child's programmes | 2.9 |
 | FR066 | B8 · E8 | Unified Admin › Exceptions queue: guardian replacement (14d deadline), late payment, guardian conflict, contact unreachable — each with owner, deadline and resolution state, visible to the roles the spec names | 2.19 · 2.22 · 2.23 |
-| FR067 | Q | Sitemap: v3 sitemap plus Q1–Q5 deltas (student enrolment tabs + payments, parent consent centre + pay/receipts, teacher gate/refund approvals, school batch + billing tabs, admin wizard hub, orders/receipts/AR/AP, consent management, notification rules, dashboard presets) | — |
+| FR067 | Q | Sitemap: v3 sitemap plus Q1–Q5 deltas (student enrolment tabs + payments, parent consent centre + pay/receipts, teacher gate/refund approvals, school batch + billing tabs, admin wizard hub, orders/receipts/AR/AP, consent management, notification rules, dashboard presets) — plus 2.28 deltas (public registration page; School Administrator Registration Requests tab) | 2.28 |
+| FR068 | OD-23 | **Registration-request flow (S06B):** public school-routed registration REQUEST — anonymous INSERT-only under a `public` scope context confined to exactly one policy (structural assertion), constant-shape response, no status endpoint, no reads, no uploads; throttled + honeypot per 2.13 family. School admin reviews own school's queue; approve → standard S01 invitation (audited, identified approver); decline audited with reason. `schools.public_listing` opt-in (default OFF) governs the public school list; free-text fallback routes to academy ops. Request-not-account: no path from a request to an account except through an accepted invitation (assertion) | **OD-23** · 2.28 · SR001 |
 
 ## Optional requirements
 
