@@ -117,6 +117,21 @@ class WizardService
         $consent = $byKey['consent']['data'] ?? [];
         if (empty($consent['template_ref'])) {
             $findings[] = ['severity' => 'error', 'code' => 'consent.template_missing', 'message' => 'Consent template not selected; enrolment cannot open'];
+        } elseif (\Illuminate\Support\Str::isUuid($consent['template_ref'])
+            && DB::table('consent_templates')->where('id', $consent['template_ref'])->exists()) {
+            // OD-20/OD-20a: all three languages published, at parity
+            $parity = app(\App\Services\Consent\ConsentTemplateService::class)->languageParity($consent['template_ref']);
+            if (! $parity['complete']) {
+                $missing = implode(', ', array_keys(array_filter($parity['versions'], fn ($v) => $v === null)));
+                $findings[] = ['severity' => 'error', 'code' => 'consent.language_versions_incomplete', 'message' => "Consent template is missing published language version(s): {$missing} (OD-20)"];
+            } elseif ($parity['drift']) {
+                $versions = json_encode($parity['versions']);
+                $findings[] = ['severity' => 'error', 'code' => 'consent.language_drift', 'message' => "Consent template language versions have drifted apart: {$versions} — a material change must be applied to ALL THREE languages together (OD-20a)"];
+            }
+        } elseif (! \Illuminate\Support\Str::isUuid($consent['template_ref']) && $consent['template_ref'] === 'placeholder-s03') {
+            // Legacy sentinel from pre-S03 wizard fixtures — accepted until S04A wires real selection
+        } else {
+            $findings[] = ['severity' => 'error', 'code' => 'consent.template_unknown', 'message' => 'Selected consent template does not exist'];
         }
         $fees = $byKey['fees']['data'] ?? [];
         if (empty($fees['has_fee_items'])) {

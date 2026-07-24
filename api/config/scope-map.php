@@ -17,6 +17,7 @@ return [
         // and link-derived scope. Residual bootstrap window: AUDIT §5.
         'users',
         'personal_access_tokens',
+        'consent_template_versions',
         'team_categories',
         'fee_items',
         'withdrawal_policies',
@@ -44,6 +45,7 @@ return [
         'role_permissions' => 'The seeded matrix, guarded by authz.permission_matrix; no personal data.',
         'capability_permissions' => 'The seeded capability grid, guarded by authz.permission_matrix and authz.consent_sign_exclusive; no personal data.',
         'pairing_code_failures' => 'Brute-force counter keyed by code string (2.13); contains no personal data and must be writable from failing (unauthorised) request paths.',
+        'consent_templates' => 'Readable by EVERY authenticated session (global does not mean internal): template CATALOGUE metadata only — trilingual names and ids; the legal text and hashes live in the SCOPED consent_template_versions; writes configuration.manage-gated.',
         'stage_requirements' => 'Readable by EVERY authenticated session (global does not mean internal): fixed-stage config incl. OD-12 thresholds; no personal or commercial data; writes configuration.manage-gated.',
         'role_library' => 'Readable by every authenticated session: team-role definitions (D2§7); no personal or commercial data; tenures/assignments (S05) will be scoped via their student rows; writes configuration.manage-gated.',
         'certification_rules' => 'Readable by every authenticated session: completion criteria (D2§9); academy-issued only — the table has no co-branding columns by construction (OD-21); no personal or commercial data; writes configuration.manage-gated.',

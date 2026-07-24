@@ -4,6 +4,34 @@
 
 > Opened at STEP 1 per the live-fill pattern.
 
+## 2. Step-by-step verification
+### STEP 1 — Templates + language-scoped versions · commit (this step)
+```
+$ php artisan test → 137 passed (623 assertions)
+$ reconcile:run --tag=S02A → PASS 2/2 (consent_templates global justified,
+  consent_template_versions SCOPED with policies, in the creating migration)
+
+Placeholder (R15), live: three languages, each published, each flagged, DISTINCT hashes:
+ en    | v1 | published | placeholder=t | 4f554a9ceb4c7ad5…
+ zh-SC | v1 | published | placeholder=t | 4ec8ba826220b09e…
+ zh-TC | v1 | published | placeholder=t | d54b7443b8added3…
+
+OD-20a drift, live: material EN v2 alone →
+ error — Consent template language versions have drifted apart: {"en":2,"zh-TC":1,"zh-SC":1}
+         — a material change must be applied to ALL THREE languages together
+TC+SC brought to v2 → consent findings: NONE — publishable: True
+
+Five-branch on consent_template_versions, live:
+ [1] academy staff: 6 rows (all published langs; drafts additionally visible — test-proven 4-vs-3)
+ [2] guardian:      6 rows, published only     [3] student: 6      [4] school_admin: 6
+ [5] Member:        0 rows
+Published immutability at the DB:
+ ERROR: published consent template versions are immutable (BI-6/OD-20): UPDATE blocked
+No-anchor publish blocked (G3, tested); unselected-template versions hidden from
+bound parties (tested — read flows only through a published programme's selection).
+```
+Result: PASS
+
 ## 5. Leftovers & newly discovered risks
 | # | Item | Severity | Proposed sprint |
 |---|------|----------|-----------------|

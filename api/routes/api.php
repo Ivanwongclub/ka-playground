@@ -4,6 +4,7 @@ use App\Http\Controllers\AccessIdentityReportController;
 use App\Http\Controllers\AuditEventController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CapabilityController;
+use App\Http\Controllers\ConsentTemplateController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ProgrammeConfigController;
@@ -82,11 +83,18 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('/admin/programmes/{id}/fee-items', [ProgrammeConfigController::class, 'storeFeeItem']);
         Route::put('/admin/programmes/{id}/certification-rules', [ProgrammeConfigController::class, 'saveCertificationRules']);
         Route::put('/admin/programmes/{id}/withdrawal-policy', [ProgrammeConfigController::class, 'saveWithdrawalPolicy']);
+
+        // S03 step 1 — consent templates + language-scoped versions
+        Route::post('/admin/consent-templates', [ConsentTemplateController::class, 'store']);
+        Route::post('/admin/consent-templates/placeholder', [ConsentTemplateController::class, 'seedPlaceholder']);
+        Route::post('/admin/consent-templates/{id}/versions', [ConsentTemplateController::class, 'draftVersion']);
+        Route::post('/admin/consent-templates/{id}/versions/{versionId}/publish', [ConsentTemplateController::class, 'publishVersion']);
     });
 
     // Reads shaped by RLS alone (S05 formation will consume these)
     Route::get('/programmes/{id}/team-categories', [ProgrammeConfigController::class, 'categories']);
     Route::get('/programmes/{id}/withdrawal-policy', [ProgrammeConfigController::class, 'withdrawalPolicy']);
+    Route::get('/consent-templates/{id}/versions', [ConsentTemplateController::class, 'versions']);
     Route::get('/admin/programmes/{id}/fee-items', [ProgrammeConfigController::class, 'feeItems'])
         ->middleware('permission:finance.view');
 });
