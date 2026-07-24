@@ -95,17 +95,31 @@ Result: PASS
   said requests are created by system (S04A) with "fixture/port creation" until
   then. Manual ops issuance is a real admin action, not a fixture, so the INSERT
   policy admits operations/super — narrower than an allowlisted elevation would
-  have been. Flagged for review.
+  have been. **ACCEPTED by Leo conditionally (step 2a):** every manual issuance
+  now REQUIRES a reason, audited with the operator (tested + refusal tested);
+  the S04A narrowing is a named §5 item.
 - **Issuance validates production semantics:** programme must be PUBLISHED and its
   consent section must select the template — the same condition under which the
   bound-party RLS branch lets the signer read the legal text. (First fixture
   attempt without this failed exactly there — RLS caught it.)
-- **Co-guardian "status yes":** as built, a co-guardian sees only requests
-  addressed to THEM (card read set: system · ops/audit · addressed signer ·
-  student · school_admin). They see the sibling guardian's request not at all —
-  status of the family's consent position for co-guardians would need the
-  read set widened to "any active guardian of the student". Left NARROW (widening
-  later is a migration); Leo to confirm which was intended.
+- **Co-guardian "status yes" — RULED (Leo, step 2a): DERIVED status, not row
+  access.** consent_requests read set stays narrow (in a separated family the
+  other guardian's row/timestamp/identity is exactly the leak the set prevents).
+  New: GET /my/students/{id}/consent-status?programme_id= — booleans only
+  (consent_met, requires_all_guardians, your_signature_needed), computed under a
+  new allowlisted+audited asSystem elevation (ConsentSigningService::derivedStatus).
+  Live paste: guardian B → {"consent_met":true,…} while B's raw request AND
+  signature views return {"data":[]}; scope.elevated audit row carries B as actor.
+- **Merge-data drift — RULED (Leo item 4): void + re-issue, never re-render.**
+  Before: no path — frozen merge data never rechecked, an issued (even signed)
+  document naming the wrong child was immutable. Now: POST /admin/consent-requests/
+  {id}/void {reason, reissue} (ops) → status 'voided' (new CHECK state, migration
+  2026_07_25_150000), audit consent_request.voided with operator + reason +
+  replacement id, ConsentRequestVoided event fired for the S09 notification
+  ladder (no channel built — card non-scope). Re-issue snapshots FRESH merge
+  data: tested — corrected student name appears, rendered hash changes, template
+  hash unchanged; voided request 409s on render/sign; a voided SIGNED request's
+  signature row is untouched (immutable evidence of what WAS signed).
 - Local error responses carry stack traces (APP_DEBUG=true, local only) — refusal
   statuses/messages are what production returns.
 - Demo fixtures synthetic; demo tokens revoked after the pastes. One earlier token
@@ -122,3 +136,4 @@ Result: PASS
 | 1 | **R15 named S10 check:** no live consent template version may still carry placeholder text at go-live (placeholder is EXPECTED during build — deliberately NOT a nightly assertion, per Leo: permanently-red assertions train people to ignore red) | High | **S10 readiness** |
 | 2 | **Timestamp trust (Leo, design-fresh note for S10):** signature evidence rests on a server NTP timestamp — contestable if anyone argues the clock was wrong or set retroactively. Options noted now, impossible to retrofit onto collected signatures: (a) RFC-3161 trusted timestamp authority countersigning each evidence bundle hash at signing time; (b) periodic anchoring of the audit_events/signature hash chain to an external immutable reference (e.g. daily digest published outside the platform). Either can be added FORWARD from the moment adopted; S10 should pick one before real signatures exist | **High — S10 design decision** | S10 |
 | 3 | Client question (fees/terms per school) still open — gates S04A consumer read clauses | High — client | before S04A |
+| 4 | **S04A MUST narrow consent_requests INSERT back to system-only** once enrolment issues requests automatically (Leo ruling 1: "a temporary widening on a personal-data table becomes permanent unless a sprint is named for reversing it"). Until then every manual issuance is reason-audited | High | **S04A** |

@@ -88,6 +88,7 @@ class ConsentSigningTest extends TestCase
         $id = $this->postJson('/api/admin/consent-requests', [
             'template_id' => $this->templateId, 'programme_id' => $this->programme->id,
             'student_id' => ($student ?? $this->student)->id, 'signer_id' => ($signer ?? $this->guardian)->id,
+            'reason' => 'test issuance pre-S04A',
         ])->assertStatus(201)->json('id');
         $this->app['auth']->forgetGuards();
 
@@ -390,7 +391,123 @@ class ConsentSigningTest extends TestCase
         Sanctum::actingAs($this->ops);
         $this->postJson('/api/admin/consent-requests', [
             'template_id' => $this->templateId, 'programme_id' => $this->programme->id,
-            'student_id' => $this->student->id, 'signer_id' => $stranger->id,
+            'student_id' => $this->student->id, 'signer_id' => $stranger->id, 'reason' => 'x-test',
         ])->assertStatus(422)->assertJsonPath('errors.signer.0', fn ($m) => str_contains($m, 'active guardian'));
+    }
+
+    // ── Ruling 1: manual issuance names operator + reason ──
+
+    public function test_manual_issuance_without_a_reason_is_refused_and_the_reason_is_audited(): void
+    {
+        Sanctum::actingAs($this->ops);
+        $this->postJson('/api/admin/consent-requests', [
+            'template_id' => $this->templateId, 'programme_id' => $this->programme->id,
+            'student_id' => $this->student->id, 'signer_id' => $this->guardian->id,
+        ])->assertStatus(422)->assertJsonValidationErrors(['reason']);
+
+        $id = $this->issue();
+        $this->assertDatabaseHas('audit_events', [
+            'entity_type' => 'consent_request', 'entity_id' => $id,
+            'action' => 'consent_request.issued', 'actor_id' => $this->ops->id,
+            'reason' => 'test issuance pre-S04A',
+        ]);
+    }
+
+    // ── Ruling 2: derived status — no leak of the other guardian's request ──
+
+    public function test_co_guardian_reads_derived_status_without_any_of_the_other_guardians_data(): void
+    {
+        $id = $this->issue(); // addressed to guardian A
+        $this->asSigner($this->guardian);
+        $this->getJson("/api/consent-requests/{$id}/document?language=en")->assertOk();
+        $this->postJson("/api/consent-requests/{$id}/scrolled")->assertOk();
+        $this->postJson("/api/consent-requests/{$id}/sign", $this->validSignaturePayload())->assertStatus(201);
+
+        // Guardian B: consent MET — and NOTHING else. No row, timestamp or identity.
+        $this->asSigner($this->coGuardian);
+        $response = $this->getJson("/api/my/students/{$this->student->id}/consent-status?programme_id={$this->programme->id}")
+            ->assertOk();
+        $this->assertSame([
+            'programme_id' => $this->programme->id, 'student_id' => $this->student->id,
+            'consent_met' => true, 'requires_all_guardians' => false,
+            'your_signature_needed' => false,
+        ], $response->json());
+        // B's raw view stays empty — the derivation leaked no rows into scope
+        $this->assertCount(0, $this->getJson('/api/consent-requests')->json('data'));
+        $this->assertCount(0, $this->getJson('/api/consent-signatures')->json('data'));
+
+        // a non-guardian of the student gets 404
+        $this->asSigner(User::factory()->create(['role' => 'guardian']));
+        $this->getJson("/api/my/students/{$this->student->id}/consent-status?programme_id={$this->programme->id}")
+            ->assertStatus(404);
+    }
+
+    public function test_derived_status_under_requires_all_guardians_shows_own_signature_needed(): void
+    {
+        DB::table('wizard_sections')->where('programme_id', $this->programme->id)->where('section_key', 'consent')
+            ->update(['data' => json_encode(['template_ref' => $this->templateId, 'requires_all_guardians' => true])]);
+        $a = $this->issue();
+        $this->issue(signer: $this->coGuardian);
+        $this->asSigner($this->guardian);
+        $this->getJson("/api/consent-requests/{$a}/document?language=en")->assertOk();
+        $this->postJson("/api/consent-requests/{$a}/scrolled")->assertOk();
+        $this->postJson("/api/consent-requests/{$a}/sign", $this->validSignaturePayload())->assertStatus(201);
+
+        $this->asSigner($this->coGuardian);
+        $status = $this->getJson("/api/my/students/{$this->student->id}/consent-status?programme_id={$this->programme->id}")->json();
+        $this->assertFalse($status['consent_met']);
+        $this->assertTrue($status['requires_all_guardians']);
+        $this->assertTrue($status['your_signature_needed'], 'their OWN open request — already visible to them');
+    }
+
+    // ── Item 4: void + re-issue on merge-data drift ──
+
+    public function test_void_and_reissue_produces_a_fresh_merge_snapshot_and_audits_the_reason(): void
+    {
+        $id = $this->issue();
+        $this->asSigner($this->guardian);
+        $staleDoc = $this->getJson("/api/consent-requests/{$id}/document?language=en")->json();
+
+        // The source record is corrected AFTER issuance — frozen data is now wrong
+        DB::table('users')->where('id', $this->student->id)->update(['name' => 'Corrected Name']);
+
+        $this->asSigner($this->ops);
+        $result = $this->postJson("/api/admin/consent-requests/{$id}/void", [
+            'reason' => 'student name misspelt in frozen merge data', 'reissue' => true,
+        ])->assertOk()->json();
+        $this->assertSame($id, $result['voided']);
+        $this->assertNotNull($result['replacement']);
+        $this->assertSame('voided', DB::table('consent_requests')->where('id', $id)->value('status'));
+        $this->assertDatabaseHas('audit_events', [
+            'entity_type' => 'consent_request', 'entity_id' => $id, 'action' => 'consent_request.voided',
+            'actor_id' => $this->ops->id, 'reason' => 'student name misspelt in frozen merge data',
+        ]);
+
+        // The voided request is dead to the signer; the replacement renders FRESH data
+        $this->asSigner($this->guardian);
+        $this->getJson("/api/consent-requests/{$id}/document?language=en")->assertStatus(409);
+        $this->postJson("/api/consent-requests/{$id}/sign", $this->validSignaturePayload())->assertStatus(409);
+        $freshDoc = $this->getJson("/api/consent-requests/{$result['replacement']}/document?language=en")->assertOk()->json();
+        $this->assertStringContainsString('Corrected Name', $freshDoc['body_html']);
+        $this->assertNotSame($staleDoc['rendered_sha256'], $freshDoc['rendered_sha256'], 'fresh snapshot, fresh rendered hash');
+        $this->assertSame($staleDoc['template_sha256'], $freshDoc['template_sha256'], 'template unchanged');
+    }
+
+    public function test_voiding_a_signed_request_preserves_the_signature_evidence(): void
+    {
+        $id = $this->issue();
+        $this->asSigner($this->guardian);
+        $this->getJson("/api/consent-requests/{$id}/document?language=en")->assertOk();
+        $this->postJson("/api/consent-requests/{$id}/scrolled")->assertOk();
+        $sigId = $this->postJson("/api/consent-requests/{$id}/sign", $this->validSignaturePayload())->json('signature_id');
+
+        $this->asSigner($this->ops);
+        $this->postJson("/api/admin/consent-requests/{$id}/void", [
+            'reason' => 'signed against corrected-away merge data', 'reissue' => true,
+        ])->assertOk();
+
+        $this->assertSame('voided', DB::table('consent_requests')->where('id', $id)->value('status'));
+        // The signature is immutable evidence of what WAS signed — untouched
+        $this->assertDatabaseHas('consent_signatures', ['id' => $sigId]);
     }
 }

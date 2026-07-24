@@ -97,6 +97,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // (S01 defect 1 fix), and the service 404s any non-addressee on top of RLS.
     Route::post('/admin/consent-requests', [ConsentRequestController::class, 'issue'])
         ->middleware('permission:operations.manage');
+    Route::post('/admin/consent-requests/{id}/void', [ConsentRequestController::class, 'void'])
+        ->middleware('permission:operations.manage');
+    Route::get('/my/students/{studentId}/consent-status', [ConsentRequestController::class, 'derivedStatus'])
+        ->middleware('role:guardian');
     Route::get('/consent-requests', [ConsentRequestController::class, 'index']); // RLS-shaped
     Route::get('/consent-signatures', [ConsentRequestController::class, 'signatures']); // RLS-shaped
     Route::get('/consent-requests/{id}/document', [ConsentRequestController::class, 'document'])

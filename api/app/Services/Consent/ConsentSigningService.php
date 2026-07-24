@@ -24,8 +24,12 @@ class ConsentSigningService
         private readonly UploadService $uploads,
     ) {}
 
-    /** Ops issuance (S04A will issue per enrolment through the same path). */
-    public function issueRequest(string $templateId, int $programmeId, int $studentId, int $signerId, User $actor): string
+    /**
+     * Ops issuance (S04A will issue per enrolment through the same path, then
+     * narrow the INSERT policy back to system-only — AUDIT §5). Manual issuance
+     * always audits the operator AND their reason (Leo ruling 1).
+     */
+    public function issueRequest(string $templateId, int $programmeId, int $studentId, int $signerId, User $actor, ?string $reason = null): string
     {
         $template = DB::table('consent_templates')->where('id', $templateId)->first();
         $programme = DB::table('programmes')->where('id', $programmeId)->first();
@@ -72,10 +76,86 @@ class ConsentSigningService
             'created_at' => now(), 'updated_at' => now(),
         ]);
         $this->audit->record('consent_request', $id, 'consent_request.issued',
-            toState: 'sent', payloadAfter: ['student_id' => $studentId, 'signer_id' => $signerId, 'template_id' => $templateId],
+            toState: 'sent', reason: $reason,
+            payloadAfter: ['student_id' => $studentId, 'signer_id' => $signerId, 'template_id' => $templateId],
             programmeId: $programmeId, actor: $actor);
 
         return $id;
+    }
+
+    /**
+     * DERIVED consent status for one of the actor's students (Leo ruling 2):
+     * met / outstanding per programme, readable by EVERY active guardian —
+     * WITHOUT exposing any other guardian's request row, timestamp or identity.
+     * The aggregate must count signed requests the actor's own context rightly
+     * cannot see, hence the allowlisted elevation; only booleans leave it.
+     *
+     * @return array{programme_id: int, student_id: int, consent_met: bool, requires_all_guardians: bool, your_signature_needed: bool}
+     */
+    public function derivedStatus(int $programmeId, int $studentId, User $guardian): array
+    {
+        $isGuardian = DB::table('guardian_links')
+            ->where('guardian_id', $guardian->id)->where('student_id', $studentId)
+            ->where('status', 'active')->exists();
+        if (! $isGuardian) {
+            abort(404);
+        }
+
+        [$met, $requiresAll] = app(\App\Services\Authz\ScopeContext::class)->asSystem(
+            'Derived consent status (S03): met/outstanding is an aggregate over ALL guardians\' requests, while RLS correctly hides co-guardians\' rows from each other. Returns booleans only; no row, timestamp or identity leaves the elevation.',
+            function () use ($programmeId, $studentId): array {
+                $requiresAll = (bool) (json_decode((string) DB::table('wizard_sections')
+                    ->where('programme_id', $programmeId)->where('section_key', 'consent')
+                    ->value('data'), true)['requires_all_guardians'] ?? false);
+
+                return [$this->consentSatisfied($programmeId, $studentId), $requiresAll];
+            },
+        );
+
+        // The actor's OWN outstanding request — their own row, already visible
+        $ownOpen = DB::table('consent_requests')
+            ->where('programme_id', $programmeId)->where('student_id', $studentId)
+            ->where('signer_id', $guardian->id)->whereIn('status', ['sent', 'viewed'])->exists();
+
+        return [
+            'programme_id' => $programmeId, 'student_id' => $studentId,
+            'consent_met' => $met, 'requires_all_guardians' => $requiresAll,
+            'your_signature_needed' => $ownOpen && (! $met || $requiresAll),
+        ];
+    }
+
+    /**
+     * Void an issued request whose frozen merge data no longer matches source
+     * (Leo item 4). Never a silent re-render — that would break the rendered-
+     * hash binding. Any existing signature stays: it is immutable evidence of
+     * what WAS signed. Optionally re-issues with a fresh merge snapshot.
+     *
+     * @return array{voided: string, replacement: string|null}
+     */
+    public function voidRequest(object $request, string $reason, User $actor, bool $reissue = false): array
+    {
+        if (! in_array($request->status, ['sent', 'viewed', 'signed'], true)) {
+            abort(409, "Consent request is {$request->status} and cannot be voided");
+        }
+
+        return DB::transaction(function () use ($request, $reason, $actor, $reissue): array {
+            DB::table('consent_requests')->where('id', $request->id)
+                ->update(['status' => 'voided', 'updated_at' => now()]);
+            $replacementId = $reissue
+                ? $this->issueRequest($request->template_id, (int) $request->programme_id,
+                    (int) $request->student_id, (int) $request->signer_id, $actor,
+                    reason: "re-issue after void of {$request->id}")
+                : null;
+
+            $this->audit->record('consent_request', $request->id, 'consent_request.voided',
+                fromState: $request->status, toState: 'voided', reason: $reason,
+                payloadAfter: ['replacement_request_id' => $replacementId, 'notify_signer' => true],
+                programmeId: (int) $request->programme_id, actor: $actor);
+            // S09's ladder tells the signer the document changed (card non-scope here)
+            \App\Events\ConsentRequestVoided::dispatch($request->id, (int) $request->signer_id, $reason, $replacementId);
+
+            return ['voided' => $request->id, 'replacement' => $replacementId];
+        });
     }
 
     /**
