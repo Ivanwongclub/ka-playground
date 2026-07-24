@@ -86,6 +86,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::put('/admin/programmes/{id}/withdrawal-policy', [ProgrammeConfigController::class, 'saveWithdrawalPolicy']);
 
         // S03 step 1 — consent templates + language-scoped versions
+        Route::get('/admin/consent-templates', [ConsentTemplateController::class, 'index']);
         Route::post('/admin/consent-templates', [ConsentTemplateController::class, 'store']);
         Route::post('/admin/consent-templates/placeholder', [ConsentTemplateController::class, 'seedPlaceholder']);
         Route::post('/admin/consent-templates/{id}/versions', [ConsentTemplateController::class, 'draftVersion']);
@@ -140,4 +141,10 @@ Route::get('/onboarding/verify-email/{id}/{hash}', [OnboardingController::class,
 Route::get('/audit-events', [AuditEventController::class, 'index'])
     ->middleware(['auth:sanctum', 'permission:audit.read']);
 Route::get('/reports/access-identity', [AccessIdentityReportController::class, 'index'])
+    ->middleware(['auth:sanctum', 'permission:audit.read']);
+
+// S03 audit element: Consent Evidence Report + per-signature bundle export
+Route::get('/reports/consent-evidence', [\App\Http\Controllers\ConsentEvidenceReportController::class, 'index'])
+    ->middleware(['auth:sanctum', 'permission:audit.read']);
+Route::get('/reports/consent-evidence/{signatureId}/bundle', [\App\Http\Controllers\ConsentEvidenceReportController::class, 'bundle'])
     ->middleware(['auth:sanctum', 'permission:audit.read']);

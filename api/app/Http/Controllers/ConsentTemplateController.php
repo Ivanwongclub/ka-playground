@@ -11,6 +11,13 @@ class ConsentTemplateController extends Controller
 {
     public function __construct(private readonly ConsentTemplateService $templates) {}
 
+    /** Template catalogue (global table — names only; text lives in versions). */
+    public function index(): JsonResponse
+    {
+        return response()->json(['data' => DB::table('consent_templates')
+            ->orderBy('created_at')->get(['id', 'name_en', 'name_tc', 'name_sc'])]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $names = $request->validate([

@@ -5,6 +5,9 @@ import { ProLayout } from '@ant-design/pro-components';
 import { Avatar, Select } from 'antd';
 import {
   BookOpen,
+  FileCheck,
+  FileSignature,
+  FileText,
   GraduationCap,
   Languages,
   LayoutDashboard,
@@ -108,6 +111,9 @@ export function AppShell() {
           { path: '/admin/audit', name: t('nav.audit'), icon: <ShieldCheck size={16} aria-hidden /> },
           { path: '/admin/access-identity', name: t('nav.accessIdentity'), icon: <Users size={16} aria-hidden /> },
           { path: '/admin/programmes', name: t('nav.programmes'), icon: <BookOpen size={16} aria-hidden /> },
+          { path: '/consents', name: t('nav.consents'), icon: <FileSignature size={16} aria-hidden /> },
+          { path: '/admin/consent-evidence', name: t('nav.consentEvidence'), icon: <FileCheck size={16} aria-hidden /> },
+          { path: '/admin/consent-templates', name: t('nav.consentTemplates'), icon: <FileText size={16} aria-hidden /> },
         ],
       }}
       menuItemRender={(item, dom) => (

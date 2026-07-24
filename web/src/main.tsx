@@ -33,6 +33,10 @@ const AdminAudit = lazy(() => import('./pages/AdminAudit').then((m) => ({ defaul
 const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })));
 const AccessIdentity = lazy(() => import('./pages/AccessIdentity').then((m) => ({ default: m.AccessIdentity })));
 const AdminProgrammes = lazy(() => import('./pages/AdminProgrammes').then((m) => ({ default: m.AdminProgrammes })));
+const ConsentList = lazy(() => import('./pages/Consents').then((m) => ({ default: m.ConsentList })));
+const ConsentSign = lazy(() => import('./pages/Consents').then((m) => ({ default: m.ConsentSign })));
+const ConsentEvidence = lazy(() => import('./pages/ConsentEvidence').then((m) => ({ default: m.ConsentEvidence })));
+const AdminConsentTemplates = lazy(() => import('./pages/AdminConsentTemplates').then((m) => ({ default: m.AdminConsentTemplates })));
 
 function RequireAuth({ children }: { children: React.ReactElement }) {
   const location = useLocation();
@@ -71,6 +75,10 @@ function Root() {
               <Route path="/admin/audit" element={<AdminAudit />} />
               <Route path="/admin/access-identity" element={<AccessIdentity />} />
               <Route path="/admin/programmes" element={<AdminProgrammes />} />
+              <Route path="/consents" element={<ConsentList />} />
+              <Route path="/consents/:id" element={<ConsentSign />} />
+              <Route path="/admin/consent-evidence" element={<ConsentEvidence />} />
+              <Route path="/admin/consent-templates" element={<AdminConsentTemplates />} />
             </Route>
           </Routes>
           </Suspense>

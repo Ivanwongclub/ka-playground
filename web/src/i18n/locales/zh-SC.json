@@ -22,7 +22,10 @@
     "help": "帮助",
     "audit": "审计",
     "accessIdentity": "访问与身份",
-    "programmes": "课程设置"
+    "programmes": "课程设置",
+    "consents": "同意书",
+    "consentEvidence": "同意书证据",
+    "consentTemplates": "同意书模板"
   },
   "shell": {
     "openNavigation": "打开导航",
@@ -192,5 +195,67 @@
       "certification": "证书与徽章",
       "integration": "系统整合"
     }
+  },
+  "consent": {
+    "listTitle": "同意书请求",
+    "listCaption": "等待您签署的文件",
+    "open": "打开",
+    "loadError": "无法加载此文件",
+    "status": {
+      "sent": "待签署",
+      "viewed": "已阅览",
+      "signed": "已签署",
+      "declined": "已拒绝",
+      "superseded": "已被取代",
+      "voided": "已作废",
+      "expired": "已过期"
+    },
+    "title": "同意书签署",
+    "languageLabel": "文件语言",
+    "placeholderBanner": "占位文字 — 非法律、不具约束力(R15)。正式上线前将由律师审定之文本取代。",
+    "readToEnd": "请滚动至文件末端以继续",
+    "readDone": "已阅读至文件末端 — 服务器已记录",
+    "gate1Locked": "签署已锁定:尚未以当前显示的语言将文件阅读至末端。",
+    "affirmLabel": "本人确认已阅读并理解本文件,并同意其内容。",
+    "gate2Hint": "签署已锁定:尚未勾选上方确认声明。",
+    "signMethodDrawn": "手写",
+    "signMethodTyped": "输入",
+    "drawHere": "请在下方手写签名",
+    "typeName": "请输入您的全名",
+    "clear": "清除",
+    "gate3Hint": "签署已锁定:尚未采集签名 — 请手写签名或输入您的全名。",
+    "signButton": "立即签署",
+    "declineButton": "拒绝",
+    "declineReason": "拒绝原因(必填)",
+    "declineConfirm": "拒绝同意",
+    "signedTitle": "已签署",
+    "signedLanguage": "记录语言",
+    "templateHash": "模板版本哈希值",
+    "renderedHash": "呈现文件哈希值",
+    "signedAt": "签署时间",
+    "student": "学生",
+    "programme": "课程",
+    "evidence": {
+      "title": "同意书证据报告",
+      "coverage": "按版本与语言的签署覆盖",
+      "outstanding": "未完成",
+      "declined": "已拒绝",
+      "superseded": "已被取代",
+      "voided": "已作废",
+      "download": "下载证据包",
+      "placeholderCount": "以占位文字签署的签名数",
+      "language": "语言",
+      "version": "版本",
+      "active": "有效",
+      "signatures": "签名",
+      "request": "请求",
+      "statusCol": "状态"
+    },
+    "templates": {
+      "title": "同意书模板",
+      "placeholderAdminBanner": "此模板现行版本为占位文字 — 非法律、不具约束力(R15)。正式上线前请以律师审定之文本取代。",
+      "versions": "版本"
+    },
+    "r15": "R15"
   }
 }

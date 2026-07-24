@@ -202,6 +202,8 @@ class ConsentSigningService
             'body_html' => $rendered, 'language' => $language,
             'template_version_id' => $version->id, 'template_sha256' => $version->sha256,
             'rendered_sha256' => $renderedSha,
+            'version' => (int) $version->version,
+            'is_placeholder' => (bool) $version->is_placeholder, // R15 UI banner
         ];
     }
 

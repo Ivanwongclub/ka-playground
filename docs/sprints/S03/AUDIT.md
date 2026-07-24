@@ -1,6 +1,8 @@
 # AUDIT KAP-S03 — Consent engine
 
-**Result:** IN PROGRESS · **Date:** started 2026-07-25 · **HEAD at gate:** `<pending>`
+**Result:** PASS — all four steps + gate verified; one documented deviation (no
+PDF/A claim, Leo option b) and the timestamp-trust gap carried to S10 ·
+**Date:** started 2026-07-25, gated 2026-07-24 · **HEAD at gate:** see gate commit
 
 > Opened at STEP 1 per the live-fill pattern.
 
@@ -260,6 +262,94 @@ ASSERTIONS (--tag=S03) registered: consent.bi6_hash_language_scoped ·
  the runner's — the runner's fail-exit is covered by ReconciliationRunnerTest.)
 ```
 Result: PASS
+
+### GATE — Signing UI · Consent Evidence Report · evidence bundle · full battery
+```
+$ php artisan test → 175 passed (1412 assertions)   (2 new in ConsentEvidenceReportTest)
+$ php artisan reconcile:run → RECONCILE PASS — 13 assertion(s), 13 passed, 0 failed
+  (one red on the way: programmes.published_completeness caught the STEP-2 demo
+   fixture SGNLIVE1 declaring has_fee_items with zero fee_items rows — the
+   invariant was right, the synthetic fixture was sloppy; fee item added, green)
+$ php artisan migrate --pretend → Nothing to migrate
+$ npx tsc --noEmit → clean · npm run build → i18n:check 226 keys ×3 parity,
+  no hardcoded strings · bundle-budget PASSED (largest chunk well under 1MB gz)
+
+GUARDIAN SIGNING UI (Leo gate item 1) — screenshots in screenshots/:
+ sign-en-gate1-unmet.png · sign-zh-TC-gate1-unmet.png · sign-zh-SC-gate1-unmet.png
+   → placeholder non-binding banner visible in ALL THREE languages (UI banner
+     keyed off is_placeholder + the in-body R15 text), document in the chosen
+     language, and GATE 1 in its unmet state: red "Signing is locked: the
+     document has not been read to the end in the language displayed."
+ sign-en-gate2-unmet.png → scroll recorded (green server confirmation),
+   affirmation unchecked, red gate-2 lock, Sign now disabled.
+ sign-en-gate3-unmet.png → affirmed, empty signature pad, red gate-3 lock,
+   Sign now disabled.
+ sign-en-signed.png → full UI flow completed end-to-end by Playwright (scroll →
+   affirm → draw → sign): success screen shows language recorded + BOTH hashes.
+ admin-templates-en.png · admin-templates-zh-TC.png → R15 admin banner + per-
+   version R15 tags with per-language hashes (step-1 carried verification).
+ The screen refuses at every unmet gate; the API refusals behind it were pasted
+ at STEP 2 — the button was never the gate.
+
+FULL PRODUCTION PIPELINE, LIVE: HTTP sign (zh-SC, drawn incl. PNG through the
+ consent-signature upload context) → redis queue → Horizon → mPDF → ClamAV clean
+ → consent_documents row (generator mpdf/mpdf 8.3.1).
+
+EVIDENCE BUNDLE (Leo gate item 2) — exported live via
+ GET /reports/consent-evidence/{sig}/bundle (audit_read), signature
+ 019f928b-45bd… (zh-SC v3). CONTENTS: manifest.json · template.html ·
+ rendered.html · consent.pdf · audit-events.json · README.txt.
+ THIRD-PARTY VERIFICATION, from bundle bytes alone (shasum + jq, no platform):
+   VERIFIED template.html  2434073552ad6548…  == manifest template_sha256
+   VERIFIED rendered.html  cff4f365acfb35f3…  == manifest rendered_sha256
+   VERIFIED consent.pdf    c919b84505d09392…  == manifest pdf_sha256
+ A third party can verify standalone: (1) the exact legal text and its hash in
+ the language signed; (2) the exact rendered document the guardian saw and its
+ hash; (3) the PDF (certificate page carries the same hashes + generator + the
+ event sequence); (4) event-sequence internal consistency; (5) the audited
+ issue→view→sign trail with actor identities.
+ THE GAP, STATED (in README.txt inside every bundle AND here): (A) TIME — all
+ timestamps are our server clock; nothing anchors any hash to a moment in time
+ or proves non-fabrication by the platform operator (S10 decision: RFC-3161 TSA
+ or external hash-chain anchoring; protects only signatures made after
+ adoption — §5 item 2). (B) SIGNER IDENTITY — bound to an authenticated account,
+ not a qualified certificate; account-to-person corroboration needs platform
+ records. (C) DATABASE STATE — INSERT-only protections and bundle-to-live-row
+ correspondence are attestable only by inspecting the platform. The service also
+ REFUSES to export a bundle whose re-render no longer reproduces the signed
+ hash (tested).
+
+AUDIT ELEMENT shipped: Consent Evidence Report (/reports/consent-evidence +
+ /admin/consent-evidence page) — coverage by version AND language, R15 exposure
+ count, outstanding/declined/superseded/voided lists, per-signature bundle
+ download. audit_read-gated (guardian 403 tested).
+
+FIVE-BRANCH COLLECTION (all four scoped tables): consent_template_versions
+ (STEP 1, live) · consent_requests (STEP 2, tested + live co-guardian) ·
+ consent_signatures (STEP 2, co-guardian-zero live: {"data":[]}) ·
+ consent_documents (STEP 3, tested incl. signer download %PDF + co-guardian 404).
+
+ELEVATION REVIEW (gate ritual): nine allowlisted asSystem sites — six from
+ S01/S02A unchanged, three new this sprint, each reviewed: derivedStatus
+ (booleans only leave it) · ConsentDocumentService::download (authz decided by
+ cd_read before elevation; storage-row read only) · supersedeForLanguage
+ (status writes + fresh issuance only, each audited with the publishing admin
+ as actor). Every elevation writes scope.elevated.
+```
+
+## 4b. Deviations & notes (gate)
+- **api Dockerfile: ext-zip added** (evidence bundle ZIPs; host PHP had it, the
+  container did not — ZipArchive failed live despite green host tests). Image
+  rebuilt. Environment-parity lesson noted; staging/production image build (S00
+  runbook) must include the same extension list.
+- **Horizon stale autoloader:** the long-running worker predated `composer
+  require mpdf` and failed 3× with "Class Mpdf not found" until restarted —
+  operational note for the deploy runbook: RESTART WORKERS AFTER DEPENDENCY
+  CHANGES. One signature's document job was then lost between queue connections
+  (host retry pushed where no worker listens); backfilled idempotently via the
+  service. All 5 signatures now have documents.
+- Playwright drove the real UI at localhost:8080 for all screenshots (no mocked
+  states); demo tokens revoked after each live block.
 
 ## 5. Leftovers & newly discovered risks
 | # | Item | Severity | Proposed sprint |

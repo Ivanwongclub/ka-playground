@@ -22,7 +22,10 @@
     "help": "說明",
     "audit": "審計",
     "accessIdentity": "存取與身分",
-    "programmes": "課程設定"
+    "programmes": "課程設定",
+    "consents": "同意書",
+    "consentEvidence": "同意書證據",
+    "consentTemplates": "同意書範本"
   },
   "shell": {
     "openNavigation": "開啟導覽",
@@ -192,5 +195,67 @@
       "certification": "證書與徽章",
       "integration": "系統整合"
     }
+  },
+  "consent": {
+    "listTitle": "同意書請求",
+    "listCaption": "等待您簽署的文件",
+    "open": "開啟",
+    "loadError": "無法載入此文件",
+    "status": {
+      "sent": "待簽署",
+      "viewed": "已閱覽",
+      "signed": "已簽署",
+      "declined": "已拒絕",
+      "superseded": "已被取代",
+      "voided": "已作廢",
+      "expired": "已過期"
+    },
+    "title": "同意書簽署",
+    "languageLabel": "文件語言",
+    "placeholderBanner": "佔位文字 — 非法律、不具約束力(R15)。正式上線前將由律師審定之文本取代。",
+    "readToEnd": "請捲動至文件末端以繼續",
+    "readDone": "已閱讀至文件末端 — 伺服器已記錄",
+    "gate1Locked": "簽署已鎖定:尚未以目前顯示的語言將文件閱讀至末端。",
+    "affirmLabel": "本人確認已閱讀並理解本文件,並同意其內容。",
+    "gate2Hint": "簽署已鎖定:尚未勾選上方確認聲明。",
+    "signMethodDrawn": "手寫",
+    "signMethodTyped": "輸入",
+    "drawHere": "請在下方手寫簽名",
+    "typeName": "請輸入您的全名",
+    "clear": "清除",
+    "gate3Hint": "簽署已鎖定:尚未擷取簽名 — 請手寫簽名或輸入您的全名。",
+    "signButton": "立即簽署",
+    "declineButton": "拒絕",
+    "declineReason": "拒絕原因(必填)",
+    "declineConfirm": "拒絕同意",
+    "signedTitle": "已簽署",
+    "signedLanguage": "記錄語言",
+    "templateHash": "範本版本雜湊值",
+    "renderedHash": "呈現文件雜湊值",
+    "signedAt": "簽署時間",
+    "student": "學生",
+    "programme": "課程",
+    "evidence": {
+      "title": "同意書證據報告",
+      "coverage": "按版本與語言的簽署覆蓋",
+      "outstanding": "未完成",
+      "declined": "已拒絕",
+      "superseded": "已被取代",
+      "voided": "已作廢",
+      "download": "下載證據包",
+      "placeholderCount": "以佔位文字簽署的簽名數",
+      "language": "語言",
+      "version": "版本",
+      "active": "有效",
+      "signatures": "簽名",
+      "request": "請求",
+      "statusCol": "狀態"
+    },
+    "templates": {
+      "title": "同意書範本",
+      "placeholderAdminBanner": "此範本現行版本為佔位文字 — 非法律、不具約束力(R15)。正式上線前請以律師審定之文本取代。",
+      "versions": "版本"
+    },
+    "r15": "R15"
   }
 }

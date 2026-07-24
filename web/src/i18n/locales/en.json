@@ -22,7 +22,10 @@
     "help": "Help",
     "audit": "Audit",
     "accessIdentity": "Access & Identity",
-    "programmes": "Programmes"
+    "programmes": "Programmes",
+    "consents": "Consent",
+    "consentEvidence": "Consent Evidence",
+    "consentTemplates": "Consent Templates"
   },
   "shell": {
     "openNavigation": "Open navigation",
@@ -192,5 +195,67 @@
       "certification": "Certification & Badges",
       "integration": "Integration"
     }
+  },
+  "consent": {
+    "listTitle": "Consent requests",
+    "listCaption": "Documents awaiting your signature",
+    "open": "Open",
+    "loadError": "Could not load this document",
+    "status": {
+      "sent": "Awaiting signature",
+      "viewed": "Viewed",
+      "signed": "Signed",
+      "declined": "Declined",
+      "superseded": "Superseded",
+      "voided": "Voided",
+      "expired": "Expired"
+    },
+    "title": "Consent signing",
+    "languageLabel": "Document language",
+    "placeholderBanner": "Placeholder wording — non-legal and non-binding (R15). Lawyer-approved text replaces this before go-live.",
+    "readToEnd": "Scroll to the end of the document to continue",
+    "readDone": "Read to the end — recorded by the server",
+    "gate1Locked": "Signing is locked: the document has not been read to the end in the language displayed.",
+    "affirmLabel": "I confirm I have read and understood this document, and I give my consent.",
+    "gate2Hint": "Signing is locked: the affirmation above has not been given.",
+    "signMethodDrawn": "Draw",
+    "signMethodTyped": "Type",
+    "drawHere": "Draw your signature below",
+    "typeName": "Type your full name",
+    "clear": "Clear",
+    "gate3Hint": "Signing is locked: no signature has been captured — draw your signature or type your full name.",
+    "signButton": "Sign now",
+    "declineButton": "Decline",
+    "declineReason": "Reason for declining (required)",
+    "declineConfirm": "Decline consent",
+    "signedTitle": "Signed",
+    "signedLanguage": "Language recorded",
+    "templateHash": "Template version hash",
+    "renderedHash": "Rendered document hash",
+    "signedAt": "Signed at",
+    "student": "Student",
+    "programme": "Programme",
+    "evidence": {
+      "title": "Consent Evidence Report",
+      "coverage": "Signature coverage by version and language",
+      "outstanding": "Outstanding",
+      "declined": "Declined",
+      "superseded": "Superseded",
+      "voided": "Voided",
+      "download": "Download bundle",
+      "placeholderCount": "Signatures on placeholder wording",
+      "language": "Language",
+      "version": "Version",
+      "active": "Active",
+      "signatures": "Signatures",
+      "request": "Request",
+      "statusCol": "Status"
+    },
+    "templates": {
+      "title": "Consent templates",
+      "placeholderAdminBanner": "This template's live versions are PLACEHOLDER wording — non-legal and non-binding (R15). Replace with the lawyer-approved text before go-live.",
+      "versions": "Versions"
+    },
+    "r15": "R15"
   }
 }
