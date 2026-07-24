@@ -20,6 +20,45 @@ integration, publish disabled post-publish. Tables wizard_sections + pre_flight_
 classified GLOBAL in the same commit (justifications state the every-authenticated-session
 definition). Result: PASS
 
+### STEP 2 — Config tables: first plan-scoped RLS · commit (this step)
+```
+$ php artisan test → 119 passed (476 assertions)
+$ reconcile:run --tag=S02A → PASS 2/2 (six new tables classified in-commit;
+  team_categories + fee_items SCOPED with policies in the same migration)
+
+team_categories — the five read branches, LIVE (Leo item 1):
+[1] academy staff (configuration):     ['Open Lobby', 'School B Lobby', 'St. Paul Lobby']
+[2] school-linked (School A admin):    ['Open Lobby', 'St. Paul Lobby']
+[3] guardian via student's school (B): ['Open Lobby', 'School B Lobby']
+[4] student (School A links):          ['Open Lobby', 'St. Paul Lobby']
+[5] Member:                            []            <- zero, as designed
+
+fee_items — OD-18 at the schema (Leo item 2), live \d:
+ amount_minor | bigint       | not null            <- INTEGER MINOR UNITS
+ currency     | character(3) | not null | 'HKD'    <- explicit ISO code
+ CHECK fee_items_amount_nonneg (amount_minor >= 0)
+ CHECK fee_items_currency_phase1 (currency = 'HKD')   <- widening = migration
+Float sweep across all migrations: zero float/double/decimal/numeric money
+columns (the two grep hits are the word 'alphanumeric' and the OD-18 comment
+itself). Float-shaped API input 422s; USD insert rejected by the DB (tested).
+fee_items isolation: finance-capability admin sees rows; school_admin holds
+finance.view so the ROUTE passes but RLS answers zero commercial rows
+(capability present, terms absent — the sharper proof); tested.
+
+OD-13b live: second default lobby ->
+ERROR: duplicate key value violates unique constraint "team_categories_one_default"
+API surfaces it as 409; exactly one default persists (tested).
+OD-12: thresholds edited after creation, audited (tested). OD-21: column-list
+test proves certification_rules has no partner/cobrand/signatory/logo columns.
+```
+**Found by the five-branch requirement:** guardians could not read their own
+students' school_links (S02A policy gap) — the lobby subquery silently returned
+nothing. Amended by migration (guardian branch added to school_links_read);
+correct in its own right. The verification caught a real defect before it
+shipped — exactly why live refusals beat existence checks.
+withdrawal_policies/bands get identical isolation treatment in STEP 3 (card order).
+Result: PASS
+
 ## 5. Leftovers & newly discovered risks
 | # | Item | Severity | Proposed sprint |
 |---|------|----------|-----------------|

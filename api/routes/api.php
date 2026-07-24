@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CapabilityController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\ProgrammeConfigController;
 use App\Http\Controllers\ProgrammeController;
 use App\Http\Controllers\SchoolAdminController;
 use App\Http\Controllers\SchoolController;
@@ -74,7 +75,18 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('/admin/programmes/{id}/publish', [WizardController::class, 'publish']);
         Route::post('/admin/programmes/{id}/save-as-template', [WizardController::class, 'saveAsTemplate']);
         Route::post('/admin/programmes/{id}/create-from-template', [WizardController::class, 'createFromTemplate']);
+
+        // S02B step 2 — config CRUD
+        Route::post('/admin/programmes/{id}/team-categories', [ProgrammeConfigController::class, 'storeCategory']);
+        Route::post('/admin/programmes/{id}/team-categories/{categoryId}/retire', [ProgrammeConfigController::class, 'retireCategory']);
+        Route::post('/admin/programmes/{id}/fee-items', [ProgrammeConfigController::class, 'storeFeeItem']);
+        Route::put('/admin/programmes/{id}/certification-rules', [ProgrammeConfigController::class, 'saveCertificationRules']);
     });
+
+    // Reads shaped by RLS alone (S05 formation will consume these)
+    Route::get('/programmes/{id}/team-categories', [ProgrammeConfigController::class, 'categories']);
+    Route::get('/admin/programmes/{id}/fee-items', [ProgrammeConfigController::class, 'feeItems'])
+        ->middleware('permission:finance.view');
 });
 
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:auth');
