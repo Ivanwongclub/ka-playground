@@ -45,8 +45,9 @@ lookup whose outcome could shape the response. Constant-shape response: the same
 202 + opaque reference whether or not the email/student/guardian exists, whether or not a
 duplicate request exists (dedupe happens at review, visible only to the reviewer —
 refusing duplicates is an "already requested" oracle). School selection comes from the
-opt-in public list only; the "my school isn't listed" free-text path routes to academy ops
-with the identical response — no school-existence oracle. This matches the
+opt-in public list ONLY — there is no free-text path (Leo, card review: it would
+reintroduce a second approval route via the academy; an unlisted school is simply not a
+public route in, its families are invited directly as today). This matches the
 `LinkController::requestByEmail` precedent: identical response regardless of account
 existence.
 
@@ -68,9 +69,10 @@ The full partner roster is the same commercially confidential relationship data 
 `team_categories` scoped (S02B ruling). Mechanism: `schools.public_listing` boolean,
 **default FALSE**, settable by configuration admins, every change audited. The public
 endpoint exposes ONLY opted-in schools' display names + an opaque slug — no ids, no
-counts, no contacts, no completeness claim. The free-text fallback keeps unlisted schools
-reachable without disclosing them. **Which partners opt in is a client decision per
-school** — the mechanism ships; listing choices are data (client question logged).
+counts, no contacts, no completeness claim. An unlisted school is not a public route in —
+its families are invited directly, exactly as today (single path, no second queue).
+**Which partners opt in is a client decision per school** — the mechanism ships; listing
+choices are data (client question logged).
 
 ## SCOPE CLASSIFICATION PLAN
 | Table | Classification | Read set / justification |
@@ -84,8 +86,8 @@ school** — the mechanism ships; listing choices are data (client question logg
    (pg_policies scan); anonymous-read probes across every table stay zero/denied.
 2. **Public page + throttles + abuse handling**: trilingual `Register Interest` page
    (2.28 Q0); limiter, honeypot, fill-time, caps; blind insert + opaque reference;
-   constant-shape probes pasted (existing vs non-existing email, listed vs free-text
-   school, duplicate submit).
+   constant-shape probes pasted (existing vs non-existing email, duplicate submit,
+   unlisted-school id rejected with the same 202 shape as any invalid choice).
 3. **Review queue + decision flow**: School Administrator `Registration Requests` tab
    (2.28 Q4) + ops cross-school queue; approve → standard S01 invitation (audited,
    identified approver); decline requires reason (audited); flood banner; bulk decline.

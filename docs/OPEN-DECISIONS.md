@@ -64,7 +64,7 @@ Per the adjustment mechanism (edit a future card before it starts, never mid-fli
 - **AMENDMENTS.md 2.20** — strike the underpayment path (OD-5a). `unmatched_payments` is fed only by overpayments and late payments (2.19).
 - **S06** — Learn threshold: per-student for certification, per-team configurable percentage for the gate (OD-12).
 - **S07** — assertion: no distribution transaction against a `charity` project.
-- **S06B (new card, OD-23)** — public registration-request flow: `public` scope context confined to one INSERT policy (structural assertion), school-routed queue, approval → standard invitation, `schools.public_listing` opt-in (default OFF) + free-text fallback to ops. OD-24 pairing-governance alignment rides here if confirmed by card start.
+- **S06B (new card, OD-23)** — public registration-request flow: `public` scope context confined to one INSERT policy (structural assertion), school-routed queue, approval → standard invitation, `schools.public_listing` opt-in (default OFF). **No free-text path (Leo, card review 2026-07-24): it would reintroduce a second approval route; an unlisted school is not a public route in — its families are invited directly as today.** OD-24 pairing-governance alignment rides here if confirmed by card start.
 
 ## Change log
 | # | Date | Change |
