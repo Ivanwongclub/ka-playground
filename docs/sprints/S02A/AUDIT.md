@@ -96,7 +96,7 @@ allowlisted elevations rather than policy holes. Result: PASS
 
 ## 6. Exit gate
 ```
-$ php artisan test                        →  102 passed (388 assertions)
+$ php artisan test                        →  102 passed (385 assertions)
 $ php artisan reconcile:run               →  RECONCILE PASS — 8 assertion(s), 8 passed, 0 failed
 $ php artisan reconcile:run --tag=S02A    →  2 assertions green (scope.coverage · version_immutability)
 $ php artisan migrate --pretend           →  Nothing to migrate (all S02A migrations Ran)
