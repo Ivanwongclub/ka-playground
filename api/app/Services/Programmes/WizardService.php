@@ -179,6 +179,7 @@ class WizardService
                 ],
                 'created_by' => $actor->id,
             ]);
+            app(WithdrawalPolicyService::class)->seedProvisional($programme, $actor);
             $this->audit->record(
                 'programme', (string) $programme->id, 'programme.published',
                 fromState: 'draft', toState: 'published',

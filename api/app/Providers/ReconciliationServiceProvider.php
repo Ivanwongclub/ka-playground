@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Services\Reconciliation\Assertions\AuditImmutabilityProbe;
 use App\Services\Reconciliation\Assertions\AuditTriggerEnabledProbe;
 use App\Services\Reconciliation\Assertions\ConsentSignExclusivityAssertion;
+use App\Services\Reconciliation\Assertions\DefaultLobbyAssertion;
+use App\Services\Reconciliation\Assertions\PublishedProgrammeCompletenessAssertion;
 use App\Services\Reconciliation\Assertions\GuardianLinkCoverageAssertion;
 use App\Services\Reconciliation\Assertions\MemberDirectoryExclusivityAssertion;
 use App\Services\Reconciliation\Assertions\PermissionMatrixProbe;
@@ -37,6 +39,10 @@ class ReconciliationServiceProvider extends ServiceProvider
             // S02A
             $registry->register(new ScopeCoverageAssertion);
             $registry->register(new VersionSnapshotImmutabilityProbe);
+
+            // S02B
+            $registry->register(new PublishedProgrammeCompletenessAssertion);
+            $registry->register(new DefaultLobbyAssertion);
 
             return $registry;
         });

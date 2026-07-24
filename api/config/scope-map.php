@@ -19,6 +19,8 @@ return [
         'personal_access_tokens',
         'team_categories',
         'fee_items',
+        'withdrawal_policies',
+        'withdrawal_bands',
         'guardian_links',
         'school_links',
         'teacher_links',

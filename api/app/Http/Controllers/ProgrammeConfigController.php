@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\Audit\AuditService;
+use App\Services\Programmes\WithdrawalPolicyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +15,40 @@ use Illuminate\Support\Str;
  */
 class ProgrammeConfigController extends Controller
 {
-    public function __construct(private readonly AuditService $audit) {}
+    public function __construct(
+        private readonly AuditService $audit,
+        private readonly WithdrawalPolicyService $withdrawal,
+    ) {}
+
+    public function saveWithdrawalPolicy(Request $request, int $programmeId): JsonResponse
+    {
+        $validated = $request->validate([
+            'full_refund_before' => ['nullable', 'date'],
+            'no_refund_after' => ['nullable', 'date'],
+            'requires_approval' => ['required', 'boolean'],
+            'bands' => ['sometimes', 'array'],
+            'bands.*.until_date' => ['required_with:bands', 'date'],
+            'bands.*.refund_pct' => ['required_with:bands', 'integer'],
+        ]);
+        $this->withdrawal->save(
+            \App\Models\Programme::query()->findOrFail($programmeId),
+            $validated['full_refund_before'] ?? null,
+            $validated['no_refund_after'] ?? null,
+            $validated['requires_approval'],
+            $validated['bands'] ?? [],
+            $request->user(),
+        );
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function withdrawalPolicy(int $programmeId): JsonResponse
+    {
+        return response()->json([
+            'policy' => DB::table('withdrawal_policies')->where('programme_id', $programmeId)->first(),
+            'bands' => DB::table('withdrawal_bands')->where('programme_id', $programmeId)->orderBy('position')->get(),
+        ]);
+    }
 
     /** RLS does the shaping — no capability gate on reads by design (plan). */
     public function categories(int $programmeId): JsonResponse

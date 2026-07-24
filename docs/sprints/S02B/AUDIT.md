@@ -1,6 +1,6 @@
 # AUDIT KAP-S02B — Programme configuration
 
-**Result:** IN PROGRESS · **Date:** started 2026-07-25 · **HEAD at gate:** `<pending>`
+**Result:** PASS · **Date:** 2026-07-25 · **HEAD at gate:** gate commit; steps `9a86800` · `0b57fbb` + step 3 (this commit)
 
 > Opened at STEP 1 per the live-fill pattern. Gate verdict last.
 
@@ -58,6 +58,54 @@ correct in its own right. The verification caught a real defect before it
 shipped — exactly why live refusals beat existence checks.
 withdrawal_policies/bands get identical isolation treatment in STEP 3 (card order).
 Result: PASS
+
+### STEP 3 — Withdrawal policy (SCOPED) · commit (this step)
+**Read set STATED PRE-BUILD (Leo item 1) and shipped as designed:** published terms readable by
+the parties who can be bound by them (guardian, student, school_admin — the E6 payer parties);
+draft terms academy-staff/system only; Members nothing. Live, programme PUBLISHED:
+```
+[1] academy staff (config):  policy: visible, bands 3
+[2] guardian:                policy: visible, bands 3   <- can read the terms they agree to (S03/S04A)
+[3] student:                 policy: visible, bands 3
+[4] school_admin:            policy: visible, bands 3
+[5] Member:                  policy: NOT VISIBLE
+```
+(draft-hidden-from-guardian is test-proven.) If the client answers "terms negotiated per school",
+the published clause narrows — §5 item 1.
+**The schema is the control (Leo item 2), live rejections:**
+```
+overlap (equal dates):  [422] band 1: until_dates must be strictly increasing — unordered or overlapping bands are refused
+unordered:              [422] band 1: until_dates must be strictly increasing — …
+inside full-refund win: [422] band 0: lies inside the full-refund window (before 2026-08-01) — it could never apply
+beyond no_refund_after: [422] band 0: lies beyond no_refund_after (2026-09-01) — it could never apply
+pct 101 / pct -5:       [422] refund_pct must be 0–100
+inverted window:        [422] no_refund_after must not precede full_refund_before
+DB backstop:            ERROR: violates check constraint "withdrawal_bands_pct_bounds"
+valid policy:           [200] ok — fixture computation: 100/75/50/25/0 across the window (tested)
+```
+OD-2 provisional seeds on publish (`seeded_provisional` flag + audited reason). Equal-date overlap
+also refused by a DB unique index. Result: PASS
+
+## 6. Exit gate
+```
+$ php artisan test              → 129 passed (517 assertions)
+$ reconcile:run --tag=S02B      → PASS 2/2 (published_completeness · one_default_lobby)
+$ reconcile:run --tag=S02A      → PASS 2/2 (all S02B tables classified, scoped ones policied)
+$ reconcile:run                 → RECONCILE PASS — 10 assertion(s), 10 passed, 0 failed
+$ migrate --pretend             → Nothing to migrate
+$ npm run build                 → i18n:check PASSED · bundle-budget PASSED
+$ docker compose config -q      → OK
+Programme walked Draft→Published through the wizard in seed: §2 STEP 1 (live) + tests.
+```
+**Verdict:** PASS.
+
+## 7. Invariant check
+| BI | Touched? | Evidence |
+|----|----------|----------|
+| BI-5 (ahead) | Prepared | fee_items carry OD-18 integer-minor-units + ISO code so S04B's immutable order lines copy clean values |
+| BI-1 pattern | Extended | programme_versions immutability probe green; version snapshot on publish |
+| BI-8 | Extended | section_saved, preflight_ran, published, locked_field_attempt, category/fee/policy mutations all audited |
+| FR006 | Extended | Three new SCOPED tables with policies shipped in their creating migrations; five-branch + read-set live pastes |
 
 ## 5. Leftovers & newly discovered risks
 | # | Item | Severity | Proposed sprint |
