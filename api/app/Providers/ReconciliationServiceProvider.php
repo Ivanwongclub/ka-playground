@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\Reconciliation\Assertions\AuditImmutabilityProbe;
 use App\Services\Reconciliation\Assertions\AuditTriggerEnabledProbe;
+use App\Services\Reconciliation\Assertions\ConsentSignExclusivityAssertion;
 use App\Services\Reconciliation\Assertions\GuardianLinkCoverageAssertion;
 use App\Services\Reconciliation\Assertions\PermissionMatrixProbe;
 use App\Services\Reconciliation\ReconciliationRegistry;
@@ -27,6 +28,7 @@ class ReconciliationServiceProvider extends ServiceProvider
             // S01
             $registry->register(new PermissionMatrixProbe);
             $registry->register(new GuardianLinkCoverageAssertion);
+            $registry->register(new ConsentSignExclusivityAssertion);
 
             return $registry;
         });

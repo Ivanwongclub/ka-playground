@@ -19,12 +19,90 @@
 | `.github/workflows/ci.yml` | M | ClamAV step with cached signature DB; skip = CI failure |
 
 ## 2. Step-by-step verification (real output pasted per step; commits listed)
-- **STEP 1** `a3df5a5` — full matrix printed (18 permissions × 6 roles ‖ 5 capability groups; 31 + 32 rows); live: 4× Member 403 (`students/consents/enrolments/payments`, each naming the missing permission); grant + revoke `{"status":"ok"} [200]` with audit rows (grantor 3 → grantee 5); escalation refusal `[403]` + `capability.grant_refused` row; `actor_role` populated (`academy_admin` on every capability row). Migration ordering bug (users FK before roles seed) caught by real data on compose, fixed seed-before-alter.
+
+### STEP 1 — roles, matrix, capabilities · `a3df5a5` (+ post-gate defect fix, §4a)
+Full seeded matrix, live from the platform DB (grid re-verified after the consent.sign fix;
+capability rows 32 → 31):
+```
+PERMISSION               | student   guardian  teacher   school_admin academy_admin member  || super_admin configuration finance operations audit_read
+======================================================================================================================================================
+audit.read               |    ·         ·         ·         ·            ·            ·     ||     ✓          ·           ·        ·          ✓
+capabilities.grant       |    ·         ·         ·         ·            ·            ·     ||     ✓          ·           ·        ·          ·
+configuration.manage     |    ·         ·         ·         ·            ·            ·     ||     ✓          ✓          ·        ·          ·
+consent.sign             |    ·         ✓        ·         ·            ·            ·     ||     ·          ·           ·        ·          ·
+consent.view             |    ✓        ✓        ·         ✓           ·            ·     ||     ✓          ·           ·        ✓         ·
+directory.view           |    ·         ·         ·         ·            ✓           ✓    ||     ✓          ·           ·        ·          ·
+enrolment.create         |    ·         ✓        ·         ✓           ·            ·     ||     ✓          ·           ·        ✓         ·
+enrolment.view           |    ✓        ✓        ✓        ✓           ·            ·     ||     ✓          ·           ·        ✓         ·
+events.rsvp              |    ✓        ·         ·         ·            ·            ✓    ||     ✓          ·           ·        ·          ·
+events.view              |    ✓        ✓        ✓        ✓           ✓           ✓    ||     ✓          ·           ·        ✓         ·
+finance.confirm          |    ·         ·         ·         ·            ·            ·     ||     ✓          ·           ✓       ·          ·
+finance.record           |    ·         ·         ·         ·            ·            ·     ||     ✓          ·           ✓       ·          ·
+finance.view             |    ·         ✓        ·         ✓           ·            ·     ||     ✓          ·           ✓       ·          ·
+operations.manage        |    ·         ·         ·         ·            ·            ·     ||     ✓          ·           ·        ✓         ·
+student_records.manage   |    ·         ·         ·         ✓           ·            ·     ||     ✓          ·           ·        ✓         ·
+student_records.view     |    ✓        ✓        ✓        ✓           ·            ·     ||     ✓          ·           ·        ✓         ·
+teams.approve            |    ·         ·         ✓        ·            ·            ·     ||     ✓          ·           ·        ✓         ·
+teams.view               |    ✓        ·         ✓        ✓           ·            ·     ||     ✓          ·           ·        ✓         ·
+role rows: 31 · capability rows: 31 (consent.sign: guardian ONLY — §4a)
+```
+The four Member 403s, live (bearer session, compose nginx):
+```
+GET /api/students   -> 403 {"message": "Missing permission: student_records.view", ...}
+GET /api/consents   -> 403 {"message": "Missing permission: consent.view", ...}
+GET /api/enrolments -> 403 {"message": "Missing permission: enrolment.view", ...}
+GET /api/payments   -> 403 {"message": "Missing permission: finance.view", ...}
+```
+Grant, revoke, escalation refusal, live:
+```
+POST /api/admin/capabilities/grant  (super_admin -> grantee, finance)   {"status":"ok"} [200]
+POST /api/admin/capabilities/revoke (super_admin -> grantee, finance)   {"status":"ok"} [200]
+POST /api/admin/capabilities/grant  (finance-holder -> operations)      [403]
+          action          | actor_id |  actor_role   | grantee | to_state | reason                                    | grantor
+ capability.granted       |        3 | academy_admin | 5       | finance  |                                           | 3
+ capability.revoked       |        3 | academy_admin | 5       |          |                                           | 3
+ capability.granted       |        3 | academy_admin | 4       | finance  |                                           | 3
+ capability.grant_refused |        4 | academy_admin | 5       |          | actor lacks capabilities.grant (super_a…) |
+```
+Migration ordering bug (users FK added before roles seed) caught by real compose data, fixed
+seed-before-alter within the step. Result: PASS
+### Remaining steps (full live outputs)
 - **STEP 2** `7e3686e` — invitation issue 201 (single-use sha256-hashed token, 14 d); accept → user unverified + `invitation_accepted`; signed verify link → `email_verified`; second accept 422; expired 422; **Member invitation 422 citing OD-22**; student invitation 422 (guardian-led); guardian creates student → active `guardian_link` + audit. 43 tests.
-- **STEP 3** `89352b9` — live: unverified login → 403 "Email not verified…"; 5×422 wrong password → attempt 6 with CORRECT password → **423 locked**; audit ladder pasted (failures 1–5, `lockout`, locked-until refusal). Reset 1 h single-use invalidates sessions; idle 12 h vs remember 30 d proven by token aging. Login page screenshot: AA logo, duotone auth-assets hero, quote, no sign-up affordance.
+- **STEP 3** `89352b9` — live outputs:
+```
+POST /api/auth/login (unverified)  -> 403 {"message": "Email not verified. Verify your email before signing in."}
+attempts 1-5 (wrong password)      -> [422] [422] [422] [422] [422]
+attempt 6 (CORRECT password)       -> [423] {"message": "Account locked. Try again later or contact an administrator."}
+    action    | actor_role |                     reason
+ failed_login | guardian   | email not verified — first login refused (2.11)
+ failed_login | guardian   | invalid password (failure 1 of 5)
+ failed_login | guardian   | invalid password (failure 2 of 5)
+ failed_login | guardian   | invalid password (failure 3 of 5)
+ failed_login | guardian   | invalid password (failure 4 of 5)
+ failed_login | guardian   | invalid password (failure 5 of 5)
+ lockout      | guardian   | 5 consecutive failed logins — locked 15 minutes
+ failed_login | guardian   | account locked until 2026-07-23T17:32:35+00:00
+```
+Reset 1 h single-use invalidates sessions; 12 h idle vs 30 d remember proven by token aging
+(tests). Login page screenshot: AA logo, duotone auth-assets hero, quote, no sign-up affordance.
 - **STEP 4** `cb609ee` — live: 5×422 then **429** from one IP; API 60/min tested (61st → 429); pairing limiter registered 5/hour. Found: Laravel 12's slim `api` group ships WITHOUT `throttle:api` — enabled explicitly.
-- **STEP 5** `257e2f4` — live: generate `4SDVDc` → redeem → pending_confirmation → student confirms → active, audit trail pasted; tests: max-5 codes, case sensitivity, consume-on-use, **10 global fails (ten different accounts) → hard-invalidated → 11th attempt refused "invalidated"**; continuity fixture: guardian revoke of sole link → 403 + refusal audited; ops-admin without reason 422; with reason → revoked + 14-day exception row + `guardian_replacement.opened`.
-- **STEP 6** `cec9fd4` — live three-way on `/api/audit-events`: no session **[401]** · session without audit_read **[403]** · with audit_read **[200]**.
+- **STEP 5** `257e2f4` — live:
+```
+POST /api/my/pairing-codes (student)          -> code issued: 4SDVDc
+POST /api/pairing-codes/redeem (guardian)     -> {"link_id":"019f9002-…","status":"pending_confirmation"}
+POST /api/my/guardian-requests/{id}/confirm   -> {"status":"active"}
+         action          | actor_role
+ pairing_code.generated  | student
+ guardian_link.requested | guardian
+ guardian_link.confirmed | student
+```
+Tests: max-5 codes, case sensitivity, consume-on-use, **10 global fails (ten different accounts) → hard-invalidated → 11th attempt refused "invalidated"**; continuity fixture: guardian revoke of sole link → 403 + refusal audited; ops-admin without reason 422; with reason → revoked + 14-day exception row + `guardian_replacement.opened`.
+- **STEP 6** `cec9fd4` — live three-way on `/api/audit-events`:
+```
+no session:              [401]
+session, no audit_read:  [403]
+session + audit_read:    [200]
+```
 - **STEP 7** `f4d7476` — entry chunk 873 → **104.4 kB gz** (charts ride the 437 kB style-guide chunk); every chunk ≪ 1 MB budget; lazy routes render, 0 console errors.
 - **STEP 8** `fc6159d` — CI clamav step with actions/cache'd signature DB + KAP test signature; API test step fails if the clamd tests skip. Cannot execute CI myself (D3).
 - **Audit element** `2e6eeb8` — Access & Identity Report behind audit_read; funnel from REAL seeded flow (issued 2 → accepted 1 → verified 1); screenshot shows funnel, lockout ladder, links, sole-guardian list, capability log incl. the refusal.
@@ -34,6 +112,7 @@
 |-----------|------------------------|
 | `authz.permission_matrix` (OD-1 · OD-17 · B7) | Yes — §2 STEP 5 live run + gate |
 | `links.guardian_coverage` (B8 · 2.2) | Yes — vacuous-by-construction until S04A (card wording); self-activates when `enrolments` exists |
+| `authz.consent_sign_exclusive` (FR036 · BI-6 · ETO Cap. 553) | Yes — §4a; proven to catch an unfixed DB before the corrective migration ran |
 
 ## 4. Deviations from SPRINT.md
 | # | Card said | Actually happened | Why | Status |
@@ -42,6 +121,37 @@
 | D2 | Guardian-led student creation (L4) | Student accounts are created email-verified (guardian-led act vouches them, B10 rule 2: students don't verify their own email) | Young students may have no usable mailbox; the guardian is authenticated and verified | Review requested |
 | D3 | "CI run shows the four real-clamd tests executing" | Workflow written + YAML-parsed; **first executed run requires Leo's push** — I never push (CLAUDE.md §2.1) | Verification impossible without push rights | **OPEN — verify on first push** |
 | D4 | Invitation delivery email | Plain token returned once to the issuing admin (201 body); email delivery rides the notification engine (S09). Verification emails DO send (log mailer locally) | K-engine is S09 scope; no silent scaffold of it | Recorded |
+
+## 4a. Post-gate review (Leo, 24 Jul) — two defects, two questions
+**DEFECT 1 — `consent.sign` was capability-reachable (super_admin '*').** Fixed: `capability_forbidden`
+list in the matrix source (no capability may ever carry consent.sign); expansion subtracts it in the
+seeding migration AND the matrix probe; corrective migration removes the row from already-seeded DBs
+(its `down()` is deliberately irreversible); `authz.consent_sign_exclusive` assertion registered —
+reintroduction is a nightly alarm. `permission.denied` audit events added to the guard middleware.
+Live: super_admin sign attempt → `[403] Missing permission: consent.sign` + audited denial; holders
+now `roles=[guardian]`, `capabilities=[]`. The new assertion FAILED against the un-migrated local DB
+before the corrective migration ran — first live catch.
+**DEFECT 2 — `directory.view` exposure.** It returns NOTHING today: no endpoint serves it anywhere
+(grep-verified; it is a seeded permission key only). Its doctrine is now written into the matrix
+source: MEMBER directory only (first-generation adults, FR058/OD-1, surfaces S06); students never
+appear; any future student/peer directory requires its OWN permission, default-off per FR056.
+Proposal for Leo: rename to `member_directory.view` to make the boundary structural — not applied
+without approval.
+**Q1 — first super_admin:** NO seeder mints it. Local/dev instances were created ad hoc via tinker
+(synthetic). There is currently no production bootstrap path — see §5 item 7.
+**Q2 — FR006 scope layer:** does NOT exist yet. The matrix is global; school_admin's
+`student_records.manage` is platform-wide today (no data is reachable — endpoints are 501 stubs).
+No test can prove school isolation because there is nothing to scope. Raised as §5 item 8.
+**D1 follow-ups (approved reading):** (a) an unauthenticated attacker CANNOT touch the failure
+counter — 401 precedes it (tested: counter untouched after unauthenticated attempts); reaching it
+requires an academy-issued guardian account (invitation-only), and failing against an ACTIVE code
+additionally requires being already-linked to that student — an attempt by a stranger who knows the
+code SUCCEEDS into pending-confirmation (burning the code) and is student-rejectable + audited. No
+unauthenticated targeted-DoS path exists. (b) Recovery: invalidated codes do not count toward the
+max-5, so the student regenerates immediately (tested); the parent-initiated email flow and
+school-mediated vouching remain independent routes. No support ticket needed; no S09 leftover.
+**D2 (narrowed):** guardian-created students stay born login-verified; **SR019** added to the
+register — no delivery to a student address that is not independently verified; gates S09.
 
 ## 5. Leftovers & newly discovered risks
 | # | Item | Severity | Proposed sprint |
@@ -52,6 +162,9 @@
 | 4 | `POST /admin/invitations` requires `operations.manage`; per-school invitation rights (School Admin inviting teachers, B1) arrive with their surfaces | Low | S02+ |
 | 5 | Guardian replacement exception has no scheduled 14-day suspension job yet — the deadline is recorded; the enforcement job belongs with enrolment suspension (2.2 step 3, needs enrolments) | Medium | S04A |
 | 6 | `schools` table is seeded empty; school link flows tested with synthetic rows. School CRUD arrives with programme/school admin surfaces | Low | S02 |
+| 7 | **No first-super_admin bootstrap exists** (Q1). Proposal: an `artisan bootstrap:super-admin` command (refuses if any super_admin exists, audited). Once created in any real environment it is a **standing credential — rotate or remove before go-live (S10 readiness item)** | **High** | S02 (build) · S10 (rotation check) |
+| 8 | **FR006 scope layer absent** (Q2): permissions are global; per-link overrides column exists but no scoping query layer or school-isolation test. Must land WITH the first real data surfaces — a school_admin must never reach another school's students | **High** | **S02** |
+| 9 | SR019 (student delivery gating) recorded in the register — S09's pipeline must enforce delivery-verification at the send layer | Medium | S09 |
 
 ## 6. Exit gate
 ```

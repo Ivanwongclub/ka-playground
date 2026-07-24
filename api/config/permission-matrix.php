@@ -21,6 +21,9 @@ return [
         'teams.approve',
         'events.view',
         'events.rsvp',
+        // directory.view = the MEMBER directory only (first-generation adults,
+        // FR058/OD-1, surfaces in S06). It never includes students. Any future
+        // student/peer directory needs its OWN permission, default-off per FR056.
         'directory.view',
         'audit.read',
         'configuration.manage',
@@ -58,9 +61,15 @@ return [
         ],
     ],
 
+    // Permissions NO capability group may ever carry. consent.sign is a legal
+    // act by a named guardian (FR036, ETO Cap. 553, BI-6) — a staff-signable
+    // consent proves nothing. Guardian role only. Guarded by the
+    // authz.consent_sign_exclusive nightly assertion.
+    'capability_forbidden' => ['consent.sign'],
+
     // Capability groups (OD-17) — qualify an academy_admin, never blur identity
     'capabilities' => [
-        'super_admin' => '*', // all permissions, incl. capabilities.grant
+        'super_admin' => '*', // all permissions EXCEPT capability_forbidden, incl. capabilities.grant
         'configuration' => ['configuration.manage'],
         'finance' => ['finance.view', 'finance.record', 'finance.confirm'],
         'operations' => [

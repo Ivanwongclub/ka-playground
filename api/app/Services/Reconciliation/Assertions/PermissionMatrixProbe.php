@@ -54,7 +54,10 @@ class PermissionMatrixProbe implements Assertion
         $expectedCaps = collect($matrix['capabilities'])
             ->flatMap(fn ($perms, string $cap) => array_map(
                 fn ($p) => "{$cap}:{$p}",
-                $perms === '*' ? $matrix['permissions'] : $perms,
+                array_values(array_diff(
+                    $perms === '*' ? $matrix['permissions'] : $perms,
+                    $matrix['capability_forbidden'] ?? [],
+                )),
             ))
             ->sort()->values();
         $actualCaps = DB::table('capability_permissions')

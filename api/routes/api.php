@@ -19,6 +19,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::get('/students', $notImplemented)->middleware('permission:student_records.view');
     Route::get('/consents', $notImplemented)->middleware('permission:consent.view');
+    Route::post('/consents/sign', $notImplemented)->middleware('permission:consent.sign');
     Route::get('/enrolments', $notImplemented)->middleware('permission:enrolment.view');
     Route::get('/payments', $notImplemented)->middleware('permission:finance.view');
 

@@ -130,6 +130,27 @@ class AuthzTest extends TestCase
         $this->assertDatabaseHas('audit_events', ['action' => 'capability.grant_refused', 'entity_id' => (string) $teacher->id]);
     }
 
+    public function test_super_admin_cannot_sign_consent_and_refusal_is_audited(): void
+    {
+        $super = $this->superAdmin();
+        Sanctum::actingAs($super);
+
+        $this->postJson('/api/consents/sign')->assertStatus(403);
+
+        $this->assertDatabaseHas('audit_events', [
+            'action' => 'permission.denied',
+            'actor_id' => $super->id,
+            'reason' => 'missing permission: consent.sign',
+        ]);
+        $this->assertNotContains('consent.sign', app(PermissionResolver::class)->effectivePermissions($super));
+    }
+
+    public function test_guardian_passes_the_consent_sign_guard(): void
+    {
+        Sanctum::actingAs($this->user('guardian'));
+        $this->postJson('/api/consents/sign')->assertStatus(501); // guard passed; module is S03
+    }
+
     // ── BI-8 / S00 §5 item 7: actor_role wired ──
 
     public function test_audit_events_now_carry_actor_role(): void

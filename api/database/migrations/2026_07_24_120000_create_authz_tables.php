@@ -73,7 +73,7 @@ return new class extends Migration
             );
         }
         foreach ($matrix['capabilities'] as $capability => $permissions) {
-            $resolved = $permissions === '*' ? $matrix['permissions'] : $permissions;
+            $resolved = array_values(array_diff($permissions === '*' ? $matrix['permissions'] : $permissions, $matrix['capability_forbidden'] ?? []));
             DB::table('capability_permissions')->insert(
                 array_map(fn (string $p) => ['capability' => $capability, 'permission_key' => $p], $resolved)
             );

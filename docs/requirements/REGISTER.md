@@ -49,6 +49,7 @@ cited in Source is the origin, not necessarily the current rule.
 | SR015 | L9–L11 | Theming: aubergine/gold token system per Design System v2.1 (binding); **`darkAlgorithm` only — no light mode, no toggle** (spec L10 "user-toggleable" **superseded** by client decision 23 Jul 2026); `cssVar: true`, `hashed: false`; `App` wrapper for static methods; shared chart theme object; ProLayout shell with §17 mobile app-shell below 768px | Spec L9–L11 · DESIGN-SYSTEM.md |
 | SR016 | 2.25 | Logto cutover: enumerate outstanding invitation/reset tokens; honour via compatibility route or void-and-reissue with notification; assertion — no pre-cutover token unresolved | 2.25 (S11) |
 | SR017 | 2.26 | Deploy & rollback runbook: deploy = pull tagged images + compose up; every prod deploy an annotated tag; one-command rollback to previous tag; destructive-migration review decides DB restore; rehearsed on staging (S10) | 2.26 |
+| SR019 | S01 review | **Student delivery gating (D2, Leo 2026-07-24):** no notification, reminder or link is ever delivered to a student email address that has not been **independently verified**. Guardian-created student accounts are born login-verified (the guardian's authenticated act vouches sign-in, B10), but delivery-verification is a SEPARATE, unmet-by-default state — a mistyped address must never receive a child's attendance or assessment data. S09's notification pipeline enforces this at the send layer; nothing sends before S09 | S01 AUDIT §5 · gates S09 |
 | SR018 | O | Mobile shell: app-like responsive (bottom tab bar, edge-swipe drawer — no hamburger, bottom sheets, gestures) + PWA manifest per Design System §17 | Spec O · §17 |
 
 ## Functional requirements
@@ -168,3 +169,4 @@ cited in Source is the origin, not necessarily the current rule.
 |---|------|--------|---------------------|
 | 1 | 2026-07-23 | S00 STEP 1: register completed from Spec v4.2 + AMENDMENTS 2.1–2.27 + resolved OD rows. GR001 widened to trilingual per OD-19. Amendment map added. Known supersessions annotated in-row (spec line 1842 struck; team categories per TEAM-CATEGORIES.md; OD-14 SoD mandatory; OD-16 single timezone; dark-only theme) | GR004–GR007, SR004–SR018, FR001–FR067, OR001–OR003 added; none withdrawn |
 | 2 | 2026-07-23 | SR014 clarified per Leo: OD-16's single timezone governs display only; per-entity timezone fields remain (`sessions.timezone`, N6/L5) | none |
+| 3 | 2026-07-24 | SR019 added (student delivery gating, D2 narrowing from Leo's S01 review) — gates S09 | SR019 added |

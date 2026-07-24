@@ -127,6 +127,42 @@ class LinkingFlowsTest extends TestCase
         $this->postJson('/api/pairing-codes/redeem', ['code' => 'zzzzz9'])->assertStatus(429);
     }
 
+    public function test_unauthenticated_attacker_cannot_touch_the_failure_counter(): void
+    {
+        // D1a (Leo): targeted invalidation DoS requires reaching recordFailure().
+        // Unauthenticated requests die at 401 — the counter is untouched.
+        $student = $this->student();
+        Sanctum::actingAs($student);
+        $code = $this->postJson('/api/my/pairing-codes')->json('code');
+
+        $this->app['auth']->forgetGuards();
+        $this->postJson('/api/pairing-codes/redeem', ['code' => $code])->assertStatus(401);
+        $this->postJson('/api/pairing-codes/redeem', ['code' => 'AAAAAA'])->assertStatus(401);
+
+        $this->assertSame(0, DB::table('pairing_code_failures')->count());
+        $this->assertNull(PairingCode::query()->where('code', $code)->firstOrFail()->invalidated_at);
+    }
+
+    public function test_recovery_after_invalidation_regenerate_works_immediately(): void
+    {
+        // D1b (Leo): an invalidated code is one dead code, not a locked-out family.
+        // Invalidated codes do not count toward the max-5, so regeneration works.
+        $student = $this->student();
+        Sanctum::actingAs($student);
+        $code = $this->postJson('/api/my/pairing-codes')->json('code');
+        $row = PairingCode::query()->where('code', $code)->firstOrFail();
+        $row->forceFill(['invalidated_at' => now()])->save();
+        DB::table('pairing_code_failures')->insert(['code' => $code, 'attempts' => 10, 'last_attempt_at' => now()]);
+
+        $fresh = $this->postJson('/api/my/pairing-codes')->assertStatus(201)->json('code');
+        $this->assertNotSame($code, $fresh);
+
+        // And the parent-initiated flow remains an independent alternate route
+        $this->app['auth']->forgetGuards();
+        Sanctum::actingAs($this->guardian());
+        $this->postJson('/api/my/link-requests', ['student_email' => $student->email])->assertStatus(202);
+    }
+
     // ── Parent-initiated + school-mediated (B4) ──
 
     public function test_parent_initiated_request_pends_and_never_leaks_existence(): void
