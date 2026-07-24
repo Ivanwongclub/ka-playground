@@ -103,7 +103,7 @@ class ConsentDocumentTest extends TestCase
         return [$id, $sigId];
     }
 
-    public function test_signing_generates_a_pdfa_document_with_recorded_generator(): void
+    public function test_signing_generates_a_self_contained_document_with_recorded_generator(): void
     {
         [, $sigId] = $this->signedRequest();
 
@@ -114,9 +114,11 @@ class ConsentDocumentTest extends TestCase
         $bytes = app(ConsentDocumentService::class)->download($doc);
         $this->assertStringStartsWith('%PDF', $bytes);
         $this->assertSame($doc->pdf_sha256, hash('sha256', $bytes), 'stored hash matches served bytes');
-        // PDF/A-1b markers: XMP conformance claim + OutputIntent with ICC profile
-        $this->assertStringContainsString('pdfaid', $bytes);
-        $this->assertStringContainsString('OutputIntent', $bytes);
+        // Leo S03-3 review, option (b): the document makes NO conformance claim
+        // a free validator could disprove — no pdfaid XMP block. Fonts still
+        // embedded (self-contained); real PDF/A is the S10 decision.
+        $this->assertStringNotContainsString('pdfaid', $bytes, 'must not claim a standard it fails');
+        $this->assertStringContainsString('FontFile2', $bytes, 'fonts embedded — self-contained');
     }
 
     public function test_cjk_document_embeds_the_sun_exta_subset(): void
