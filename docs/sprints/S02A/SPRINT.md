@@ -33,7 +33,14 @@ assertion that automatically covers every future table.
    for console). Below every access path (Eloquent, DB::table, raw SQL, reports, exports),
    **fail-closed** (no context ⇒ zero rows, never everything), `FORCE ROW LEVEL SECURITY` so even
    the owner obeys; the runbook owner-guard gains a `rolbypassrls` check. App-layer scoping is UX
-   and defence-in-depth, never the line. Scoping bounds every read/write by the actor's links —
+   and defence-in-depth, never the line. **Context lifecycle is STRUCTURAL (Leo, pre-STEP-3):
+   framework events registered once in a provider, never per-callsite — HTTP middleware sets on
+   entry and RESETS in terminate; `Queue::before` resets-then-sets from the job's own serialized
+   context and `Queue::after`/`failing` reset again (long-lived Horizon worker connections are
+   scrubbed around EVERY job — stale context from a previous user is impossible, and a job
+   carrying no context runs with none, fail-closed); `CommandStarting` resets then sets the
+   `system` context that only console/queue bootstrap can set (reconcile:run's cross-scope reads
+   run as `system`; the HTTP path cannot claim it).** Scoping bounds every read/write by the actor's links —
    school_admin sees and manages ONLY their own school's students, teachers and programmes;
    teacher scoped to their school; guardian/student scoped to their links. **Per-link
    `permission_overrides` (B7 layer 2) NARROW ONLY, never widen — enforced server-side: the
@@ -62,6 +69,9 @@ Member surfaces (OD-22: S06).
   cross-school grant) is rejected server-side at write time; a hand-inserted widening row is
   ignored at resolve time. Paste both refusals (Leo amendment 1).**
 - Version snapshot rows immutable (BI-1 probe pattern; paste the DB rejection).
+- **Context isolation across the worker boundary (Leo): request as user A (school A), then a
+  queued job processed on the same worker — the job does NOT inherit A's context; then a request
+  as user B — B sees B's scope, never A's. Two users in sequence, pasted.**
 - `jurisdiction` present on the programme entity (OD-16).
 - Trilingual: school and programme entity surfaces render EN/TC/SC, i18n:check green.
 
