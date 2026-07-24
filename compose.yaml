@@ -13,8 +13,8 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_DATABASE: kap
-      DB_USERNAME: kap
-      DB_PASSWORD: kap_local_only
+      DB_USERNAME: kap_app # non-superuser: RLS is inert for superusers
+      DB_PASSWORD: app_local_only
       REDIS_CLIENT: phpredis
       REDIS_HOST: redis
       QUEUE_CONNECTION: redis
@@ -42,8 +42,8 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_DATABASE: kap
-      DB_USERNAME: kap
-      DB_PASSWORD: kap_local_only
+      DB_USERNAME: kap_app # non-superuser: RLS is inert for superusers
+      DB_PASSWORD: app_local_only
       REDIS_CLIENT: phpredis
       REDIS_HOST: redis
       QUEUE_CONNECTION: redis

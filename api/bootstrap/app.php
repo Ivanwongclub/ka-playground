@@ -13,6 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->throttleApi(); // 2.13: API default 60/min/user (limiter in AppServiceProvider)
+        // FR006: RLS session context — set from the authenticated user, reset in
+        // terminate. Structural: applies to every api route, no opt-out.
+        $middleware->api(append: [\App\Http\Middleware\SetScopeContext::class]);
         $middleware->alias([
             'permission' => \App\Http\Middleware\EnsurePermission::class,
             'role' => \App\Http\Middleware\EnsureRole::class,

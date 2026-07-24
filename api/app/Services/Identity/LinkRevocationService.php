@@ -6,6 +6,7 @@ use App\Models\GuardianLink;
 use App\Models\User;
 use App\Services\Audit\AuditService;
 use App\Services\Authz\PermissionResolver;
+use App\Services\Authz\ScopeContext;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -24,6 +25,7 @@ class LinkRevocationService
         private readonly AuditService $audit,
         private readonly EnrolmentStatusPort $enrolments,
         private readonly PermissionResolver $resolver,
+        private readonly ScopeContext $scope,
     ) {}
 
     public function revoke(User $actor, GuardianLink $link, ?string $reason): GuardianLink
@@ -32,11 +34,13 @@ class LinkRevocationService
             throw ValidationException::withMessages(['link' => ['Only an active link can be revoked']]);
         }
 
-        $isSoleLink = GuardianLink::query()
+        // Platform integrity check: sole-ness must see ALL links, not the
+        // actor's scoped view (RLS hides co-guardians from each other)
+        $isSoleLink = $this->scope->asSystem(fn (): bool => GuardianLink::query()
             ->where('student_id', $link->student_id)
             ->where('status', 'active')
             ->where('id', '!=', $link->id)
-            ->doesntExist();
+            ->doesntExist());
         $guarded = $isSoleLink && $this->enrolments->hasNonTerminalEnrolments($link->student_id);
 
         if ($guarded) {

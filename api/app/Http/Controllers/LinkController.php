@@ -80,19 +80,49 @@ class LinkController extends Controller
     public function schoolVouch(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'student_id' => ['required', 'integer', 'exists:users,id'],
+            'student_id' => ['required', 'integer'],
             'guardian_email' => ['required', 'email'],
         ]);
+
+        // Scoped visibility check: under the admin's RLS context this row only
+        // exists if the student is in THEIR school. Absent → audited 404 that
+        // does not leak whether the student exists elsewhere (FR006).
+        $inSchool = \Illuminate\Support\Facades\DB::table('school_links')
+            ->where('student_id', $validated['student_id'])
+            ->where('status', 'active')->exists();
+        if (! $inSchool) {
+            $this->audit->record(
+                'user', (string) $validated['student_id'], 'scope.denied',
+                reason: 'school-mediated vouch attempted for a student outside the acting school (FR006)',
+                actor: $request->user(),
+            );
+            abort(404);
+        }
+
         $guardian = User::query()->where('email', $validated['guardian_email'])
             ->where('role', 'guardian')->firstOrFail();
-        $link = GuardianLink::query()->create([
-            'id' => (string) Str::uuid7(),
-            'student_id' => $validated['student_id'],
-            'guardian_id' => $guardian->id,
-            'status' => 'active', // the school vouched (B4)
-            'verified_at' => now(),
-            'origin' => 'school_mediated',
-        ]);
+        try {
+            // Savepoint: if the RLS backstop refuses, the connection stays
+            // healthy and the refusal becomes an audited 403, never a 500
+            $link = \Illuminate\Support\Facades\DB::transaction(fn () => GuardianLink::query()->create([
+                'id' => (string) Str::uuid7(),
+                'student_id' => $validated['student_id'],
+                'guardian_id' => $guardian->id,
+                'status' => 'active', // the school vouched (B4)
+                'verified_at' => now(),
+                'origin' => 'school_mediated',
+            ]));
+        } catch (\Illuminate\Database\QueryException $e) {
+            if (($e->errorInfo[0] ?? '') === '42501') { // row-level security violation
+                $this->audit->record(
+                    'user', (string) $validated['student_id'], 'scope.denied',
+                    reason: 'RLS refused a cross-scope guardian-link write (FR006 backstop)',
+                    actor: $request->user(),
+                );
+                abort(403);
+            }
+            throw $e;
+        }
         $this->audit->record(
             'guardian_link', $link->id, 'guardian_link.created',
             toState: 'active',

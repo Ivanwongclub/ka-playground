@@ -178,12 +178,16 @@ class LinkingFlowsTest extends TestCase
         ]);
     }
 
-    public function test_school_vouched_link_auto_activates(): void
+    public function test_school_vouched_link_auto_activates_for_own_school_student(): void
     {
+        $school = \App\Models\School::query()->create(['name_en' => 'A', 'name_tc' => '甲', 'name_sc' => '甲']);
         $student = $this->student();
         $guardian = $this->guardian();
-        Sanctum::actingAs(User::factory()->create(['role' => 'school_admin']));
+        $admin = User::factory()->create(['role' => 'school_admin']);
+        DB::table('school_admin_links')->insert(['id' => (string) Str::uuid7(), 'school_admin_id' => $admin->id, 'school_id' => $school->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('school_links')->insert(['id' => (string) Str::uuid7(), 'student_id' => $student->id, 'school_id' => $school->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
 
+        Sanctum::actingAs($admin);
         $this->postJson('/api/school/guardian-links', [
             'student_id' => $student->id, 'guardian_email' => $guardian->email,
         ])->assertStatus(201);
@@ -192,6 +196,26 @@ class LinkingFlowsTest extends TestCase
             'student_id' => $student->id, 'guardian_id' => $guardian->id,
             'status' => 'active', 'origin' => 'school_mediated',
         ]);
+    }
+
+    public function test_school_vouch_for_another_schools_student_is_denied_and_audited(): void
+    {
+        $schoolA = \App\Models\School::query()->create(['name_en' => 'A', 'name_tc' => '甲', 'name_sc' => '甲']);
+        $schoolB = \App\Models\School::query()->create(['name_en' => 'B', 'name_tc' => '乙', 'name_sc' => '乙']);
+        $student = $this->student(); // enrolled at school B
+        DB::table('school_links')->insert(['id' => (string) Str::uuid7(), 'student_id' => $student->id, 'school_id' => $schoolB->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+        $adminA = User::factory()->create(['role' => 'school_admin']);
+        DB::table('school_admin_links')->insert(['id' => (string) Str::uuid7(), 'school_admin_id' => $adminA->id, 'school_id' => $schoolA->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+
+        Sanctum::actingAs($adminA);
+        $this->postJson('/api/school/guardian-links', [
+            'student_id' => $student->id, 'guardian_email' => $this->guardian()->email,
+        ])->assertStatus(404); // does not leak existence
+
+        $this->assertDatabaseHas('audit_events', [
+            'action' => 'scope.denied', 'actor_id' => $adminA->id,
+        ]);
+        $this->assertDatabaseMissing('guardian_links', ['student_id' => $student->id, 'origin' => 'school_mediated']);
     }
 
     // ── Continuity rule (2.2) ──
