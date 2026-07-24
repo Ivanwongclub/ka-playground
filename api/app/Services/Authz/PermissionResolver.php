@@ -39,4 +39,30 @@ class PermissionResolver
     {
         return in_array($permission, $this->effectivePermissions($user), true);
     }
+
+    /**
+     * B7 layer 2: per-link overrides applied for actions concerning a specific
+     * student. Overrides NARROW ONLY — the sole recognised key is "deny"
+     * (enforced at write time by the DB trigger); anything else is ignored
+     * here too, so even a hand-planted widening row grants nothing.
+     */
+    public function allowsFor(User $user, string $permission, int $studentId): bool
+    {
+        if (! $this->allows($user, $permission)) {
+            return false; // overrides can never ADD what the role lacks
+        }
+
+        $overrides = DB::table('guardian_links')
+            ->where('guardian_id', $user->id)
+            ->where('student_id', $studentId)
+            ->where('status', 'active')
+            ->value('permission_overrides');
+        if ($overrides === null) {
+            return true;
+        }
+
+        $denied = json_decode((string) $overrides, true)['deny'] ?? [];
+
+        return ! in_array($permission, is_array($denied) ? $denied : [], true);
+    }
 }

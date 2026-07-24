@@ -21,6 +21,8 @@ import { antdLocaleFor, htmlLangFor, storedLocale } from './i18n';
 import type { KaLocale } from './i18n';
 import { kaTheme } from './theme/theme';
 import { AppShell } from './AppShell';
+import { Navigate, useLocation } from 'react-router-dom';
+import { getToken } from './auth/session';
 import { Placeholder } from './pages/Placeholder';
 import './index.css';
 
@@ -30,6 +32,14 @@ const StyleGuide = lazy(() => import('./pages/StyleGuide').then((m) => ({ defaul
 const AdminAudit = lazy(() => import('./pages/AdminAudit').then((m) => ({ default: m.AdminAudit })));
 const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })));
 const AccessIdentity = lazy(() => import('./pages/AccessIdentity').then((m) => ({ default: m.AccessIdentity })));
+
+function RequireAuth({ children }: { children: React.ReactElement }) {
+  const location = useLocation();
+  if (!getToken()) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
+  return children;
+}
 
 function Root() {
   const { i18n } = useTranslation();
@@ -50,7 +60,7 @@ function Root() {
           <Suspense fallback={<div className="ka-route-loading" aria-hidden />}>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route element={<AppShell />}>
+            <Route element={<RequireAuth><AppShell /></RequireAuth>}>
               <Route index element={<Placeholder titleKey="empty.title" />} />
               <Route path="/tracker" element={<Placeholder titleKey="empty.title" />} />
               <Route path="/team" element={<Placeholder titleKey="empty.title" />} />

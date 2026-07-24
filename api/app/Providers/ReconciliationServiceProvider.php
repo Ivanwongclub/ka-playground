@@ -8,6 +8,8 @@ use App\Services\Reconciliation\Assertions\ConsentSignExclusivityAssertion;
 use App\Services\Reconciliation\Assertions\GuardianLinkCoverageAssertion;
 use App\Services\Reconciliation\Assertions\MemberDirectoryExclusivityAssertion;
 use App\Services\Reconciliation\Assertions\PermissionMatrixProbe;
+use App\Services\Reconciliation\Assertions\ScopeCoverageAssertion;
+use App\Services\Reconciliation\Assertions\VersionSnapshotImmutabilityProbe;
 use App\Services\Reconciliation\ReconciliationRegistry;
 use Illuminate\Support\ServiceProvider;
 
@@ -31,6 +33,10 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new GuardianLinkCoverageAssertion);
             $registry->register(new ConsentSignExclusivityAssertion);
             $registry->register(new MemberDirectoryExclusivityAssertion);
+
+            // S02A
+            $registry->register(new ScopeCoverageAssertion);
+            $registry->register(new VersionSnapshotImmutabilityProbe);
 
             return $registry;
         });

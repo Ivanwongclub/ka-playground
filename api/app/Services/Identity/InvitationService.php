@@ -25,7 +25,7 @@ class InvitationService
     public function __construct(private readonly AuditService $audit) {}
 
     /** @return array{invitation: Invitation, plain_token: string} */
-    public function issue(User $actor, string $email, string $role): array
+    public function issue(User $actor, string $email, string $role, ?int $schoolId = null): array
     {
         if (! in_array($role, self::INVITABLE_ROLES, true)) {
             $reason = $role === 'member'
@@ -39,6 +39,7 @@ class InvitationService
             'id' => (string) Str::uuid7(),
             'email' => $email,
             'role' => $role,
+            'school_id' => $schoolId, // teacher invitations carry the vouching school (B1)
             'token_hash' => hash('sha256', $plainToken),
             'issued_by' => $actor->id,
             'expires_at' => now()->addDays(14),
@@ -49,7 +50,7 @@ class InvitationService
             entityId: $invitation->id,
             action: 'invitation.issued',
             toState: 'issued',
-            payloadAfter: ['email' => $email, 'role' => $role],
+            payloadAfter: ['email' => $email, 'role' => $role, 'school_id' => $schoolId],
             actor: $actor,
         );
 
@@ -81,6 +82,18 @@ class InvitationService
             'role' => $invitation->role,
         ]);
         $invitation->forceFill(['accepted_at' => now(), 'user_id' => $user->id])->save();
+
+        if ($invitation->school_id !== null && $invitation->role === 'teacher') {
+            // The issuing school admin vouched — the affiliation activates now
+            \App\Models\GuardianLink::query()->getConnection()->table('teacher_links')->insert([
+                'id' => (string) Str::uuid7(),
+                'teacher_id' => $user->id,
+                'school_id' => $invitation->school_id,
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
         $this->audit->record(
             entityType: 'invitation',

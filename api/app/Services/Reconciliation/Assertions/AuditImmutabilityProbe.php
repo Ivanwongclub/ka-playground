@@ -60,7 +60,11 @@ class AuditImmutabilityProbe implements Assertion
                 );
             } catch (QueryException $e) {
                 DB::rollBack();
-                if (! str_contains($e->getMessage(), 'INSERT-only')) {
+                // Two valid rejection layers: the privilege REVOKE on the app
+                // role (SQLSTATE 42501) fires before the trigger ever could;
+                // both are database-level enforcement.
+                $privilegeDenied = ($e->errorInfo[0] ?? '') === '42501';
+                if (! $privilegeDenied && ! str_contains($e->getMessage(), 'INSERT-only')) {
                     return AssertionResult::fail(
                         "statement rejected but not by the BI-1 guard: {$e->getMessage()}"
                     );
@@ -68,6 +72,6 @@ class AuditImmutabilityProbe implements Assertion
             }
         }
 
-        return AssertionResult::pass('UPDATE and DELETE both rejected by the BI-1 trigger');
+        return AssertionResult::pass('UPDATE and DELETE both rejected at the database (privilege revoke and/or BI-1 trigger)');
     }
 }

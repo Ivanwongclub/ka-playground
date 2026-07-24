@@ -7,6 +7,7 @@ use App\Http\Controllers\CapabilityController;
 use App\Http\Controllers\LinkController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ProgrammeController;
+use App\Http\Controllers\SchoolAdminController;
 use App\Http\Controllers\SchoolController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +41,19 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/my/guardian-requests/{id}/confirm', [LinkController::class, 'confirm'])->middleware('role:student');
     Route::post('/my/link-requests', [LinkController::class, 'requestByEmail'])->middleware('role:guardian');
     Route::post('/school/guardian-links', [LinkController::class, 'schoolVouch'])->middleware('role:school_admin');
+    Route::middleware('role:school_admin')->group(function (): void {
+        Route::get('/school/students', [SchoolAdminController::class, 'students']);
+        Route::get('/school/students/{id}', [SchoolAdminController::class, 'student']);
+        Route::get('/school/teachers', [SchoolAdminController::class, 'teachers']);
+        Route::post('/school/teachers/invite', [SchoolAdminController::class, 'inviteTeacher']);
+    });
+    // Ops contrast (the platform owner CAN cross schools): all school links
+    Route::get('/admin/students', fn () => response()->json([
+        'data' => \Illuminate\Support\Facades\DB::table('school_links')
+            ->join('users', 'users.id', '=', 'school_links.student_id')
+            ->where('school_links.status', 'active')
+            ->get(['users.id', 'users.name', 'school_links.school_id']),
+    ]))->middleware('permission:operations.manage');
     Route::post('/guardian-links/{id}/revoke', [LinkController::class, 'revoke']);
 
     // S02A step 2 — configuration surfaces (OD-17: configuration capability)

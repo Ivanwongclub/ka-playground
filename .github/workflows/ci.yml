@@ -55,8 +55,10 @@ jobs:
           cp .env.example .env
           php artisan key:generate --force
 
-      - name: Create test database
-        run: PGPASSWORD=kap_local_only psql -h 127.0.0.1 -p 54329 -U kap -d kap -c 'CREATE DATABASE kap_test OWNER kap;'
+      - name: Create app role + test database (RLS needs a non-superuser runtime)
+        run: |
+          PGPASSWORD=kap_local_only psql -h 127.0.0.1 -p 54329 -U kap -d kap -f deploy/postgres/grant-app-role.sql
+          PGPASSWORD=kap_local_only psql -h 127.0.0.1 -p 54329 -U kap -d kap -c 'CREATE DATABASE kap_test OWNER kap_app;'
 
       - name: Cache ClamAV signature database
         uses: actions/cache@v4
@@ -79,11 +81,12 @@ jobs:
           docker exec clamav clamdscan --ping 1 || { docker logs clamav | tail -20; exit 1; }
           printf 'KAP-CUSTOM-TEST-SIGNATURE-6a8f2c' | docker exec -i clamav clamdscan - | head -1
 
-      - name: Migration gate (2.15)
+      - name: Migration gate (2.15) — as the owner role, then re-grant
         working-directory: api
         run: |
           php artisan migrate --force
           php artisan migrate --pretend
+          PGPASSWORD=kap_local_only psql -h 127.0.0.1 -p 54329 -U kap -d kap -f ../deploy/postgres/grant-app-role.sql
 
       - name: API tests (incl. the four real-clamd tests — must EXECUTE, not skip)
         working-directory: api
@@ -98,8 +101,11 @@ jobs:
             exit 1
           fi
 
-      - name: Reconciliation suite
+      - name: Reconciliation suite (as the RLS-subject app role)
         working-directory: api
+        env:
+          DB_USERNAME: kap_app
+          DB_PASSWORD: app_local_only
         run: php artisan reconcile:run
 
       - name: Web install
