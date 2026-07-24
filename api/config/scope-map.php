@@ -20,6 +20,7 @@ return [
         'consent_template_versions',
         'consent_requests',
         'consent_signatures',
+        'consent_documents',
         'team_categories',
         'fee_items',
         'withdrawal_policies',

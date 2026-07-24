@@ -26,6 +26,16 @@ return [
             'mimes' => ['application/pdf', 'image/jpeg', 'image/png'],
             'max_bytes' => 15 * 1024 * 1024,
         ],
+        // S03: drawn-signature PNG captured in the signing flow (G4)
+        'consent-signature' => [
+            'mimes' => ['image/png'],
+            'max_bytes' => 2 * 1024 * 1024,
+        ],
+        // S03: generated signed PDF + audit certificate (FR038)
+        'consent-document' => [
+            'mimes' => ['application/pdf'],
+            'max_bytes' => 15 * 1024 * 1024,
+        ],
     ],
 
     'clamav' => [

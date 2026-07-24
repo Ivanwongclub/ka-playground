@@ -105,6 +105,26 @@ class ConsentRequestController extends Controller
             ->get(['id', 'request_id', 'signer_id', 'language', 'template_sha256', 'rendered_sha256', 'method', 'signed_at'])]);
     }
 
+    /** Evidence documents — RLS-shaped: signer's own + compliance staff. */
+    public function documents(): JsonResponse
+    {
+        return response()->json(['data' => DB::table('consent_documents')
+            ->orderBy('created_at')
+            ->get(['id', 'signature_id', 'request_id', 'signer_id', 'language', 'pdf_sha256', 'generator', 'created_at'])]);
+    }
+
+    /** The signed PDF itself (FR038). BI-10: 409 until the scan passes. */
+    public function download(string $id)
+    {
+        $document = DB::table('consent_documents')->where('id', $id)->first() ?? abort(404);
+        $bytes = app(\App\Services\Consent\ConsentDocumentService::class)->download($document);
+
+        return response($bytes, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "attachment; filename=\"consent-{$document->request_id}.pdf\"",
+        ]);
+    }
+
     private function findOr404(string $id): object
     {
         // RLS shapes this read: a request not in the session's read set is

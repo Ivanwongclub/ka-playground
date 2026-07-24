@@ -23,15 +23,13 @@ class ScopeContextServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Queue workers (incl. Horizon): reset → system before every job;
-        // reset after and on failure. Jobs run as platform, never as a user.
-        Queue::before(function (): void {
-            $ctx = $this->app->make(ScopeContext::class);
-            $ctx->reset();
-            $ctx->setSystem();
-        });
-        Queue::after(fn () => $this->app->make(ScopeContext::class)->reset());
-        Queue::failing(fn () => $this->app->make(ScopeContext::class)->reset());
+        // Queue workers (incl. Horizon): every job RUNS as system; the boundary
+        // restores the surrounding context (empty in a worker → stays scrubbed;
+        // the requester's context when the sync driver runs a job inline —
+        // S03-3 repair: a blind reset was wiping the rest of the request).
+        Queue::before(fn () => $this->app->make(ScopeContext::class)->beginJob());
+        Queue::after(fn () => $this->app->make(ScopeContext::class)->endJob());
+        Queue::failing(fn () => $this->app->make(ScopeContext::class)->endJob());
 
         // Console + scheduler (incl. reconcile:run): system context.
         Event::listen(CommandStarting::class, function (): void {

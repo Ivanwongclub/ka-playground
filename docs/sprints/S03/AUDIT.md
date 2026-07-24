@@ -130,6 +130,81 @@ Result: PASS
   states"); the guardian-facing signing screen ships with steps 3–4 before the
   gate's screenshot verifications.
 
+### STEP 3 — Signed PDF + audit certificate (FR038) · commit (this step)
+```
+$ php artisan test → 167 passed (1213 assertions)   (9 new in ConsentDocumentTest,
+  1 new in ConsentSigningTest: signed-then-voided consent_met exclusion)
+$ reconcile:run --tag=S02A → RECONCILE PASS — 2 assertion(s), 2 passed, 0 failed
+
+mPDF 8.3.1, PINNED EXACT in composer.json ("mpdf/mpdf": "8.3.1") — Leo condition 4;
+generator recorded on the consent_documents row AND the certificate page (tested).
+
+CONDITION 1 (hardening), tested:
+ - merge values HTML-escaped before templating (renderBody) — student name set to
+   "<img src='file://CANARY'>@import url(file://CANARY)" renders as LITERAL text
+   (&lt;img …), generation succeeds, canary bytes ABSENT from the PDF.
+ - defense in depth: sanitizeForPdf strips img/iframe/object/embed/link/style/svg/
+   script + url() style attrs + @import (tested).
+ - mPDF built with whitelistStreamWrappers = [] — file://, http(s)://, phar:// all
+   refused even for RAW hostile markup fed straight to renderPdf (tested, canary
+   absent). data: URIs (our own signature PNG) carry no wrapper — unaffected.
+
+CONDITION 2 (embedded CJK), live zh-TC document:
+ /BaseFont /MPDFAA+Sun-ExtA   ← MPDFAA+ prefix = SUBSET-EMBEDDED, FontFile2 present
+ no UniCNS/Adobe-CJK CMaps (the non-embedded mode is never engaged; tested)
+
+CONDITION 3 (PDF/A-1b): output carries <pdfaid:part>1</pdfaid:part>,
+ <pdfaid:conformance>B</pdfaid:conformance>, OutputIntent + ICC. veraPDF (docker,
+ ghcr.io/verapdf/cli) verdict: FAIL on EXACTLY ONE clause — 6.3.5 test 3: subset
+ CIDFonts lack a CIDSet stream. Characterised: universal to mPDF unicode embedding
+ (Latin-only fails identically; percentSubset=0 changes nothing). See §4 note —
+ recommendation for Leo.
+
+Live zh-TC evidence chain (dev stack, REAL ClamAV scan):
+ doc=019f9260-761e… lang=zh-TC generator=mpdf/mpdf 8.3.1
+ upload status=clean · file sha256 == recorded pdf_sha256 (a4cc10e2…) — verified
+BI-10: download 409s until the scan verdict is clean (tested — our own generated
+ files get no exemption). BI-6: generation REFUSES if the re-render hash no longer
+ equals the signed rendered_sha256 (tested: merge drift → RuntimeException).
+Five-branch on consent_documents (tested): signer 1 + downloads %PDF · co-guardian 0,
+ download 404 · school_admin 0 · ops 1 · Member 0. Rows immutable at the DB (tested).
+
+LEO EDGE CASE: a signed-then-voided request does NOT count toward consent_met —
+ current behaviour was ALREADY CORRECT (consentSatisfied counts status='signed'
+ only; void rewrites status). Regression-tested: met → void → not met, evidence
+ row untouched, co-guardian derived status flips back to outstanding.
+```
+Result: PASS (one documented PDF/A deviation, §4)
+
+## 4a. Deviations & notes (step 3)
+- **PDF/A-1b deviation (condition 3 "say so and recommend"):** mPDF 8.3.1 emits
+  PDF/A-1b structure (XMP claim, OutputIntent, full font embedding) but omits the
+  CIDSet stream for subset CID fonts — veraPDF fails clause 6.3.5-3, and ONLY that,
+  on every document (CJK and Latin alike). The file is self-contained and renders
+  identically without installed fonts; the gap is subset bookkeeping, not content.
+  **Recommendation:** accept the documented deviation for Phase 1 evidence, and at
+  S10 hardening decide between (a) ghostscript post-processing to strict PDF/A
+  (new dependency — needs approval) or (b) recording the deviation in the evidence
+  bundle's provenance page. Leo to rule.
+- **Queue-boundary repair (structural, scope layer):** Queue::after blind-reset the
+  context; under the SYNC driver (tests, inline jobs) that wiped the requester's
+  context mid-request. Job boundaries now snapshot/restore (beginJob/endJob) —
+  workers still start scrubbed→system (their snapshot is empty). Additionally
+  ScopeContext::apply() tolerates SQLSTATE 25P02 ONLY (aborted surrounding tx:
+  GUC writes are impossible there and rollback reverts them anyway); any other
+  QueryException still throws.
+- **Conditional immutability REVOKE:** FK RI checks (SELECT..FOR KEY SHARE) need
+  the referenced table owner's UPDATE privilege. In kap_test the app role IS the
+  owner, so the migrations' belt-and-braces REVOKE broke inserts into
+  consent_documents. The migration REVOKE now applies only when the migrating role
+  is not kap_app; real environments (owner kap ≠ runtime kap_app) revoke as before
+  (grant-app-role.sql unchanged); the DB trigger remains the guarantee everywhere.
+- **Step-2 latent gap closed:** the 'consent-signature' upload context was
+  referenced but never registered in config/uploads.php (the optional PNG path was
+  untested). Both 'consent-signature' and 'consent-document' contexts now exist.
+- {{today}} now resolves from the request's ISSUANCE date (was wall-clock) — the
+  PDF re-render must reproduce rendered_sha256 byte-exactly on any later day.
+
 ## 5. Leftovers & newly discovered risks
 | # | Item | Severity | Proposed sprint |
 |---|------|----------|-----------------|
@@ -137,3 +212,4 @@ Result: PASS
 | 2 | **Timestamp trust (Leo, design-fresh note for S10):** signature evidence rests on a server NTP timestamp — contestable if anyone argues the clock was wrong or set retroactively. Options noted now, impossible to retrofit onto collected signatures: (a) RFC-3161 trusted timestamp authority countersigning each evidence bundle hash at signing time; (b) periodic anchoring of the audit_events/signature hash chain to an external immutable reference (e.g. daily digest published outside the platform). Either can be added FORWARD from the moment adopted; S10 should pick one before real signatures exist | **High — S10 design decision** | S10 |
 | 3 | Client question (fees/terms per school) still open — gates S04A consumer read clauses | High — client | before S04A |
 | 4 | **S04A MUST narrow consent_requests INSERT back to system-only** once enrolment issues requests automatically (Leo ruling 1: "a temporary widening on a personal-data table becomes permanent unless a sprint is named for reversing it"). Until then every manual issuance is reason-audited | High | **S04A** |
+| 5 | **PDF/A strictness decision** (§4a): mPDF omits CIDSet for subset fonts — veraPDF clause 6.3.5-3, sole failure. Choose at S10: ghostscript post-process (new dependency) vs documented deviation in evidence provenance | High — S10 decision | S10 |

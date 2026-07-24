@@ -103,6 +103,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->middleware('role:guardian');
     Route::get('/consent-requests', [ConsentRequestController::class, 'index']); // RLS-shaped
     Route::get('/consent-signatures', [ConsentRequestController::class, 'signatures']); // RLS-shaped
+    Route::get('/consent-documents', [ConsentRequestController::class, 'documents']); // RLS-shaped
+    Route::get('/consent-documents/{id}/download', [ConsentRequestController::class, 'download']); // RLS-shaped + BI-10
     Route::get('/consent-requests/{id}/document', [ConsentRequestController::class, 'document'])
         ->middleware('role:guardian');
     Route::post('/consent-requests/{id}/scrolled', [ConsentRequestController::class, 'scrolled'])

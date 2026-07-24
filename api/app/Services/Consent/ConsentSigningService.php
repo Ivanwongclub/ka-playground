@@ -179,7 +179,7 @@ class ConsentSigningService
             throw ValidationException::withMessages(['language' => ["No published {$language} version"]]);
         }
 
-        $rendered = $this->resolveMergeFields($version->body_html, (array) json_decode($request->merge_data, true));
+        $rendered = $this->renderBody($request, $version->body_html);
         $renderedSha = hash('sha256', $rendered);
 
         $this->appendEvent($request->id, 'rendered', [
@@ -321,6 +321,9 @@ class ConsentSigningService
                 ],
                 programmeId: (int) $request->programme_id, actor: $signer);
 
+            // FR038: the signed PDF + certificate generate after commit, as system
+            \App\Jobs\GenerateConsentDocument::dispatch($id)->afterCommit();
+
             return $id;
         });
     }
@@ -365,22 +368,27 @@ class ConsentSigningService
         }
     }
 
-    private function resolveMergeFields(string $body, array $mergeData): string
+    /**
+     * The ONE merge-resolution path — used by the signer-facing render AND the
+     * step-3 PDF generation, which re-renders and MUST reproduce the byte-exact
+     * HTML behind rendered_sha256. Hence every input is deterministic:
+     * merge_data is frozen at issuance and {{today}} resolves from the
+     * request's issuance date, never the wall clock. Values are HTML-escaped;
+     * signature anchors stay literal until the signed PDF substitutes them
+     * (after hash verification).
+     */
+    public function renderBody(object $request, string $versionBody): string
     {
+        $mergeData = (array) json_decode($request->merge_data, true);
         $map = $mergeData + [
-            'today' => now()->timezone('Asia/Hong_Kong')->toDateString(),
+            'today' => \Illuminate\Support\Carbon::parse($request->created_at)->timezone('Asia/Hong_Kong')->toDateString(),
             'signer_name' => $mergeData['guardian_name'] ?? '',
-            'signature' => '<span class="signature-anchor">{{signature}}</span>',
-            'signature_date' => '<span class="signature-anchor">{{signature_date}}</span>',
         ];
         foreach ($map as $field => $value) {
-            if ($field === 'signature' || $field === 'signature_date') {
-                continue; // anchors stay literal until the signed PDF (step 3)
-            }
-            $body = str_replace('{{'.$field.'}}', e((string) $value), $body);
+            $versionBody = str_replace('{{'.$field.'}}', e((string) $value), $versionBody);
         }
 
-        return $body;
+        return $versionBody;
     }
 
     /** @return array<int, array{type: string, at: string, meta: array}> */

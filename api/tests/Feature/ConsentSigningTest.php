@@ -32,6 +32,8 @@ class ConsentSigningTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // signing now generates the FR038 PDF inline under the sync queue
+        $this->app->bind(\App\Services\Uploads\VirusScanner::class, EicarOnlyScanner::class);
         $this->ops = User::factory()->create(['role' => 'academy_admin']);
         foreach (['configuration', 'operations'] as $cap) {
             DB::table('admin_capabilities')->insert([
@@ -491,6 +493,34 @@ class ConsentSigningTest extends TestCase
         $this->assertStringContainsString('Corrected Name', $freshDoc['body_html']);
         $this->assertNotSame($staleDoc['rendered_sha256'], $freshDoc['rendered_sha256'], 'fresh snapshot, fresh rendered hash');
         $this->assertSame($staleDoc['template_sha256'], $freshDoc['template_sha256'], 'template unchanged');
+    }
+
+    public function test_a_signed_then_voided_request_no_longer_counts_toward_consent_met(): void
+    {
+        $id = $this->issue();
+        $this->asSigner($this->guardian);
+        $this->getJson("/api/consent-requests/{$id}/document?language=en")->assertOk();
+        $this->postJson("/api/consent-requests/{$id}/scrolled")->assertOk();
+        $this->postJson("/api/consent-requests/{$id}/sign", $this->validSignaturePayload())->assertStatus(201);
+
+        $service = app(ConsentSigningService::class);
+        $this->assertTrue($service->consentSatisfied($this->programme->id, $this->student->id));
+
+        // The document named the wrong child — void it. The signature stays as
+        // evidence of what WAS signed, but satisfies nothing (Leo, S03-3).
+        $this->asSigner($this->ops);
+        $this->postJson("/api/admin/consent-requests/{$id}/void", [
+            'reason' => 'frozen merge data named the wrong child',
+        ])->assertOk();
+
+        $this->assertFalse($service->consentSatisfied($this->programme->id, $this->student->id),
+            'a voided request must not count toward consent_met, signed or not');
+        $this->assertSame(1, DB::table('consent_signatures')->count(), 'evidence untouched');
+
+        // and the derived status the co-guardian sees flips back to outstanding
+        $this->asSigner($this->coGuardian);
+        $this->assertFalse($this->getJson("/api/my/students/{$this->student->id}/consent-status?programme_id={$this->programme->id}")
+            ->json('consent_met'));
     }
 
     public function test_voiding_a_signed_request_preserves_the_signature_evidence(): void

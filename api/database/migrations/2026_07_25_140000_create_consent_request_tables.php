@@ -57,7 +57,17 @@ return new class extends Migration
                 FOR EACH STATEMENT EXECUTE FUNCTION consent_signatures_immutable();
             REVOKE UPDATE, DELETE, TRUNCATE ON consent_signatures FROM PUBLIC;
             SQL);
-        DB::unprepared('REVOKE UPDATE, DELETE, TRUNCATE ON consent_signatures FROM kap_app');
+        // Belt-and-braces revoke — only when the app role is NOT the table
+        // owner (kap_test has a single role: FK RI checks need the owner's
+        // UPDATE privilege for SELECT..FOR KEY SHARE; the trigger above is the
+        // immutability guarantee there)
+        DB::unprepared(<<<'SQL'
+            DO $$ BEGIN
+                IF current_user <> 'kap_app' AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'kap_app') THEN
+                    REVOKE UPDATE, DELETE, TRUNCATE ON consent_signatures FROM kap_app;
+                END IF;
+            END $$;
+            SQL);
 
         // ── RLS per the plan ──
         $ctx = "current_setting('app.context', true)";

@@ -18,3 +18,4 @@ ALTER DEFAULT PRIVILEGES FOR ROLE kap IN SCHEMA public
 REVOKE UPDATE, DELETE, TRUNCATE ON audit_events FROM kap_app;
 REVOKE UPDATE, DELETE, TRUNCATE ON programme_versions FROM kap_app;
 REVOKE UPDATE, DELETE, TRUNCATE ON consent_signatures FROM kap_app; -- BI-6 evidence (S03)
+REVOKE UPDATE, DELETE, TRUNCATE ON consent_documents FROM kap_app; -- FR038 evidence (S03)

@@ -126,6 +126,34 @@ class ScopeContext
         }
     }
 
+    /** @var array<int, array<string, string>> */
+    private array $jobStack = [];
+
+    /**
+     * Job boundary (S02A lifecycle, repaired in S03-3): jobs always RUN as
+     * system, but the boundary restores whatever context surrounded the job —
+     * a worker's snapshot is empty (stays scrubbed, exactly as before), while
+     * a sync-driver job running inline inside an HTTP request must hand the
+     * requester's context back instead of wiping the rest of the request.
+     */
+    public function beginJob(): void
+    {
+        $this->jobStack[] = $this->snapshot();
+        $this->reset();
+        $this->setSystem();
+    }
+
+    public function endJob(): void
+    {
+        $saved = array_pop($this->jobStack);
+        $isEmpty = $saved === null || $saved === [] || array_filter($saved) === [];
+        if ($isEmpty) {
+            $this->reset();
+        } else {
+            $this->restore($saved);
+        }
+    }
+
     /** @return array<string, string> */
     private function snapshot(): array
     {
@@ -171,6 +199,16 @@ class ScopeContext
         $sql = collect($vars)
             ->map(fn ($v, $k) => 'set_config('.DB::connection()->getPdo()->quote($k).', '.DB::connection()->getPdo()->quote($v).', false)')
             ->implode(', ');
-        DB::statement("SELECT {$sql}");
+        try {
+            DB::statement("SELECT {$sql}");
+        } catch (\Illuminate\Database\QueryException $e) {
+            // 25P02: the surrounding transaction is already aborted. GUC writes
+            // are impossible there AND unnecessary — rollback reverts every GUC
+            // set inside the transaction, so fail-closed state is preserved.
+            // Swallowing anything else would weaken the scope layer; rethrow.
+            if (($e->errorInfo[0] ?? '') !== '25P02') {
+                throw $e;
+            }
+        }
     }
 }
