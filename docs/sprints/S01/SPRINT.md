@@ -1,5 +1,14 @@
 # SPRINT KAP-S01 — Identity, auth & invitations
 
+> ⚠️ **PARTLY SUPERSEDED (OD-23 client model change, 2026-07-24 — after this sprint gated).**
+> This card records what was BUILT AND TRUE at the S01 gate. The following S01 deliverables are
+> retired or transformed by OD-27 / amendment 2.30, landing in the proposed S04C/S04D cards:
+> guardian-creates-student (retired; creation primitive retained for system/bulk use) · pairing-
+> code and parent-initiated linking (no longer COMPLETE links — they produce pending_approval) ·
+> school vouching (becomes the vouching admin's combined initiation+approval act) · the D2
+> born-login-verified ruling (retired with the path — OD-29). The gate stands; do not build from
+> this card's linking semantics.
+
 > Adjusted 2026-07-24 per the card-adjustment mechanism: S00 AUDIT §5 items 2, 7, 8, 9, 10
 > and the OPEN-DECISIONS follow-ons (OD-1, OD-17) folded in before sprint start; five
 > amendments from Leo's review applied (ordering, Member negative test, escalation refusal,

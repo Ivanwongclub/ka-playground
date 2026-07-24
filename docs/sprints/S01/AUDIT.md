@@ -2,6 +2,13 @@
 
 **Result:** PASS (one verification pending Leo's push — §4/D3) · **Date:** 2026-07-24 · **HEAD at gate:** gate commit; last content commit `2e6eeb8`
 
+> ⚠️ **ANNOTATION (2026-07-24, OD-23 client model change — this AUDIT is NOT rewritten; a passed
+> gate records what was true then):** the guardian-creates-student path, the auto-completing
+> pairing/email/vouch linking flows, and the D2 born-login-verified ruling verified below were
+> correct as built and are SUPERSEDED by OD-23/OD-27/OD-29 + amendment 2.30. Their retirement/
+> transformation lands in the proposed S04C/S04D cards; until that step lands the flows remain
+> operative against synthetic data only.
+
 > Written by Claude Code at the sprint's end. Honesty outranks looking good. Steps 2–8 ran
 > unattended under Leo's standing rules (2026-07-24): per-step VERIFY + commit, STOP conditions
 > live, judgement calls recorded below.

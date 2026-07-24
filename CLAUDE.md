@@ -34,7 +34,7 @@
   not done until it conforms
 - `docs/design/ASSET-MANIFEST.md` — where the MVP imagery lives and how to rescue it. Consumed by S00
 - `docs/design/IMAGE-PROMPTS.md` — upgrade path for client-supplied imagery. Reference only
-- `docs/sprints/<ID>/SPRINT.md` — your execution card (fifteen cards: S00–S11, with S02 and S04 each split into A/B, plus S06B per OD-23). **Work only from the current card**
+- `docs/sprints/<ID>/SPRINT.md` — your execution card (seventeen cards: S00–S11, with S02 split into A/B and S04 into A–E per the approved OD-23 re-plan). **Work only from the current card**
 - `docs/requirements/REGISTER.md` — requirement IDs; cite them in commits where relevant
 - `docs/OPEN-DECISIONS.md` — undecided items. **If your current step depends on one, STOP**
 
@@ -47,9 +47,14 @@ Known supersessions you will otherwise trip over:
 - Spec and Build Plan references to "School Team / Armour Team" as fixed types — superseded by
   `docs/TEAM-CATEGORIES.md`. They were example labels. There is no hard-coded school or armour type.
 - Spec line 1842 (HKUST co-powered certification) — struck. Certificates are academy-issued only.
-- Spec L4, B10 and R2 ("invitation-only, no public sign-up, ever") — superseded by OD-23. A single
-  public surface exists: the school-routed registration REQUEST (creates no account); accounts still
-  come into being only through the S01 invitation flow.
+- Spec L4, B10 and R2 ("invitation-only, no public sign-up, ever") — superseded by OD-23 (as
+  re-decided 2026-07-24): students and guardians self-register; approval creates the account.
+- Spec B4 (pairing codes / parent-initiated / school-vouch flows COMPLETING links) and B5 (the
+  relationship state machine) — superseded by OD-23/OD-27 and amendment 2.30: all linkage now
+  terminates in a pending-approval state; only a school/platform admin's decision activates a link
+  (school vouching collapses initiation and approval into the vouching admin's one audited act).
+- S01's D2 ruling (guardian-created students born login-verified) — retired with the path it
+  reasoned about (OD-29). Every self-registered account verifies its own address.
 
 ---
 
@@ -158,11 +163,17 @@ If a command listed here doesn't exist yet, it is being built in S00 — say so 
 - **Team finance is record-only.** Money moves offline; the platform records and verifies evidence.
 - **Consent e-sign is in-house** (no DocuSign): scroll-to-end, affirmation, drawn/typed capture,
   signed PDF + audit certificate page, SHA-256 versioning.
-- **Invitation-led onboarding (OD-23).** The only public surface is a school-routed registration
-  **request**: it creates no account, grants no session, reads nothing, and is visible only to the
-  routed school's administrators and academy ops. Approval issues the standard S01 guardian
-  invitation — the invitation flow remains the only way an account comes into being. No other
-  public write exists; no public read of any roster beyond opt-in listed school names.
+- **Onboarding is self-registration with approval (OD-23 as re-decided by the client, 2026-07-24).**
+  Students and guardians SELF-REGISTER; approval creates the account. Registrations naming a
+  partner school route to that school's admins; direct registrations route to the academy — no
+  free text, no unlisted-school gap. **Guardians can no longer create a student** (the S01 path is
+  retired, OD-27). School accounts remain academy-invited; school bulk creation makes students
+  directly. **ALL linkage — guardian-student, teacher-student, school-student — requires school-
+  admin or platform-admin approval. Approving a person is not approving a relationship: two
+  decisions, separately recorded, separately audited.** Account state derives from links (OD-28):
+  Registered (login, own profile, catalogue, own pending-link status) → Active (approved link
+  opens everything). Every self-registered account verifies its own email before first login
+  (OD-29); nothing is born delivery-verified. Members remain invitation-only (OD-1/OD-22).
 - **No partial payments** (OD-5). Offline payments are recorded only when received in full; a payment
   record carries 1..n evidence images. No payment splitting, no allocation across orders, no balances.
   An underpayment is **not recorded at all** — the admin waits for full payment, then records once
