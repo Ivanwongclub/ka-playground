@@ -9,6 +9,7 @@ use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ProgrammeController;
 use App\Http\Controllers\SchoolAdminController;
 use App\Http\Controllers\SchoolController;
+use App\Http\Controllers\WizardController;
 use Illuminate\Support\Facades\Route;
 
 // Permission-guarded resource surfaces. The guarded routes exist from S01 STEP 1
@@ -65,6 +66,14 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('/admin/programmes', [ProgrammeController::class, 'store']);
         Route::put('/admin/programmes/{id}', [ProgrammeController::class, 'update']);
         Route::post('/admin/programmes/{id}/versions', [ProgrammeController::class, 'snapshot']);
+
+        // S02B step 1 — hub-and-spoke wizard (Part D)
+        Route::get('/admin/programmes/{id}/wizard', [WizardController::class, 'state']);
+        Route::put('/admin/programmes/{id}/wizard/{key}', [WizardController::class, 'saveSection']);
+        Route::post('/admin/programmes/{id}/pre-flight', [WizardController::class, 'preFlight']);
+        Route::post('/admin/programmes/{id}/publish', [WizardController::class, 'publish']);
+        Route::post('/admin/programmes/{id}/save-as-template', [WizardController::class, 'saveAsTemplate']);
+        Route::post('/admin/programmes/{id}/create-from-template', [WizardController::class, 'createFromTemplate']);
     });
 });
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ProLayout } from '@ant-design/pro-components';
 import { Avatar, Select } from 'antd';
 import {
+  BookOpen,
   GraduationCap,
   Languages,
   LayoutDashboard,
@@ -106,6 +107,7 @@ export function AppShell() {
           { path: '/style-guide', name: t('nav.styleGuide'), icon: <Palette size={16} aria-hidden /> },
           { path: '/admin/audit', name: t('nav.audit'), icon: <ShieldCheck size={16} aria-hidden /> },
           { path: '/admin/access-identity', name: t('nav.accessIdentity'), icon: <Users size={16} aria-hidden /> },
+          { path: '/admin/programmes', name: t('nav.programmes'), icon: <BookOpen size={16} aria-hidden /> },
         ],
       }}
       menuItemRender={(item, dom) => (

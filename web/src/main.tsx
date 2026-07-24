@@ -32,6 +32,7 @@ const StyleGuide = lazy(() => import('./pages/StyleGuide').then((m) => ({ defaul
 const AdminAudit = lazy(() => import('./pages/AdminAudit').then((m) => ({ default: m.AdminAudit })));
 const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })));
 const AccessIdentity = lazy(() => import('./pages/AccessIdentity').then((m) => ({ default: m.AccessIdentity })));
+const AdminProgrammes = lazy(() => import('./pages/AdminProgrammes').then((m) => ({ default: m.AdminProgrammes })));
 
 function RequireAuth({ children }: { children: React.ReactElement }) {
   const location = useLocation();
@@ -69,6 +70,7 @@ function Root() {
               <Route path="/style-guide" element={<StyleGuide />} />
               <Route path="/admin/audit" element={<AdminAudit />} />
               <Route path="/admin/access-identity" element={<AccessIdentity />} />
+              <Route path="/admin/programmes" element={<AdminProgrammes />} />
             </Route>
           </Routes>
           </Suspense>

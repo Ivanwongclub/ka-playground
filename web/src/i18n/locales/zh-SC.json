@@ -21,7 +21,8 @@
     "settings": "设置",
     "help": "帮助",
     "audit": "审计",
-    "accessIdentity": "访问与身份"
+    "accessIdentity": "访问与身份",
+    "programmes": "课程设置"
   },
   "shell": {
     "openNavigation": "打开导航",
@@ -157,5 +158,39 @@
     "capabilityLog": "权能授予与撤销",
     "grantor": "授予者",
     "none": "无"
+  },
+  "wizard": {
+    "title": "课程设置",
+    "subtitle": "枢纽式设置向导(规格 Part D)",
+    "newProgramme": "新增课程",
+    "readiness": "{{required}} 个必要区段中已完成 {{complete}} 个",
+    "statusNotStarted": "未开始",
+    "statusIncomplete": "进行中",
+    "statusComplete": "已完成",
+    "statusDeferred": "延后(第二阶段)",
+    "saveDraft": "保存草稿",
+    "preFlight": "发布前检查",
+    "publish": "发布",
+    "publishDisabled": "所有必要区段完成前无法发布",
+    "markComplete": "标记完成",
+    "markIncomplete": "标记进行中",
+    "severityError": "错误",
+    "severityWarning": "警告",
+    "severityInfo": "提示",
+    "published": "已发布",
+    "draft": "草稿",
+    "code": "代码",
+    "sections": {
+      "basics": "基本资料与媒体",
+      "eligibility": "资格与名额",
+      "fees": "费用与缴费",
+      "consent": "同意书",
+      "tracker": "活动进度",
+      "teamRules": "团队规则",
+      "roleLibrary": "角色库",
+      "learning": "学习(课程与活动)",
+      "certification": "证书与徽章",
+      "integration": "系统整合"
+    }
   }
 }

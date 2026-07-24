@@ -40,6 +40,8 @@ return [
         'role_permissions' => 'The seeded matrix, guarded by authz.permission_matrix; no personal data.',
         'capability_permissions' => 'The seeded capability grid, guarded by authz.permission_matrix and authz.consent_sign_exclusive; no personal data.',
         'pairing_code_failures' => 'Brute-force counter keyed by code string (2.13); contains no personal data and must be writable from failing (unauthorised) request paths.',
+        'wizard_sections' => 'Readable by EVERY authenticated session (students, guardians, Members, teachers — global does not mean internal): wizard/readiness state of the members-visible catalogue. Carries section status and config payloads only; fee amounts and refund terms live in the SCOPED fee_items/withdrawal tables (S02B plan). Writes are configuration.manage-gated at the route.',
+        'pre_flight_results' => 'Readable by every authenticated session: publish-validation findings (config completeness), no personal or commercial data; writes configuration.manage-gated.',
         'reconciliation_log' => 'Assertion run records (SR010); no personal data; read surface is permission-gated (audit_read).',
     ],
 

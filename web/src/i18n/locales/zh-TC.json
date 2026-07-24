@@ -21,7 +21,8 @@
     "settings": "設定",
     "help": "說明",
     "audit": "審計",
-    "accessIdentity": "存取與身分"
+    "accessIdentity": "存取與身分",
+    "programmes": "課程設定"
   },
   "shell": {
     "openNavigation": "開啟導覽",
@@ -157,5 +158,39 @@
     "capabilityLog": "權能授予與撤銷",
     "grantor": "授予者",
     "none": "無"
+  },
+  "wizard": {
+    "title": "課程設定",
+    "subtitle": "樞紐式設定精靈(規格 Part D)",
+    "newProgramme": "新增課程",
+    "readiness": "{{required}} 個必要區段中已完成 {{complete}} 個",
+    "statusNotStarted": "未開始",
+    "statusIncomplete": "進行中",
+    "statusComplete": "已完成",
+    "statusDeferred": "延後(第二階段)",
+    "saveDraft": "儲存草稿",
+    "preFlight": "發佈前檢查",
+    "publish": "發佈",
+    "publishDisabled": "所有必要區段完成前無法發佈",
+    "markComplete": "標記完成",
+    "markIncomplete": "標記進行中",
+    "severityError": "錯誤",
+    "severityWarning": "警告",
+    "severityInfo": "提示",
+    "published": "已發佈",
+    "draft": "草稿",
+    "code": "代碼",
+    "sections": {
+      "basics": "基本資料與媒體",
+      "eligibility": "資格與名額",
+      "fees": "費用與繳費",
+      "consent": "同意書",
+      "tracker": "活動進度",
+      "teamRules": "團隊規則",
+      "roleLibrary": "角色庫",
+      "learning": "學習(課程與活動)",
+      "certification": "證書與徽章",
+      "integration": "系統整合"
+    }
   }
 }

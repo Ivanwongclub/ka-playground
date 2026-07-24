@@ -21,7 +21,8 @@
     "settings": "Settings",
     "help": "Help",
     "audit": "Audit",
-    "accessIdentity": "Access & Identity"
+    "accessIdentity": "Access & Identity",
+    "programmes": "Programmes"
   },
   "shell": {
     "openNavigation": "Open navigation",
@@ -157,5 +158,39 @@
     "capabilityLog": "Capability grants & revocations",
     "grantor": "Grantor",
     "none": "None"
+  },
+  "wizard": {
+    "title": "Programme Configuration",
+    "subtitle": "Hub-and-spoke wizard (Spec Part D) — dark only",
+    "newProgramme": "New programme",
+    "readiness": "{{complete}} of {{required}} sections complete",
+    "statusNotStarted": "Not started",
+    "statusIncomplete": "In progress",
+    "statusComplete": "Complete",
+    "statusDeferred": "Deferred (Phase 2)",
+    "saveDraft": "Save draft",
+    "preFlight": "Pre-flight check",
+    "publish": "Publish",
+    "publishDisabled": "Publish is disabled until every required section is complete",
+    "markComplete": "Mark complete",
+    "markIncomplete": "Mark in progress",
+    "severityError": "Error",
+    "severityWarning": "Warning",
+    "severityInfo": "Info",
+    "published": "Published",
+    "draft": "Draft",
+    "code": "Code",
+    "sections": {
+      "basics": "Basics & Media",
+      "eligibility": "Eligibility & Capacity",
+      "fees": "Fees & Payment",
+      "consent": "Consent Form",
+      "tracker": "Activity Tracker",
+      "teamRules": "Team Rules",
+      "roleLibrary": "Role Library",
+      "learning": "Learning (Lessons & Events)",
+      "certification": "Certification & Badges",
+      "integration": "Integration"
+    }
   }
 }
