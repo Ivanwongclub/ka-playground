@@ -167,3 +167,34 @@ Ten sprints. Order is dependency-driven. **Every sprint ships three things: the 
 
 ---
 *End of document.*
+
+---
+
+# PART 5 — Revised sprint sequence (workflow-review handoff, applied 2026-07-26)
+
+> From docs/handoff/BUILD-PLAN-EDITS.md. OD numbers below use the LIVE register numbering
+> (handoff numbers +6). Card-name mapping: the handoff's S06-BATCH ≈ the S04E card,
+> S-SELFREG ≈ the S04C/S04D pair, S-QFPAY = a new card to be written. The committed
+> S04A–S04E cards were written BEFORE this handoff and are NOT yet reconciled to it.
+
+| Sprint | Scope | Change |
+|---|---|---|
+| S00–S03 | Foundation · Identity · Access/RLS · Programme config · Consent | unchanged (built) |
+| S04A | Enrolment states, awaiting-a-team pool, formation deadline, withdrawal workflow, per-programme independence, scheduled-job auditing | **REWRITE REQUIRED** — team-based capacity, not individual seats (OD-31/33/34/43/63/64/65) |
+| S04B | Orders, receipts, credit notes, refunds, offline recording, payment link, MockProvider behind PaymentProvider | **REWRITE REQUIRED** — trigger (成團) lives in S05; BI-9 scoped to manual (OD-43/44/46/47/48/53/54) |
+| S05 | Teams, lobbies, formation, approval routing, 成團 → seat claim → payment trigger, waivers, post-成團 control, teacher-team links | **REWRITE REQUIRED** — capacity claimed here (OD-32/35/37–42/57/58/61/62) |
+| S06 | Sessions, attendance, assessment, member events | unchanged |
+| S04E (≈S06-BATCH) | School bulk import, versioned Excel template, two payment modes, school-settled receivable, consolidated invoicing, batch failure path | **RECONCILE at card review (REPO-RECONCILE 2026-07-26):** bulk creates STUDENT accounts via the OD-27 primitive (OD-50); guardian invitations are register-only — consent then payment surface as portal tasks (OD-50a/50b; family-paid pays at 成團 through S04B machinery, school-settled rows have no family payment step); Excel-template model (OD-51); receivable model (OD-53/54); boundary check — a consent request addressed to a not-yet-registered guardian (bound to the invitation) is additive to S03, flag at review |
+| S04C/S04D (≈S-SELFREG) | Registration + approval surfaces | **UNBLOCKED (REPO-RECONCILE 2026-07-26): Model B confirmed; S04C's account.provenance assertion correct as written. At S04C review: make the school-verification-gates-programmes holding-state consequence explicit (OD-28)** |
+| S07–S09 | Team finance · Recognition · Notifications (delivers the OD-66 catalogue) | unchanged |
+| S10 | Go-live readiness | **add:** QFPay merchant-application status is a launch gate; credential rotation; PDF/A decision |
+| S-QFPAY | QFPay adapter for PaymentProvider: hosted session, webhook signature verification, idempotency, settlement reconciliation, async refunds | NEW CARD — Phase 2 pre-production, gated by merchant application; slots before S10 |
+
+**Parallel client workstream:** QFPay merchant application (IN PROGRESS) is a first-class launch
+dependency with its own status — not an S10 discovery. On approval, confirm Alipay CN enabled and
+HKD settlement.
+
+**Cross-cutting notes for every affected card:** scheduled jobs audit with a SYSTEM actor, never
+null (OD-64) · every new table classified in its creating migration (S02A discipline) · every
+module raises its notification events even though S09 delivers them (OD-66) · the awaiting-a-team
+pool is ONE concept — never a separate waitlist (OD-34).
