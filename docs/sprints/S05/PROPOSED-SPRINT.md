@@ -19,20 +19,29 @@ OD-45 (consequences) · OD-53 (issuance at 成團) · OD-57/58 (consent gates �
 OD-15 (tenure ledger) · OD-64/66 · BI-3 (reshaped) · TEAM-CATEGORIES §4–§8 · Activity Tracker
 (five fixed stages)
 
-## 成團 — THE TRANSACTION (stated before build)
-One database transaction at team approval:
-1. Preconditions: size within rules OR waiver field (OD-40) · every member's consent satisfied
-   against CURRENT template versions (OD-57; stale consent blocks — OD-58) · approver authority
-   per routing (OD-39).
-2. `SELECT … FOR UPDATE` on the programme capacity counter → claim N seats for N members
+## 成團 — THE TRANSACTION (stated before build; revised per Leo Q1/Q2, 2026-07-27)
+One database transaction at team approval — LOCKS AND STATE ONLY, no issuance inside it:
+1. Approver authority per routing (OD-39); size within rules OR waiver field (OD-40).
+2. **Consent re-verified INSIDE the transaction under `SELECT … FOR SHARE` on each member's
+   satisfying consent_request rows (Q2).** A plain in-transaction read is NOT sufficient under
+   READ COMMITTED — a supersede fan-out could commit between check and 成團-commit. The share
+   locks serialise that race: a concurrent material-change supersede blocks until 成團 resolves
+   (or 成團 waits, re-reads, and refuses on stale — OD-57/58). Lock order is fixed (consent rows
+   before the capacity counter) so the two writers cannot deadlock.
+3. `SELECT … FOR UPDATE` on the programme capacity counter → claim N seats for N members
    **atomically — all or "insufficient capacity", never partial, never overbooked (OD-32,
    BI-3 reshaped: one lock, N seats)**.
-3. Member enrolments `In Pool/Teamed → Confirmed` (S04A machine).
-4. Fire per member: family-paid → `PaymentTriggerPort` (order + `payment.requested` + 7d clock,
-   OD-43/50b); school-settled → consolidated invoice line + `covered by invoice` (OD-53).
-5. Audit: one 成團 event + per-member transitions, approver identity throughout (BI-8).
+4. Member enrolments `In Pool/Teamed → Confirmed` (S04A machine).
+5. **One `payment_obligations` OUTBOX row per member — written in this same transaction (Q1):
+   the payment OBLIGATION is atomic with the seat claim; the ISSUANCE is not.** No order, no
+   invoice line, no provider call, no `PaymentTriggerPort` invocation happens under the lock.
+6. Audit: one 成團 event + per-member transitions, approver identity throughout (BI-8).
+AFTER COMMIT: the S04B outbox consumer (system context) issues orders / invoice lines per
+obligation — idempotent, re-scanned on failure, `payment_obligations.completeness` asserting
+nightly that no Confirmed enrolment outlives the issuance window without its money artifact.
 Concurrency verification mirrors S04A-old's twin test, team-shaped: two teams racing the last
-seats — exactly one confirms, the loser fails whole with a clean refusal.
+seats — exactly one confirms, the loser fails whole with a clean refusal. A second race test
+covers Q2: supersede-vs-成團 on the same member, both orders of arrival, no stale confirm.
 
 ## SCOPE CLASSIFICATION PLAN (read sets pre-stated)
 | Table | Classification | Read set / justification |

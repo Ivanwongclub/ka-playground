@@ -12,8 +12,9 @@ receivable — all proven against a fixture trigger, waiting for S05 to pull it.
 
 ## PRECONDITIONS
 - [ ] S04A gate PASSED
-- [ ] **CLIENT ANSWER: are fees/terms ever school-specific?** (moved here with the orders) —
-  gates the consumer fee-read clause in STEP 1; **STOP there if still open**.
+- [x] Fee-terms question CLOSED (OD-67, Leo 2026-07-27): **the programme fee is the SAME for
+  every student — no per-school fee resolution.** Orders snapshot the programme-level fee.
+  No STOP remains in this card.
 
 ## IMPLEMENTS  BI-2 · BI-5 · BI-9 (as narrowed by OD-47) · OD-18 · OD-25 · OD-26 (money side) ·
 OD-42* (submitter n/a — see S05) · OD-43 (port only) · OD-44 · OD-45 (machinery) · OD-46 ·
@@ -22,7 +23,7 @@ OD-48 · OD-50b · OD-53 · OD-54 · 2.17 · 2.19/2.20 (reshaped by full-fee) ·
 ## SCOPE CLASSIFICATION PLAN (read sets pre-stated)
 | Table | Classification | Read set / justification |
 |---|---|---|
-| `orders` / `order_lines` | **scoped** | Read: system · finance/audit · the payer guardian · the student (read-only, Q1). Lines INSERT-only at the DB (BI-5, conditional revoke per S03 pattern); full fee snapshot, OD-18 minor units + `currency CHAR(3)` |
+| `orders` / `order_lines` | **scoped** | Read: system · finance/audit · **EVERY active guardian of the student (OD-67 ruling 2: any active guardian may read AND pay — OD-6 consistency)** · the student (read-only, Q1). **School admins: NEVER (OD-67 ruling 3 — their money view is their own consolidated invoices, nothing family-level).** Lines INSERT-only at the DB (BI-5, conditional revoke per S03 pattern); uniform programme fee snapshot (OD-67 ruling 1), OD-18 minor units + `currency CHAR(3)` |
 | `receipts` / `receipt_sequences` | **scoped** | Read: payer guardian (own) · student read-only · finance/audit · system. Number assigned INSIDE the issuing transaction from the counter row under `FOR UPDATE` (BI-2/BI-3); never pre-reserved |
 | `payments` | **scoped** | One table, two origins: `manual` (school-settled/offline — BI-9 recorder ≠ confirmer, both `finance`, OD-47) and `provider` (mock/gateway — confirms itself, out of BI-9 scope). Read: finance/audit · payer guardian (own) · system. 1..n evidence images on manual (OD-5) |
 | `refunds` / `credit_notes` | **scoped** | 2.17 machine, FULL amounts only (OD-48); BI-9 on the manual side; destination = original payer party (OD-25: paid BY the academy). School-settled precedence: credit note always; refund-to-school if invoice already paid (OD-54, nightly balance assertion) |
@@ -34,11 +35,18 @@ OD-48 · OD-50b · OD-53 · OD-54 · 2.17 · 2.19/2.20 (reshaped by full-fee) ·
    payer_party (OD-25), gapless in-transaction numbering; consumer fee-read clause per the
    CLIENT ANSWER — **STOP if unanswered**. VERIFY: 50-parallel receipt probe gapless (paste);
    line UPDATE refused at DB (paste); OD-18 schema paste.
-2. **`PaymentTriggerPort` + deadline machinery (OD-43 port, OD-45).** Port: given a Confirmed
-   enrolment → issue order, fire `payment.requested`, start the deadline clock (default 7d);
-   grace → suspend → exception jobs (SYSTEM actor, OD-64). Proven with a FIXTURE trigger — 成團
-   arrives in S05. VERIFY: fixture-triggered full flow paste; deadline-lapse job paste with
-   SYSTEM actor; nothing in S04B can fire the port from a user request (paste the absence).
+2. **`PaymentTriggerPort` as an OUTBOX CONSUMER + deadline machinery (OD-43, OD-45; Leo Q1).**
+   The port's contract: S05's 成團 transaction writes one `payment_obligations` outbox row per
+   member ATOMICALLY WITH THE SEAT CLAIM (tiny insert, negligible lock time); a system-context
+   consumer job picks obligations up AFTER COMMIT and issues the order / invoice line, fires
+   `payment.requested`, starts the deadline clock (default 7d). Issuance is idempotent per
+   enrolment; a crashed queue cannot lose an obligation — the consumer re-scans the outbox, and
+   the completeness assertion goes red on anything older than the window. Order issuance NEVER
+   runs inside the capacity lock, and never under provider IO while holding any lock. Grace →
+   suspend → exception jobs (SYSTEM actor, OD-64). Proven with FIXTURE outbox rows — 成團
+   arrives in S05. VERIFY: fixture-obligation full flow paste; kill-the-consumer-mid-batch →
+   re-scan completes idempotently (paste); deadline-lapse job paste with SYSTEM actor; nothing
+   in S04B can write an obligation from a user request (paste the absence).
 3. **PaymentProvider + MockProvider (OD-46) + payment link (OD-44).** Interface (create session,
    confirm, refund, reconcile); MockProvider drives success/fail/timeout; provider payments
    self-confirm (OD-47 — out of BI-9); link page: initials-only, expiring, single-use, dead
@@ -71,6 +79,16 @@ Member zero · anonymous: link-token page only, nothing else) · `--tag` regress
 - `refunds.full_only` — no refund or credit note ≠ its order total (OD-48)
 - `invoices.balance` — consolidated invoice balance = original − credits (OD-54)
 - `payment_links.no_pii` — no link payload row contains more than initials (OD-44)
+- `payment_links.single_reader` — **structural confinement, matching S04C's public-context
+  discipline (Leo instruction):** the token-resolution endpoint is the ONLY unauthenticated
+  reader of any payment data — asserted structurally, not by payload inspection: (a) a route-table
+  scan proves exactly one guest-accessible route touches any money table; (b) a `pg_policies`
+  scan proves NO policy on any money table admits an anonymous/public context; (c) the token
+  endpoint's reads run system-context server-side against a single-use token hash, and the
+  assertion fails if a second unauthenticated read path ever appears
+- `payment_obligations.completeness` — no Confirmed enrolment older than the issuance window
+  without its order or invoice line; no unconsumed outbox row past the window (Q1 pattern —
+  the atomicity gap closed by structure, checked nightly)
 - `deadlines.no_silent_lapse` — every lapsed payment deadline has its SYSTEM-actor audit event
   and a suspension or exception (OD-45/64)
 
