@@ -124,6 +124,35 @@ cited in Source is the origin, not necessarily the current rule.
 | FR066 | B8 · E8 | Unified Admin › Exceptions queue: guardian replacement (14d deadline), late payment, guardian conflict, contact unreachable — each with owner, deadline and resolution state, visible to the roles the spec names | 2.19 · 2.22 · 2.23 |
 | FR067 | Q | Sitemap: v3 sitemap plus Q1–Q5 deltas (student enrolment tabs + payments, parent consent centre + pay/receipts, teacher gate/refund approvals, school batch + billing tabs, admin wizard hub, orders/receipts/AR/AP, consent management, notification rules, dashboard presets) — plus 2.28 deltas (public registration page; School Administrator Registration Requests tab) | 2.28 |
 | FR068 | OD-23 | **Self-registration flow (REWRITTEN 2026-07-24 for the client model; proposed S04C):** public student AND guardian registration forms — anonymous INSERT-only under the `public` scope context confined to exactly one policy (structural assertion), constant-shape responses, no status endpoint, no reads, no uploads, throttled + honeypot (the S06B anonymous-write design, reused). Routing: named partner school → that school's approval queue; direct → academy queue (`schools.public_listing` opt-in governs the picker; "direct" is a first-class choice — no free text). **APPROVAL CREATES THE ACCOUNT** (unverified; OD-29 verification before first login). A registration naming a guardian/student counterpart yields a PENDING LINK at approval — auto-matched by exact email, or HELD until the counterpart is approved (no manual matching, no existence oracle). **Held links materialise only against a VERIFIED address (OD-29 makes this free) — a typo'd email must never surface a stranger as a routine pending link; the queue marks held-link origin "claimed by a registration form, not confirmed by either party" so the approver checks rather than clears; held links EXPIRE (default 90d, configurable) and expiry is surfaced in queue-age reporting.** One queue per approver for accounts AND links; age visible; over-threshold requests escalate into the FR066 exceptions queue; combined review presents account+link as one work item carrying TWO recorded decisions | **OD-23 · OD-27 · OD-28 · OD-29** · 2.28 · 2.30 · SR001 |
+| FR201 | OD-31 | Team-based capacity: seats allocate to the team at 成團, claimed atomically at approval | OD-31/26 |
+| FR202 | OD-33 | Per-programme formation deadline; ordering (enrolment close → formation → payment) validated at publish and on edit | OD-33 |
+| FR203 | OD-34 | Awaiting-a-team pool replaces the individual waitlist | OD-34 |
+| FR204 | OD-35 | Unteamed-at-deadline resolution: match / roll (parked, 90-day auto-refund backstop) / release | OD-35 |
+| FR205 | OD-37 | Team-below-minimum exception with four terminal actions (assign / grace-once / waiver / dissolve) | OD-37 |
+| FR206 | OD-38 | Team dissolution re-pools paid members in-lobby, paid status retained, no re-charge | OD-38 |
+| FR207 | OD-39 | Team approval: school approves normal teams, academy handles exceptions; team-linked teacher may approve | OD-39 |
+| FR208 | OD-40 | Size waiver stored as a team field with reason; nightly check reads "meets rules OR waiver" | OD-40 |
+| FR209 | OD-41 | Post-成團 changes academy-only, reasoned, audited, notified; paid removal via withdrawal workflow | OD-41 |
+| FR210 | OD-43 | Payment triggered on entering a confirmed team; deadline default 7 days | OD-43 |
+| FR211 | OD-44 | Forwardable payment link, initials-only, expiring, dead once paid | OD-44 |
+| FR212 | OD-46 | PaymentProvider interface; MockProvider Phase 1; QFPay Phase 2 gated by merchant application; HKD only | OD-46 |
+| FR213 | OD-49 | Manual "reconcile payment" action alongside nightly gateway reconciliation | OD-49 |
+| FR214 | OD-50 | Bulk import creates student records + guardian invitations; existing people matched, not duplicated | OD-50 |
+| FR215 | OD-51 | Config-driven, version-stamped, pre-filled Excel template | OD-51 |
+| FR216 | OD-53 | School-settled receivable: invoice at 成團, "covered by invoice" status, receipt on real payment | OD-53 |
+| FR217 | OD-54 | School-settled withdrawal = credit note always; refund-to-school if already paid; balance assertion | OD-54 |
+| FR218 | OD-55 | Batch failure = single academy exception on invoice aging | OD-55 |
+| FR219 | OD-56 | Consent never batched; consent deadline + school-admin escalation for non-responders | OD-56 |
+| FR220 | OD-57 | Consent completeness gates team submission (成團) | OD-57 |
+| FR221 | OD-58 | Stale consent re-consent blocks 成團; material change updates all three languages | OD-58 |
+| FR222 | OD-59 | Fresh consent per cohort (per-enrolment, not per-child) | OD-59 |
+| FR223 | OD-60 | Teacher lifecycle: invited, school-stamped, single-school, offboarding-guarded | OD-60 |
+| FR224 | OD-61 | Teacher links to team (not students); may approve that team's gates; required before first gate | OD-61 |
+| FR225 | OD-62 | Student leaving school mid-programme: team stands, academy exception | OD-62 |
+| FR226 | OD-63 | Enrolment independence per programme (student × programme) | OD-63 |
+| FR227 | OD-64 | Scheduled-job state changes audit with a system actor | OD-64 |
+| FR228 | OD-66 | Notification catalogue: 21 events, transactional/informational, per channel × language | OD-66 |
+| — | — | *(handoff FR200 — self-registration request-not-account — NOT applied: contradicts FR068 under the later client model change; awaiting Leo ruling)* | — |
 
 ## Optional requirements
 

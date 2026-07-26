@@ -17,7 +17,7 @@
 | Stack | Laravel 12 (JSON API) · React + Vite + Ant Design Pro · PostgreSQL · Redis · Horizon · Nginx · Docker Compose |
 | Hosting | Alibaba Cloud HK — ApsaraDB RDS (Postgres) + OSS. Environments: `local → staging → production` |
 | Identity | Sanctum now, behind an auth interface; **Logto arrives only in Sprint 11**, after UAT |
-| Payments | Offline recording only. QFPay is Phase 2 — do not scaffold for it |
+| Payments | Manual recording (school-settled/offline) + a MockProvider behind a PaymentProvider interface (OD-46). QFPay is Phase 2, pre-production, gated by the merchant application — build the interface now, the QFPay adapter later. HKD only; the gateway handles Alipay CN and settles HKD |
 | Money representation | Every monetary value carries an ISO **currency code** (HKD in Phase 1) and is stored in **integer minor units**. Never a float. Multi-currency UI and admin-entered HKD↔RMB rate are Phase 2 (OD-18) |
 | Time & place | Single timezone `Asia/Hong_Kong`; timestamps stored UTC, rendered HKT. A `jurisdiction` field is retained — HK and mainland China share an offset but not a legal regime (OD-16) |
 | Languages | Code, comments, docs: **English**. UI: **EN + 繁體中文 (TC) + 简体中文 (SC)** — full trilingual i18n, scaffolded in S00. No user-facing string is ever hardcoded (OD-19) |
@@ -55,6 +55,11 @@ Known supersessions you will otherwise trip over:
   (school vouching collapses initiation and approval into the vouching admin's one audited act).
 - S01's D2 ruling (guardian-created students born login-verified) — retired with the path it
   reasoned about (OD-29). Every self-registered account verifies its own address.
+- The individual enrolment waitlist (Spec E / amendment 2.18) — superseded by OD-34 (the
+  awaiting-a-team pool) under team-based capacity (OD-31): seats allocate to teams at 成團, not
+  to individuals at enrolment. Do not build a separate waitlist.
+- "QFPay — do not scaffold" — superseded by OD-46: a PaymentProvider interface with a
+  MockProvider ships in Phase 1; the QFPay adapter is Phase 2, gated by the merchant application.
 
 ---
 
@@ -86,7 +91,7 @@ Known supersessions you will otherwise trip over:
 | BI-6 | A Signed consent's stored document hash must match its template version's SHA-256. No signature without a matching hash. **Template versions are language-scoped** — a consent signed in SC hashes against the SC template version, never a translation of another (OD-20) | Sprint 3 |
 | BI-7 | Enrolment reaches `Withdrawn` only through the withdrawal workflow (2.1). No direct status write | 2.1 |
 | BI-8 | Every entity status transition writes an audit event carrying the actor's identity — including auth events (2.11) | Part P + 2.11 |
-| BI-9 | Segregation of duty: recorder ≠ confirmer on payments **and refunds**. Enforced server-side, not by UI hiding. **Not switchable per programme** — Spec R10 is overridden (OD-14). Both parties require the `finance` capability; the academy must staff at least two such accounts | Sprint 4 + 2.17 |
+| BI-9 | Segregation of duty: recorder ≠ confirmer on **manually recorded** payments **and refunds** (school-settled, offline). Gateway and mock payments confirm themselves and are out of BI-9 scope (OD-47). Enforced server-side, not by UI hiding. **Not switchable per programme** — Spec R10 is overridden (OD-14). Both parties require the `finance` capability; the academy must staff at least two such accounts | Sprint 4 + 2.17 + OD-47 |
 | BI-10 | Uploaded files are invisible until the ClamAV scan passes. No context skips the shared upload service | 2.12 |
 
 ---
