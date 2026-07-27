@@ -88,6 +88,15 @@ class WizardService
             throw new HttpException(423, "Section '{$key}' is locked — changes require a new programme version (D5)");
         }
 
+        // OD-33/A12: date ordering is re-validated on EVERY post-publish edit —
+        // a published programme can never be edited into an illegal timeline
+        if ($programme->status !== 'draft' && in_array($key, ['basics', 'team_rules'], true)) {
+            $violation = $this->deadlineOrderingViolation($programme, $key, $data);
+            if ($violation !== null) {
+                throw ValidationException::withMessages(['dates' => [$violation]]);
+            }
+        }
+
         $section = WizardSection::query()->updateOrCreate(
             ['programme_id' => $programme->id, 'section_key' => $key],
             ['status' => $status, 'data' => $data, 'updated_by' => $actor->id],
@@ -102,6 +111,49 @@ class WizardService
         return $section;
     }
 
+
+    /**
+     * OD-33: enrolment close < formation deadline < programme start. Dates live
+     * in wizard data (basics.enrolment_closes_on, basics.starts_on,
+     * team_rules.formation_deadline_on). If NONE are set the rule is silent
+     * (pre-flight WARNS; S05 formation requires the deadline before it runs);
+     * a PARTIAL or misordered set is a violation.
+     * $overrideKey/$overrideData evaluate a prospective edit before saving.
+     *
+     * @param array<string, mixed>|null $overrideData
+     */
+    public function deadlineOrderingViolation(Programme $programme, ?string $overrideKey = null, ?array $overrideData = null): ?string
+    {
+        $sectionData = function (string $key) use ($programme, $overrideKey, $overrideData): array {
+            if ($key === $overrideKey && $overrideData !== null) {
+                return $overrideData;
+            }
+            $row = WizardSection::query()->where('programme_id', $programme->id)->where('section_key', $key)->first();
+
+            return (array) ($row->data ?? []);
+        };
+        $basics = $sectionData('basics');
+        $teamRules = $sectionData('team_rules');
+        $dates = [
+            'enrolment_closes_on' => $basics['enrolment_closes_on'] ?? null,
+            'formation_deadline_on' => $teamRules['formation_deadline_on'] ?? null,
+            'starts_on' => $basics['starts_on'] ?? null,
+        ];
+        $set = array_filter($dates, fn ($v) => $v !== null && $v !== '');
+        if ($set === []) {
+            return null; // silent — pre-flight raises the warning
+        }
+        if (count($set) < 3) {
+            $missing = implode(', ', array_keys(array_diff_key($dates, $set)));
+            return "Formation timeline is partially configured — missing: {$missing} (OD-33: all three dates or none)";
+        }
+        if (! ($dates['enrolment_closes_on'] < $dates['formation_deadline_on'] && $dates['formation_deadline_on'] < $dates['starts_on'])) {
+            return 'Formation timeline out of order — required: enrolment close < formation deadline < programme start (OD-33)';
+        }
+
+        return null;
+    }
+
     /** @return array{findings: list<array{severity: string, code: string, message: string}>, publishable: bool} */
     public function preFlight(Programme $programme, User $actor): array
     {
@@ -114,6 +166,13 @@ class WizardService
                 $findings[] = ['severity' => 'error', 'code' => "section.{$key}.incomplete", 'message' => "Section '{$key}' is not complete"];
             }
         }
+        $violation = $this->deadlineOrderingViolation($programme);
+        if ($violation !== null) {
+            $findings[] = ['severity' => 'error', 'code' => 'deadline.ordering', 'message' => $violation];
+        } elseif (empty(($byKey['team_rules']['data'] ?? [])['formation_deadline_on'])) {
+            $findings[] = ['severity' => 'warning', 'code' => 'deadline.dates_missing', 'message' => 'No formation timeline set (OD-33) — S05 team formation requires it before the programme runs'];
+        }
+
         $consent = $byKey['consent']['data'] ?? [];
         if (empty($consent['template_ref'])) {
             $findings[] = ['severity' => 'error', 'code' => 'consent.template_missing', 'message' => 'Consent template not selected; enrolment cannot open'];
