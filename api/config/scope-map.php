@@ -35,6 +35,8 @@ return [
         'consolidated_invoices',
         'credit_notes',
         'refunds',
+        'teams',
+        'team_members',
         'team_categories',
         'fee_items',
         'withdrawal_policies',

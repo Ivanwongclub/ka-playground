@@ -152,6 +152,12 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/consent-requests/{id}/decline', [ConsentRequestController::class, 'decline'])
         ->middleware('role:guardian');
 
+    // S05 step 1 — team formation in lobbies (TEAM-CATEGORIES §4-§8)
+    Route::get('/programmes/{programmeId}/lobbies', [\App\Http\Controllers\FormationController::class, 'lobbies'])->middleware('role:student');
+    Route::post('/my/teams', [\App\Http\Controllers\FormationController::class, 'create'])->middleware('role:student');
+    Route::post('/teams/{id}/join', [\App\Http\Controllers\FormationController::class, 'join'])->middleware('role:student');
+    Route::get('/teams', [\App\Http\Controllers\FormationController::class, 'index']); // RLS-shaped
+
     // Reads shaped by RLS alone (S05 formation will consume these)
     Route::get('/programmes/{id}/team-categories', [ProgrammeConfigController::class, 'categories']);
     Route::get('/programmes/{id}/withdrawal-policy', [ProgrammeConfigController::class, 'withdrawalPolicy']);
