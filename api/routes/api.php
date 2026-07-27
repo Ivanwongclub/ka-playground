@@ -31,6 +31,16 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->middleware('permission:enrolment.view'); // S04A: RLS-shaped
     Route::post('/my/enrolments', [\App\Http\Controllers\EnrolmentController::class, 'store'])
         ->middleware('role:guardian'); // S04A: creation records the acting guardian (2.22)
+    // S04A step 4 — withdrawal workflow (BI-7 state only; OD-26 fixed approver)
+    Route::post('/my/enrolments/{enrolmentId}/withdrawal', [\App\Http\Controllers\WithdrawalController::class, 'store'])
+        ->middleware('role:guardian');
+    Route::post('/withdrawal-requests/{id}/cancel', [\App\Http\Controllers\WithdrawalController::class, 'cancel'])
+        ->middleware('role:guardian');
+    Route::post('/withdrawal-requests/{id}/endorse', [\App\Http\Controllers\WithdrawalController::class, 'endorse'])
+        ->middleware('role:school_admin');
+    Route::post('/admin/withdrawal-requests/{id}/decide', [\App\Http\Controllers\WithdrawalController::class, 'decide'])
+        ->middleware('permission:operations.manage');
+    Route::get('/withdrawal-requests', [\App\Http\Controllers\WithdrawalController::class, 'index']); // RLS-shaped
     Route::get('/payments', $notImplemented)->middleware('permission:finance.view');
 
     Route::post('/admin/capabilities/grant', [CapabilityController::class, 'grant']);
