@@ -21,6 +21,7 @@ use App\Services\Reconciliation\Assertions\InvoiceBalanceAssertion;
 use App\Services\Reconciliation\Assertions\ManualPaymentSodAssertion;
 use App\Services\Reconciliation\Assertions\OrderLinesImmutabilityProbe;
 use App\Services\Reconciliation\Assertions\ReceiptGaplessAssertion;
+use App\Services\Reconciliation\Assertions\RefundBackstopProvenanceAssertion;
 use App\Services\Reconciliation\Assertions\RefundFullOnlyAssertion;
 use App\Services\Reconciliation\Assertions\PaymentObligationCompletenessAssertion;
 use App\Services\Reconciliation\Assertions\PaymentLinkNoPiiAssertion;
@@ -81,6 +82,11 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new OrderLinesImmutabilityProbe);
             $registry->register(new ManualPaymentSodAssertion);
             $registry->register(new RefundFullOnlyAssertion);
+
+            // S05 — the balance of the S05 battery registers at STEP 6; this one
+            // lands early because it is the replacement control for an out-of-BI-9
+            // money path (STEP 3 backstop, Leo ruling 2026-07-27).
+            $registry->register(new RefundBackstopProvenanceAssertion);
 
             return $registry;
         });

@@ -160,6 +160,11 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // S05 step 2 — 成團: submit (student) then approve (school admin of lobby / academy ops)
     Route::post('/teams/{id}/submit', [\App\Http\Controllers\TeamConfirmationController::class, 'submit'])->middleware('role:student');
     Route::post('/teams/{id}/confirm', [\App\Http\Controllers\TeamConfirmationController::class, 'confirm']); // authority checked in-service (OD-39)
+    // S05 step 3 — deadline matching screen (OD-35): screen read is RLS-shaped; action authority in-service (academy operations)
+    Route::get('/admin/programmes/{programmeId}/matching', [\App\Http\Controllers\MatchingController::class, 'screen']);
+    Route::post('/admin/matching/match', [\App\Http\Controllers\MatchingController::class, 'match']);
+    Route::post('/admin/matching/roll', [\App\Http\Controllers\MatchingController::class, 'roll']);
+    Route::post('/admin/matching/release', [\App\Http\Controllers\MatchingController::class, 'release']);
 
     // Reads shaped by RLS alone (S05 formation will consume these)
     Route::get('/programmes/{id}/team-categories', [ProgrammeConfigController::class, 'categories']);

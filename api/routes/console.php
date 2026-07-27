@@ -11,3 +11,13 @@ Schedule::command('reconcile:run')
     ->onFailure(function (): void {
         \Illuminate\Support\Facades\Log::critical('Nightly reconciliation run failed or did not complete');
     });
+
+// S05-3 formation-deadline machinery (OD-33/35). Daily, off-peak, HKT. Both are
+// idempotent SYSTEM jobs; the backstop runs after deadlines so a just-flagged
+// team never trips it the same day.
+Schedule::command('teams:run-deadlines')
+    ->timezone('Asia/Hong_Kong')
+    ->dailyAt('02:30');
+Schedule::command('teams:run-parking-backstop')
+    ->timezone('Asia/Hong_Kong')
+    ->dailyAt('02:40');

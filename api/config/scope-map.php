@@ -50,6 +50,7 @@ return [
         'uploads',
         'audit_events',
         'guardian_replacement_exceptions',
+        'team_exceptions',
     ],
 
     // Deliberately unscoped — each with its recorded reason

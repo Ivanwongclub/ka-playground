@@ -35,4 +35,14 @@ return [
     'App\\Services\\Teams\\TeamConfirmationService::submit' => 'Team submit transition (S05): the submitter moves their own forming team to submitted; teams.status is a system-only write (S04A state-machine discipline), the submitter authority was just checked.',
 
     'App\\Services\\Teams\\TeamConfirmationService::confirm' => 'Team 成團 confirmation (S05): the whole seat-claim transaction is a system state-machine op — FOR SHARE on members\' consent (+guardian_links), FOR UPDATE on programme_capacity, teamed→confirmed, one payment_obligation per member. The approver\'s authority (OD-39) was established before the elevation; only the members\' own rows are touched.',
+
+    'App\Services\Teams\FormationDeadlineService::run' => 'Formation deadline job (S05-3, OD-33): at the deadline the SYSTEM auto-submits size-compliant forming teams and raises deadline_noncompliant exceptions for the rest. teams.status and team_exceptions are system-only writes; this is the scheduled actor. Reads and writes only rows of past-deadline programmes.',
+
+    'App\Services\Teams\MatchingService::match' => 'Deadline matching — MATCH (S05-3, OD-35): an admin places an unplaced student into an under-strength team; the enrolment moves in_pool → teamed (system-only) and a team_member is inserted. The admin authority and lobby eligibility are checked before the elevation; exactly this one enrolment/team is touched.',
+
+    'App\Services\Teams\MatchingService::roll' => 'Deadline matching — ROLL (S05-3, OD-35): an admin parks an unplaced student as a pending roll-forward exception with a 90-day auto-refund backstop. The enrolment stays in_pool; only a team_exceptions row is written (system-only). Admin authority checked before the elevation.',
+
+    'App\Services\Teams\MatchingService::release' => 'Deadline matching — RELEASE (S05-3, OD-35): an admin releases an unplaced student; the enrolment moves in_pool → released (system-only) and any open parking exception is resolved. Admin authority checked before the elevation.',
+
+    'App\Services\Teams\ParkingBackstopService::run' => 'Parking backstop (S05-3, OD-35): the SYSTEM force-resolves parked roll-forwards past their 90-day window — full auto-refund (origin=backstop_auto, out of BI-9 per OD-47) of any paid order, then enrolment in_pool → released, then the exception auto_released. Scheduled actor; touches only expired parked rows and their own orders/enrolments.',
 ];
