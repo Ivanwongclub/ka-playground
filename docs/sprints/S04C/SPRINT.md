@@ -14,6 +14,14 @@ self-registration can replace it.
 
 ## IMPLEMENTS  OD-23 · OD-27 (creation retirement) · OD-28 · OD-29 · FR068 · SR001 · 2.28 · FR066 (reuse)
 
+## CARRY-IN — public-surface fix from S04B (fix WITH the public-page work, not later)
+- **Payment-link URL (OD-44):** `PaymentLinkService::mint` builds the forwardable URL from
+  `url("/pay/{token}")` = APP_URL + path → e.g. `http://localhost/pay/{token}`, which is MISSING
+  the `/api` prefix and the real host/port, so the link does not resolve as printed. The link's
+  whole purpose is FORWARDING, so the correct absolute public URL must be generated at mint time —
+  fix it when the public payment page (the anonymous initials-only render of `/api/pay/{token}`)
+  is built alongside this sprint's anonymous surfaces. Found at the S04B local preview, 2026-07-27.
+
 ## SCOPE CLASSIFICATION PLAN (read sets pre-stated)
 | Table | Classification | Read set / justification |
 |---|---|---|
