@@ -111,6 +111,9 @@ class ConsentTemplateService
                 foreach ($stale as $request) {
                     DB::table('consent_requests')->where('id', $request->id)
                         ->update(['status' => 'superseded', 'updated_at' => now()]);
+                    // S04A: supersession un-satisfies consent — re-evaluate the pool gate
+                    \App\Jobs\EvaluateConsentGate::dispatch((int) $request->programme_id,
+                        (int) $request->student_id, (int) $actor->id, 'consent superseded (OD-20a)')->afterCommit();
                     $this->audit->record('consent_request', $request->id, 'consent_request.superseded',
                         fromState: 'signed', toState: 'superseded',
                         reason: "material change to {$language} v{$newVersion} (OD-20a)",

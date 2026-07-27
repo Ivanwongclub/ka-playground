@@ -161,6 +161,9 @@ class ConsentSigningService
                 programmeId: (int) $request->programme_id, actor: $actor);
             // S09's ladder tells the signer the document changed (card non-scope here)
             \App\Events\ConsentRequestVoided::dispatch($request->id, (int) $request->signer_id, $reason, null);
+            // S04A: a void can UN-satisfy consent — pull the enrolment back
+            \App\Jobs\EvaluateConsentGate::dispatch((int) $request->programme_id,
+                (int) $request->student_id, (int) $actor->id, 'consent request voided')->afterCommit();
 
             return ['voided' => $request->id, 'reissue_queued' => $reissue];
         });
@@ -342,6 +345,9 @@ class ConsentSigningService
 
             // FR038: the signed PDF + certificate generate after commit, as system
             \App\Jobs\GenerateConsentDocument::dispatch($id)->afterCommit();
+            // S04A: a landed signature may open the pool gate (OD-34/50a)
+            \App\Jobs\EvaluateConsentGate::dispatch((int) $request->programme_id,
+                (int) $request->student_id, (int) $signer->id, 'signature landed')->afterCommit();
 
             return $id;
         });

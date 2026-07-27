@@ -109,7 +109,7 @@ class AuthLifecycleTest extends TestCase
         $this->refreshAuth();
         $this->getJson('/api/enrolments', ['Authorization' => "Bearer {$session}"])->assertStatus(401);
         $this->refreshAuth();
-        $this->getJson('/api/enrolments', ['Authorization' => "Bearer {$remember}"])->assertStatus(501);
+        $this->getJson('/api/enrolments', ['Authorization' => "Bearer {$remember}"])->assertStatus(200);
 
         // Age the remember token past 30 days — it dies too
         DB::table('personal_access_tokens')->update([

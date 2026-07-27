@@ -27,7 +27,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/students', $notImplemented)->middleware('permission:student_records.view');
     Route::get('/consents', $notImplemented)->middleware('permission:consent.view');
     Route::post('/consents/sign', $notImplemented)->middleware('permission:consent.sign');
-    Route::get('/enrolments', $notImplemented)->middleware('permission:enrolment.view');
+    Route::get('/enrolments', [\App\Http\Controllers\EnrolmentController::class, 'index'])
+        ->middleware('permission:enrolment.view'); // S04A: RLS-shaped
+    Route::post('/my/enrolments', [\App\Http\Controllers\EnrolmentController::class, 'store'])
+        ->middleware('role:guardian'); // S04A: creation records the acting guardian (2.22)
     Route::get('/payments', $notImplemented)->middleware('permission:finance.view');
 
     Route::post('/admin/capabilities/grant', [CapabilityController::class, 'grant']);

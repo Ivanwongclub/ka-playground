@@ -21,6 +21,7 @@ return [
         'consent_requests',
         'consent_signatures',
         'consent_documents',
+        'enrolments',
         'team_categories',
         'fee_items',
         'withdrawal_policies',

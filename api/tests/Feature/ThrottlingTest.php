@@ -34,7 +34,7 @@ class ThrottlingTest extends TestCase
         Sanctum::actingAs(User::factory()->create(['role' => 'guardian']));
 
         for ($i = 1; $i <= 60; $i++) {
-            $this->getJson('/api/enrolments')->assertStatus(501);
+            $this->getJson('/api/enrolments')->assertStatus(200);
         }
 
         $this->getJson('/api/enrolments')->assertStatus(429);
