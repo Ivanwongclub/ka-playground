@@ -28,6 +28,7 @@ return [
         'order_lines',
         'receipts',
         'receipt_sequences',
+        'payment_obligations',
         'team_categories',
         'fee_items',
         'withdrawal_policies',

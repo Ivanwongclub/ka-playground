@@ -17,6 +17,7 @@ use App\Services\Reconciliation\Assertions\DefaultLobbyAssertion;
 use App\Services\Reconciliation\Assertions\PublishedProgrammeCompletenessAssertion;
 use App\Services\Reconciliation\Assertions\GuardianLinkCoverageAssertion;
 use App\Services\Reconciliation\Assertions\MemberDirectoryExclusivityAssertion;
+use App\Services\Reconciliation\Assertions\PaymentObligationCompletenessAssertion;
 use App\Services\Reconciliation\Assertions\PermissionMatrixProbe;
 use App\Services\Reconciliation\Assertions\ScopeCoverageAssertion;
 use App\Services\Reconciliation\Assertions\VersionSnapshotImmutabilityProbe;
@@ -63,6 +64,9 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new EnrolmentStatusBypassAssertion);
             $registry->register(new ConsentIssuanceCompletenessAssertion);
             $registry->register(new DeadlineOrderingAssertion);
+
+            // S04B
+            $registry->register(new PaymentObligationCompletenessAssertion);
 
             return $registry;
         });
