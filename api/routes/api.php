@@ -42,6 +42,11 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->middleware('permission:operations.manage');
     Route::get('/withdrawal-requests', [\App\Http\Controllers\WithdrawalController::class, 'index']); // RLS-shaped
     Route::get('/payments', $notImplemented)->middleware('permission:finance.view');
+    // S04B step 1 — RLS-shaped money reads (OD-67: guardians+student read;
+    // school admins get ZERO family orders; finance/audit see all)
+    Route::get('/orders', fn () => response()->json(['data' => \Illuminate\Support\Facades\DB::table('orders')->orderBy('created_at')->get(['id', 'enrolment_id', 'programme_id', 'student_id', 'payer_party', 'status', 'total_amount_minor', 'currency', 'payment_due_at'])]));
+    Route::get('/orders/{id}/lines', fn (string $id) => response()->json(['data' => \Illuminate\Support\Facades\DB::table('order_lines')->where('order_id', $id)->get(['id', 'name_en', 'name_tc', 'name_sc', 'amount_minor', 'currency'])]));
+    Route::get('/receipts', fn () => response()->json(['data' => \Illuminate\Support\Facades\DB::table('receipts')->orderBy('receipt_number')->get(['id', 'order_id', 'sequence_key', 'receipt_number', 'amount_minor', 'currency', 'issued_at'])]));
 
     Route::post('/admin/capabilities/grant', [CapabilityController::class, 'grant']);
     Route::post('/admin/capabilities/revoke', [CapabilityController::class, 'revoke']);
