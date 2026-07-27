@@ -157,6 +157,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/my/teams', [\App\Http\Controllers\FormationController::class, 'create'])->middleware('role:student');
     Route::post('/teams/{id}/join', [\App\Http\Controllers\FormationController::class, 'join'])->middleware('role:student');
     Route::get('/teams', [\App\Http\Controllers\FormationController::class, 'index']); // RLS-shaped
+    // S05 step 2 — 成團: submit (student) then approve (school admin of lobby / academy ops)
+    Route::post('/teams/{id}/submit', [\App\Http\Controllers\TeamConfirmationController::class, 'submit'])->middleware('role:student');
+    Route::post('/teams/{id}/confirm', [\App\Http\Controllers\TeamConfirmationController::class, 'confirm']); // authority checked in-service (OD-39)
 
     // Reads shaped by RLS alone (S05 formation will consume these)
     Route::get('/programmes/{id}/team-categories', [ProgrammeConfigController::class, 'categories']);

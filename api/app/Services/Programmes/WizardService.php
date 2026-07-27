@@ -6,6 +6,7 @@ use App\Models\Programme;
 use App\Models\User;
 use App\Models\WizardSection;
 use App\Services\Audit\AuditService;
+use App\Services\Authz\ScopeContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -36,7 +37,10 @@ class WizardService
     /** Sections locked once Published (D5 one-way door). */
     public const LOCKED_WHEN_PUBLISHED = ['fees', 'consent'];
 
-    public function __construct(private readonly AuditService $audit) {}
+    public function __construct(
+        private readonly AuditService $audit,
+        private readonly ScopeContext $scope,
+    ) {}
 
     /** @return array{sections: list<array<string, mixed>>, readiness: array{complete: int, required: int}} */
     public function state(Programme $programme): array
@@ -95,6 +99,19 @@ class WizardService
             if ($violation !== null) {
                 throw ValidationException::withMessages(['dates' => [$violation]]);
             }
+        }
+
+        // OD-31 capacity edit rule (S05-2): raising is fine; LOWERING below the
+        // seats already claimed by confirmed teams is refused
+        if ($programme->status !== 'draft' && $key === 'eligibility' && isset($data['capacity'])) {
+            $claimed = (int) DB::table('programme_capacity')->where('programme_id', $programme->id)->value('claimed');
+            if ((int) $data['capacity'] < $claimed) {
+                throw ValidationException::withMessages(['capacity' => ["Capacity cannot be lowered to {$data['capacity']}: {$claimed} seat(s) are already claimed by confirmed teams (OD-31)"]]);
+            }
+            $this->scope->asSystem(
+                'Programme capacity edit (S05-2): the seat counter is a system-only table (claimed moves only through 成團); this raises/lowers the CAPACITY column after the OD-31 lower-below-claimed guard, never claimed. Config authority was established by the wizard route before this call.',
+                fn () => DB::table('programme_capacity')->where('programme_id', $programme->id)->update(['capacity' => (int) $data['capacity'], 'updated_at' => now()]),
+            );
         }
 
         $section = WizardSection::query()->updateOrCreate(
@@ -173,6 +190,16 @@ class WizardService
             $findings[] = ['severity' => 'warning', 'code' => 'deadline.dates_missing', 'message' => 'No formation timeline set (OD-33) — S05 team formation requires it before the programme runs'];
         }
 
+        $capacity = ($byKey['eligibility']['data'] ?? [])['capacity'] ?? null;
+        $minTeam = (int) (($byKey['team_rules']['data'] ?? [])['min_team_size'] ?? 1);
+        if ($capacity === null) {
+            $findings[] = ['severity' => 'warning', 'code' => 'capacity.unset', 'message' => 'No programme capacity set (OD-31, eligibility) — S05 team 成團 refuses without it'];
+        } elseif ((int) $capacity <= 0) {
+            $findings[] = ['severity' => 'error', 'code' => 'capacity.invalid', 'message' => 'Programme capacity must be greater than 0 (OD-31)'];
+        } elseif ((int) $capacity < $minTeam) {
+            $findings[] = ['severity' => 'error', 'code' => 'capacity.below_min_team', 'message' => "Programme capacity ({$capacity}) is below the minimum team size ({$minTeam}) (OD-31)"];
+        }
+
         $consent = $byKey['consent']['data'] ?? [];
         if (empty($consent['template_ref'])) {
             $findings[] = ['severity' => 'error', 'code' => 'consent.template_missing', 'message' => 'Consent template not selected; enrolment cannot open'];
@@ -239,6 +266,13 @@ class WizardService
 
         return DB::transaction(function () use ($programme, $actor): Programme {
             $programme->update(['status' => 'published']);
+            // S05-2: seed the seat counter from eligibility.capacity when set
+            $capacity = json_decode((string) DB::table('wizard_sections')
+                ->where('programme_id', $programme->id)->where('section_key', 'eligibility')
+                ->value('data'), true)['capacity'] ?? null;
+            if ($capacity !== null && (int) $capacity > 0) {
+                $this->seedCapacity($programme, (int) $capacity);
+            }
             // Freeze the full config as an immutable version (D5)
             app(\App\Http\Controllers\ProgrammeController::class); // (snapshot logic shared below)
             $next = (int) \App\Models\ProgrammeVersion::query()
@@ -263,6 +297,18 @@ class WizardService
 
             return $programme->fresh();
         });
+    }
+
+    /** Seed the system-only seat counter at publish (frame[1] must be this method for asSystem). */
+    private function seedCapacity(Programme $programme, int $capacity): void
+    {
+        $this->scope->asSystem(
+            'Programme capacity seed (S05-2): publish seeds the seat counter from eligibility.capacity with claimed=0. programme_capacity is a system-only table; this is the one insert of the row, inside the publish transaction. Publish authority was established by the route before this call.',
+            fn () => DB::table('programme_capacity')->updateOrInsert(
+                ['programme_id' => $programme->id],
+                ['capacity' => $capacity, 'claimed' => 0, 'updated_at' => now(), 'created_at' => now()],
+            ),
+        );
     }
 
     public function saveAsTemplate(Programme $programme, User $actor): Programme

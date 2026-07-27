@@ -37,6 +37,7 @@ return [
         'refunds',
         'teams',
         'team_members',
+        'programme_capacity',
         'team_categories',
         'fee_items',
         'withdrawal_policies',
