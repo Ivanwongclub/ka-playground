@@ -22,3 +22,6 @@ REVOKE UPDATE, DELETE, TRUNCATE ON consent_documents FROM kap_app; -- FR038 evid
 REVOKE UPDATE, DELETE, TRUNCATE ON order_lines FROM kap_app; -- BI-5 immutable lines (S04B-1)
 REVOKE UPDATE, DELETE, TRUNCATE ON receipts FROM kap_app; -- BI-2 immutable receipts (S04B-1)
 REVOKE UPDATE, DELETE, TRUNCATE ON credit_notes FROM kap_app; -- BI-5 immutable corrections (S04B-5)
+REVOKE UPDATE, DELETE, TRUNCATE ON reconciliation_log FROM kap_app; -- SR010 audit spine: run records are append-only, must not be app-rewritable (grant-role audit 2026-07-27)
+REVOKE UPDATE, DELETE, TRUNCATE ON payment_evidence FROM kap_app; -- append-only evidence links (grant-role audit 2026-07-27)
+REVOKE UPDATE, DELETE, TRUNCATE ON withdrawal_endorsements FROM kap_app; -- append-only pastoral records (grant-role audit 2026-07-27)
