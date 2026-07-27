@@ -26,10 +26,10 @@ class ReconciliationRunnerTest extends TestCase
             ->expectsOutputToContain('PASS  programmes.version_immutability')
             ->expectsOutputToContain('PASS  programmes.published_completeness')
             ->expectsOutputToContain('PASS  teams.one_default_lobby')
-            ->expectsOutputToContain('RECONCILE PASS — 27 assertion(s), 27 passed, 0 failed')
+            ->expectsOutputToContain('RECONCILE PASS — 28 assertion(s), 28 passed, 0 failed')
             ->assertExitCode(0);
 
-        $this->assertSame(27, DB::table('reconciliation_log')->where('passed', true)->where('assertion_key', '!=', '_run')->count());
+        $this->assertSame(28, DB::table('reconciliation_log')->where('passed', true)->where('assertion_key', '!=', '_run')->count());
         $this->assertSame(1, DB::table('reconciliation_log')->where('assertion_key', '_run')->count());
     }
 

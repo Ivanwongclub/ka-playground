@@ -23,7 +23,9 @@ class TeamConfirmationController extends Controller
     public function confirm(Request $request, string $id): JsonResponse
     {
         $result = $this->confirmation->confirm($id, $request->user());
-        ConsumePaymentObligations::dispatch(); // after commit: issue orders + fire PaymentRequested
+        if (! empty($result['obligations'])) {
+            ConsumePaymentObligations::dispatch(); // after commit: issue orders + fire PaymentRequested (only if any obligation was written)
+        }
 
         return response()->json($result);
     }

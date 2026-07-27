@@ -165,6 +165,12 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/matching/match', [\App\Http\Controllers\MatchingController::class, 'match']);
     Route::post('/admin/matching/roll', [\App\Http\Controllers\MatchingController::class, 'roll']);
     Route::post('/admin/matching/release', [\App\Http\Controllers\MatchingController::class, 'release']);
+    // S05 step 4 — the four terminal actions on a below-min exception (OD-37); authority in-service (academy operations)
+    Route::post('/admin/teams/{id}/assign', [\App\Http\Controllers\TeamResolutionController::class, 'assign']);
+    Route::post('/admin/teams/{id}/extend-grace', [\App\Http\Controllers\TeamResolutionController::class, 'extendGrace']);
+    Route::post('/admin/teams/{id}/waive', [\App\Http\Controllers\TeamResolutionController::class, 'waive']);
+    Route::post('/admin/teams/{id}/dissolve', [\App\Http\Controllers\TeamResolutionController::class, 'dissolve']);
+    Route::post('/admin/team-members/{id}/school-leave', [\App\Http\Controllers\TeamResolutionController::class, 'schoolLeave']); // OD-62; {id} = enrolment id
 
     // Reads shaped by RLS alone (S05 formation will consume these)
     Route::get('/programmes/{id}/team-categories', [ProgrammeConfigController::class, 'categories']);

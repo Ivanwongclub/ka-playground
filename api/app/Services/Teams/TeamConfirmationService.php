@@ -111,6 +111,13 @@ class TeamConfirmationService
                     $obligationIds = [];
                     foreach ($members as $m) {
                         $this->enrolments->transition($m->enrolment_id, 'confirmed', $approver, "成團 of team {$team->id}");
+                        // OD-38 "no re-charge": a dissolution re-pools PAID members into the
+                        // pool keeping their paid order. When such a member re-teams, they
+                        // claim a seat and confirm, but get NO second obligation — otherwise
+                        // the outbox would re-request payment against their live paid order.
+                        if (DB::table('orders')->where('enrolment_id', $m->enrolment_id)->where('status', 'paid')->exists()) {
+                            continue;
+                        }
                         $oid = (string) Str::uuid7();
                         DB::table('payment_obligations')->insert([
                             'id' => $oid, 'enrolment_id' => $m->enrolment_id, 'programme_id' => $team->programme_id,

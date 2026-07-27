@@ -45,4 +45,16 @@ return [
     'App\Services\Teams\MatchingService::release' => 'Deadline matching — RELEASE (S05-3, OD-35): an admin releases an unplaced student; the enrolment moves in_pool → released (system-only) and any open parking exception is resolved. Admin authority checked before the elevation.',
 
     'App\Services\Teams\ParkingBackstopService::run' => 'Parking backstop (S05-3, OD-35): the SYSTEM force-resolves parked roll-forwards past their 90-day window — full auto-refund (origin=backstop_auto, out of BI-9 per OD-47) of any paid order, then enrolment in_pool → released, then the exception auto_released. Scheduled actor; touches only expired parked rows and their own orders/enrolments.',
+
+    'App\Services\Teams\LapseDetectionService::run' => 'Lapse-detection job (S05-4, OD-45): the SYSTEM scans family-paid unpaid orders past payment_due_at + grace and, for each, writes a lapse audit, suspends the member on team_members, and raises an FR066 lapse (+ below_min) exception. teams/team_members/team_exceptions are system-only writes; this is the scheduled actor.',
+
+    'App\Services\Teams\TeamResolutionService::assign' => 'Below-min resolution — ASSIGN (S05-4, OD-37): an admin places an unplaced student into a below-min team; one seat is claimed under FOR UPDATE, the enrolment moves in_pool → teamed → confirmed, and a guardian payment_obligation is written. Admin authority + lobby eligibility checked before the elevation.',
+
+    'App\Services\Teams\TeamResolutionService::extendGrace' => 'Below-min resolution — GRACE-ONCE (S05-4, OD-37): an admin extends a suspended member\'s payment grace exactly once and un-suspends them. A second extension is refused (grace is not a loop, OD-31/37). team_members is a system-only write; authority checked before the elevation.',
+
+    'App\Services\Teams\TeamResolutionService::waive' => 'Below-min resolution — WAIVE (S05-4, OD-40): an admin grants an under-strength waiver, stored as a reason field on the team so the nightly size check reads "meets rules OR waiver". teams is a system-only write; authority checked before the elevation.',
+
+    'App\Services\Teams\TeamResolutionService::dissolve' => 'Below-min resolution — DISSOLVE (S05-4, OD-38): an admin disbands the team; each live member\'s enrolment moves confirmed → in_pool (re-pooled in-lobby), PAID orders are kept untouched (no re-charge, no refund) and unpaid orders are cancelled, then the team is disbanded. System-only writes; authority checked before the elevation.',
+
+    'App\Services\Teams\TeamResolutionService::recordSchoolLeave' => 'School-leave record (S05-4, OD-62): a student leaves school mid-programme. The team STANDS — no membership or team state change — and an academy school_leave exception is raised. team_exceptions is a system-only write; authority checked before the elevation.',
 ];

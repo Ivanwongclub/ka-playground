@@ -21,3 +21,9 @@ Schedule::command('teams:run-deadlines')
 Schedule::command('teams:run-parking-backstop')
     ->timezone('Asia/Hong_Kong')
     ->dailyAt('02:40');
+
+// S05-4 non-payment lapse cascade (OD-45). Runs before the deadline job so a
+// same-day suspension is visible when below-min teams are assessed.
+Schedule::command('teams:run-lapse-detection')
+    ->timezone('Asia/Hong_Kong')
+    ->dailyAt('02:20');

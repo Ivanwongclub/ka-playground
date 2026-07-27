@@ -24,7 +24,9 @@ class EnrolmentService
         'pending_consent' => ['in_pool', 'withdrawn'],
         'in_pool' => ['pending_consent', 'teamed', 'withdrawn', 'released'],
         'teamed' => ['in_pool', 'confirmed', 'withdrawn'],
-        'confirmed' => ['active', 'withdrawn'],
+        // S05-4: dissolution (OD-38) re-pools a confirmed member back to the
+        // awaiting-a-team pool, keeping their paid order (no re-charge, no refund).
+        'confirmed' => ['active', 'withdrawn', 'in_pool'],
         'active' => ['completed', 'withdrawn'],
         'completed' => [], // terminal, OD-65
         'withdrawn' => [],
