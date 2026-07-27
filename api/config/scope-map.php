@@ -51,6 +51,9 @@ return [
         'audit_events',
         'guardian_replacement_exceptions',
         'team_exceptions',
+        'team_teacher_links',
+        'tenures',
+        'stage_gates',
     ],
 
     // Deliberately unscoped — each with its recorded reason

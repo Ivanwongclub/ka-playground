@@ -171,6 +171,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/teams/{id}/waive', [\App\Http\Controllers\TeamResolutionController::class, 'waive']);
     Route::post('/admin/teams/{id}/dissolve', [\App\Http\Controllers\TeamResolutionController::class, 'dissolve']);
     Route::post('/admin/team-members/{id}/school-leave', [\App\Http\Controllers\TeamResolutionController::class, 'schoolLeave']); // OD-62; {id} = enrolment id
+    // S05 step 5 — roles & tracker (OD-15/61); authority in-service
+    Route::post('/admin/teams/{id}/teacher-link', [\App\Http\Controllers\RolesTrackerController::class, 'linkTeacher']);
+    Route::post('/teams/{id}/roles', [\App\Http\Controllers\RolesTrackerController::class, 'assignRole']);
+    Route::post('/teams/{id}/gates/{stage}/approve', [\App\Http\Controllers\RolesTrackerController::class, 'approveGate']);
 
     // Reads shaped by RLS alone (S05 formation will consume these)
     Route::get('/programmes/{id}/team-categories', [ProgrammeConfigController::class, 'categories']);

@@ -1,0 +1,89 @@
+<?php
+
+namespace App\Services\Teams;
+
+use App\Models\User;
+use App\Services\Audit\AuditService;
+use App\Services\Authz\ScopeContext;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+/**
+ * S05-5 — the Activity Tracker's gate records over the FIVE FIXED stages. The
+ * stages are a platform constant (GR005 / A2 matrix: five stages are fixed, not
+ * programme-shaped) — there is deliberately no per-programme stage config here.
+ *
+ * Gate approval authority (OD-61): a TEAM-LINKED teacher approves their team's
+ * gate; where none is linked, the lobby's school admin does (academy ops is the
+ * platform-wide fallback). A teacher linked to a DIFFERENT team, a guardian, a
+ * student or any other actor is refused — team-linked, never student-linked.
+ */
+class TrackerService
+{
+    /** The five fixed Activity Tracker stages (FR010). Order is the sequence. */
+    public const STAGES = ['Plan', 'Design', 'Learn', 'Pitch', 'Launch'];
+
+    public function __construct(
+        private readonly AuditService $audit,
+        private readonly ScopeContext $scope,
+    ) {}
+
+    public function approveGate(string $teamId, string $stage, User $approver, ?string $notes = null): array
+    {
+        if (! in_array($stage, self::STAGES, true)) {
+            abort(422, 'Unknown stage — the five stages are fixed: '.implode(', ', self::STAGES));
+        }
+
+        return $this->scope->asSystem(
+            'Stage-gate approval (S05-5, OD-61): a team-linked teacher, the lobby school admin, or academy ops records a gate pass. The approver\'s authority (team-linked, not student-linked) is resolved WITHIN the elevation using explicit actor-id filters — a gate approver may not be able to read the team through RLS, but the OD-61 decision is a policy call, not a visibility one. stage_gates is a system-only write.',
+            function () use ($teamId, $stage, $approver, $notes): array {
+                $team = DB::table('teams')->where('id', $teamId)->first() ?? abort(404);
+                $kind = $this->gateApproverKind($approver, $team); // 403s if unauthorised
+                if (DB::table('stage_gates')->where('team_id', $team->id)->where('stage', $stage)->exists()) {
+                    abort(409, "The {$stage} gate has already been passed for this team");
+                }
+                $id = (string) Str::uuid7();
+                DB::table('stage_gates')->insert([
+                    'id' => $id, 'team_id' => $team->id, 'category_id' => $team->category_id,
+                    'stage' => $stage, 'status' => 'passed', 'approved_by' => $approver->id,
+                    'approver_kind' => $kind, 'approved_at' => now(), 'notes' => $notes,
+                    'created_at' => now(), 'updated_at' => now(),
+                ]);
+                $this->audit->record('stage_gate', $id, 'stage_gate.passed',
+                    toState: 'passed', programmeId: (int) $team->programme_id,
+                    payloadAfter: ['stage' => $stage, 'approver_kind' => $kind, 'approved_by' => $approver->id], actor: $approver);
+
+                return ['gate_id' => $id, 'stage' => $stage, 'approver_kind' => $kind];
+            },
+        );
+    }
+
+    /** OD-61 authority resolution; aborts 403 when the actor may not approve this team's gate. */
+    private function gateApproverKind(User $approver, object $team): string
+    {
+        // academy operations / super — platform-wide fallback
+        if ($approver->role === 'academy_admin') {
+            $caps = DB::table('admin_capabilities')->where('user_id', $approver->id)->pluck('capability');
+            if ($caps->contains('operations') || $caps->contains('super_admin')) {
+                return 'academy';
+            }
+        }
+        // TEAM-linked teacher (OD-61) — linked to THIS team, not merely to a student
+        if ($approver->role === 'teacher') {
+            $linked = DB::table('team_teacher_links')->where('team_id', $team->id)
+                ->where('teacher_id', $approver->id)->where('status', 'active')->exists();
+            if ($linked) {
+                return 'teacher';
+            }
+        }
+        // lobby's school admin
+        if ($approver->role === 'school_admin') {
+            $schoolId = DB::table('team_categories')->where('id', $team->category_id)->value('school_id');
+            if ($schoolId !== null && DB::table('school_admin_links')
+                ->where('school_admin_id', $approver->id)->where('school_id', $schoolId)->where('status', 'active')->exists()) {
+                return 'school_admin';
+            }
+        }
+        abort(403, 'Not authorised to approve this team\'s gate — a team-linked teacher or the lobby school admin only (OD-61)');
+    }
+}

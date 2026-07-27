@@ -57,4 +57,10 @@ return [
     'App\Services\Teams\TeamResolutionService::dissolve' => 'Below-min resolution — DISSOLVE (S05-4, OD-38): an admin disbands the team; each live member\'s enrolment moves confirmed → in_pool (re-pooled in-lobby), PAID orders are kept untouched (no re-charge, no refund) and unpaid orders are cancelled, then the team is disbanded. System-only writes; authority checked before the elevation.',
 
     'App\Services\Teams\TeamResolutionService::recordSchoolLeave' => 'School-leave record (S05-4, OD-62): a student leaves school mid-programme. The team STANDS — no membership or team state change — and an academy school_leave exception is raised. team_exceptions is a system-only write; authority checked before the elevation.',
+
+    'App\Services\Teams\TeamTeacherLinkService::link' => 'Team-teacher link (S05-5, OD-61): the lobby school admin or an academy admin links a teacher to a TEAM (not to students). team_teacher_links is a system-only write; the admin authority was established before the elevation.',
+
+    'App\Services\Teams\RoleRotationService::assignRole' => 'Role rotation recording (S05-5, OD-15): staff record a role assignment; the prior active tenure for this (team, role) is completed and a fresh active one opened — the ledger handover. tenures is a system-only write; the recorder\'s authority was established before the elevation.',
+
+    'App\Services\Teams\TrackerService::approveGate' => 'Stage-gate approval (S05-5, OD-61): a team-linked teacher, the lobby school admin, or academy ops records a gate pass. The approver\'s authority (team-linked, not student-linked) is resolved WITHIN the elevation using explicit actor-id filters — a gate approver may not be able to read the team through RLS, but the OD-61 decision is a policy call, not a visibility one. stage_gates is a system-only write.',
 ];
