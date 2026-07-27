@@ -25,7 +25,9 @@
     "programmes": "Programmes",
     "consents": "Consent",
     "consentEvidence": "Consent Evidence",
-    "consentTemplates": "Consent Templates"
+    "consentTemplates": "Consent Templates",
+    "enrolments": "Enrolments",
+    "enrolmentPool": "Enrolment Pool"
   },
   "shell": {
     "openNavigation": "Open navigation",
@@ -257,5 +259,38 @@
       "versions": "Versions"
     },
     "r15": "R15"
+  },
+  "enrol": {
+    "listTitle": "Enrolments",
+    "listCaption": "Programme enrolments for your family",
+    "student": "Student",
+    "programme": "Programme",
+    "actingGuardian": "Acting guardian",
+    "status": {
+      "submitted": "Submitted",
+      "pending_consent": "Awaiting consent",
+      "in_pool": "Awaiting a team",
+      "teamed": "Teamed",
+      "confirmed": "Team confirmed",
+      "active": "Active",
+      "completed": "Completed",
+      "withdrawn": "Withdrawn",
+      "released": "Released"
+    },
+    "pool": {
+      "title": "Enrolment & Pool Report",
+      "byProgramme": "Pool by programme",
+      "pendingConsent": "Awaiting consent",
+      "inPool": "Awaiting a team",
+      "teamedPlus": "Teamed+",
+      "terminal": "Terminal",
+      "deadline": "Formation deadline",
+      "timelines": "Recent enrolments",
+      "issuanceGaps": "Consent-issuance gaps",
+      "issuanceHealthy": "Every pre-team enrolment has requests for every active guardian",
+      "withdrawals": "Withdrawal pipeline",
+      "decidedBy": "Decided by",
+      "reason": "Reason"
+    }
   }
 }

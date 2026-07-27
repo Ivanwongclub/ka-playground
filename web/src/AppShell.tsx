@@ -112,6 +112,8 @@ export function AppShell() {
           { path: '/admin/access-identity', name: t('nav.accessIdentity'), icon: <Users size={16} aria-hidden /> },
           { path: '/admin/programmes', name: t('nav.programmes'), icon: <BookOpen size={16} aria-hidden /> },
           { path: '/consents', name: t('nav.consents'), icon: <FileSignature size={16} aria-hidden /> },
+          { path: '/enrolments', name: t('nav.enrolments'), icon: <GraduationCap size={16} aria-hidden /> },
+          { path: '/admin/enrolment-pool', name: t('nav.enrolmentPool'), icon: <Users size={16} aria-hidden /> },
           { path: '/admin/consent-evidence', name: t('nav.consentEvidence'), icon: <FileCheck size={16} aria-hidden /> },
           { path: '/admin/consent-templates', name: t('nav.consentTemplates'), icon: <FileText size={16} aria-hidden /> },
         ],

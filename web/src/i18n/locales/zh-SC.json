@@ -25,7 +25,9 @@
     "programmes": "课程设置",
     "consents": "同意书",
     "consentEvidence": "同意书证据",
-    "consentTemplates": "同意书模板"
+    "consentTemplates": "同意书模板",
+    "enrolments": "报名",
+    "enrolmentPool": "报名池"
   },
   "shell": {
     "openNavigation": "打开导航",
@@ -257,5 +259,38 @@
       "versions": "版本"
     },
     "r15": "R15"
+  },
+  "enrol": {
+    "listTitle": "报名",
+    "listCaption": "您家庭的课程报名",
+    "student": "学生",
+    "programme": "课程",
+    "actingGuardian": "操作家长",
+    "status": {
+      "submitted": "已提交",
+      "pending_consent": "待同意书",
+      "in_pool": "待组队",
+      "teamed": "已入队",
+      "confirmed": "队伍已确认",
+      "active": "进行中",
+      "completed": "已完成",
+      "withdrawn": "已退出",
+      "released": "已释放"
+    },
+    "pool": {
+      "title": "报名与队伍池报告",
+      "byProgramme": "各课程队伍池",
+      "pendingConsent": "待同意书",
+      "inPool": "待组队",
+      "teamedPlus": "已入队+",
+      "terminal": "终止",
+      "deadline": "组队截止日",
+      "timelines": "近期报名",
+      "issuanceGaps": "同意书签发缺口",
+      "issuanceHealthy": "每个待组队报名均已向所有现任家长签发同意书",
+      "withdrawals": "退出流程",
+      "decidedBy": "决定人",
+      "reason": "原因"
+    }
   }
 }

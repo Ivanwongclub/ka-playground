@@ -25,7 +25,9 @@
     "programmes": "課程設定",
     "consents": "同意書",
     "consentEvidence": "同意書證據",
-    "consentTemplates": "同意書範本"
+    "consentTemplates": "同意書範本",
+    "enrolments": "報名",
+    "enrolmentPool": "報名池"
   },
   "shell": {
     "openNavigation": "開啟導覽",
@@ -257,5 +259,38 @@
       "versions": "版本"
     },
     "r15": "R15"
+  },
+  "enrol": {
+    "listTitle": "報名",
+    "listCaption": "您家庭的課程報名",
+    "student": "學生",
+    "programme": "課程",
+    "actingGuardian": "操作家長",
+    "status": {
+      "submitted": "已提交",
+      "pending_consent": "待同意書",
+      "in_pool": "待組隊",
+      "teamed": "已入隊",
+      "confirmed": "隊伍已確認",
+      "active": "進行中",
+      "completed": "已完成",
+      "withdrawn": "已退出",
+      "released": "已釋放"
+    },
+    "pool": {
+      "title": "報名與隊伍池報告",
+      "byProgramme": "各課程隊伍池",
+      "pendingConsent": "待同意書",
+      "inPool": "待組隊",
+      "teamedPlus": "已入隊+",
+      "terminal": "終止",
+      "deadline": "組隊截止日",
+      "timelines": "近期報名",
+      "issuanceGaps": "同意書簽發缺口",
+      "issuanceHealthy": "每個待組隊報名均已向所有現任家長簽發同意書",
+      "withdrawals": "退出流程",
+      "decidedBy": "決定人",
+      "reason": "原因"
+    }
   }
 }

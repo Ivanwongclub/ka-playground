@@ -156,6 +156,8 @@ Route::get('/reports/access-identity', [AccessIdentityReportController::class, '
     ->middleware(['auth:sanctum', 'permission:audit.read']);
 
 // S03 audit element: Consent Evidence Report + per-signature bundle export
+Route::get('/reports/enrolment-pool', [\App\Http\Controllers\EnrolmentPoolReportController::class, 'index'])
+    ->middleware(['auth:sanctum', 'permission:audit.read']); // S04A audit element
 Route::get('/reports/consent-evidence', [\App\Http\Controllers\ConsentEvidenceReportController::class, 'index'])
     ->middleware(['auth:sanctum', 'permission:audit.read']);
 Route::get('/reports/consent-evidence/{signatureId}/bundle', [\App\Http\Controllers\ConsentEvidenceReportController::class, 'bundle'])

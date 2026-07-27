@@ -5,6 +5,11 @@ namespace App\Providers;
 use App\Services\Reconciliation\Assertions\AuditImmutabilityProbe;
 use App\Services\Reconciliation\Assertions\AuditTriggerEnabledProbe;
 use App\Services\Reconciliation\Assertions\ConsentHashIntegrityAssertion;
+use App\Services\Reconciliation\Assertions\ConsentIssuanceCompletenessAssertion;
+use App\Services\Reconciliation\Assertions\DeadlineOrderingAssertion;
+use App\Services\Reconciliation\Assertions\EnrolmentStatusBypassAssertion;
+use App\Services\Reconciliation\Assertions\EnrolmentUniquenessProbe;
+use App\Services\Reconciliation\Assertions\PoolIntegrityAssertion;
 use App\Services\Reconciliation\Assertions\ConsentLanguageCompletenessAssertion;
 use App\Services\Reconciliation\Assertions\ConsentSignExclusivityAssertion;
 use App\Services\Reconciliation\Assertions\SupersededVersionReconsentAssertion;
@@ -51,6 +56,13 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new ConsentHashIntegrityAssertion);
             $registry->register(new ConsentLanguageCompletenessAssertion);
             $registry->register(new SupersededVersionReconsentAssertion);
+
+            // S04A
+            $registry->register(new EnrolmentUniquenessProbe);
+            $registry->register(new PoolIntegrityAssertion);
+            $registry->register(new EnrolmentStatusBypassAssertion);
+            $registry->register(new ConsentIssuanceCompletenessAssertion);
+            $registry->register(new DeadlineOrderingAssertion);
 
             return $registry;
         });

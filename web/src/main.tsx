@@ -37,6 +37,8 @@ const ConsentList = lazy(() => import('./pages/Consents').then((m) => ({ default
 const ConsentSign = lazy(() => import('./pages/Consents').then((m) => ({ default: m.ConsentSign })));
 const ConsentEvidence = lazy(() => import('./pages/ConsentEvidence').then((m) => ({ default: m.ConsentEvidence })));
 const AdminConsentTemplates = lazy(() => import('./pages/AdminConsentTemplates').then((m) => ({ default: m.AdminConsentTemplates })));
+const Enrolments = lazy(() => import('./pages/Enrolments').then((m) => ({ default: m.Enrolments })));
+const EnrolmentPool = lazy(() => import('./pages/EnrolmentPool').then((m) => ({ default: m.EnrolmentPool })));
 
 function RequireAuth({ children }: { children: React.ReactElement }) {
   const location = useLocation();
@@ -79,6 +81,8 @@ function Root() {
               <Route path="/consents/:id" element={<ConsentSign />} />
               <Route path="/admin/consent-evidence" element={<ConsentEvidence />} />
               <Route path="/admin/consent-templates" element={<AdminConsentTemplates />} />
+              <Route path="/enrolments" element={<Enrolments />} />
+              <Route path="/admin/enrolment-pool" element={<EnrolmentPool />} />
             </Route>
           </Routes>
           </Suspense>
