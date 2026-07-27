@@ -56,7 +56,7 @@ class AuthzTest extends TestCase
     {
         Sanctum::actingAs($this->user('guardian'));
         $this->getJson('/api/consents')->assertStatus(501); // authorised; module not built yet
-        $this->getJson('/api/payments')->assertStatus(501);
+        $this->getJson('/api/payments')->assertStatus(200); // real surface since S04B-4 (was the 501 stub)
     }
 
     public function test_unauthenticated_requests_get_401(): void

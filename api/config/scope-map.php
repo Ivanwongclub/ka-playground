@@ -31,6 +31,7 @@ return [
         'payment_obligations',
         'payment_links',
         'payments',
+        'payment_evidence',
         'team_categories',
         'fee_items',
         'withdrawal_policies',

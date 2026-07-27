@@ -41,7 +41,16 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/withdrawal-requests/{id}/decide', [\App\Http\Controllers\WithdrawalController::class, 'decide'])
         ->middleware('permission:operations.manage');
     Route::get('/withdrawal-requests', [\App\Http\Controllers\WithdrawalController::class, 'index']); // RLS-shaped
-    Route::get('/payments', $notImplemented)->middleware('permission:finance.view');
+    Route::get('/payments', [\App\Http\Controllers\ManualPaymentController::class, 'index'])
+        ->middleware('permission:finance.view'); // S04B step 4: real surface; RLS-shaped inside the S01 gate
+    // Manual recording under BI-9 (OD-47 scope): record and decide are SEPARATE
+    // permissions AND separate people — the DB policy refuses recorder=confirmer
+    Route::post('/admin/payments', [\App\Http\Controllers\ManualPaymentController::class, 'record'])
+        ->middleware('permission:finance.record');
+    Route::post('/admin/payments/{id}/confirm', [\App\Http\Controllers\ManualPaymentController::class, 'confirm'])
+        ->middleware('permission:finance.confirm');
+    Route::post('/admin/payments/{id}/reject', [\App\Http\Controllers\ManualPaymentController::class, 'reject'])
+        ->middleware('permission:finance.confirm');
     // S04B step 1 — RLS-shaped money reads (OD-67: guardians+student read;
     // school admins get ZERO family orders; finance/audit see all)
     Route::get('/orders', fn () => response()->json(['data' => \Illuminate\Support\Facades\DB::table('orders')->orderBy('created_at')->get(['id', 'enrolment_id', 'programme_id', 'student_id', 'payer_party', 'status', 'total_amount_minor', 'currency', 'payment_due_at'])]));
