@@ -87,6 +87,8 @@ class EnrolmentService
         $this->audit->record('enrolment', $enrolmentId, "enrolment.{$to}",
             fromState: $enrolment->status, toState: $to, reason: $reason,
             programmeId: (int) $enrolment->programme_id, actor: $actor);
+        // OD-66: every transition raises its catalogued event; S09 delivers
+        \App\Events\EnrolmentTransitioned::dispatch($enrolmentId, $enrolment->status, $to);
     }
 
     /**

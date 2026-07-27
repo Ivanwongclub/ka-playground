@@ -5,6 +5,7 @@ namespace App\Services\Audit;
 use App\Models\AuditEvent;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -34,11 +35,25 @@ class AuditService
         $actor ??= Auth::user();
         $request = app()->runningInConsole() ? null : request();
 
+        // OD-64: attribution is NEVER null. When no human actor exists and the
+        // scope context is system (queue jobs, scheduler, console), the event
+        // is attributed to the SYSTEM actor explicitly — a job-driven state
+        // change reads "system", not an attribution hole.
+        $systemActor = false;
+        if ($actor === null) {
+            try {
+                $ctx = DB::selectOne("SELECT current_setting('app.context', true) AS c")->c ?? '';
+            } catch (\Throwable) {
+                $ctx = '';
+            }
+            $systemActor = $ctx === 'system';
+        }
+
         $event = new AuditEvent([
             'event_id' => (string) Str::uuid7(),
             'occurred_at' => now(),
             'actor_id' => $actor?->getAuthIdentifier(),
-            'actor_role' => $actor?->getAttribute('role'),
+            'actor_role' => $actor?->getAttribute('role') ?? ($systemActor ? 'system' : null),
             'on_behalf_of' => $onBehalfOf,
             'entity_type' => $entityType,
             'entity_id' => (string) $entityId,
