@@ -18,6 +18,7 @@
         </include>
     </source>
     <php>
+        <ini name="memory_limit" value="512M"/><!-- S05-1: ParaTest workers' 128M default was marginal (UploadServiceTest's 15M file-cap test tips a worker when co-scheduled) -->
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

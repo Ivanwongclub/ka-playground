@@ -58,7 +58,15 @@ Resolution order:
 
 ## 5. School binding (the only constraint a lobby can carry)
 
-If `school_id` is set, only students with an **active link to that school** can create or join teams in the lobby. Violation is blocked at formation with the reason explained inline ("This lobby is for students of X — you are not linked to X").
+If `school_id` is set, only students with an **active link to that school** can create or join teams in the lobby.
+
+> **SUPERSEDED IN PART (S05-1, 2026-07-27, Leo-ratified):** the inline reason *"This lobby is for
+> students of X — you are not linked to X"* is NOT shown to a non-linked student. The S02B
+> partner-roster scoping (team_categories RLS) hides school-bound lobbies from non-linked students
+> entirely — naming X would disclose that X is a partner. So a non-linked student never sees the
+> bound lobby (their `/lobbies` omits it), and a direct API POST to it is refused generically
+> ("that lobby does not belong to this programme"). The roster-confidentiality decision wins over
+> this UX nicety. §5's binding CONSTRAINT stands in full; only the disclosing message is dropped.
 
 If `school_id` is null, the lobby is open to any enrolled student regardless of school.
 
