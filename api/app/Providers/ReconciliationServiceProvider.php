@@ -18,6 +18,8 @@ use App\Services\Reconciliation\Assertions\PublishedProgrammeCompletenessAsserti
 use App\Services\Reconciliation\Assertions\GuardianLinkCoverageAssertion;
 use App\Services\Reconciliation\Assertions\MemberDirectoryExclusivityAssertion;
 use App\Services\Reconciliation\Assertions\PaymentObligationCompletenessAssertion;
+use App\Services\Reconciliation\Assertions\PaymentLinkNoPiiAssertion;
+use App\Services\Reconciliation\Assertions\PaymentLinkSingleReaderAssertion;
 use App\Services\Reconciliation\Assertions\PermissionMatrixProbe;
 use App\Services\Reconciliation\Assertions\ScopeCoverageAssertion;
 use App\Services\Reconciliation\Assertions\VersionSnapshotImmutabilityProbe;
@@ -67,6 +69,8 @@ class ReconciliationServiceProvider extends ServiceProvider
 
             // S04B
             $registry->register(new PaymentObligationCompletenessAssertion);
+            $registry->register(new PaymentLinkNoPiiAssertion);
+            $registry->register(new PaymentLinkSingleReaderAssertion);
 
             return $registry;
         });

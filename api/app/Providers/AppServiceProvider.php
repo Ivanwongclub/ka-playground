@@ -20,6 +20,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(\App\Services\Money\PaymentProvider::class, fn () => new \App\Services\Money\MockProvider); // OD-46: QFPay adapter replaces this in S-QFPAY
         // 2.2 continuity condition: real adapter arrives with enrolments (S04A)
         $this->app->bind(EnrolmentStatusPort::class, NoEnrolmentsYet::class);
         $this->app->bind(VirusScanner::class, fn (): VirusScanner => new ClamAvScanner(
@@ -39,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
         // the 10-global-fails hard invalidation is data-level in that flow)
         RateLimiter::for('api', fn (Request $r) => Limit::perMinute(60)->by($r->user()?->id ?? $r->ip()));
         RateLimiter::for('auth', fn (Request $r) => Limit::perMinute(5)->by($r->ip()));
+        RateLimiter::for('payment-link', fn (Request $r) => Limit::perMinute(10)->by('paylink:'.$r->ip()));
         RateLimiter::for('pairing', fn (Request $r) => Limit::perHour(5)->by('pairing:'.($r->user()?->id ?? $r->ip())));
 
         // Session policy (2.11): 12h IDLE expiry (last_used_at), remember-me 30d.

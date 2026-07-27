@@ -29,6 +29,8 @@ return [
         'receipts',
         'receipt_sequences',
         'payment_obligations',
+        'payment_links',
+        'payments',
         'team_categories',
         'fee_items',
         'withdrawal_policies',

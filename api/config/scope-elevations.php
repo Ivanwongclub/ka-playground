@@ -23,4 +23,7 @@ return [
     'App\Services\Consent\ConsentDocumentService::download' => 'Consent document download (S03): the signed-PDF upload row is system-owned storage; read authorisation was already decided by the consent_documents RLS read set for the requesting session.',
 
     'App\Services\Consent\ConsentTemplateService::supersedeForLanguage' => 'OD-20a re-consent fan-out (S03): a material template change must supersede signed requests in the changed language across ALL guardians — rows the publishing admin\'s context rightly cannot read. Status transitions and fresh issuance only, each audited with the publishing admin as actor.',
+    'App\Services\Money\PaymentLinkService::resolve' => 'Anonymous payment-link resolution (OD-44): the viewer holds only the bearer token; no session, no context. Reads exactly one frozen-payload row by sha256 token hash; initials-only, no other order data reachable.',
+
+    'App\Services\Money\PaymentLinkService::confirmPayment' => 'Anonymous payment-link confirmation (OD-44): the payer holds only the bearer token. Atomic claim (active→paying CAS) serialises concurrent confirmers; provider self-confirms (OD-47); writes payment + order transition + link death, all audited.',
 ];

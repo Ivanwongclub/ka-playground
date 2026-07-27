@@ -47,6 +47,11 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/orders', fn () => response()->json(['data' => \Illuminate\Support\Facades\DB::table('orders')->orderBy('created_at')->get(['id', 'enrolment_id', 'programme_id', 'student_id', 'payer_party', 'status', 'total_amount_minor', 'currency', 'payment_due_at'])]));
     Route::get('/orders/{id}/lines', fn (string $id) => response()->json(['data' => \Illuminate\Support\Facades\DB::table('order_lines')->where('order_id', $id)->get(['id', 'name_en', 'name_tc', 'name_sc', 'amount_minor', 'currency'])]));
     Route::get('/receipts', fn () => response()->json(['data' => \Illuminate\Support\Facades\DB::table('receipts')->orderBy('receipt_number')->get(['id', 'order_id', 'sequence_key', 'receipt_number', 'amount_minor', 'currency', 'issued_at'])]));
+    // S04B step 3 — payment links (OD-44). Mint = the guardian's own audited
+    // act on their own order; the list NEVER exposes token_hash (ruling 6)
+    Route::post('/my/orders/{id}/payment-link', [\App\Http\Controllers\PaymentLinkController::class, 'mint'])
+        ->middleware('role:guardian');
+    Route::get('/my/payment-links', [\App\Http\Controllers\PaymentLinkController::class, 'index']);
 
     Route::post('/admin/capabilities/grant', [CapabilityController::class, 'grant']);
     Route::post('/admin/capabilities/revoke', [CapabilityController::class, 'revoke']);
@@ -148,6 +153,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/users/{id}/unlock', [AuthController::class, 'unlock'])
         ->middleware('permission:operations.manage');
 });
+
+// S04B step 3 — THE ONLY unauthenticated money surface (OD-44; single_reader
+// assertion enforces exactly these two): multi-view resolve + single-act confirm
+Route::get('/pay/{token}', [\App\Http\Controllers\PaymentLinkController::class, 'resolve'])
+    ->middleware('throttle:payment-link');
+Route::post('/pay/{token}/confirm', [\App\Http\Controllers\PaymentLinkController::class, 'confirm'])
+    ->middleware('throttle:payment-link');
 
 // Guest onboarding surface (2.11) — throttling arrives with step 4
 Route::post('/onboarding/accept', [OnboardingController::class, 'accept'])->middleware('throttle:auth');
