@@ -18,6 +18,9 @@ OD-15 (tenure ledger) · OD-64/66 · BI-3 (reshaped) · TEAM-CATEGORIES §4–§
 
 ## 成團 — THE TRANSACTION (stated before build; revised per Leo Q1/Q2, 2026-07-27)
 One database transaction at team approval — LOCKS AND STATE ONLY, no issuance inside it:
+0. **HARD PRECONDITION (Leo, S04A gate): the programme's formation deadline (OD-33) must be
+   SET before any 成團 runs — S04A treats absent dates as a pre-flight warning; S05 treats
+   them as a refusal. No deadline, no formation.**
 1. Approver authority per routing (OD-39); size within rules OR waiver field (OD-40).
 2. **Consent re-verified INSIDE the transaction under `SELECT … FOR SHARE` on each member's
    satisfying consent_request rows (Q2).** A plain in-transaction read is NOT sufficient under
