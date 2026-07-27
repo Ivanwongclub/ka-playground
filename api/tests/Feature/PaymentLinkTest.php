@@ -302,6 +302,20 @@ class PaymentLinkTest extends TestCase
     public function test_initials_derivation_covers_cjk_names(): void
     {
         $this->assertSame('W.Y.C.', PaymentLinkService::initials('Wing Yan Chan'));
-        $this->assertSame('陳·', PaymentLinkService::initials('陳詠恩'));
+        // STEP 3b (Leo): CJK → GIVEN name, family name hidden — never surname-only
+        $this->assertSame('詠恩', PaymentLinkService::initials('陳詠恩'));
+        $this->assertSame('詠', PaymentLinkService::initials('陳詠'));
+        $this->assertSame('陳', PaymentLinkService::initials('陳'));
+    }
+
+    public function test_cjk_link_payload_hides_the_family_name(): void
+    {
+        $this->student->update(['name' => '陳詠恩']);
+        [, $token] = $this->mint();
+        $payload = $this->getJson("/api/pay/{$token}")->assertOk()->json();
+        $this->assertSame('詠恩', $payload['student_initials']);
+        $this->assertStringNotContainsString('陳', json_encode($payload, JSON_UNESCAPED_UNICODE),
+            'the searchable family name must never appear in the anonymous payload');
+        $this->assertStringNotContainsString('陳', (string) DB::table('payment_links')->orderByDesc('created_at')->value('student_initials'));
     }
 }

@@ -67,12 +67,20 @@ class PaymentLinkService
         ];
     }
 
-    /** OD-44: initials only. Spaced names → per-part initials; unspaced (CJK) → first character. */
+    /**
+     * OD-44 (Leo fix, STEP 3b): spaced Latin names → first-of-each (W.Y.C.).
+     * Unspaced CJK names → the GIVEN name with the FAMILY name hidden
+     * (陳詠恩 → 詠恩): surname-only leaked the shared, searchable family name
+     * and told the payer nothing — the given name confirms the child to
+     * someone who knows them, which is the entire point.
+     */
     public static function initials(string $name): string
     {
-        $parts = preg_split('/\s+/u', trim($name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $name = trim($name);
+        $parts = preg_split('/\s+/u', $name, -1, PREG_SPLIT_NO_EMPTY) ?: [];
         if (count($parts) <= 1) {
-            return mb_substr($name, 0, 1).'·';
+            $given = mb_substr($name, 1); // drop the leading family name
+            return $given !== '' ? $given : $name; // degenerate single-char name
         }
 
         return implode('', array_map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)).'.', $parts));
