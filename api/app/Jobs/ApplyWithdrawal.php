@@ -31,5 +31,9 @@ class ApplyWithdrawal implements ShouldQueue
         }
         $enrolments->transition($request->enrolment_id, 'withdrawn',
             User::find($this->deciderId), "withdrawal request {$this->requestId} approved");
+
+        // S04B step 5: the MONEY side follows the state transition — credit
+        // note / refund per OD-54/OD-25/OD-48, system context. Idempotent.
+        app(\App\Services\Money\WithdrawalSettlementService::class)->settle($this->requestId, User::find($this->deciderId));
     }
 }

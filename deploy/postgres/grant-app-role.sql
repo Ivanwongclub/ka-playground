@@ -19,3 +19,6 @@ REVOKE UPDATE, DELETE, TRUNCATE ON audit_events FROM kap_app;
 REVOKE UPDATE, DELETE, TRUNCATE ON programme_versions FROM kap_app;
 REVOKE UPDATE, DELETE, TRUNCATE ON consent_signatures FROM kap_app; -- BI-6 evidence (S03)
 REVOKE UPDATE, DELETE, TRUNCATE ON consent_documents FROM kap_app; -- FR038 evidence (S03)
+REVOKE UPDATE, DELETE, TRUNCATE ON order_lines FROM kap_app; -- BI-5 immutable lines (S04B-1)
+REVOKE UPDATE, DELETE, TRUNCATE ON receipts FROM kap_app; -- BI-2 immutable receipts (S04B-1)
+REVOKE UPDATE, DELETE, TRUNCATE ON credit_notes FROM kap_app; -- BI-5 immutable corrections (S04B-5)

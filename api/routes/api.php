@@ -51,6 +51,12 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->middleware('permission:finance.confirm');
     Route::post('/admin/payments/{id}/reject', [\App\Http\Controllers\ManualPaymentController::class, 'reject'])
         ->middleware('permission:finance.confirm');
+    // S04B step 5 — refund payout (2.17) under BI-9: approve ≠ confirm, DB-enforced
+    Route::get('/refunds', [\App\Http\Controllers\RefundController::class, 'index'])->middleware('permission:finance.view');
+    Route::get('/credit-notes', [\App\Http\Controllers\RefundController::class, 'creditNotes'])->middleware('permission:finance.view');
+    Route::post('/admin/refunds/{id}/approve', [\App\Http\Controllers\RefundController::class, 'approve'])->middleware('permission:finance.record');
+    Route::post('/admin/refunds/{id}/confirm', [\App\Http\Controllers\RefundController::class, 'confirm'])->middleware('permission:finance.confirm');
+    Route::post('/admin/refunds/{id}/reject', [\App\Http\Controllers\RefundController::class, 'reject'])->middleware('permission:finance.confirm');
     // S04B step 1 — RLS-shaped money reads (OD-67: guardians+student read;
     // school admins get ZERO family orders; finance/audit see all)
     Route::get('/orders', fn () => response()->json(['data' => \Illuminate\Support\Facades\DB::table('orders')->orderBy('created_at')->get(['id', 'enrolment_id', 'programme_id', 'student_id', 'payer_party', 'status', 'total_amount_minor', 'currency', 'payment_due_at'])]));

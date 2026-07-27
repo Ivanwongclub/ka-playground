@@ -17,6 +17,7 @@ use App\Services\Reconciliation\Assertions\DefaultLobbyAssertion;
 use App\Services\Reconciliation\Assertions\PublishedProgrammeCompletenessAssertion;
 use App\Services\Reconciliation\Assertions\GuardianLinkCoverageAssertion;
 use App\Services\Reconciliation\Assertions\MemberDirectoryExclusivityAssertion;
+use App\Services\Reconciliation\Assertions\InvoiceBalanceAssertion;
 use App\Services\Reconciliation\Assertions\PaymentObligationCompletenessAssertion;
 use App\Services\Reconciliation\Assertions\PaymentLinkNoPiiAssertion;
 use App\Services\Reconciliation\Assertions\PaymentLinkSingleReaderAssertion;
@@ -71,6 +72,7 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new PaymentObligationCompletenessAssertion);
             $registry->register(new PaymentLinkNoPiiAssertion);
             $registry->register(new PaymentLinkSingleReaderAssertion);
+            $registry->register(new InvoiceBalanceAssertion);
 
             return $registry;
         });
