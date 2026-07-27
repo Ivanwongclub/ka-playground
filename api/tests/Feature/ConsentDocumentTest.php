@@ -84,13 +84,7 @@ class ConsentDocumentTest extends TestCase
 
     private function signedRequest(string $language = 'en'): array
     {
-        $this->app['auth']->forgetGuards();
-        Sanctum::actingAs($this->ops);
-        $id = $this->postJson('/api/admin/consent-requests', [
-            'template_id' => $this->templateId, 'programme_id' => $this->programme->id,
-            'student_id' => $this->student->id, 'signer_id' => $this->guardian->id,
-            'reason' => 'document test issuance',
-        ])->assertStatus(201)->json('id');
+        $id = $this->issueConsentRequest($this->templateId, $this->programme->id, $this->student->id, $this->guardian->id, $this->ops);
 
         $this->app['auth']->forgetGuards();
         Sanctum::actingAs($this->guardian);

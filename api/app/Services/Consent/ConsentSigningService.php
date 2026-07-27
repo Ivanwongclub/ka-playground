@@ -147,20 +147,22 @@ class ConsentSigningService
         return DB::transaction(function () use ($request, $reason, $actor, $reissue): array {
             DB::table('consent_requests')->where('id', $request->id)
                 ->update(['status' => 'voided', 'updated_at' => now()]);
-            $replacementId = $reissue
-                ? $this->issueRequest($request->template_id, (int) $request->programme_id,
-                    (int) $request->student_id, (int) $request->signer_id, $actor,
-                    reason: "re-issue after void of {$request->id}")
-                : null;
+            if ($reissue) {
+                // S04A STEP 1: INSERT is system-only — re-issuance rides the
+                // system-context job; the voiding operator stays the actor
+                \App\Jobs\ReissueConsentRequest::dispatch(
+                    $request->id, "re-issue after void of {$request->id}", (int) $actor->id,
+                )->afterCommit();
+            }
 
             $this->audit->record('consent_request', $request->id, 'consent_request.voided',
                 fromState: $request->status, toState: 'voided', reason: $reason,
-                payloadAfter: ['replacement_request_id' => $replacementId, 'notify_signer' => true],
+                payloadAfter: ['reissue_queued' => $reissue, 'notify_signer' => true],
                 programmeId: (int) $request->programme_id, actor: $actor);
             // S09's ladder tells the signer the document changed (card non-scope here)
-            \App\Events\ConsentRequestVoided::dispatch($request->id, (int) $request->signer_id, $reason, $replacementId);
+            \App\Events\ConsentRequestVoided::dispatch($request->id, (int) $request->signer_id, $reason, null);
 
-            return ['voided' => $request->id, 'replacement' => $replacementId];
+            return ['voided' => $request->id, 'reissue_queued' => $reissue];
         });
     }
 

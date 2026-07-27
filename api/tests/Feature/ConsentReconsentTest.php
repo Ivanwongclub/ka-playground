@@ -95,13 +95,7 @@ class ConsentReconsentTest extends TestCase
 
     private function signedRequest(User $student, string $language): string
     {
-        $this->app['auth']->forgetGuards();
-        Sanctum::actingAs($this->ops);
-        $id = $this->postJson('/api/admin/consent-requests', [
-            'template_id' => $this->templateId, 'programme_id' => $this->programme->id,
-            'student_id' => $student->id, 'signer_id' => $this->guardian->id,
-            'reason' => 'reconsent test issuance',
-        ])->assertStatus(201)->json('id');
+        $id = $this->issueConsentRequest($this->templateId, $this->programme->id, $student->id, $this->guardian->id, $this->ops);
         $this->app['auth']->forgetGuards();
         Sanctum::actingAs($this->guardian);
         $this->getJson("/api/consent-requests/{$id}/document?language={$language}")->assertOk();
@@ -152,13 +146,7 @@ class ConsentReconsentTest extends TestCase
 
     public function test_signature_cannot_land_on_a_version_that_is_no_longer_current(): void
     {
-        $this->app['auth']->forgetGuards();
-        Sanctum::actingAs($this->ops);
-        $id = $this->postJson('/api/admin/consent-requests', [
-            'template_id' => $this->templateId, 'programme_id' => $this->programme->id,
-            'student_id' => $this->studentA->id, 'signer_id' => $this->guardian->id,
-            'reason' => 'staleness test',
-        ])->json('id');
+        $id = $this->issueConsentRequest($this->templateId, $this->programme->id, $this->studentA->id, $this->guardian->id, $this->ops);
 
         $this->app['auth']->forgetGuards();
         Sanctum::actingAs($this->guardian);
@@ -188,13 +176,7 @@ class ConsentReconsentTest extends TestCase
 
     public function test_decline_is_terminal_reasoned_and_audited(): void
     {
-        $this->app['auth']->forgetGuards();
-        Sanctum::actingAs($this->ops);
-        $id = $this->postJson('/api/admin/consent-requests', [
-            'template_id' => $this->templateId, 'programme_id' => $this->programme->id,
-            'student_id' => $this->studentA->id, 'signer_id' => $this->guardian->id,
-            'reason' => 'decline test',
-        ])->json('id');
+        $id = $this->issueConsentRequest($this->templateId, $this->programme->id, $this->studentA->id, $this->guardian->id, $this->ops);
 
         $this->app['auth']->forgetGuards();
         Sanctum::actingAs($this->guardian);
@@ -222,13 +204,7 @@ class ConsentReconsentTest extends TestCase
 
     public function test_non_addressee_cannot_decline(): void
     {
-        $this->app['auth']->forgetGuards();
-        Sanctum::actingAs($this->ops);
-        $id = $this->postJson('/api/admin/consent-requests', [
-            'template_id' => $this->templateId, 'programme_id' => $this->programme->id,
-            'student_id' => $this->studentA->id, 'signer_id' => $this->guardian->id,
-            'reason' => 'decline isolation test',
-        ])->json('id');
+        $id = $this->issueConsentRequest($this->templateId, $this->programme->id, $this->studentA->id, $this->guardian->id, $this->ops);
 
         $this->app['auth']->forgetGuards();
         Sanctum::actingAs(User::factory()->create(['role' => 'guardian']));

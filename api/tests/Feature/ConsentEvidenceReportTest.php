@@ -84,13 +84,7 @@ class ConsentEvidenceReportTest extends TestCase
 
     private function signedSignatureId(string $language = 'zh-SC'): string
     {
-        $this->app['auth']->forgetGuards();
-        Sanctum::actingAs($this->ops);
-        $id = $this->postJson('/api/admin/consent-requests', [
-            'template_id' => $this->templateId, 'programme_id' => $this->programme->id,
-            'student_id' => $this->student->id, 'signer_id' => $this->guardian->id,
-            'reason' => 'evidence test issuance',
-        ])->json('id');
+        $id = $this->issueConsentRequest($this->templateId, $this->programme->id, $this->student->id, $this->guardian->id, $this->ops);
         $this->app['auth']->forgetGuards();
         Sanctum::actingAs($this->guardian);
         $this->getJson("/api/consent-requests/{$id}/document?language={$language}")->assertOk();

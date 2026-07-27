@@ -11,28 +11,6 @@ class ConsentRequestController extends Controller
 {
     public function __construct(private readonly ConsentSigningService $signing) {}
 
-    /**
-     * Ops issuance (operations.manage) — S04A will issue per enrolment and
-     * narrow the write set back to system-only. Reason is REQUIRED and audited
-     * with the operator (Leo ruling 1): temporary widening, named for reversal.
-     */
-    public function issue(Request $request): JsonResponse
-    {
-        $data = $request->validate([
-            'template_id' => ['required', 'uuid'],
-            'programme_id' => ['required', 'integer'],
-            'student_id' => ['required', 'integer'],
-            'signer_id' => ['required', 'integer'],
-            'reason' => ['required', 'string', 'min:5'],
-        ]);
-        $id = $this->signing->issueRequest(
-            $data['template_id'], $data['programme_id'], $data['student_id'], $data['signer_id'],
-            $request->user(), $data['reason'],
-        );
-
-        return response()->json(['id' => $id], 201);
-    }
-
     /** Void a request whose frozen merge data no longer matches source (ops). */
     public function void(Request $request, string $id): JsonResponse
     {

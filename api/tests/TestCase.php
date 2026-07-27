@@ -25,4 +25,12 @@ abstract class TestCase extends BaseTestCase
 
         return $response;
     }
+
+    /** S04A STEP 1: issuance is system-only — tests issue through the service
+     *  in the harness's system context, never through a retired endpoint. */
+    protected function issueConsentRequest(string $templateId, int $programmeId, int $studentId, int $signerId, \App\Models\User $actor, string $reason = 'test issuance (system path)'): string
+    {
+        return app(\App\Services\Consent\ConsentSigningService::class)
+            ->issueRequest($templateId, $programmeId, $studentId, $signerId, $actor, $reason);
+    }
 }

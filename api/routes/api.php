@@ -93,11 +93,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('/admin/consent-templates/{id}/versions/{versionId}/publish', [ConsentTemplateController::class, 'publishVersion']);
     });
 
-    // S03 step 2 — signing flow (FR036). Issuance is ops; the signing acts are
-    // the addressed guardian's alone: consent.sign is held by NO capability
-    // (S01 defect 1 fix), and the service 404s any non-addressee on top of RLS.
-    Route::post('/admin/consent-requests', [ConsentRequestController::class, 'issue'])
-        ->middleware('permission:operations.manage');
+    // S03 step 2 — signing flow (FR036). Manual issuance was RETIRED at S04A
+    // STEP 1 (S03 §5 item 4): consent_requests INSERT is system-only; requests
+    // are issued by system jobs (enrolment, re-issue after void). Signing acts
+    // remain the addressed guardian's alone (consent.sign held by NO capability).
     Route::post('/admin/consent-requests/{id}/void', [ConsentRequestController::class, 'void'])
         ->middleware('permission:operations.manage');
     Route::get('/my/students/{studentId}/consent-status', [ConsentRequestController::class, 'derivedStatus'])

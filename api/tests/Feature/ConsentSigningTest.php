@@ -85,16 +85,8 @@ class ConsentSigningTest extends TestCase
 
     private function issue(?User $signer = null, ?User $student = null): string
     {
-        $this->app['auth']->forgetGuards();
-        Sanctum::actingAs($this->ops);
-        $id = $this->postJson('/api/admin/consent-requests', [
-            'template_id' => $this->templateId, 'programme_id' => $this->programme->id,
-            'student_id' => ($student ?? $this->student)->id, 'signer_id' => ($signer ?? $this->guardian)->id,
-            'reason' => 'test issuance pre-S04A',
-        ])->assertStatus(201)->json('id');
-        $this->app['auth']->forgetGuards();
-
-        return $id;
+        return $this->issueConsentRequest($this->templateId, $this->programme->id,
+            ($student ?? $this->student)->id, ($signer ?? $this->guardian)->id, $this->ops);
     }
 
     private function asSigner(User $signer): void
@@ -390,28 +382,49 @@ class ConsentSigningTest extends TestCase
     public function test_issuance_refuses_a_signer_who_is_not_an_active_guardian_of_the_student(): void
     {
         $stranger = User::factory()->create(['role' => 'guardian']);
-        Sanctum::actingAs($this->ops);
-        $this->postJson('/api/admin/consent-requests', [
-            'template_id' => $this->templateId, 'programme_id' => $this->programme->id,
-            'student_id' => $this->student->id, 'signer_id' => $stranger->id, 'reason' => 'x-test',
-        ])->assertStatus(422)->assertJsonPath('errors.signer.0', fn ($m) => str_contains($m, 'active guardian'));
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectExceptionMessage('active guardian');
+        $this->issueConsentRequest($this->templateId, $this->programme->id,
+            $this->student->id, $stranger->id, $this->ops);
     }
 
     // ── Ruling 1: manual issuance names operator + reason ──
 
-    public function test_manual_issuance_without_a_reason_is_refused_and_the_reason_is_audited(): void
+    public function test_manual_issuance_is_retired_and_insert_is_system_only(): void
     {
+        // S04A STEP 1 (S03 §5 item 4): the endpoint is GONE
         Sanctum::actingAs($this->ops);
         $this->postJson('/api/admin/consent-requests', [
             'template_id' => $this->templateId, 'programme_id' => $this->programme->id,
             'student_id' => $this->student->id, 'signer_id' => $this->guardian->id,
-        ])->assertStatus(422)->assertJsonValidationErrors(['reason']);
+            'reason' => 'should not matter',
+        ])->assertStatus(404);
 
+        // and the DB refuses an ops-context INSERT outright (policy, not routing)
+        $scope = app(\App\Services\Authz\ScopeContext::class);
+        $scope->set($this->ops);
+        try {
+            // savepoint: the expected violation must not abort the outer test tx
+            DB::transaction(fn () => DB::table('consent_requests')->insert([
+                'id' => (string) Str::uuid7(), 'template_id' => $this->templateId,
+                'programme_id' => $this->programme->id, 'student_id' => $this->student->id,
+                'signer_id' => $this->guardian->id, 'status' => 'sent',
+                'merge_data' => '{}', 'event_sequence' => '[]',
+                'created_at' => now(), 'updated_at' => now(),
+            ]));
+            $this->fail('ops-context INSERT into consent_requests must be refused');
+        } catch (\Illuminate\Database\QueryException $e) {
+            $this->assertStringContainsString('row-level security', $e->getMessage());
+        } finally {
+            $scope->setSystem();
+        }
+
+        // system-path issuance still audits operator + reason
         $id = $this->issue();
         $this->assertDatabaseHas('audit_events', [
             'entity_type' => 'consent_request', 'entity_id' => $id,
             'action' => 'consent_request.issued', 'actor_id' => $this->ops->id,
-            'reason' => 'test issuance pre-S04A',
+            'reason' => 'test issuance (system path)',
         ]);
     }
 
@@ -478,7 +491,11 @@ class ConsentSigningTest extends TestCase
             'reason' => 'student name misspelt in frozen merge data', 'reissue' => true,
         ])->assertOk()->json();
         $this->assertSame($id, $result['voided']);
-        $this->assertNotNull($result['replacement']);
+        $this->assertTrue($result['reissue_queued']);
+        $replacement = DB::table('consent_requests')
+            ->where('student_id', $this->student->id)->where('signer_id', $this->guardian->id)
+            ->where('status', 'sent')->value('id');
+        $this->assertNotNull($replacement, 'the reissue job (sync queue) must have issued the replacement');
         $this->assertSame('voided', DB::table('consent_requests')->where('id', $id)->value('status'));
         $this->assertDatabaseHas('audit_events', [
             'entity_type' => 'consent_request', 'entity_id' => $id, 'action' => 'consent_request.voided',
@@ -489,7 +506,7 @@ class ConsentSigningTest extends TestCase
         $this->asSigner($this->guardian);
         $this->getJson("/api/consent-requests/{$id}/document?language=en")->assertStatus(409);
         $this->postJson("/api/consent-requests/{$id}/sign", $this->validSignaturePayload())->assertStatus(409);
-        $freshDoc = $this->getJson("/api/consent-requests/{$result['replacement']}/document?language=en")->assertOk()->json();
+        $freshDoc = $this->getJson("/api/consent-requests/{$replacement}/document?language=en")->assertOk()->json();
         $this->assertStringContainsString('Corrected Name', $freshDoc['body_html']);
         $this->assertNotSame($staleDoc['rendered_sha256'], $freshDoc['rendered_sha256'], 'fresh snapshot, fresh rendered hash');
         $this->assertSame($staleDoc['template_sha256'], $freshDoc['template_sha256'], 'template unchanged');
