@@ -1,48 +1,95 @@
-# SPRINT KAP-S04B — Payments, refunds & money exceptions
+# SPRINT KAP-S04B — Money machinery: orders, receipts, providers, refunds (no trigger)
+
+> PROMOTED 2026-07-27 on Leo Q1/Q2 verdicts (outbox approved; FOR SHARE + STATED BINDING LOCK ORDER approved; single_reader accepted). Replaces the individual-seat card.
 
 ## GOAL
-Offline money handled as it actually arrives: late, wrong, duplicated, contested — every path
-closing in a defined state with evidence and segregation of duty.
+Everything money needs, none of it self-starting: immutable full-fee orders with gapless
+receipts, a PaymentProvider interface with a MockProvider driving the full flow, manual
+recording under BI-9, the forwardable payment link, full-only refunds and the school-settled
+receivable — all proven against a fixture trigger, waiting for S05 to pull it.
 
 ## PRECONDITIONS
-- [ ] S04A gate PASSED · OD-5 (partial payments) decided — **STOP if open** · OD-2 values seeded
+- [ ] S04A gate PASSED
+- [x] Fee-terms question CLOSED (OD-67, Leo 2026-07-27): **the programme fee is the SAME for
+  every student — no per-school fee resolution.** Orders snapshot the programme-level fee.
+  No STOP remains in this card.
 
-## IMPLEMENTS  2.1 (workflow) · 2.8 (payments) · 2.17 · 2.19 · 2.20 · 2.21 (register) · BI-2 · BI-7 · BI-9
+## IMPLEMENTS  BI-2 · BI-5 · BI-9 (as narrowed by OD-47) · OD-18 · OD-25 · OD-26 (money side) ·
+OD-42* (submitter n/a — see S05) · OD-43 (port only) · OD-44 · OD-45 (machinery) · OD-46 ·
+OD-48 · OD-50b · OD-53 · OD-54 · 2.17 · 2.19/2.20 (reshaped by full-fee) · 2.29
 
-## SCOPE
-1. Offline payment recording: evidence upload (S00 service), client idempotency key (2.8),
-   **recorder ≠ confirmer (BI-9)**; confirmation issues the gapless receipt (BI-2).
-2. **Withdrawal workflow (2.1 / BI-7)**: request (acting guardian per 2.22) → approval → policy-
-   computed refund → Refund record opens. `Withdrawn` reachable only here.
-3. **Refund state machine (2.17)**: Requested → Approved → Paid Out → Confirmed/Rejected; payout
-   evidence mandatory; SoD; destination = original payer party; credit note on completion.
-4. **Late Payment exception (2.19)**: recording against a non-recordable enrolment → exception;
-   seat still free → admin reinstate; taken → refund via 2.17 + guardian notified.
-5. **Wrong amounts (2.20)** per OD-5: underpayment → Unmatched + shortfall notice; overpayment →
-   receipt at order amount + credit note or refund; `unmatched_payments` queue with aging + resolver.
-6. Register the **Withdrawal Cascade assertion (2.21)** — extended by S05/S06/S09.
+## SCOPE CLASSIFICATION PLAN (read sets pre-stated)
+| Table | Classification | Read set / justification |
+|---|---|---|
+| `orders` / `order_lines` | **scoped** | Read: system · finance/audit · **EVERY active guardian of the student (OD-67 ruling 2: any active guardian may read AND pay — OD-6 consistency)** · the student (read-only, Q1). **School admins: NEVER (OD-67 ruling 3 — their money view is their own consolidated invoices, nothing family-level).** Lines INSERT-only at the DB (BI-5, conditional revoke per S03 pattern); uniform programme fee snapshot (OD-67 ruling 1), OD-18 minor units + `currency CHAR(3)` |
+| `receipts` / `receipt_sequences` | **scoped** | Read: payer guardian (own) · student read-only · finance/audit · system. Number assigned INSIDE the issuing transaction from the counter row under `FOR UPDATE` (BI-2/BI-3); never pre-reserved |
+| `payments` | **scoped** | One table, two origins: `manual` (school-settled/offline — BI-9 recorder ≠ confirmer, both `finance`, OD-47) and `provider` (mock/gateway — confirms itself, out of BI-9 scope). Read: finance/audit · payer guardian (own) · system. 1..n evidence images on manual (OD-5) |
+| `refunds` / `credit_notes` | **scoped** | 2.17 machine, FULL amounts only (OD-48); BI-9 on the manual side; destination = original payer party (OD-25: paid BY the academy). School-settled precedence: credit note always; refund-to-school if invoice already paid (OD-54, nightly balance assertion) |
+| `consolidated_invoices` | **scoped** | OD-53 receivable: issued at 成團 (S05/S04E wire it; machinery + "covered by invoice" status ≠ Paid here), net-30 default, aging feeds OD-55 batch exception later. Read: finance/audit · the addressed school's admins · system |
+| `payment_links` (OD-44) | **scoped — WITH AN ANONYMOUS READ SURFACE** | The platform's second anonymous surface (after S04C's write): a forwardable tokenized page showing order reference, amount, programme name, student as INITIALS ONLY. No RLS read policy for anonymous — the token endpoint resolves server-side (system context) by single-use token hash; constant-shape 404 for unknown/expired/paid tokens; expires at the payment deadline, dead once paid. Design reviewed like the S04C anonymous write (confinement-style assertion: no child-identifying field can appear in the link payload) |
+
+## SCOPE (steps in this order; each = VERIFY + commit + stop)
+1. **Orders + lines + receipts (BI-2/BI-5, OD-18/48) + fee-read clause.** Full-fee snapshot,
+   payer_party (OD-25), gapless in-transaction numbering; consumer fee-read clause per the
+   CLIENT ANSWER — **STOP if unanswered**. VERIFY: 50-parallel receipt probe gapless (paste);
+   line UPDATE refused at DB (paste); OD-18 schema paste.
+2. **`PaymentTriggerPort` as an OUTBOX CONSUMER + deadline machinery (OD-43, OD-45; Leo Q1).**
+   The port's contract: S05's 成團 transaction writes one `payment_obligations` outbox row per
+   member ATOMICALLY WITH THE SEAT CLAIM (tiny insert, negligible lock time); a system-context
+   consumer job picks obligations up AFTER COMMIT and issues the order / invoice line, fires
+   `payment.requested`, starts the deadline clock (default 7d). Issuance is idempotent per
+   enrolment; a crashed queue cannot lose an obligation — the consumer re-scans the outbox, and
+   the completeness assertion goes red on anything older than the window. Order issuance NEVER
+   runs inside the capacity lock, and never under provider IO while holding any lock. Grace →
+   suspend → exception jobs (SYSTEM actor, OD-64). Proven with FIXTURE outbox rows — 成團
+   arrives in S05. VERIFY: fixture-obligation full flow paste; kill-the-consumer-mid-batch →
+   re-scan completes idempotently (paste); deadline-lapse job paste with SYSTEM actor; nothing
+   in S04B can write an obligation from a user request (paste the absence).
+3. **PaymentProvider + MockProvider (OD-46) + payment link (OD-44).** Interface (create session,
+   confirm, refund, reconcile); MockProvider drives success/fail/timeout; provider payments
+   self-confirm (OD-47 — out of BI-9); link page: initials-only, expiring, single-use, dead
+   once paid. VERIFY: mock end-to-end paste; link shows NO child-identifying data (paste of
+   payload + the assertion); expired/paid link → constant-shape 404 (paste).
+4. **Manual recording under BI-9 (OD-47 scope).** Recorder ≠ confirmer, both `finance`,
+   server-side; evidence images 1..n via the upload pipeline (BI-10); late/wrong-amount
+   exceptions reshaped by full-fee-only (2.19; 2.20's partial paths stay dead per OD-5/48).
+   VERIFY: self-confirm refusal paste (BI-9); provider payment needing no confirmer (paste —
+   the OD-47 boundary shown from both sides).
+5. **Refunds + credit notes + receivable (2.17, OD-48/53/54).** Full-only; school-settled credit
+   note precedence with the balance assertion; withdrawal-money wiring to S04A's approved
+   requests. VERIFY: partial refund refused (paste); credit-note-then-refund-to-school flow
+   paste; invoice balance assertion green + deliberate red.
+6. **Financial Integrity Report (audit element) + assertions.**
 
 ## NON-SCOPE
-QFPay or any gateway (Phase 2) · team finance (S07) · notification channels (fire events only).
+成團 and the real trigger (S05) · batch/Excel (S04E) · QFPay adapter (S-QFPAY; interface only
+here) · teams · enrolment states (S04A's, read-only here).
 
 ## KEY VERIFICATIONS
-- Same recorder attempts to confirm own payment → server-side rejection (BI-9), paste.
-- Withdrawal at each policy band fixture (before / pro-rata / after) → refund amounts match policy
-  math exactly; paste computation inputs from the audit trail.
-- Payment recorded against an expired enrolment: seat free → reinstate path; seat taken (waitlist
-  promoted) → refund path. Both demonstrated.
-- Duplicate payment submit with same idempotency key → original record returned.
-- Direct status write to Withdrawn (test) → rejected (BI-7).
-
-## AUDIT ELEMENT (completes the Financial Integrity Report)
-Receipt sequence audit (gap probe) · payments-vs-receipts reconciliation · refund lifecycle with
-evidence links · unmatched/late-payment queues with aging · who-recorded/who-confirmed listing.
+Five-branch per scoped table (payer guardian · non-payer co-guardian — read outcome stated at
+card review per OD-6 · student read-only · school_admin zero except own consolidated invoices ·
+Member zero · anonymous: link-token page only, nothing else) · `--tag` regression green each step.
 
 ## ASSERTIONS (--tag=S04B)
-Receipts total == confirmed payments · every Active enrolment has signed consent + paid/waived order ·
-every computed refund reaches terminal or is <14d old · every Confirmed refund has evidence · no
-Unmatched >7d without resolver · no payment without recordable order or linked exception ·
-**Withdrawal Cascade v1** (no Withdrawn enrolment with active team/tenure/booking/waitlist/ladder —
-vacuous parts activate as later sprints land).
+- `receipts.gapless` (BI-2 probe) · `order_lines.immutable` (BI-5 probe)
+- `payments.bi9_manual_sod` — no manual payment where recorder = confirmer; every provider
+  payment confirmer-free (OD-47, both directions)
+- `refunds.full_only` — no refund or credit note ≠ its order total (OD-48)
+- `invoices.balance` — consolidated invoice balance = original − credits (OD-54)
+- `payment_links.no_pii` — no link payload row contains more than initials (OD-44)
+- `payment_links.single_reader` — **structural confinement, matching S04C's public-context
+  discipline (Leo instruction):** the token-resolution endpoint is the ONLY unauthenticated
+  reader of any payment data — asserted structurally, not by payload inspection: (a) a route-table
+  scan proves exactly one guest-accessible route touches any money table; (b) a `pg_policies`
+  scan proves NO policy on any money table admits an anonymous/public context; (c) the token
+  endpoint's reads run system-context server-side against a single-use token hash, and the
+  assertion fails if a second unauthenticated read path ever appears
+- `payment_obligations.completeness` — no Confirmed enrolment older than the issuance window
+  without its order or invoice line; no unconsumed outbox row past the window (Q1 pattern —
+  the atomicity gap closed by structure, checked nightly)
+- `deadlines.no_silent_lapse` — every lapsed payment deadline has its SYSTEM-actor audit event
+  and a suspension or exception (OD-45/64)
 
-## EXIT GATE  Tests + `reconcile:run` FULL suite green (this sprint touches everything financial). AUDIT.md, gate commit.
+## EXIT GATE
+Tests + `--tag=S04B` + prior tags green + fixture-trigger flow + BI-9 both-sides pastes +
+five-branch pastes + AUDIT.md (fee-terms outcome recorded), gate commit.
