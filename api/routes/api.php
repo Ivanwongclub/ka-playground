@@ -190,6 +190,8 @@ Route::get('/reports/access-identity', [AccessIdentityReportController::class, '
 // S03 audit element: Consent Evidence Report + per-signature bundle export
 Route::get('/reports/enrolment-pool', [\App\Http\Controllers\EnrolmentPoolReportController::class, 'index'])
     ->middleware(['auth:sanctum', 'permission:audit.read']); // S04A audit element
+Route::get('/reports/financial-integrity', [\App\Http\Controllers\FinancialIntegrityReportController::class, 'index'])
+    ->middleware('auth:sanctum'); // S04B audit element — finance/audit gated in-controller, academy-scoped
 Route::get('/reports/consent-evidence', [\App\Http\Controllers\ConsentEvidenceReportController::class, 'index'])
     ->middleware(['auth:sanctum', 'permission:audit.read']);
 Route::get('/reports/consent-evidence/{signatureId}/bundle', [\App\Http\Controllers\ConsentEvidenceReportController::class, 'bundle'])

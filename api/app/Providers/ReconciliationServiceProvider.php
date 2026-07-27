@@ -18,6 +18,10 @@ use App\Services\Reconciliation\Assertions\PublishedProgrammeCompletenessAsserti
 use App\Services\Reconciliation\Assertions\GuardianLinkCoverageAssertion;
 use App\Services\Reconciliation\Assertions\MemberDirectoryExclusivityAssertion;
 use App\Services\Reconciliation\Assertions\InvoiceBalanceAssertion;
+use App\Services\Reconciliation\Assertions\ManualPaymentSodAssertion;
+use App\Services\Reconciliation\Assertions\OrderLinesImmutabilityProbe;
+use App\Services\Reconciliation\Assertions\ReceiptGaplessAssertion;
+use App\Services\Reconciliation\Assertions\RefundFullOnlyAssertion;
 use App\Services\Reconciliation\Assertions\PaymentObligationCompletenessAssertion;
 use App\Services\Reconciliation\Assertions\PaymentLinkNoPiiAssertion;
 use App\Services\Reconciliation\Assertions\PaymentLinkSingleReaderAssertion;
@@ -73,6 +77,10 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new PaymentLinkNoPiiAssertion);
             $registry->register(new PaymentLinkSingleReaderAssertion);
             $registry->register(new InvoiceBalanceAssertion);
+            $registry->register(new ReceiptGaplessAssertion);
+            $registry->register(new OrderLinesImmutabilityProbe);
+            $registry->register(new ManualPaymentSodAssertion);
+            $registry->register(new RefundFullOnlyAssertion);
 
             return $registry;
         });

@@ -27,7 +27,8 @@
     "consentEvidence": "Consent Evidence",
     "consentTemplates": "Consent Templates",
     "enrolments": "Enrolments",
-    "enrolmentPool": "Enrolment Pool"
+    "enrolmentPool": "Enrolment Pool",
+    "financialIntegrity": "Financial Integrity"
   },
   "shell": {
     "openNavigation": "Open navigation",
@@ -292,5 +293,31 @@
       "decidedBy": "Decided by",
       "reason": "Reason"
     }
+  },
+  "fin": {
+    "title": "Financial Integrity Report",
+    "live": "Live from source — no cached totals",
+    "orders": "Orders",
+    "payments": "Payments",
+    "receipts": "Receipts",
+    "refunds": "Refunds",
+    "creditNotes": "Credit notes",
+    "invoices": "Consolidated invoices",
+    "obligations": "Payment obligations",
+    "status": "Status",
+    "count": "Count",
+    "amount": "Amount (HKD)",
+    "origin": "Origin",
+    "destination": "Destination",
+    "sequence": "Sequence",
+    "next": "Next number",
+    "pending": "Pending",
+    "consumed": "Consumed",
+    "original": "Original",
+    "balance": "Balance",
+    "reconciliation": "Invoice/credit reconciliation",
+    "creditedViaNotes": "Credited via notes",
+    "originalMinusBalance": "Original − balance",
+    "loadError": "Could not load the report"
   }
 }

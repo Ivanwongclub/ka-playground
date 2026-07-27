@@ -39,6 +39,7 @@ const ConsentEvidence = lazy(() => import('./pages/ConsentEvidence').then((m) =>
 const AdminConsentTemplates = lazy(() => import('./pages/AdminConsentTemplates').then((m) => ({ default: m.AdminConsentTemplates })));
 const Enrolments = lazy(() => import('./pages/Enrolments').then((m) => ({ default: m.Enrolments })));
 const EnrolmentPool = lazy(() => import('./pages/EnrolmentPool').then((m) => ({ default: m.EnrolmentPool })));
+const FinancialIntegrity = lazy(() => import('./pages/FinancialIntegrity').then((m) => ({ default: m.FinancialIntegrity })));
 
 function RequireAuth({ children }: { children: React.ReactElement }) {
   const location = useLocation();
@@ -83,6 +84,7 @@ function Root() {
               <Route path="/admin/consent-templates" element={<AdminConsentTemplates />} />
               <Route path="/enrolments" element={<Enrolments />} />
               <Route path="/admin/enrolment-pool" element={<EnrolmentPool />} />
+              <Route path="/admin/financial-integrity" element={<FinancialIntegrity />} />
             </Route>
           </Routes>
           </Suspense>

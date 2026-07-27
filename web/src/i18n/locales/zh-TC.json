@@ -27,7 +27,8 @@
     "consentEvidence": "同意書證據",
     "consentTemplates": "同意書範本",
     "enrolments": "報名",
-    "enrolmentPool": "報名池"
+    "enrolmentPool": "報名池",
+    "financialIntegrity": "財務完整性"
   },
   "shell": {
     "openNavigation": "開啟導覽",
@@ -292,5 +293,31 @@
       "decidedBy": "決定人",
       "reason": "原因"
     }
+  },
+  "fin": {
+    "title": "財務完整性報告",
+    "live": "即時讀取來源 — 無快取總額",
+    "orders": "訂單",
+    "payments": "付款",
+    "receipts": "收據",
+    "refunds": "退款",
+    "creditNotes": "貸記單",
+    "invoices": "合併發票",
+    "obligations": "付款責任",
+    "status": "狀態",
+    "count": "數目",
+    "amount": "金額(HKD)",
+    "origin": "來源",
+    "destination": "目的地",
+    "sequence": "序列",
+    "next": "下一號碼",
+    "pending": "待處理",
+    "consumed": "已處理",
+    "original": "原額",
+    "balance": "結餘",
+    "reconciliation": "發票/貸記對賬",
+    "creditedViaNotes": "貸記單合計",
+    "originalMinusBalance": "原額 − 結餘",
+    "loadError": "無法載入報告"
   }
 }

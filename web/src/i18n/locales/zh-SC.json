@@ -27,7 +27,8 @@
     "consentEvidence": "同意书证据",
     "consentTemplates": "同意书模板",
     "enrolments": "报名",
-    "enrolmentPool": "报名池"
+    "enrolmentPool": "报名池",
+    "financialIntegrity": "财务完整性"
   },
   "shell": {
     "openNavigation": "打开导航",
@@ -292,5 +293,31 @@
       "decidedBy": "决定人",
       "reason": "原因"
     }
+  },
+  "fin": {
+    "title": "财务完整性报告",
+    "live": "实时读取来源 — 无缓存总额",
+    "orders": "订单",
+    "payments": "付款",
+    "receipts": "收据",
+    "refunds": "退款",
+    "creditNotes": "贷记单",
+    "invoices": "合并发票",
+    "obligations": "付款责任",
+    "status": "状态",
+    "count": "数目",
+    "amount": "金额(HKD)",
+    "origin": "来源",
+    "destination": "目的地",
+    "sequence": "序列",
+    "next": "下一号码",
+    "pending": "待处理",
+    "consumed": "已处理",
+    "original": "原额",
+    "balance": "结余",
+    "reconciliation": "发票/贷记对账",
+    "creditedViaNotes": "贷记单合计",
+    "originalMinusBalance": "原额 − 结余",
+    "loadError": "无法加载报告"
   }
 }

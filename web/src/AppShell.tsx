@@ -114,6 +114,7 @@ export function AppShell() {
           { path: '/consents', name: t('nav.consents'), icon: <FileSignature size={16} aria-hidden /> },
           { path: '/enrolments', name: t('nav.enrolments'), icon: <GraduationCap size={16} aria-hidden /> },
           { path: '/admin/enrolment-pool', name: t('nav.enrolmentPool'), icon: <Users size={16} aria-hidden /> },
+          { path: '/admin/financial-integrity', name: t('nav.financialIntegrity'), icon: <FileCheck size={16} aria-hidden /> },
           { path: '/admin/consent-evidence', name: t('nav.consentEvidence'), icon: <FileCheck size={16} aria-hidden /> },
           { path: '/admin/consent-templates', name: t('nav.consentTemplates'), icon: <FileText size={16} aria-hidden /> },
         ],

@@ -108,6 +108,13 @@ approval usage.
 - `teams.size_or_waiver` — every confirmed team meets size rules OR carries a waiver reason
   (OD-40).
 - 2.21 Withdrawal Cascade extends here: no Withdrawn enrolment holds membership or open tenure.
+- `deadlines.no_silent_lapse` — **MOVED HERE FROM S04B (Leo ruling, 2026-07-27):** every lapsed
+  payment deadline (OD-43 clock, set at S04B order issuance) has its SYSTEM-actor audit event and
+  a suspension or exception (OD-45). It lives here because its resolution machinery is here — the
+  non-payment cascade (OD-39/45: grace → member suspended → academy exception) is team-membership
+  work that does not exist until S05. S04B ships the deadline clock only; building a partial
+  suspend-detector in S04B would have been a permanently-red assertion with no resolution path
+  (the R15 trap). This step OWNS the grace→suspend→exception jobs AND this assertion together.
 
 ## EXIT GATE
 Tests + `--tag=S05` + all prior tags green + the 成團 race paste + five-branch pastes + AUDIT.md,
