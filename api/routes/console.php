@@ -27,3 +27,10 @@ Schedule::command('teams:run-parking-backstop')
 Schedule::command('teams:run-lapse-detection')
     ->timezone('Asia/Hong_Kong')
     ->dailyAt('02:20');
+
+// S06-1 enrolment activation (R3). Runs before the reconciliation (03:00) so a
+// started programme's confirmed enrolments are Active by the time
+// enrolments.activation_liveness is checked.
+Schedule::command('enrolments:run-activations')
+    ->timezone('Asia/Hong_Kong')
+    ->dailyAt('02:15');

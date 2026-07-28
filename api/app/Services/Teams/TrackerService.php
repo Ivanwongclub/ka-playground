@@ -39,6 +39,15 @@ class TrackerService
             function () use ($teamId, $stage, $approver, $notes): array {
                 $team = DB::table('teams')->where('id', $teamId)->first() ?? abort(404);
                 $kind = $this->gateApproverKind($approver, $team); // 403s if unauthorised
+                // FR012 (R3): the tracker is LOCKED until the programme is Active (has started).
+                // Authority is decided first (403), then the lock (422) — an authorised approver
+                // still cannot pass a gate before the programme begins.
+                $startsOn = json_decode((string) DB::table('wizard_sections')
+                    ->where('programme_id', $team->programme_id)->where('section_key', 'basics')
+                    ->value('data'), true)['starts_on'] ?? null;
+                if ($startsOn === null || $startsOn > now()->format('Y-m-d')) {
+                    abort(422, 'Tracker is locked until the programme begins (FR012, R3)');
+                }
                 if (DB::table('stage_gates')->where('team_id', $team->id)->where('stage', $stage)->exists()) {
                     abort(409, "The {$stage} gate has already been passed for this team");
                 }

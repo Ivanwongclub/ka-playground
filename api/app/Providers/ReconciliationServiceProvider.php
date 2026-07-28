@@ -21,6 +21,7 @@ use App\Services\Reconciliation\Assertions\InvoiceBalanceAssertion;
 use App\Services\Reconciliation\Assertions\ManualPaymentSodAssertion;
 use App\Services\Reconciliation\Assertions\OrderLinesImmutabilityProbe;
 use App\Services\Reconciliation\Assertions\ReceiptGaplessAssertion;
+use App\Services\Reconciliation\Assertions\ActivationLivenessAssertion;
 use App\Services\Reconciliation\Assertions\CapacityClaimsWholeAssertion;
 use App\Services\Reconciliation\Assertions\CapacityConservationAssertion;
 use App\Services\Reconciliation\Assertions\ConsentCompleteAtConfirmAssertion;
@@ -99,6 +100,9 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new ConsentCompleteAtConfirmAssertion);
             $registry->register(new TeamSizeOrWaiverAssertion);
             $registry->register(new PoolNoExpiredParkingAssertion);
+
+            // S06
+            $registry->register(new ActivationLivenessAssertion);
 
             return $registry;
         });

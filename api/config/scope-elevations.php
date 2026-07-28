@@ -62,5 +62,7 @@ return [
 
     'App\Services\Teams\RoleRotationService::assignRole' => 'Role rotation recording (S05-5, OD-15): staff record a role assignment; the prior active tenure for this (team, role) is completed and a fresh active one opened — the ledger handover. tenures is a system-only write; the recorder\'s authority was established before the elevation.',
 
+    'App\Services\Enrolments\EnrolmentActivationService::run' => 'Enrolment activation job (S06-1, R3): the SYSTEM activates confirmed enrolments whose programme has started (basics.starts_on ≤ now) — payment-decoupled, keyed purely on "confirmed AND started". enrolments state writes are system-only (S04A); this is the scheduled actor. Transitions confirmed → active only.',
+
     'App\Services\Teams\TrackerService::approveGate' => 'Stage-gate approval (S05-5, OD-61): a team-linked teacher, the lobby school admin, or academy ops records a gate pass. The approver\'s authority (team-linked, not student-linked) is resolved WITHIN the elevation using explicit actor-id filters — a gate approver may not be able to read the team through RLS, but the OD-61 decision is a policy call, not a visibility one. stage_gates is a system-only write.',
 ];
