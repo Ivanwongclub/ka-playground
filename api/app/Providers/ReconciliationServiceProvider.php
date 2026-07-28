@@ -21,8 +21,13 @@ use App\Services\Reconciliation\Assertions\InvoiceBalanceAssertion;
 use App\Services\Reconciliation\Assertions\ManualPaymentSodAssertion;
 use App\Services\Reconciliation\Assertions\OrderLinesImmutabilityProbe;
 use App\Services\Reconciliation\Assertions\ReceiptGaplessAssertion;
+use App\Services\Reconciliation\Assertions\CapacityClaimsWholeAssertion;
+use App\Services\Reconciliation\Assertions\CapacityConservationAssertion;
+use App\Services\Reconciliation\Assertions\ConsentCompleteAtConfirmAssertion;
 use App\Services\Reconciliation\Assertions\NoSilentLapseAssertion;
+use App\Services\Reconciliation\Assertions\PoolNoExpiredParkingAssertion;
 use App\Services\Reconciliation\Assertions\RefundBackstopProvenanceAssertion;
+use App\Services\Reconciliation\Assertions\TeamSizeOrWaiverAssertion;
 use App\Services\Reconciliation\Assertions\RefundFullOnlyAssertion;
 use App\Services\Reconciliation\Assertions\PaymentObligationCompletenessAssertion;
 use App\Services\Reconciliation\Assertions\PaymentLinkNoPiiAssertion;
@@ -84,12 +89,16 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new ManualPaymentSodAssertion);
             $registry->register(new RefundFullOnlyAssertion);
 
-            // S05 — the balance of the S05 battery registers at STEP 6; these land
-            // early: the provenance assertion is the replacement control for an
-            // out-of-BI-9 money path (STEP 3 backstop), and no_silent_lapse gets its
-            // resolution machinery at STEP 4 (both Leo rulings 2026-07-27).
+            // S05 — provenance + no_silent_lapse landed early (out-of-BI-9 backstop
+            // control; resolution machinery at STEP 4). The rest of the battery lands
+            // at the S05 gate (STEP 6).
             $registry->register(new RefundBackstopProvenanceAssertion);
             $registry->register(new NoSilentLapseAssertion);
+            $registry->register(new CapacityConservationAssertion);
+            $registry->register(new CapacityClaimsWholeAssertion);
+            $registry->register(new ConsentCompleteAtConfirmAssertion);
+            $registry->register(new TeamSizeOrWaiverAssertion);
+            $registry->register(new PoolNoExpiredParkingAssertion);
 
             return $registry;
         });
