@@ -13,6 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Tests\Support\EicarOnlyScanner;
 use Tests\TestCase;
 
 class RolesTrackerTest extends TestCase
@@ -95,7 +96,7 @@ class RolesTrackerTest extends TestCase
     }
 
     /** @return User the guardian (so tests can act as a member's guardian) */
-    private function pooledStudent(Programme $programme, ?School $school, User &$guardianOut = null): User
+    private function pooledStudent(Programme $programme, ?School $school, ?User &$guardianOut = null): User
     {
         app(ScopeContext::class)->set($this->ops);
         $guardian = User::factory()->create(['role' => 'guardian']);

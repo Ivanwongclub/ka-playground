@@ -14,6 +14,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Tests\Support\EicarOnlyScanner;
 use Tests\TestCase;
 
 class FinancialIntegrityReportTest extends TestCase

@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Tests\Support\EicarOnlyScanner;
 use Tests\TestCase;
 
 /** S06-6 — the requires_all_guardians at-rest hardening of consent_complete_at_confirm, with teeth. */

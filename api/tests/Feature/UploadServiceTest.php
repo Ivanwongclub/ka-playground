@@ -12,22 +12,13 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
+use Tests\Support\EicarOnlyScanner;
 use Tests\TestCase;
 
 // EICAR: the industry-standard harmless antivirus test string.
 const EICAR = 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*';
 
 /** Deterministic scanner for pipeline tests: flags EICAR, passes everything else. */
-class EicarOnlyScanner implements VirusScanner
-{
-    public function scan(string $contents): ?string
-    {
-        return str_contains($contents, 'EICAR-STANDARD-ANTIVIRUS-TEST-FILE')
-            ? 'Eicar-Signature'
-            : null;
-    }
-}
-
 class UploadServiceTest extends TestCase
 {
     use RefreshDatabase;

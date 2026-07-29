@@ -17,6 +17,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Tests\Support\EicarOnlyScanner;
 use Tests\TestCase;
 
 /** S05-6 gate: each new S05 assertion has real red-then-green teeth. */
