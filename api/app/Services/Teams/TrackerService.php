@@ -26,6 +26,7 @@ class TrackerService
     public function __construct(
         private readonly AuditService $audit,
         private readonly ScopeContext $scope,
+        private readonly LearnGateService $learn,
     ) {}
 
     public function approveGate(string $teamId, string $stage, User $approver, ?string $notes = null): array
@@ -47,6 +48,19 @@ class TrackerService
                     ->value('data'), true)['starts_on'] ?? null;
                 if ($startsOn === null || $startsOn > now()->format('Y-m-d')) {
                     abort(422, 'Tracker is locked until the programme begins (FR012, R3)');
+                }
+                // OD-12 / R2 (Option B): the Learn gate carries a computed HARD PRECONDITION —
+                // the team must be Learn-eligible (enough members qualify on attendance). The
+                // threshold gates the teacher's approval; it does not replace it. 0/0 (no
+                // attendance yet) → not-yet-assessable → refused (never silently passed).
+                if ($stage === 'Learn') {
+                    $e = $this->learn->eligibility($team);
+                    if (! $e['assessable']) {
+                        abort(422, 'Learn gate is not yet assessable — no attendance recorded for this team (OD-12)');
+                    }
+                    if (! $e['eligible']) {
+                        abort(422, "Team is not Learn-eligible: {$e['qualifying']}/{$e['active_members']} members qualify, needs {$e['team_gate_pass_pct']}% (OD-12)");
+                    }
                 }
                 if (DB::table('stage_gates')->where('team_id', $team->id)->where('stage', $stage)->exists()) {
                     abort(409, "The {$stage} gate has already been passed for this team");

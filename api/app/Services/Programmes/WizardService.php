@@ -233,6 +233,12 @@ class WizardService
         if (empty($basics['hero_image'])) {
             $findings[] = ['severity' => 'info', 'code' => 'basics.no_hero', 'message' => 'No hero image set; the catalogue card will show a colour block'];
         }
+        // OD-12 / R2: a Learn team-gate threshold is configured, but the Learn gate can only be
+        // assessed once sessions carry attendance. Warn (mirrors the capacity nudge) — non-blocking.
+        $teamGatePct = (int) (DB::table('certification_rules')->where('programme_id', $programme->id)->value('team_gate_pass_pct') ?? 0);
+        if ($teamGatePct > 0 && DB::table('programme_sessions')->where('programme_id', $programme->id)->doesntExist()) {
+            $findings[] = ['severity' => 'warning', 'code' => 'learn.no_sessions', 'message' => "Learn gate requires {$teamGatePct}% of members to qualify on attendance, but no sessions are configured yet — the Learn stage cannot be assessed until sessions run (OD-12)"];
+        }
 
         $publishable = collect($findings)->where('severity', 'error')->isEmpty();
 

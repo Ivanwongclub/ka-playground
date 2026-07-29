@@ -255,15 +255,18 @@ class RolesTrackerTest extends TestCase
         Sanctum::actingAs($teacher);
         // an off-list stage is rejected — there is no per-programme stage config
         $this->postJson("/api/teams/{$teamId}/gates/Prototype/approve")->assertStatus(422);
-        // each of the five fixed stages is accepted
-        foreach (TrackerService::STAGES as $stage) {
+        // the four non-Learn fixed stages approve manually (uniform OD-61 authority)
+        foreach (['Plan', 'Design', 'Pitch', 'Launch'] as $stage) {
             $this->postJson("/api/teams/{$teamId}/gates/{$stage}/approve")->assertOk();
         }
+        // Learn is the ONE computed gate (S06-4, Option B): with no attendance it is not yet
+        // assessable → refused even for an authorised approver (its own precondition, not a stage-config)
+        $this->postJson("/api/teams/{$teamId}/gates/Learn/approve")->assertStatus(422);
         // a repeat of an already-passed gate is refused
         $this->postJson("/api/teams/{$teamId}/gates/Plan/approve")->assertStatus(409);
         $this->app['auth']->forgetGuards();
 
-        $this->sys(fn () => $this->assertSame(5, DB::table('stage_gates')->where('team_id', $teamId)->count()));
+        $this->sys(fn () => $this->assertSame(4, DB::table('stage_gates')->where('team_id', $teamId)->count()));
     }
 
     public function test_gate_and_tenure_writes_carry_the_acting_human_not_system(): void
