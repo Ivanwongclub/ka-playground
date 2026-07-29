@@ -94,25 +94,65 @@ class BookingService
                     $this->audit->record('session_booking', $booking->id, 'session_booking.cancelled',
                         fromState: $booking->status, toState: 'cancelled', programmeId: (int) $session->programme_id, actor: $student);
 
-                    $promoted = null;
-                    if ($wasBooked) {
-                        $next = DB::table('session_bookings')->where('session_id', $sessionId)->where('status', 'waitlisted')
-                            ->orderBy('created_at')->orderBy('id')->first();
-                        if ($next !== null) {
-                            DB::table('session_bookings')->where('id', $next->id)->update(['status' => 'booked', 'updated_at' => now()]);
-                            $this->audit->record('session_booking', $next->id, 'session_booking.promoted',
-                                fromState: 'waitlisted', toState: 'booked', programmeId: (int) $session->programme_id,
-                                payloadAfter: ['session_id' => $sessionId, 'student_id' => $next->student_id]);
-                            BookingPromoted::dispatch($sessionId, $next->id, (int) $next->student_id);
-                            $promoted = (int) $next->student_id;
-                        } elseif ($session->status === 'full') {
-                            DB::table('programme_sessions')->where('id', $sessionId)->update(['status' => 'published', 'updated_at' => now()]);
-                        }
-                    }
+                    $promoted = $wasBooked ? $this->freeBookedSeat($session) : null;
 
                     return ['cancelled' => $booking->id, 'promoted_student_id' => $promoted];
                 });
             },
         );
+    }
+
+    /**
+     * S06-6 (2.21 cascade extension): when an enrolment is Withdrawn, cancel its
+     * FUTURE session bookings and release the waitlist slots (auto-promoting behind
+     * each freed booked seat). Called from ApplyWithdrawal, under a system elevation.
+     */
+    public function cascadeWithdrawal(string $enrolmentId, ?User $actor = null): int
+    {
+        return $this->scope->asSystem(
+            'Withdrawal booking cascade (S06-6, 2.21): a Withdrawn enrolment\'s FUTURE session bookings are cancelled and waitlist slots released — each under FOR UPDATE on its session row, auto-promoting behind a freed booked seat. Only the withdrawn enrolment\'s bookings (and at most one promotion each) are touched.',
+            function () use ($enrolmentId, $actor): int {
+                $bookings = DB::table('session_bookings as sb')
+                    ->join('programme_sessions as ps', 'ps.id', '=', 'sb.session_id')
+                    ->where('sb.enrolment_id', $enrolmentId)->whereIn('sb.status', ['booked', 'waitlisted'])
+                    ->where('ps.starts_at', '>', now())->whereNotIn('ps.status', ['cancelled', 'completed'])
+                    ->orderBy('sb.id')->get(['sb.id', 'sb.session_id', 'sb.status']);
+                $cancelled = 0;
+                foreach ($bookings as $b) {
+                    $session = DB::selectOne('SELECT id, programme_id, status FROM programme_sessions WHERE id = ? FOR UPDATE', [$b->session_id]);
+                    DB::table('session_bookings')->where('id', $b->id)->update(['status' => 'cancelled', 'updated_at' => now()]);
+                    $this->audit->record('session_booking', $b->id, 'session_booking.cancelled',
+                        fromState: $b->status, toState: 'cancelled', reason: 'enrolment withdrawn (2.21 cascade)',
+                        programmeId: (int) $session->programme_id, actor: $actor);
+                    if ($b->status === 'booked') {
+                        $this->freeBookedSeat($session);
+                    }
+                    $cancelled++;
+                }
+
+                return $cancelled;
+            },
+        );
+    }
+
+    /** Behind a freed booked seat: promote the earliest waitlisted booking, or re-open a full session. */
+    private function freeBookedSeat(object $session): ?int
+    {
+        $next = DB::table('session_bookings')->where('session_id', $session->id)->where('status', 'waitlisted')
+            ->orderBy('created_at')->orderBy('id')->first();
+        if ($next !== null) {
+            DB::table('session_bookings')->where('id', $next->id)->update(['status' => 'booked', 'updated_at' => now()]);
+            $this->audit->record('session_booking', $next->id, 'session_booking.promoted',
+                fromState: 'waitlisted', toState: 'booked', programmeId: (int) $session->programme_id,
+                payloadAfter: ['session_id' => $session->id, 'student_id' => $next->student_id]);
+            BookingPromoted::dispatch($session->id, $next->id, (int) $next->student_id);
+
+            return (int) $next->student_id;
+        }
+        if ($session->status === 'full') {
+            DB::table('programme_sessions')->where('id', $session->id)->update(['status' => 'published', 'updated_at' => now()]);
+        }
+
+        return null;
     }
 }

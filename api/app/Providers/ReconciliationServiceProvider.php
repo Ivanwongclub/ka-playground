@@ -25,6 +25,7 @@ use App\Services\Reconciliation\Assertions\ActivationLivenessAssertion;
 use App\Services\Reconciliation\Assertions\CapacityClaimsWholeAssertion;
 use App\Services\Reconciliation\Assertions\CapacityConservationAssertion;
 use App\Services\Reconciliation\Assertions\ConsentCompleteAtConfirmAssertion;
+use App\Services\Reconciliation\Assertions\LadderLivenessAssertion;
 use App\Services\Reconciliation\Assertions\NoSilentLapseAssertion;
 use App\Services\Reconciliation\Assertions\PoolNoExpiredParkingAssertion;
 use App\Services\Reconciliation\Assertions\RefundBackstopProvenanceAssertion;
@@ -103,6 +104,7 @@ class ReconciliationServiceProvider extends ServiceProvider
 
             // S06
             $registry->register(new ActivationLivenessAssertion);
+            $registry->register(new LadderLivenessAssertion);
 
             return $registry;
         });

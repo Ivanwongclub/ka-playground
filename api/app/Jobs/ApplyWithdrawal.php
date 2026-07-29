@@ -29,8 +29,13 @@ class ApplyWithdrawal implements ShouldQueue
         if ($enrolment === null || $enrolment->status === 'withdrawn') {
             return; // idempotent
         }
+        $decider = User::find($this->deciderId);
         $enrolments->transition($request->enrolment_id, 'withdrawn',
-            User::find($this->deciderId), "withdrawal request {$this->requestId} approved");
+            $decider, "withdrawal request {$this->requestId} approved");
+
+        // S06-6 (2.21 cascade extension): cancel the withdrawn enrolment's FUTURE
+        // session bookings and release the waitlist slots behind them.
+        app(\App\Services\Sessions\BookingService::class)->cascadeWithdrawal($request->enrolment_id, $decider);
 
         // S04B step 5: the MONEY side follows the state transition — credit
         // note / refund per OD-54/OD-25/OD-48, system context. Idempotent.
