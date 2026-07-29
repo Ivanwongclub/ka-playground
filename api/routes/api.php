@@ -183,6 +183,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/sessions/{id}/reschedule', [\App\Http\Controllers\SessionController::class, 'reschedule']);
     Route::post('/admin/sessions/{id}/clash-preview', [\App\Http\Controllers\SessionController::class, 'clashPreview']);
     Route::post('/admin/mentors/{userId}/status', [\App\Http\Controllers\MentorController::class, 'setStatus']);
+    // S06-3 — booking workflow (student self-service) + attendance capture (mentor/academy)
+    Route::post('/my/sessions/{id}/book', [\App\Http\Controllers\BookingController::class, 'book'])->middleware('role:student');
+    Route::post('/my/sessions/{id}/cancel', [\App\Http\Controllers\BookingController::class, 'cancel'])->middleware('role:student');
+    Route::post('/admin/sessions/{id}/attendance', [\App\Http\Controllers\AttendanceController::class, 'mark']); // authority in-service (mentor/ops)
 
     // Reads shaped by RLS alone (S05 formation will consume these)
     Route::get('/programmes/{id}/team-categories', [ProgrammeConfigController::class, 'categories']);
