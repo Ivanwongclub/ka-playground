@@ -34,3 +34,8 @@ Schedule::command('teams:run-lapse-detection')
 Schedule::command('enrolments:run-activations')
     ->timezone('Asia/Hong_Kong')
     ->dailyAt('02:15');
+
+// S06-7 session advancement (2.3). Every 5 minutes so sessions open/close near
+// their real time; also before reconcile so sessions.no_stale_published holds.
+Schedule::command('sessions:advance')
+    ->everyFiveMinutes();

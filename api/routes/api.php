@@ -182,6 +182,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/sessions/{id}/transition', [\App\Http\Controllers\SessionController::class, 'transition']);
     Route::post('/admin/sessions/{id}/reschedule', [\App\Http\Controllers\SessionController::class, 'reschedule']);
     Route::post('/admin/sessions/{id}/clash-preview', [\App\Http\Controllers\SessionController::class, 'clashPreview']);
+    Route::get('/admin/programmes/{id}/attendance-report', [\App\Http\Controllers\SessionAttendanceReportController::class, 'show']); // S06-7 audit element
     Route::post('/admin/mentors/{userId}/status', [\App\Http\Controllers\MentorController::class, 'setStatus']);
     // S06-3 — booking workflow (student self-service) + attendance capture (mentor/academy)
     Route::post('/my/sessions/{id}/book', [\App\Http\Controllers\BookingController::class, 'book'])->middleware('role:student');

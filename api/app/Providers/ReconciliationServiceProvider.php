@@ -24,8 +24,12 @@ use App\Services\Reconciliation\Assertions\ReceiptGaplessAssertion;
 use App\Services\Reconciliation\Assertions\ActivationLivenessAssertion;
 use App\Services\Reconciliation\Assertions\CapacityClaimsWholeAssertion;
 use App\Services\Reconciliation\Assertions\CapacityConservationAssertion;
+use App\Services\Reconciliation\Assertions\AttendanceIntegrityAssertion;
+use App\Services\Reconciliation\Assertions\BookingCascadeLiveAssertion;
 use App\Services\Reconciliation\Assertions\ConsentCompleteAtConfirmAssertion;
 use App\Services\Reconciliation\Assertions\LadderLivenessAssertion;
+use App\Services\Reconciliation\Assertions\LearnGateIntegrityAssertion;
+use App\Services\Reconciliation\Assertions\NoStalePublishedSessionAssertion;
 use App\Services\Reconciliation\Assertions\NoSilentLapseAssertion;
 use App\Services\Reconciliation\Assertions\PoolNoExpiredParkingAssertion;
 use App\Services\Reconciliation\Assertions\RefundBackstopProvenanceAssertion;
@@ -105,6 +109,11 @@ class ReconciliationServiceProvider extends ServiceProvider
             // S06
             $registry->register(new ActivationLivenessAssertion);
             $registry->register(new LadderLivenessAssertion);
+            // S06-7 gate battery
+            $registry->register(new LearnGateIntegrityAssertion);
+            $registry->register(new NoStalePublishedSessionAssertion);
+            $registry->register(new AttendanceIntegrityAssertion);
+            $registry->register(new BookingCascadeLiveAssertion);
 
             return $registry;
         });

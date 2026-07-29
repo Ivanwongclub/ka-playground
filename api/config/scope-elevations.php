@@ -76,6 +76,8 @@ return [
 
     'App\Services\Sessions\BookingService::cancel' => 'Session booking cancel (S06-3): a student cancels their booking under FOR UPDATE on the session row; a freed booked slot auto-promotes the earliest waitlisted booking (or the full session re-opens). Only this student\'s booking and at most one promoted booking are touched.',
 
+    'App\Services\Sessions\SessionAdvancementService::run' => 'Session advancement job (S06-7, 2.3): the SYSTEM advances sessions past their time — published/full → in_progress at start, in_progress → completed at end. programme_sessions.status is a system-only write; this is the scheduled actor. Only sessions whose time has passed are touched.',
+
     'App\Services\Sessions\BookingService::cascadeWithdrawal' => 'Withdrawal booking cascade (S06-6, 2.21): a Withdrawn enrolment\'s FUTURE session bookings are cancelled and waitlist slots released — each under FOR UPDATE on its session row, auto-promoting behind a freed booked seat. Only the withdrawn enrolment\'s bookings (and at most one promotion each) are touched.',
 
     'App\Services\Sessions\AttendanceService::mark' => 'Attendance capture (S06-3): the mentor or academy records a booked student attended/no_show on an in-progress/completed session, stamping the recorder\'s identity. The recorder authority (session mentor, or academy operations) is resolved WITHIN the elevation via explicit actor-id filters — a recorder may not read the session through RLS, but the authority is a policy call, not a visibility one. session_bookings is a system-only write.',

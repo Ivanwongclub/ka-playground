@@ -53,6 +53,7 @@ class TrackerService
                 // the team must be Learn-eligible (enough members qualify on attendance). The
                 // threshold gates the teacher's approval; it does not replace it. 0/0 (no
                 // attendance yet) → not-yet-assessable → refused (never silently passed).
+                $learnSnapshot = null;
                 if ($stage === 'Learn') {
                     $e = $this->learn->eligibility($team);
                     if (! $e['assessable']) {
@@ -61,6 +62,9 @@ class TrackerService
                     if (! $e['eligible']) {
                         abort(422, "Team is not Learn-eligible: {$e['qualifying']}/{$e['active_members']} members qualify, needs {$e['team_gate_pass_pct']}% (OD-12)");
                     }
+                    // record the eligibility figures AS OF pass time — the learn_gate_integrity
+                    // assertion judges the gate by this immutable snapshot, never a live recompute.
+                    $learnSnapshot = ['qualifying' => $e['qualifying'], 'active_members' => $e['active_members'], 'team_gate_pass_pct' => $e['team_gate_pass_pct']];
                 }
                 if (DB::table('stage_gates')->where('team_id', $team->id)->where('stage', $stage)->exists()) {
                     abort(409, "The {$stage} gate has already been passed for this team");
@@ -74,7 +78,8 @@ class TrackerService
                 ]);
                 $this->audit->record('stage_gate', $id, 'stage_gate.passed',
                     toState: 'passed', programmeId: (int) $team->programme_id,
-                    payloadAfter: ['stage' => $stage, 'approver_kind' => $kind, 'approved_by' => $approver->id], actor: $approver);
+                    payloadAfter: array_merge(['stage' => $stage, 'approver_kind' => $kind, 'approved_by' => $approver->id],
+                        $learnSnapshot !== null ? ['learn_eligibility' => $learnSnapshot] : []), actor: $approver);
 
                 return ['gate_id' => $id, 'stage' => $stage, 'approver_kind' => $kind];
             },
