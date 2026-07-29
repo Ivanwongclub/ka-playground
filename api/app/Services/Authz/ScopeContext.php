@@ -90,6 +90,28 @@ class ScopeContext
     }
 
     /**
+     * The anonymous WRITE context (S04C, D-iii). The LEAST-privileged context in
+     * the system: no actor, no role, no scope — it matches exactly ONE policy
+     * platform-wide, the registration_requests INSERT (proved by
+     * scope.public_context_confinement). It reads NOTHING (no enumeration
+     * oracle) and cannot escalate through its one insert (WITH CHECK). Unlike
+     * setSystem() this is a DE-escalation, so it carries no elevation allowlist;
+     * the business action it wraps is audited (registration.submitted, role
+     * 'public'). Set only around the registration write, reset immediately after.
+     */
+    public function setPublic(): void
+    {
+        $this->apply([
+            'app.context' => 'public',
+            'app.actor_id' => '',
+            'app.actor_role' => '',
+            'app.capabilities' => '',
+            'app.school_ids' => '',
+            'app.student_ids' => '',
+        ]);
+    }
+
+    /**
      * Run a platform integrity check under system context, restoring the
      * caller's context after. THE SANCTIONED BYPASS — constrained (Leo, S02A):
      * the call site must appear in config/scope-elevations.php with a matching

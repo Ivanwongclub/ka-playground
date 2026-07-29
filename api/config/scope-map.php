@@ -63,6 +63,10 @@ return [
         'events',
         'event_rsvps',
         'member_profiles',
+        // S04C: pre-account personal data about a child or guardian. The ONLY
+        // table admitting the anonymous `public` context (one confined INSERT,
+        // scope.public_context_confinement); reads are the reviewer set only.
+        'registration_requests',
     ],
 
     // Deliberately unscoped — each with its recorded reason

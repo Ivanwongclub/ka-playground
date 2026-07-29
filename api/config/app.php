@@ -55,6 +55,14 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
+    | The PUBLIC web (SPA) base URL — where a human opens a forwardable link
+    | (the OD-44 payment page /pay/{token}). Distinct from APP_URL (the API/
+    | console root): a forwardable link must open a rendered PAGE, not the JSON
+    | API. Defaults to the local SPA origin; set APP_PUBLIC_URL per environment.
+    */
+    'public_url' => env('APP_PUBLIC_URL', 'http://localhost:8080'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------

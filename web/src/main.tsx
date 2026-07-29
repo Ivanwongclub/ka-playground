@@ -29,6 +29,8 @@ import './index.css';
 // Route-level code-splitting (S01 step 7): heavy pages load on navigation.
 // The charts library rides only the style-guide chunk.
 const StyleGuide = lazy(() => import('./pages/StyleGuide').then((m) => ({ default: m.StyleGuide })));
+const Register = lazy(() => import('./pages/Register').then((m) => ({ default: m.Register })));
+const PublicPay = lazy(() => import('./pages/PublicPay').then((m) => ({ default: m.PublicPay })));
 const AdminAudit = lazy(() => import('./pages/AdminAudit').then((m) => ({ default: m.AdminAudit })));
 const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })));
 const AccessIdentity = lazy(() => import('./pages/AccessIdentity').then((m) => ({ default: m.AccessIdentity })));
@@ -68,6 +70,9 @@ function Root() {
           <Suspense fallback={<div className="ka-route-loading" aria-hidden />}>
           <Routes>
             <Route path="/login" element={<Login />} />
+            {/* S04C — public, unauthenticated surfaces (self-registration + the forwardable payment page) */}
+            <Route path="/register" element={<Register />} />
+            <Route path="/pay/:token" element={<PublicPay />} />
             <Route element={<RequireAuth><AppShell /></RequireAuth>}>
               <Route index element={<Placeholder titleKey="empty.title" />} />
               <Route path="/tracker" element={<Placeholder titleKey="empty.title" />} />

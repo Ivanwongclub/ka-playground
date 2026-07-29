@@ -62,7 +62,11 @@ class PaymentLinkService
 
         return [
             'link_id' => $id,
-            'url' => url("/pay/{$token}"),
+            // Absolute URL to the PUBLIC PAGE (D-ii, S04C) — a forwardable link
+            // opens the initials-only render for a human, never the JSON API.
+            // Was url("/pay/{token}") = APP_URL+path = http://localhost/pay/... —
+            // wrong host/port and pointed at a page that did not exist.
+            'url' => rtrim((string) config('app.public_url'), '/')."/pay/{$token}",
             'expires_at' => (string) ($order->payment_due_at ?? now()->addDays(7)),
         ];
     }

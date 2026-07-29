@@ -227,6 +227,14 @@ Route::get('/pay/{token}', [\App\Http\Controllers\PaymentLinkController::class, 
 Route::post('/pay/{token}/confirm', [\App\Http\Controllers\PaymentLinkController::class, 'confirm'])
     ->middleware('throttle:payment-link');
 
+// S04C step 1 — the platform's FIRST anonymous WRITE (OD-23). The picker read
+// is a filtered listed-schools read; submit is the confined public-context write.
+// Constant-shape 202, no status endpoint. throttle:registration on both.
+Route::get('/register/schools', [\App\Http\Controllers\RegistrationController::class, 'schools'])
+    ->middleware('throttle:registration');
+Route::post('/register', [\App\Http\Controllers\RegistrationController::class, 'submit'])
+    ->middleware('throttle:registration');
+
 // Guest onboarding surface (2.11) — throttling arrives with step 4
 Route::post('/onboarding/accept', [OnboardingController::class, 'accept'])->middleware('throttle:auth');
 Route::get('/onboarding/verify-email/{id}/{hash}', [OnboardingController::class, 'verifyEmail'])

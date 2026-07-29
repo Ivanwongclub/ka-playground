@@ -40,6 +40,7 @@ class AuditService
         // is attributed to the SYSTEM actor explicitly — a job-driven state
         // change reads "system", not an attribution hole.
         $systemActor = false;
+        $publicActor = false;
         if ($actor === null) {
             try {
                 $ctx = DB::selectOne("SELECT current_setting('app.context', true) AS c")->c ?? '';
@@ -47,13 +48,18 @@ class AuditService
                 $ctx = '';
             }
             $systemActor = $ctx === 'system';
+            // S04C (D-iii): a genuinely anonymous pre-account action (self-
+            // registration) has no identity — but attribution is still never a
+            // hole (OD-64). The public context stamps actor_role 'public', so an
+            // anonymous write reads "public", never a null-role gap.
+            $publicActor = $ctx === 'public';
         }
 
         $event = new AuditEvent([
             'event_id' => (string) Str::uuid7(),
             'occurred_at' => now(),
             'actor_id' => $actor?->getAuthIdentifier(),
-            'actor_role' => $actor?->getAttribute('role') ?? ($systemActor ? 'system' : null),
+            'actor_role' => $actor?->getAttribute('role') ?? ($systemActor ? 'system' : ($publicActor ? 'public' : null)),
             'on_behalf_of' => $onBehalfOf,
             'entity_type' => $entityType,
             'entity_id' => (string) $entityId,

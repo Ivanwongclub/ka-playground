@@ -289,6 +289,22 @@ h3 {
   display: flex;
   min-height: 100dvh;
 }
+/* S04C — public self-registration + forwardable payment page, centred single column */
+.ka-register,
+.ka-pay {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100dvh;
+  padding: 48px 16px;
+  background: var(--ka-bg);
+}
+.ka-register-card {
+  width: min(560px, 100%);
+}
+.ka-pay-card {
+  width: min(460px, 100%);
+}
 .ka-login-form {
   width: min(440px, 100%);
   padding: 48px 40px;

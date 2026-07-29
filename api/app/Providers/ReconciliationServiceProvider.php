@@ -26,6 +26,7 @@ use App\Services\Reconciliation\Assertions\CapacityClaimsWholeAssertion;
 use App\Services\Reconciliation\Assertions\CapacityConservationAssertion;
 use App\Services\Reconciliation\Assertions\AttendanceIntegrityAssertion;
 use App\Services\Reconciliation\Assertions\BookingCascadeLiveAssertion;
+use App\Services\Reconciliation\Assertions\PublicContextConfinementAssertion;
 use App\Services\Reconciliation\Assertions\ConsentCompleteAtConfirmAssertion;
 use App\Services\Reconciliation\Assertions\LadderLivenessAssertion;
 use App\Services\Reconciliation\Assertions\LearnGateIntegrityAssertion;
@@ -114,6 +115,9 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new NoStalePublishedSessionAssertion);
             $registry->register(new AttendanceIntegrityAssertion);
             $registry->register(new BookingCascadeLiveAssertion);
+
+            // S04C — the anonymous-write confinement (STEP 1)
+            $registry->register(new PublicContextConfinementAssertion);
 
             return $registry;
         });
