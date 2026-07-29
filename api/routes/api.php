@@ -193,6 +193,14 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/assessments/{id}/grade', [\App\Http\Controllers\AssessmentController::class, 'grade']);
     Route::get('/admin/assessments/{id}/results', [\App\Http\Controllers\AssessmentController::class, 'results']);
     Route::get('/assessments/{id}/results/{studentId}', [\App\Http\Controllers\AssessmentController::class, 'result']); // RLS-embargoed
+    // S06-5 — Member surfaces (OD-22/FR058): events (network-wide) + RSVP (per-member) + directory
+    Route::post('/admin/events', [\App\Http\Controllers\EventController::class, 'store']);
+    Route::post('/admin/events/{id}/transition', [\App\Http\Controllers\EventController::class, 'transition']);
+    Route::get('/events', [\App\Http\Controllers\EventController::class, 'index']); // RLS-shaped (Members see published)
+    Route::post('/events/{id}/rsvp', [\App\Http\Controllers\MemberController::class, 'rsvp'])->middleware('role:member');
+    Route::get('/my/rsvps', [\App\Http\Controllers\MemberController::class, 'myRsvps'])->middleware('role:member');
+    Route::get('/directory', [\App\Http\Controllers\MemberController::class, 'directory']); // RLS-shaped (Members only)
+    Route::put('/my/profile', [\App\Http\Controllers\MemberController::class, 'profile'])->middleware('role:member');
 
     // Reads shaped by RLS alone (S05 formation will consume these)
     Route::get('/programmes/{id}/team-categories', [ProgrammeConfigController::class, 'categories']);

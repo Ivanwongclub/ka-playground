@@ -60,6 +60,9 @@ return [
         'mentors',
         'assessments',
         'assessment_results',
+        'events',
+        'event_rsvps',
+        'member_profiles',
     ],
 
     // Deliberately unscoped — each with its recorded reason

@@ -58,6 +58,12 @@ class ScopeContext
                     ->where('user_id', $user->id)->whereNull('revoked_at')
                     ->pluck('capability')->all();
                 break;
+            case 'member':
+                // OD-22/R-Member: a Member is NETWORK-scoped, not link-scoped. There is
+                // no school/student/capability to derive — the marker is actor_role='member'
+                // itself, which the events/directory policies key on. Everything else stays
+                // empty, so a Member matches no enrolment/consent/finance/team row.
+                break;
         }
 
         $this->apply([

@@ -78,6 +78,14 @@ return [
 
     'App\Services\Sessions\AttendanceService::mark' => 'Attendance capture (S06-3): the mentor or academy records a booked student attended/no_show on an in-progress/completed session, stamping the recorder\'s identity. The recorder authority (session mentor, or academy operations) is resolved WITHIN the elevation via explicit actor-id filters — a recorder may not read the session through RLS, but the authority is a policy call, not a visibility one. session_bookings is a system-only write.',
 
+    'App\Services\Members\EventService::create' => 'Event create (S06-5, OD-22): the academy creates a Draft network event. events is a system-only write; the academy-operator authority was established before the elevation.',
+
+    'App\Services\Members\EventService::transition' => 'Event lifecycle transition (S06-5, OD-22): the academy publishes or cancels a network event. events.status is a system-only write; authority established before the elevation.',
+
+    'App\Services\Members\MemberSurfaceService::rsvp' => 'Member RSVP (S06-5, OD-22): a Member records their own RSVP to a published event. event_rsvps is a system-only write; only the acting Member\'s own rsvp row is touched.',
+
+    'App\Services\Members\MemberSurfaceService::upsertProfile' => 'Member profile upsert (S06-5, OD-22): a Member edits their own directory profile. member_profiles is a system-only write; only the acting Member\'s own profile is touched.',
+
     'App\Services\Assessments\AssessmentService::create' => 'Assessment create (S06-4b, 2.5): the academy creates a Draft assessment for a programme (optionally a team). assessments is a system-only write; the academy-operator authority was established before the elevation.',
 
     'App\Services\Assessments\AssessmentService::transition' => 'Assessment lifecycle transition (S06-4b, 2.5): the academy advances an assessment (draft→published→open→closed→graded→released). RELEASED lifts the result embargo. assessments.status is a system-only write; authority established before the elevation.',
