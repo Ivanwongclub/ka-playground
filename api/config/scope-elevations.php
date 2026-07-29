@@ -78,6 +78,12 @@ return [
 
     'App\Services\Sessions\AttendanceService::mark' => 'Attendance capture (S06-3): the mentor or academy records a booked student attended/no_show on an in-progress/completed session, stamping the recorder\'s identity. The recorder authority (session mentor, or academy operations) is resolved WITHIN the elevation via explicit actor-id filters — a recorder may not read the session through RLS, but the authority is a policy call, not a visibility one. session_bookings is a system-only write.',
 
+    'App\Services\Assessments\AssessmentService::create' => 'Assessment create (S06-4b, 2.5): the academy creates a Draft assessment for a programme (optionally a team). assessments is a system-only write; the academy-operator authority was established before the elevation.',
+
+    'App\Services\Assessments\AssessmentService::transition' => 'Assessment lifecycle transition (S06-4b, 2.5): the academy advances an assessment (draft→published→open→closed→graded→released). RELEASED lifts the result embargo. assessments.status is a system-only write; authority established before the elevation.',
+
+    'App\Services\Assessments\AssessmentService::grade' => 'Assessment grading (S06-4b, 2.5): the academy records a student\'s result on a closed/graded assessment. assessment_results is a system-only write; the embargo (results hidden until Released) is enforced separately at READ. Grader authority established before the elevation.',
+
     'App\Services\Enrolments\EnrolmentActivationService::run' => 'Enrolment activation job (S06-1, R3): the SYSTEM activates confirmed enrolments whose programme has started (basics.starts_on ≤ now) — payment-decoupled, keyed purely on "confirmed AND started". enrolments state writes are system-only (S04A); this is the scheduled actor. Transitions confirmed → active only.',
 
     'App\Services\Teams\TrackerService::approveGate' => 'Stage-gate approval (S05-5, OD-61): a team-linked teacher, the lobby school admin, or academy ops records a gate pass. The approver\'s authority (team-linked, not student-linked) is resolved WITHIN the elevation using explicit actor-id filters — a gate approver may not be able to read the team through RLS, but the OD-61 decision is a policy call, not a visibility one. stage_gates is a system-only write.',

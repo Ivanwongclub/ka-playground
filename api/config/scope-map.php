@@ -58,6 +58,8 @@ return [
         'session_versions',
         'session_bookings',
         'mentors',
+        'assessments',
+        'assessment_results',
     ],
 
     // Deliberately unscoped — each with its recorded reason

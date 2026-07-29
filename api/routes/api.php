@@ -187,6 +187,12 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/my/sessions/{id}/book', [\App\Http\Controllers\BookingController::class, 'book'])->middleware('role:student');
     Route::post('/my/sessions/{id}/cancel', [\App\Http\Controllers\BookingController::class, 'cancel'])->middleware('role:student');
     Route::post('/admin/sessions/{id}/attendance', [\App\Http\Controllers\AttendanceController::class, 'mark']); // authority in-service (mentor/ops)
+    // S06-4b — assessment lifecycle (2.5); the result read is RLS-embargoed (hidden until Released)
+    Route::post('/admin/programmes/{programmeId}/assessments', [\App\Http\Controllers\AssessmentController::class, 'store']);
+    Route::post('/admin/assessments/{id}/transition', [\App\Http\Controllers\AssessmentController::class, 'transition']);
+    Route::post('/admin/assessments/{id}/grade', [\App\Http\Controllers\AssessmentController::class, 'grade']);
+    Route::get('/admin/assessments/{id}/results', [\App\Http\Controllers\AssessmentController::class, 'results']);
+    Route::get('/assessments/{id}/results/{studentId}', [\App\Http\Controllers\AssessmentController::class, 'result']); // RLS-embargoed
 
     // Reads shaped by RLS alone (S05 formation will consume these)
     Route::get('/programmes/{id}/team-categories', [ProgrammeConfigController::class, 'categories']);
