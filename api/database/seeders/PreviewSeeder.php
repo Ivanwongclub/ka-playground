@@ -65,6 +65,18 @@ class PreviewSeeder extends Seeder
                 ['student_id' => $s->id, 'guardian_id' => $guardian->id],
                 ['id' => (string) Str::uuid7(), 'status' => 'active', 'origin' => 'onboarding', 'updated_at' => now(), 'created_at' => now()],
             );
+            // FLAG #2 (S04C-3): every active guardian_link — even seeded — must
+            // carry its to_state='active' activation audit, so the demo DB is as
+            // honest as the real paths and links.activation_audited holds.
+            $linkId = DB::table('guardian_links')->where('student_id', $s->id)->where('guardian_id', $guardian->id)->value('id');
+            if (! DB::table('audit_events')->where('entity_type', 'guardian_link')->where('entity_id', $linkId)->where('to_state', 'active')->exists()) {
+                DB::table('audit_events')->insert([
+                    'event_id' => (string) Str::uuid7(), 'occurred_at' => now(),
+                    'entity_type' => 'guardian_link', 'entity_id' => $linkId,
+                    'action' => 'guardian_link.created', 'to_state' => 'active',
+                    'actor_role' => 'system', 'request_id' => (string) Str::uuid7(),
+                ]);
+            }
         }
 
         // ── published programme + consent template + fee (HKD 2,500) ──

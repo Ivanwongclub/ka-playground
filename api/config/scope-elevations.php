@@ -16,6 +16,9 @@ return [
 
     'App\Services\Identity\RegistrationApprovalService::approve' => 'Registration approval (OD-23/OD-29): the reviewer creates an account for a person who is BY DEFINITION outside the reviewer\'s scope until it exists (INSERT..RETURNING checks the new row against SELECT policies). Creates exactly one UNVERIFIED account + one single-use activation token, updates the request, all audited to the reviewer.',
 
+    'App\Services\Identity\LinkageService::materialiseFor' => 'Held-link materialisation (OD-23, Leo 1a): a relationship CLAIMED against an address on a registration form materialises into a pending_approval link only once that address proves control of itself (verification). System-context: the claimant is outside the just-verified account\'s scope, and held_links are system-write by construction. Creates pending links only — never active.',
+    'App\Services\Identity\LinkageService::approveLink' => 'Guardian-link approval (OD-23/2.30 · FLAG #2): the admin\'s decision — separate from approving either person — activates the relationship. CAS pending_approval→active; writes the to_state=\'active\' audit that S06 requires_all consent hardening depends on. Elevated because a not-yet-affiliated student is outside the reviewer\'s derived scope.',
+
     'App\Services\Identity\AuthService::login' => 'Credential-verified token issuance: login is an auth-bootstrap act regardless of any pre-existing session (account switching); the token belongs to the just-verified credential holder, not the ambient actor.',
 
     'App\Services\Identity\InvitationService::accept' => 'Invitation acceptance is a pre-authentication bootstrap act by design (2.11): creates the invited account and activates any school-vouched teacher affiliation — single-use token-gated writes no scoped context could perform.',

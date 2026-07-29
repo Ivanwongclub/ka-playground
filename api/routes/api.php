@@ -28,6 +28,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // requests are theirs — school admin = own routed, academy ops = direct + all).
     Route::post('/admin/registration-requests/{id}/approve', [\App\Http\Controllers\RegistrationReviewController::class, 'approve']);
     Route::post('/admin/registration-requests/{id}/decline', [\App\Http\Controllers\RegistrationReviewController::class, 'decline']);
+    // S04C step 3 — the link-approval decision (FLAG #2): activates a RELATIONSHIP,
+    // separate from approving a person. Reviewer roles only; RLS scopes the rows.
+    Route::post('/admin/guardian-links/{id}/approve', [\App\Http\Controllers\GuardianLinkReviewController::class, 'approve']);
+    Route::post('/admin/guardian-links/{id}/reject', [\App\Http\Controllers\GuardianLinkReviewController::class, 'reject']);
 
     Route::get('/students', $notImplemented)->middleware('permission:student_records.view');
     Route::get('/consents', $notImplemented)->middleware('permission:consent.view');

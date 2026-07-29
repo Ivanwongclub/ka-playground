@@ -27,6 +27,8 @@ use App\Services\Reconciliation\Assertions\CapacityConservationAssertion;
 use App\Services\Reconciliation\Assertions\AttendanceIntegrityAssertion;
 use App\Services\Reconciliation\Assertions\BookingCascadeLiveAssertion;
 use App\Services\Reconciliation\Assertions\PublicContextConfinementAssertion;
+use App\Services\Reconciliation\Assertions\LinkActivationAuditedAssertion;
+use App\Services\Reconciliation\Assertions\NoUnverifiedMaterialisationAssertion;
 use App\Services\Reconciliation\Assertions\ConsentCompleteAtConfirmAssertion;
 use App\Services\Reconciliation\Assertions\LadderLivenessAssertion;
 use App\Services\Reconciliation\Assertions\LearnGateIntegrityAssertion;
@@ -118,6 +120,9 @@ class ReconciliationServiceProvider extends ServiceProvider
 
             // S04C — the anonymous-write confinement (STEP 1)
             $registry->register(new PublicContextConfinementAssertion);
+            // S04C STEP 3 — FLAG #2 made structural + the held-link typo guard
+            $registry->register(new LinkActivationAuditedAssertion);
+            $registry->register(new NoUnverifiedMaterialisationAssertion);
 
             return $registry;
         });

@@ -31,6 +31,7 @@ class RegistrationApprovalService
     public function __construct(
         private readonly AuditService $audit,
         private readonly ScopeContext $scope,
+        private readonly LinkageService $linkage,
     ) {}
 
     public function approve(string $requestId, User $approver): User
@@ -88,6 +89,12 @@ class RegistrationApprovalService
                         toState: 'registered',
                         payloadAfter: ['origin' => 'registration_approval', 'role' => $locked->kind, 'verified' => false],
                         actor: $approver);
+
+                    // Orphan pairs (STEP 3): if the request named a counterpart, either a
+                    // pending link (existing verified account) or a held link (not yet
+                    // registered). Runs inside this elevation — creates pending/held only,
+                    // never active. (approve is idempotent above, so this fires once.)
+                    $this->linkage->linkCounterpartAtApproval($user, $locked, $approver);
 
                     $fresh = true;
 

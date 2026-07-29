@@ -39,3 +39,9 @@ Schedule::command('enrolments:run-activations')
 // their real time; also before reconcile so sessions.no_stale_published holds.
 Schedule::command('sessions:advance')
     ->everyFiveMinutes();
+
+// S04C-3 held-link expiry (Leo 1b). Daily, off-peak, HKT. The terminal exit for
+// an unmaterialised form-claim; runs before reconcile so held_links.expiry holds.
+Schedule::command('held-links:expire')
+    ->timezone('Asia/Hong_Kong')
+    ->dailyAt('02:10');

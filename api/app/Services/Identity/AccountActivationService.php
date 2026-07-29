@@ -23,7 +23,10 @@ use Illuminate\Validation\ValidationException;
  */
 class AccountActivationService
 {
-    public function __construct(private readonly AuditService $audit) {}
+    public function __construct(
+        private readonly AuditService $audit,
+        private readonly LinkageService $linkage,
+    ) {}
 
     public function activate(string $token, string $password): User
     {
@@ -54,6 +57,11 @@ class AccountActivationService
             toState: 'verified', actor: $user);
         $this->audit->record('user', (string) $user->id, 'account.activated',
             toState: 'activated', payloadAfter: ['via' => 'registration_activation'], actor: $user);
+
+        // Now that THIS address is verified, any held link that claimed it
+        // materialises into a pending link (STEP 3, road B). Pending only — never
+        // active; an admin still decides the relationship (approveLink).
+        $this->linkage->materialiseFor($user);
 
         return $user;
     }

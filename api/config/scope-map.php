@@ -67,6 +67,10 @@ return [
         // table admitting the anonymous `public` context (one confined INSERT,
         // scope.public_context_confinement); reads are the reviewer set only.
         'registration_requests',
+        // S04C STEP 3: an unconfirmed relationship claim (form-claimed). Read =
+        // reviewer set; write = system only (created/materialised/expired by the
+        // platform), the most misleadable row in the system.
+        'held_links',
     ],
 
     // Deliberately unscoped — each with its recorded reason
