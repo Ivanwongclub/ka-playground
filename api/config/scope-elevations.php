@@ -14,6 +14,8 @@ return [
     'App\Http\Controllers\LinkController::schoolVouch' => 'B4 school-mediated flow: guardian lookup by exact email for a student already verified to be in the acting school. The guardian is outside the school\'s scope until this link creates the relationship.',
     'App\Services\Identity\GuardianStudentService::createStudent' => 'L4 guardian-led student creation: the child account is outside the guardian\'s scope until the link this very operation creates exists (INSERT..RETURNING checks SELECT policies on the new row). Creates exactly one student + one active link, both audited.',
 
+    'App\Services\Identity\RegistrationApprovalService::approve' => 'Registration approval (OD-23/OD-29): the reviewer creates an account for a person who is BY DEFINITION outside the reviewer\'s scope until it exists (INSERT..RETURNING checks the new row against SELECT policies). Creates exactly one UNVERIFIED account + one single-use activation token, updates the request, all audited to the reviewer.',
+
     'App\Services\Identity\AuthService::login' => 'Credential-verified token issuance: login is an auth-bootstrap act regardless of any pre-existing session (account switching); the token belongs to the just-verified credential holder, not the ambient actor.',
 
     'App\Services\Identity\InvitationService::accept' => 'Invitation acceptance is a pre-authentication bootstrap act by design (2.11): creates the invited account and activates any school-vouched teacher affiliation — single-use token-gated writes no scoped context could perform.',

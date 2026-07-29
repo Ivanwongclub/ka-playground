@@ -361,5 +361,20 @@
     "amount": "金額",
     "payNow": "立即支付 {{amount}}",
     "privacyNote": "為保障兒童私隱，只顯示其姓名縮寫。"
+  },
+  "activate": {
+    "logoAlt": "Armour Academy",
+    "title": "啟用您的帳戶",
+    "subtitle": "您的註冊已通過。設定密碼以驗證您的電郵並完成帳戶設定。",
+    "password": "設定密碼",
+    "confirm": "確認密碼",
+    "submit": "啟用帳戶",
+    "mismatch": "兩次輸入的密碼不一致。",
+    "doneTitle": "帳戶已啟用",
+    "doneSubtitle": "您的電郵已驗證，密碼已設定。您現在可以登入。",
+    "toLogin": "登入",
+    "errorToken": "此啟用連結無效或已過期。請聯絡管理員重新發出。",
+    "errorGeneric": "請檢查表格內容後再試一次。",
+    "errorNetwork": "連線發生問題，請再試一次。"
   }
 }

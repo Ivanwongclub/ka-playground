@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Identity\AccountActivationService;
 use App\Services\Identity\RegistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,10 @@ use Illuminate\Validation\Rule;
  */
 class RegistrationController extends Controller
 {
-    public function __construct(private readonly RegistrationService $registration) {}
+    public function __construct(
+        private readonly RegistrationService $registration,
+        private readonly AccountActivationService $activation,
+    ) {}
 
     /** Opt-in listed partner schools for the picker + a fresh form nonce (fill-time). */
     public function schools(): JsonResponse
@@ -52,4 +56,21 @@ class RegistrationController extends Controller
             202
         );
     }
+
+    /**
+     * Verify-and-set-password in one act (OD-29 model B). Guest surface: the
+     * single-use token is the access control. Establishes the credential AND the
+     * verified address together, then the account can log in.
+     */
+    public function activate(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'token' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+        $this->activation->activate($validated['token'], $validated['password']);
+
+        return response()->json(['status' => 'activated']);
+    }
 }
+

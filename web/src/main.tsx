@@ -31,6 +31,7 @@ import './index.css';
 const StyleGuide = lazy(() => import('./pages/StyleGuide').then((m) => ({ default: m.StyleGuide })));
 const Register = lazy(() => import('./pages/Register').then((m) => ({ default: m.Register })));
 const PublicPay = lazy(() => import('./pages/PublicPay').then((m) => ({ default: m.PublicPay })));
+const Activate = lazy(() => import('./pages/Activate').then((m) => ({ default: m.Activate })));
 const AdminAudit = lazy(() => import('./pages/AdminAudit').then((m) => ({ default: m.AdminAudit })));
 const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })));
 const AccessIdentity = lazy(() => import('./pages/AccessIdentity').then((m) => ({ default: m.AccessIdentity })));
@@ -73,6 +74,7 @@ function Root() {
             {/* S04C — public, unauthenticated surfaces (self-registration + the forwardable payment page) */}
             <Route path="/register" element={<Register />} />
             <Route path="/pay/:token" element={<PublicPay />} />
+            <Route path="/activate/:token" element={<Activate />} />
             <Route element={<RequireAuth><AppShell /></RequireAuth>}>
               <Route index element={<Placeholder titleKey="empty.title" />} />
               <Route path="/tracker" element={<Placeholder titleKey="empty.title" />} />

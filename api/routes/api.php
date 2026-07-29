@@ -24,6 +24,11 @@ Route::middleware('auth:sanctum')->group(function (): void {
         501,
     );
 
+    // S04C step 2 — registration review (routed reviewer decides; RLS scopes which
+    // requests are theirs — school admin = own routed, academy ops = direct + all).
+    Route::post('/admin/registration-requests/{id}/approve', [\App\Http\Controllers\RegistrationReviewController::class, 'approve']);
+    Route::post('/admin/registration-requests/{id}/decline', [\App\Http\Controllers\RegistrationReviewController::class, 'decline']);
+
     Route::get('/students', $notImplemented)->middleware('permission:student_records.view');
     Route::get('/consents', $notImplemented)->middleware('permission:consent.view');
     Route::post('/consents/sign', $notImplemented)->middleware('permission:consent.sign');
@@ -234,6 +239,10 @@ Route::get('/register/schools', [\App\Http\Controllers\RegistrationController::c
     ->middleware('throttle:registration');
 Route::post('/register', [\App\Http\Controllers\RegistrationController::class, 'submit'])
     ->middleware('throttle:registration');
+// S04C step 2 — activation (verify + set password in one act, OD-29 model B).
+// Guest: the single-use token is the access control. throttle:auth (credential surface).
+Route::post('/register/activate', [\App\Http\Controllers\RegistrationController::class, 'activate'])
+    ->middleware('throttle:auth');
 
 // Guest onboarding surface (2.11) — throttling arrives with step 4
 Route::post('/onboarding/accept', [OnboardingController::class, 'accept'])->middleware('throttle:auth');

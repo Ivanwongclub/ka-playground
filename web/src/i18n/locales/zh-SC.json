@@ -361,5 +361,20 @@
     "amount": "金额",
     "payNow": "立即支付 {{amount}}",
     "privacyNote": "为保护儿童隐私，只显示其姓名缩写。"
+  },
+  "activate": {
+    "logoAlt": "Armour Academy",
+    "title": "激活您的账户",
+    "subtitle": "您的注册已通过。设置密码以验证您的电邮并完成账户设置。",
+    "password": "设置密码",
+    "confirm": "确认密码",
+    "submit": "激活账户",
+    "mismatch": "两次输入的密码不一致。",
+    "doneTitle": "账户已激活",
+    "doneSubtitle": "您的电邮已验证，密码已设置。您现在可以登录。",
+    "toLogin": "登录",
+    "errorToken": "此激活链接无效或已过期。请联系管理员重新发送。",
+    "errorGeneric": "请检查表格内容后重试。",
+    "errorNetwork": "连接出现问题，请重试。"
   }
 }
