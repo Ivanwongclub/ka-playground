@@ -40,7 +40,11 @@ surfaces)** · 2.10 (register) · 2.21 extension · consent at-rest hardening (A
    pre-confirm) + **mentor lifecycle (2.6)** (Departed blocked while future sessions exist). Attendance
    only in In Progress/Completed. Sessions bind to the **shipped** `enrolments`/`team_members` roster (D4).
 3. **Bookings + session waitlist** (auto-promotion) + **attendance capture** (recorder identity;
-   attendance ties booking → enrolment → `team_members`).
+   attendance ties booking → enrolment → `team_members`). **Deliberate state split (S06-3):**
+   *booking* requires only a LIVE enrolment (`confirmed`/`active`) — a student may reserve a seat on a
+   session published before the programme starts; *attendance* requires the session to be In Progress
+   or Completed (never Draft/Published). Attendance is recorded ON the booking (`attended`/`no_show` +
+   recorder), so `attendance == attended bookings` by construction.
 4. **Learn-threshold computation (OD-12, R2) + the Learn gate + assessment lifecycle (2.5).**
    Per-student attendance ratio ≥ `attendance_threshold_pct` → qualifies; team roll-up ≥
    `team_gate_pass_pct` → **Learn-eligible**. Eligibility is a hard precondition to `approveGate('Learn')`;
