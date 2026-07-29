@@ -27,6 +27,9 @@ class LearnGateService
         $attendancePct = (int) ($rules->attendance_threshold_pct ?? self::DEFAULT_ATTENDANCE_PCT);
         $teamGatePct = (int) ($rules->team_gate_pass_pct ?? self::DEFAULT_TEAM_GATE_PCT);
 
+        // PRODUCT RULING (Leo, 2026-07-29): SUSPENDED members are EXCLUDED from the
+        // Learn denominator — a non-payment lapse must not penalise the team's learning
+        // pass rate. Only status='active' members count (removed are already out).
         $studentIds = DB::table('team_members')->where('team_id', $team->id)->where('status', 'active')->pluck('student_id');
         $activeMembers = $studentIds->count();
 
