@@ -177,6 +177,12 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/teams/{id}/gates/{stage}/approve', [\App\Http\Controllers\RolesTrackerController::class, 'approveGate']);
     // S05-6 audit element — the Team & Capacity Report (RLS-shaped)
     Route::get('/admin/programmes/{id}/team-capacity-report', [\App\Http\Controllers\TeamCapacityReportController::class, 'show']);
+    // S06-2 — session lifecycle (2.3) + reschedule/clash (2.24) + mentor lifecycle (2.6); authority in-service
+    Route::post('/admin/programmes/{programmeId}/sessions', [\App\Http\Controllers\SessionController::class, 'store']);
+    Route::post('/admin/sessions/{id}/transition', [\App\Http\Controllers\SessionController::class, 'transition']);
+    Route::post('/admin/sessions/{id}/reschedule', [\App\Http\Controllers\SessionController::class, 'reschedule']);
+    Route::post('/admin/sessions/{id}/clash-preview', [\App\Http\Controllers\SessionController::class, 'clashPreview']);
+    Route::post('/admin/mentors/{userId}/status', [\App\Http\Controllers\MentorController::class, 'setStatus']);
 
     // Reads shaped by RLS alone (S05 formation will consume these)
     Route::get('/programmes/{id}/team-categories', [ProgrammeConfigController::class, 'categories']);

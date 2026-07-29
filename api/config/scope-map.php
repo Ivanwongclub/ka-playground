@@ -54,6 +54,10 @@ return [
         'team_teacher_links',
         'tenures',
         'stage_gates',
+        'programme_sessions',
+        'session_versions',
+        'session_bookings',
+        'mentors',
     ],
 
     // Deliberately unscoped — each with its recorded reason

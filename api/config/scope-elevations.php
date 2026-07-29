@@ -62,6 +62,16 @@ return [
 
     'App\Services\Teams\RoleRotationService::assignRole' => 'Role rotation recording (S05-5, OD-15): staff record a role assignment; the prior active tenure for this (team, role) is completed and a fresh active one opened — the ledger handover. tenures is a system-only write; the recorder\'s authority was established before the elevation.',
 
+    'App\Services\Sessions\SessionService::create' => 'Session create (S06-2): the organiser creates a Draft session bound to a programme (optionally a team, D4). programme_sessions is a system-only write; the academy-operator authority was established before the elevation.',
+
+    'App\Services\Sessions\SessionService::transition' => 'Session lifecycle transition (S06-2, 2.3): the organiser advances a session through its state machine (draft→published→full→in_progress→completed/cancelled). programme_sessions.status is a system-only write; authority established before the elevation.',
+
+    'App\Services\Sessions\SessionService::reschedule' => 'Session reschedule (S06-2, 2.3/2.24): the organiser moves a session; the pre-change snapshot is written to session_versions, bookings are retained, booking re-opens if capacity grew, and clashing students are computed for re-notification. programme_sessions/session_versions are system-only writes; authority established before the elevation.',
+
+    'App\Services\Sessions\SessionService::clashPreview' => 'Session clash preview (S06-2, 2.24): read-only count of booked students who would clash at a proposed new time — spans bookings across sessions the organiser cannot otherwise see. No write.',
+
+    'App\Services\Sessions\MentorService::setStatus' => 'Mentor lifecycle (S06-2, 2.6): the academy moves a mentor active/inactive/departed; departing is refused while future non-terminal sessions remain (reassign or reschedule first). mentors is a system-only write; authority established before the elevation.',
+
     'App\Services\Enrolments\EnrolmentActivationService::run' => 'Enrolment activation job (S06-1, R3): the SYSTEM activates confirmed enrolments whose programme has started (basics.starts_on ≤ now) — payment-decoupled, keyed purely on "confirmed AND started". enrolments state writes are system-only (S04A); this is the scheduled actor. Transitions confirmed → active only.',
 
     'App\Services\Teams\TrackerService::approveGate' => 'Stage-gate approval (S05-5, OD-61): a team-linked teacher, the lobby school admin, or academy ops records a gate pass. The approver\'s authority (team-linked, not student-linked) is resolved WITHIN the elevation using explicit actor-id filters — a gate approver may not be able to read the team through RLS, but the OD-61 decision is a policy call, not a visibility one. stage_gates is a system-only write.',
