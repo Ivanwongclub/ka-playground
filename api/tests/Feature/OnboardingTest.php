@@ -118,32 +118,14 @@ class OnboardingTest extends TestCase
         $this->getJson($other)->assertStatus(403);
     }
 
-    public function test_guardian_creates_student_with_active_link_and_audit(): void
+    public function test_guardian_creates_student_path_is_retired(): void
     {
-        $guardian = User::factory()->create(['role' => 'guardian']);
-        Sanctum::actingAs($guardian);
-
-        $response = $this->postJson('/api/my/students', [
-            'name' => 'Chan Tai Man', 'email' => 'ctm@example.test', 'password' => 'student-pass-12345',
-        ])->assertStatus(201);
-
-        $studentId = $response->json('student_id');
-        $this->assertDatabaseHas('users', ['id' => $studentId, 'role' => 'student']);
-        $this->assertDatabaseHas('guardian_links', [
-            'student_id' => $studentId, 'guardian_id' => $guardian->id,
-            'status' => 'active', 'origin' => 'onboarding',
-        ]);
-        $this->assertDatabaseHas('audit_events', [
-            'action' => 'guardian_link.created', 'actor_id' => $guardian->id, 'actor_role' => 'guardian',
-        ]);
-    }
-
-    public function test_non_guardian_cannot_create_students(): void
-    {
-        Sanctum::actingAs(User::factory()->create(['role' => 'member']));
+        // OD-27 (S04C STEP 4): guardian-creates-student is retired — students are
+        // created by self-registration + approval now. The endpoint no longer exists.
+        Sanctum::actingAs(User::factory()->create(['role' => 'guardian']));
         $this->postJson('/api/my/students', [
-            'name' => 'X', 'email' => 'x@example.test', 'password' => 'student-pass-12345',
-        ])->assertStatus(403);
+            'name' => 'Chan Tai Man', 'email' => 'ctm@example.test', 'password' => 'student-pass-12345',
+        ])->assertStatus(404);
     }
 
     public function test_invitation_stores_only_a_hash_of_the_token(): void

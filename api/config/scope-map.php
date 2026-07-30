@@ -71,6 +71,9 @@ return [
         // reviewer set; write = system only (created/materialised/expired by the
         // platform), the most misleadable row in the system.
         'held_links',
+        // S04C STEP 4: the approval-queue escalation ledger. Read = academy
+        // (ops/audit); write = system (the daily sweep).
+        'onboarding_exceptions',
     ],
 
     // Deliberately unscoped — each with its recorded reason

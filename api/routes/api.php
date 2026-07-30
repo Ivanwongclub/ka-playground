@@ -32,6 +32,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // separate from approving a person. Reviewer roles only; RLS scopes the rows.
     Route::post('/admin/guardian-links/{id}/approve', [\App\Http\Controllers\GuardianLinkReviewController::class, 'approve']);
     Route::post('/admin/guardian-links/{id}/reject', [\App\Http\Controllers\GuardianLinkReviewController::class, 'reject']);
+    // S04C step 4 — the ONE queue (read; RLS-scoped per approver).
+    Route::get('/admin/onboarding-queue', [\App\Http\Controllers\OnboardingQueueController::class, 'index']);
 
     Route::get('/students', $notImplemented)->middleware('permission:student_records.view');
     Route::get('/consents', $notImplemented)->middleware('permission:consent.view');
@@ -82,8 +84,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::post('/admin/invitations', [OnboardingController::class, 'issue'])
         ->middleware('permission:operations.manage');
-    Route::post('/my/students', [OnboardingController::class, 'createStudent'])
-        ->middleware('role:guardian');
+    // OD-27: guardian-creates-student (POST /my/students) is RETIRED — self-
+    // registration + approval (S04C) creates students now. The endpoint, service
+    // and its elevation are gone in the same step self-registration went live.
 
     // Linking flows (B4) + continuity (2.2)
     Route::post('/my/pairing-codes', [LinkController::class, 'generateCode'])->middleware('role:student');

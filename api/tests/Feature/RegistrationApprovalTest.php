@@ -229,6 +229,32 @@ class RegistrationApprovalTest extends TestCase
         $this->postJson("/api/admin/registration-requests/{$reqId}/approve")->assertStatus(403);
     }
 
+    // ── D-i: a school-routed student reaches Active at approval ────────────────
+
+    public function test_school_routed_student_approval_mints_the_active_affiliation(): void
+    {
+        $ops = $this->ops();
+        $schoolId = $this->school();
+        $reqId = $this->submittedRequest('student', $schoolId); // school-routed student
+        $this->sanctumAs($ops);
+        $accountId = $this->postJson("/api/admin/registration-requests/{$reqId}/approve")->assertStatus(201)->json('account_id');
+
+        // an active school_links affiliation → the student is Active (OD-28)
+        $sl = $this->sys(fn () => DB::table('school_links')->where('student_id', $accountId)->where('status', 'active')->first());
+        $this->assertNotNull($sl, 'the reviewing school affiliates the student — the active link');
+        $this->assertSame($schoolId, (int) $sl->school_id);
+        $this->assertSame(1, $this->sys(fn () => DB::table('audit_events')->where('entity_type', 'school_link')->where('entity_id', $sl->id)->where('to_state', 'active')->count()));
+    }
+
+    public function test_direct_student_approval_leaves_the_student_registered(): void
+    {
+        $ops = $this->ops();
+        $reqId = $this->submittedRequest('student'); // direct (academy) — no school to affiliate
+        $this->sanctumAs($ops);
+        $accountId = $this->postJson("/api/admin/registration-requests/{$reqId}/approve")->assertStatus(201)->json('account_id');
+        $this->assertSame(0, $this->sys(fn () => DB::table('school_links')->where('student_id', $accountId)->count()), 'a direct student stays Registered until a link is approved');
+    }
+
     // ── activation is a CAS: exactly one activation wins ───────────────────────
 
     public function test_two_activations_on_one_token_one_wins_one_refuses_password_set_once(): void

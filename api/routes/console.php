@@ -45,3 +45,9 @@ Schedule::command('sessions:advance')
 Schedule::command('held-links:expire')
     ->timezone('Asia/Hong_Kong')
     ->dailyAt('02:10');
+
+// S04C-4 onboarding-queue escalation (2.28 Q5). Daily, before reconcile so
+// queue.escalation_liveness holds — a queue item left too long is flagged.
+Schedule::command('onboarding:escalate')
+    ->timezone('Asia/Hong_Kong')
+    ->dailyAt('02:05');

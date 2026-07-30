@@ -163,7 +163,18 @@
     "deadline": "期限",
     "capabilityLog": "权能授予与撤销",
     "grantor": "授予者",
-    "none": "无"
+    "none": "无",
+    "onboarding": "注册入口",
+    "onboardingSub": "自助注册漏斗、审批队列轮候时间，以及暂存链接账本。",
+    "onb_submitted": "已提交",
+    "onb_approved": "已通过",
+    "onb_verified": "已验证",
+    "onb_escalations": "待处理升级",
+    "pendingAccounts": "待审账户",
+    "pendingLinks": "待审链接",
+    "heldClaims": "暂存声明",
+    "oldestPending": "最久待处理（天）",
+    "heldLedger": "暂存链接账本 — 暂存：{{held}} · 已实现：{{materialised}} · 已过期：{{expired}}"
   },
   "wizard": {
     "title": "课程设置",

@@ -15,6 +15,11 @@ interface Report {
   sole_guardian_students: { student_id: number; name: string }[];
   replacement_exceptions: { id: string; student_id: number; reason: string; deadline: string }[];
   capability_log: { occurred_at: string; action: string; actor_id: number | null; reason: string | null }[];
+  onboarding: {
+    funnel: { submitted: number; approved: number; declined: number; verified: number };
+    queue: { pending_accounts: number; pending_links: number; held: number; open_escalations: number; oldest_pending_days: number };
+    held_link_ledger: { held: number; materialised: number; expired: number };
+  };
 }
 
 function hkt(iso: string): string {
@@ -63,6 +68,42 @@ export function AccessIdentity() {
           </Col>
         ))}
       </Row>
+
+      <Title level={2}>{t('accessReport.onboarding')}</Title>
+      <Paragraph type="secondary">{t('accessReport.onboardingSub')}</Paragraph>
+      <Row gutter={16}>
+        {(['submitted', 'approved', 'verified'] as const).map((stage) => (
+          <Col key={stage} xs={12} sm={6}>
+            <Card>
+              <Statistic title={t(`accessReport.onb_${stage}`)} value={report.onboarding.funnel[stage]}
+                valueStyle={{ color: kaColors.gold, fontVariantNumeric: 'tabular-nums' }} />
+            </Card>
+          </Col>
+        ))}
+        <Col xs={12} sm={6}>
+          <Card>
+            <Statistic title={t('accessReport.onb_escalations')} value={report.onboarding.queue.open_escalations}
+              valueStyle={{ color: report.onboarding.queue.open_escalations > 0 ? kaColors.danger : kaColors.gold, fontVariantNumeric: 'tabular-nums' }} />
+          </Card>
+        </Col>
+      </Row>
+      <Row gutter={16} style={{ marginTop: 16 }}>
+        {([['pendingAccounts', report.onboarding.queue.pending_accounts], ['pendingLinks', report.onboarding.queue.pending_links], ['heldClaims', report.onboarding.queue.held], ['oldestPending', report.onboarding.queue.oldest_pending_days]] as const).map(([key, val]) => (
+          <Col key={key} xs={12} sm={6}>
+            <Card>
+              <Statistic title={t(`accessReport.${key}`)} value={val as number}
+                valueStyle={{ fontVariantNumeric: 'tabular-nums' }} />
+            </Card>
+          </Col>
+        ))}
+      </Row>
+      <Paragraph type="secondary" style={{ marginTop: 12 }}>
+        {t('accessReport.heldLedger', {
+          held: report.onboarding.held_link_ledger.held,
+          materialised: report.onboarding.held_link_ledger.materialised,
+          expired: report.onboarding.held_link_ledger.expired,
+        })}
+      </Paragraph>
 
       <Title level={2}>{t('accessReport.authLog')}</Title>
       <Table

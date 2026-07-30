@@ -163,7 +163,18 @@
     "deadline": "Deadline",
     "capabilityLog": "Capability grants & revocations",
     "grantor": "Grantor",
-    "none": "None"
+    "none": "None",
+    "onboarding": "Onboarding front door",
+    "onboardingSub": "Self-registration funnel, approval-queue age, and the held-link ledger.",
+    "onb_submitted": "Submitted",
+    "onb_approved": "Approved",
+    "onb_verified": "Verified",
+    "onb_escalations": "Open escalations",
+    "pendingAccounts": "Pending accounts",
+    "pendingLinks": "Pending links",
+    "heldClaims": "Held claims",
+    "oldestPending": "Oldest pending (days)",
+    "heldLedger": "Held-link ledger — held: {{held}} · materialised: {{materialised}} · expired: {{expired}}"
   },
   "wizard": {
     "title": "Programme Configuration",

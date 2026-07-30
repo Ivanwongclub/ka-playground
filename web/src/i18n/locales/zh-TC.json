@@ -163,7 +163,18 @@
     "deadline": "期限",
     "capabilityLog": "權能授予與撤銷",
     "grantor": "授予者",
-    "none": "無"
+    "none": "無",
+    "onboarding": "註冊入口",
+    "onboardingSub": "自助註冊漏斗、審批佇列輪候時間，以及暫存連結帳本。",
+    "onb_submitted": "已提交",
+    "onb_approved": "已通過",
+    "onb_verified": "已驗證",
+    "onb_escalations": "待處理升級",
+    "pendingAccounts": "待審帳戶",
+    "pendingLinks": "待審連結",
+    "heldClaims": "暫存聲明",
+    "oldestPending": "最久待處理（日）",
+    "heldLedger": "暫存連結帳本 — 暫存：{{held}} · 已實現：{{materialised}} · 已過期：{{expired}}"
   },
   "wizard": {
     "title": "課程設定",

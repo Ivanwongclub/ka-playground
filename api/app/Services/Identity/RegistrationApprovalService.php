@@ -90,6 +90,23 @@ class RegistrationApprovalService
                         payloadAfter: ['origin' => 'registration_approval', 'role' => $locked->kind, 'verified' => false],
                         actor: $approver);
 
+                    // D-i (STEP 4): a school-routed student reaches ACTIVE at approval —
+                    // the reviewing school affiliating them IS the active link (OD-28).
+                    // A direct (academy-routed) student stays Registered until a link is
+                    // approved. The richer school-link state machine is S04D; this is the
+                    // minimal affiliation. Audited to_state='active' (BI-8).
+                    if ($locked->kind === 'student' && $locked->routing === 'school' && $locked->school_id !== null) {
+                        $linkId = (string) Str::uuid7();
+                        DB::table('school_links')->insert([
+                            'id' => $linkId, 'student_id' => $user->id, 'school_id' => $locked->school_id,
+                            'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
+                        ]);
+                        $this->audit->record('school_link', $linkId, 'school_link.created',
+                            toState: 'active',
+                            payloadAfter: ['student_id' => $user->id, 'school_id' => $locked->school_id, 'origin' => 'registration_approval'],
+                            actor: $approver);
+                    }
+
                     // Orphan pairs (STEP 3): if the request named a counterpart, either a
                     // pending link (existing verified account) or a held link (not yet
                     // registered). Runs inside this elevation — creates pending/held only,

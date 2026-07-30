@@ -29,6 +29,8 @@ use App\Services\Reconciliation\Assertions\BookingCascadeLiveAssertion;
 use App\Services\Reconciliation\Assertions\PublicContextConfinementAssertion;
 use App\Services\Reconciliation\Assertions\LinkActivationAuditedAssertion;
 use App\Services\Reconciliation\Assertions\NoUnverifiedMaterialisationAssertion;
+use App\Services\Reconciliation\Assertions\QueueEscalationLivenessAssertion;
+use App\Services\Reconciliation\Assertions\AccountProvenanceAssertion;
 use App\Services\Reconciliation\Assertions\ConsentCompleteAtConfirmAssertion;
 use App\Services\Reconciliation\Assertions\LadderLivenessAssertion;
 use App\Services\Reconciliation\Assertions\LearnGateIntegrityAssertion;
@@ -123,6 +125,9 @@ class ReconciliationServiceProvider extends ServiceProvider
             // S04C STEP 3 — FLAG #2 made structural + the held-link typo guard
             $registry->register(new LinkActivationAuditedAssertion);
             $registry->register(new NoUnverifiedMaterialisationAssertion);
+            // S04C STEP 4 — the queue's escalation liveness + account provenance
+            $registry->register(new QueueEscalationLivenessAssertion);
+            $registry->register(new AccountProvenanceAssertion);
 
             return $registry;
         });

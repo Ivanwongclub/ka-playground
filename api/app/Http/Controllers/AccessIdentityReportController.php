@@ -50,6 +50,30 @@ class AccessIdentityReportController extends Controller
                 ->where('action', 'like', 'capability.%')
                 ->orderByDesc('occurred_at')->limit(50)
                 ->get(['occurred_at', 'action', 'actor_id', 'entity_id', 'reason', 'payload_after']),
+            // S04C STEP 4 — the onboarding front door: funnel, queue age, held ledger
+            'onboarding' => [
+                'funnel' => [
+                    'submitted' => DB::table('registration_requests')->count(),
+                    'approved' => DB::table('registration_requests')->where('status', 'approved')->count(),
+                    'declined' => DB::table('registration_requests')->where('status', 'declined')->count(),
+                    'verified' => DB::table('registration_requests AS rr')
+                        ->join('users AS u', 'u.id', '=', 'rr.created_account_id')
+                        ->where('rr.status', 'approved')->whereNotNull('u.email_verified_at')->count(),
+                ],
+                'queue' => [
+                    'pending_accounts' => DB::table('registration_requests')->where('status', 'submitted')->count(),
+                    'pending_links' => DB::table('guardian_links')->where('status', 'pending_approval')->count(),
+                    'held' => DB::table('held_links')->where('status', 'held')->count(),
+                    'open_escalations' => DB::table('onboarding_exceptions')->where('status', 'open')->count(),
+                    'oldest_pending_days' => (int) (DB::table('registration_requests')->where('status', 'submitted')->min('created_at')
+                        ? now()->diffInDays(DB::table('registration_requests')->where('status', 'submitted')->min('created_at'), absolute: true) : 0),
+                ],
+                'held_link_ledger' => [
+                    'held' => DB::table('held_links')->where('status', 'held')->count(),
+                    'materialised' => DB::table('held_links')->where('status', 'materialised')->count(),
+                    'expired' => DB::table('held_links')->where('status', 'expired')->count(),
+                ],
+            ],
         ]);
     }
 }

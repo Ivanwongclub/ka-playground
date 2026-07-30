@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\Audit\AuditService;
 use App\Services\Audit\AuthEventType;
-use App\Services\Identity\GuardianStudentService;
 use App\Services\Identity\InvitationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,7 +13,6 @@ class OnboardingController extends Controller
 {
     public function __construct(
         private readonly InvitationService $invitations,
-        private readonly GuardianStudentService $guardianStudents,
         private readonly AuditService $audit,
     ) {}
 
@@ -73,24 +71,5 @@ class OnboardingController extends Controller
         }
 
         return response()->json(['verified' => true]);
-    }
-
-    /** Guardian creates the student account (L4 — guardian is the anchor). */
-    public function createStudent(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:12'],
-        ]);
-
-        $student = $this->guardianStudents->createStudent(
-            $request->user(),
-            $validated['name'],
-            $validated['email'],
-            $validated['password'],
-        );
-
-        return response()->json(['student_id' => $student->id], 201);
     }
 }

@@ -31,10 +31,24 @@ class PreviewSeeder extends Seeder
             throw new \RuntimeException('PreviewSeeder is local-only — it seeds a known password and must never run outside the local environment.');
         }
 
-        $acct = fn (string $email, string $name, string $role) => User::query()->firstOrCreate(
-            ['email' => $email],
-            ['name' => $name, 'role' => $role, 'password' => Hash::make('password'), 'email_verified_at' => now()],
-        );
+        $acct = function (string $email, string $name, string $role): User {
+            $u = User::query()->firstOrCreate(
+                ['email' => $email],
+                ['name' => $name, 'role' => $role, 'password' => Hash::make('password'), 'email_verified_at' => now()],
+            );
+            // account.provenance (S04C-4): every account traces to an audited origin
+            // — even seeded ones, so the demo is as honest as the real paths.
+            if (! DB::table('audit_events')->where('entity_type', 'user')->where('entity_id', (string) $u->id)->whereIn('action', ['user.created', 'bootstrap.super_admin'])->exists()) {
+                DB::table('audit_events')->insert([
+                    'event_id' => (string) Str::uuid7(), 'occurred_at' => now(), 'entity_type' => 'user',
+                    'entity_id' => (string) $u->id, 'action' => 'user.created', 'to_state' => 'registered',
+                    'actor_role' => 'system', 'request_id' => (string) Str::uuid7(),
+                    'payload_after' => json_encode(['origin' => 'seed_demo', 'role' => $role]),
+                ]);
+            }
+
+            return $u;
+        };
         $cap = function (User $u, string $cap): void {
             if (! DB::table('admin_capabilities')->where('user_id', $u->id)->where('capability', $cap)->exists()) {
                 DB::table('admin_capabilities')->insert(['id' => (string) Str::uuid7(), 'user_id' => $u->id, 'capability' => $cap, 'granted_by' => $u->id, 'granted_at' => now()]);
