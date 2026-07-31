@@ -12,11 +12,9 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
+use Tests\Support\Eicar;
 use Tests\Support\EicarOnlyScanner;
 use Tests\TestCase;
-
-// EICAR: the industry-standard harmless antivirus test string.
-const EICAR = 'X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*';
 
 /** Deterministic scanner for pipeline tests: flags EICAR, passes everything else. */
 class UploadServiceTest extends TestCase
@@ -160,7 +158,7 @@ class UploadServiceTest extends TestCase
     {
         Queue::fake();
         $tmp = tempnam(sys_get_temp_dir(), 'kap');
-        file_put_contents($tmp, '%PDF-1.4 '.EICAR);
+        file_put_contents($tmp, '%PDF-1.4 '.Eicar::STRING);
         $file = new UploadedFile($tmp, 'infected.pdf', 'application/pdf', null, true);
 
         $service = app(UploadService::class);

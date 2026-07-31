@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Tests\Support\Eicar;
 use Tests\TestCase;
 
 /**
@@ -49,7 +50,7 @@ class ClamAvIntegrationTest extends TestCase
 
     public function test_real_clamd_flags_eicar(): void
     {
-        $signature = $this->scanner()->scan(EICAR);
+        $signature = $this->scanner()->scan(Eicar::STRING);
 
         $this->assertNotNull($signature, 'clamd must flag the EICAR test string');
         $this->assertStringContainsStringIgnoringCase('eicar', $signature);
