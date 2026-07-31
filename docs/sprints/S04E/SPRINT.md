@@ -36,6 +36,24 @@
 > **D-10** — the batch carries its **programme target (+ optional OD-25 payer) captured at the STEP 1
 > upload**; a new nullable `programme_id` (+ `payer_party`/`payer_school_id`) is added to
 > `enrolment_batches` and the upload endpoint requires the programme.
+>
+> **RECONCILED (STEP 3) 2026-08-01** per `docs/sprints/S04E/PROPOSED-S04E-STEP3-REVIEW.md` and Leo's
+> three rulings, after confirming the finance schema:
+> **D-11** — **OD-25 consolidated invoicing → S07, NOT S04E.** `consolidated_invoices` is keyed
+> `(school_id, programme_id)` with **no `batch_id`** — an invoice is "what a school owes for a
+> programme", aggregating school-payer orders regardless of bulk-origin. There is **no batch→invoice
+> seam to lay**; the schema already has it. The one missing wire — obligation `payer_party` from the
+> programme's E6 value instead of the hardcoded `'guardian'` — is order-payer determination, an **S07
+> (team finance)** change. OD-25 + the `invoices.line_reconciliation` assertion are a **named S07
+> hand-off**, not a loose end. (There are no batch-time orders to invoice — orders are born at 成團, S05.)
+> **D-13** — **wire the FR066 `onboarding_exceptions` row** (`subject_type='enrolment_batch'`) on
+> batch failure. Batch failures join the same trackable ledger the escalation sweep watches: the audit
+> event records the failure, the exception row makes it actionable/resolvable — no terminal fate escapes
+> enumeration. Additively touches the STEP 1/2 failure paths.
+> **D-14** — **leave `enrolment_batches.payer_party` DORMANT.** The programme's E6 `payer_party` is the
+> authoritative source; the batch column is recorded intent only. Do NOT populate it from E6 (a second
+> copy can drift). If the dashboard labels a cohort "school-paid", it reads programme E6 **live** at
+> display — single source of truth.
 
 ## GOAL
 A school administrator enrols a cohort in one auditable batch: **CSV** in, per-row outcomes out,
@@ -102,14 +120,19 @@ in Phase 1** (D-5).
    → FR066 exception. VERIFY: a mixed batch — guardian-having rows Enrolled (`pending_consent`,
    consent issued, pasted); guardian-less rows `not_enrolled` with reason (pasted); re-commit
    idempotent (no duplicate accounts *or* enrolments) pasted; another school's admin five-branch.
-3. **Batch dashboard (H4) + consolidated invoicing (OD-25) — RE-SCOPED, needs its own reconciliation
-   (D-9).** School admin sees Active | Complete | Exceptions with per-row drill-down (2.28/Q4 3.4).
-   **The consolidated invoice cannot be built at batch time — there are no batch-time orders** (orders
-   exist only after the batch's enrolments reach 成團/confirmation at S05; OD-25 school-payer is
-   additionally unwired — both obligation call sites hardcode guardian payer). So STEP 3 splits: the
-   **dashboard (H4)** is buildable now; the **consolidated invoice** is deferred to when S05 orders
-   exist and gets a dedicated reconciliation (flagged before STEP 3 is built). VERIFY (dashboard):
-   batch drill-down + per-row outcomes; school admin of ANOTHER school sees zero (five-branch).
+3. **Batch dashboard (H4) + FR066 wiring — the LAST S04E step (D-11/D-13).** School admin sees their
+   batches: list by status (`ready | committing | complete | partially_complete | failed`) / programme
+   / age, with per-batch drill-down (per-row disposition/outcome/reason; **enrolled** rows enriched
+   with their live enrolment status `submitted → pending_consent → in_pool …`). **The `not_enrolled`
+   (guardian-less) rows are the actionable core — the join-back to S04D**: they name the children
+   awaiting a guardian, and a re-commit enrols them once linked (STEP 2 re-evaluates `committed=false`
+   rows). If a cohort is labelled "school-paid", the dashboard reads programme E6 `payer_party` **live**
+   (D-14 — no stored copy). **FR066 (D-13):** batch failure (STEP 1 scan/structural, STEP 2 commit)
+   additionally opens an `onboarding_exceptions` row (`subject_type='enrolment_batch'`) — the audit
+   event records it, the exception row makes it resolvable. **NO consolidated invoice here** — OD-25 is
+   an S07 hand-off (D-11). VERIFY: batch list + drill-down + `not_enrolled` join-back pastes; a failed
+   batch opens an exception row (paste); five-branch (another school's admin sees zero); `batches.no_stuck`
+   red→green teeth.
 
 ## STEP 1 PLAN (intake layer — the reviewed detail)
 The front end of Part H, and where the PROPOSED-review's Q1–Q5 land. Sequenced by the async gate:
@@ -162,10 +185,12 @@ decompressed-size/entry caps; XXE/billion-laughs → entity loading disabled; ma
 a new `composer require` that is a STOP. Not this card.
 
 ## NON-SCOPE
-xlsx intake (deferred fast-follow, D-5; its reader dependency is a STOP) · the S10 clamd env fix
-itself (S04E ships its gate on the double; real-clamd `batch-csv` end-to-end is the **S10 acceptance
-item**, D-7) · payment recording against consolidated invoices (S04B machinery consumes them; if S04B
-gated before this card, wire-up only — no new payment paths) · teams (S05) · any linkage flow (S04D).
+**OD-25 consolidated invoicing → S07 (D-11)**: the invoice is `(school, programme)`-keyed and
+aggregates 成團 orders that do not exist until S05; the missing wire (obligation payer from programme
+E6, not hardcoded `'guardian'`) is order-payer determination, a team-finance change. Named S07
+hand-off with `invoices.line_reconciliation`. · xlsx intake (deferred fast-follow, D-5; its reader
+dependency is a STOP) · the S10 clamd env fix itself (S04E ships its gate on the double; real-clamd
+`batch-csv` end-to-end is the **S10 acceptance item**, D-7) · teams (S05) · any linkage flow (S04D).
 
 ## KEY VERIFICATIONS
 Five-branch per scoped table · **scan gates parse: EICAR CSV never reaches a parsed row (double)** ·
@@ -175,24 +200,26 @@ re-mint)** · consent issuance fired per enrolled row (`consent.issuance_complet
 at volume here) · **`scope.public_context_confinement` stays green — S04E adds NO public policy** ·
 all prior tags green each step.
 
-## AUDIT ELEMENT (Financial Integrity Report, part 1b)
-Batch ledger — batches by school/status/age; per-row outcome distribution; **upload/scan disposition
-per batch (received / clean / quarantined / scan-unreachable-refused)**; consolidated invoice register
-with order-line reconciliation.
+## AUDIT ELEMENT (Batch ledger — the Financial Integrity Report 1b batch half)
+Batch ledger — batches by school/status/age; per-row outcome distribution (enrolled / not_enrolled /
+skipped / failed); **upload/scan disposition per batch (received / clean / quarantined /
+scan-unreachable-refused)**; open batch exceptions (FR066). **The consolidated-invoice register half
+of FIR 1b defers to S07** (D-11 — no batch-time orders to reconcile).
 
 ## ASSERTIONS (--tag=S04E)
 - `batches.scan_gated` — no parsed `enrolment_batch_rows` exist under an upload that is not `CLEAN`
   (a parsed row implies a passed scan — the BI-10 gate, path-independent). **[STEP 1, shipped]**
 - `batches.row_conservation` — every committed batch's rows sum to Enrolled + NotEnrolled + Skipped +
   Failed, each non-Enrolled carrying a reason (P4). **No "Waiting"** — enrolment is intent (OD-31),
-  there is no capacity/waitlist at batch time. **[STEP 2]**
-- `batches.no_stuck` — no batch in Scanning/Validating/Committing older than its job-timeout window. **[STEP 2]**
-- ~~`invoices.line_reconciliation`~~ — **deferred (D-9)**: there are no batch-time orders to invoice
-  (orders exist post-成團, S05). Moves to the STEP 3 consolidated-invoice reconciliation.
+  there is no capacity/waitlist at batch time. **[STEP 2, shipped]**
+- `batches.no_stuck` — no batch in Scanning/Validating/Committing older than its job-timeout window. **[STEP 3]**
+- ~~`invoices.line_reconciliation`~~ — **→ S07 (D-11)**, with the consolidated invoice it guards
+  (no batch-time orders to reconcile; orders are born at 成團, S05).
 
 ## EXIT GATE
 Tests + `--tag=S04E` + all prior tags green + STEP 1 scan-gate/fail-closed/hostile-CSV pastes +
 **STEP 2 mixed-batch paste (guardian-having Enrolled→pending_consent + consent issued; guardian-less
-`not_enrolled`; re-commit idempotent — no duplicate accounts or enrolments)** + five-branch pastes +
-AUDIT.md (**record the D-7 S10 acceptance item: verify real-clamd `batch-csv` end-to-end with the live
-daemon before go-live; and the D-9 deferral of consolidated invoicing to S05-order time**), gate commit.
+`not_enrolled`; re-commit idempotent — no duplicate accounts or enrolments)** + **STEP 3 dashboard +
+`not_enrolled` join-back + FR066 exception-on-failure paste + `batches.no_stuck` teeth** + five-branch
+pastes + AUDIT.md (**record the named hand-offs: D-11 OD-25 consolidated invoicing → S07; D-7 real-clamd
+`batch-csv` → S10 acceptance item; D-5/D-6 xlsx → fast-follow**), gate commit.
