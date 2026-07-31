@@ -7,7 +7,6 @@ use App\Notifications\AccountActivationNotification;
 use App\Services\Audit\AuditService;
 use App\Services\Authz\ScopeContext;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -32,6 +31,7 @@ class RegistrationApprovalService
         private readonly AuditService $audit,
         private readonly ScopeContext $scope,
         private readonly LinkageService $linkage,
+        private readonly AccountMintingService $minting,
     ) {}
 
     public function approve(string $requestId, User $approver): User
@@ -48,10 +48,10 @@ class RegistrationApprovalService
         return $this->scope->asSystem(
             'Registration approval (OD-23/OD-29): the reviewer creates an account for a person who is BY DEFINITION outside the reviewer\'s scope until it exists (INSERT..RETURNING checks the new row against SELECT policies). Creates exactly one UNVERIFIED account + one single-use activation token, updates the request, all audited to the reviewer.',
             function () use ($req, $approver): User {
-                $token = Str::random(64); // 256-bit; only the sha256 hash is stored
+                $token = null; // set by mintPendingActivation on a fresh approval
                 $fresh = false;
 
-                $user = DB::transaction(function () use ($req, $approver, $token, &$fresh): User {
+                $user = DB::transaction(function () use ($req, $approver, &$token, &$fresh): User {
                     // Idempotency + race guard (BI-4): lock the row, re-check under the lock.
                     $locked = DB::table('registration_requests')->where('id', $req->id)->lockForUpdate()->first();
                     if ($locked->status === 'approved' && $locked->created_account_id !== null) {
@@ -61,17 +61,11 @@ class RegistrationApprovalService
                         throw ValidationException::withMessages(['request' => ['This registration has already been decided']]);
                     }
 
-                    $user = User::query()->create([
-                        'name' => $locked->applicant_name,
-                        'email' => $locked->applicant_email,
-                        'password' => Hash::make(Str::random(40)), // unusable placeholder — real password set at activation
-                        'role' => $locked->kind, // guardian | student
-                    ]);
-                    // born UNVERIFIED (email_verified_at stays null); carry the activation token
-                    $user->forceFill([
-                        'activation_token_hash' => hash('sha256', $token),
-                        'activation_expires_at' => now()->addDays(7),
-                    ])->save();
+                    // Model B account minting lives in ONE place (D-i-2): born
+                    // UNVERIFIED, activation token, no usable password.
+                    $minted = $this->minting->mintPendingActivation($locked->applicant_name, $locked->applicant_email, $locked->kind);
+                    $user = $minted['user'];
+                    $token = $minted['token'];
 
                     DB::table('registration_requests')->where('id', $locked->id)->update([
                         'status' => 'approved',

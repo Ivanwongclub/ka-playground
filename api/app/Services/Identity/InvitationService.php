@@ -7,7 +7,6 @@ use App\Models\User;
 use App\Services\Audit\AuditService;
 use App\Services\Authz\ScopeContext;
 use App\Services\Audit\AuthEventType;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -26,6 +25,7 @@ class InvitationService
     public function __construct(
         private readonly AuditService $audit,
         private readonly ScopeContext $scope,
+        private readonly AccountMintingService $minting,
     ) {}
 
     /** @return array{invitation: Invitation, plain_token: string} */
@@ -87,25 +87,38 @@ class InvitationService
             throw ValidationException::withMessages(['token' => ['This invitation has expired']]);
         }
 
-        $user = User::query()->create([
-            'name' => Str::before($invitation->email, '@'), // provisional; profile completion refines
-            'email' => $invitation->email,
-            'password' => Hash::make($password),
-            'role' => $invitation->role,
-        ]);
+        // Invited staff: password set now (D-i-2 mintWithPassword), then email verification.
+        $user = $this->minting->mintWithPassword(
+            Str::before($invitation->email, '@'), // provisional; profile completion refines
+            $invitation->email,
+            $invitation->role,
+            $password,
+        );
         $invitation->forceFill(['accepted_at' => now(), 'user_id' => $user->id])->save();
 
         if ($invitation->school_id !== null && $invitation->role === 'teacher') {
-            // The issuing school admin vouched — the affiliation activates now
-            // (already under the accept() elevation)
+            // The issuing school admin vouched — the teacher↔school affiliation
+            // activates now (already under the accept() elevation). FLAG #2 /
+            // no_active_without_approval: the activation MUST audit to_state='active'
+            // (this path was previously the ONE un-audited active-link write).
+            $teacherLinkId = (string) Str::uuid7();
             \Illuminate\Support\Facades\DB::table('teacher_links')->insert([
-                'id' => (string) Str::uuid7(),
+                'id' => $teacherLinkId,
                 'teacher_id' => $user->id,
                 'school_id' => $invitation->school_id,
                 'status' => 'active',
+                'origin' => 'invitation',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            $this->audit->record(
+                entityType: 'teacher_link',
+                entityId: $teacherLinkId,
+                action: 'teacher_link.created',
+                toState: 'active',
+                payloadAfter: ['teacher_id' => $user->id, 'school_id' => $invitation->school_id, 'origin' => 'invitation'],
+                actor: $user,
+            );
         }
 
         $this->audit->record(
