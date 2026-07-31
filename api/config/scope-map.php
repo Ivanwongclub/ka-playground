@@ -33,6 +33,8 @@ return [
         'payments',
         'payment_evidence',
         'consolidated_invoices',
+        'enrolment_batches',
+        'enrolment_batch_rows',
         'credit_notes',
         'refunds',
         'teams',

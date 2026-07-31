@@ -36,7 +36,18 @@ return [
             'mimes' => ['application/pdf'],
             'max_bytes' => 15 * 1024 * 1024,
         ],
+        // S04E: bulk-enrolment roll CSV (Phase 1 = CSV only; xlsx deferred).
+        // finfo resolves plain CSV as text/plain or text/csv depending on
+        // content; both are allow-listed and the file is verified structurally
+        // at parse. Small cap — a roll of names, not a document.
+        'batch-csv' => [
+            'mimes' => ['text/csv', 'text/plain', 'application/csv'],
+            'max_bytes' => 2 * 1024 * 1024,
+        ],
     ],
+
+    // S04E: hard row-count cap enforced at parse (a roll, not a dataset).
+    'batch_csv_max_rows' => 5000,
 
     'clamav' => [
         'host' => env('CLAMAV_HOST', '127.0.0.1'),

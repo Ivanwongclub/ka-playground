@@ -54,4 +54,32 @@ class ClamAvScanner implements VirusScanner
 
         throw new RuntimeException("clamd unexpected reply: '{$reply}'");
     }
+
+    /**
+     * clamd PING/PONG liveness (S04E D-4). Never throws: any failure to reach
+     * or get a PONG from the daemon returns false, so the caller fails closed.
+     */
+    public function isAvailable(): bool
+    {
+        $socket = @stream_socket_client(
+            "tcp://{$this->host}:{$this->port}",
+            $errno,
+            $errstr,
+            $this->timeoutSeconds,
+        );
+        if ($socket === false) {
+            return false;
+        }
+        try {
+            stream_set_timeout($socket, $this->timeoutSeconds);
+            fwrite($socket, "zPING\0");
+            $reply = trim((string) stream_get_contents($socket), "\0\r\n ");
+        } catch (\Throwable) {
+            return false;
+        } finally {
+            fclose($socket);
+        }
+
+        return $reply === 'PONG';
+    }
 }

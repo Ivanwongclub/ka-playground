@@ -33,6 +33,7 @@ use App\Services\Reconciliation\Assertions\QueueEscalationLivenessAssertion;
 use App\Services\Reconciliation\Assertions\AccountProvenanceAssertion;
 use App\Services\Reconciliation\Assertions\NoActiveWithoutApprovalAssertion;
 use App\Services\Reconciliation\Assertions\GuardianAdditionVisibilityAssertion;
+use App\Services\Reconciliation\Assertions\BatchScanGatedAssertion;
 use App\Services\Reconciliation\Assertions\VouchScopeAssertion;
 use App\Services\Reconciliation\Assertions\ConsentCompleteAtConfirmAssertion;
 use App\Services\Reconciliation\Assertions\LadderLivenessAssertion;
@@ -136,6 +137,8 @@ class ReconciliationServiceProvider extends ServiceProvider
             // S04D STEP 3 — OD-24 never-silent + OD-30 vouch scope
             $registry->register(new GuardianAdditionVisibilityAssertion);
             $registry->register(new VouchScopeAssertion);
+            // S04E STEP 1 — the BI-10 scan gate, path-independent
+            $registry->register(new BatchScanGatedAssertion);
 
             return $registry;
         });

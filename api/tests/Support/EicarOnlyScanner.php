@@ -20,4 +20,11 @@ class EicarOnlyScanner implements VirusScanner
             ? 'Eicar-Signature'
             : null;
     }
+
+    // The double is always "reachable" — the fail-closed 503 path is exercised
+    // with Tests\Support\UnreachableScanner instead.
+    public function isAvailable(): bool
+    {
+        return true;
+    }
 }
