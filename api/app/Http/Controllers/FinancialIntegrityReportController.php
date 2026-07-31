@@ -62,6 +62,17 @@ class FinancialIntegrityReportController extends Controller
                 'credited_via_notes_minor' => (int) DB::table('credit_notes')->whereNotNull('consolidated_invoice_id')->sum('amount_minor'),
                 'invoice_original_minus_balance_minor' => (int) DB::table('consolidated_invoices')->sum(DB::raw('original_amount_minor - balance_minor')),
             ],
+            // S04E STEP 3 — FIR 1b batch ledger (the invoice-register half defers
+            // to S07, D-11: no batch-time orders to reconcile).
+            'enrolment_batches' => [
+                'by_status' => DB::table('enrolment_batches')->groupBy('status')
+                    ->select('status', DB::raw('count(*) as n'))->get(),
+                'row_outcomes' => DB::table('enrolment_batch_rows')->groupBy('status')
+                    ->select('status', DB::raw('count(*) as n'))->get(),
+                // the FR066 ledger (D-13): failed batches are the actionable exceptions
+                'failed' => DB::table('enrolment_batches')->where('status', 'failed')
+                    ->select('id', 'school_id', 'programme_id', 'failure_reason', 'created_at')->get(),
+            ],
         ]);
     }
 }

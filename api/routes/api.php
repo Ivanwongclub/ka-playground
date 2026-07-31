@@ -104,6 +104,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('/school/bulk-students', [SchoolAdminController::class, 'bulkStudents']);
         // S04E step 1 — bulk-enrolment CSV intake (scan-gated) + dry-run report.
         Route::post('/school/enrolment-batches', [\App\Http\Controllers\EnrolmentBatchController::class, 'upload']);
+        // S04E step 3 — dashboard (H4): the school's batches + failed-batch exceptions.
+        Route::get('/school/enrolment-batches', [\App\Http\Controllers\EnrolmentBatchController::class, 'index']);
         Route::get('/school/enrolment-batches/{batch}', [\App\Http\Controllers\EnrolmentBatchController::class, 'show']);
         // S04E step 2 — commit the validated batch (enrolment intent, idempotent).
         Route::post('/school/enrolment-batches/{batch}/commit', [\App\Http\Controllers\EnrolmentBatchController::class, 'commit']);

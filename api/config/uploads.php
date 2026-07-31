@@ -49,6 +49,12 @@ return [
     // S04E: hard row-count cap enforced at parse (a roll, not a dataset).
     'batch_csv_max_rows' => 5000,
 
+    // S04E STEP 3: a batch may legitimately sit in a transient state (scanning
+    // waits on Horizon; committing runs the whole roll) — this window is
+    // generous so a big-but-healthy batch never false-reds batches.no_stuck.
+    // A batch past it is genuinely stuck (a job died).
+    'batch_stuck_minutes' => 30,
+
     'clamav' => [
         'host' => env('CLAMAV_HOST', '127.0.0.1'),
         'port' => (int) env('CLAMAV_PORT', 3310),

@@ -36,10 +36,11 @@ class ReconciliationRunnerTest extends TestCase
             ->expectsOutputToContain('PASS  links.vouch_scope')
             ->expectsOutputToContain('PASS  batches.scan_gated')
             ->expectsOutputToContain('PASS  batches.row_conservation')
-            ->expectsOutputToContain('RECONCILE PASS — 49 assertion(s), 49 passed, 0 failed')
+            ->expectsOutputToContain('PASS  batches.no_stuck')
+            ->expectsOutputToContain('RECONCILE PASS — 50 assertion(s), 50 passed, 0 failed')
             ->assertExitCode(0);
 
-        $this->assertSame(49, DB::table('reconciliation_log')->where('passed', true)->where('assertion_key', '!=', '_run')->count());
+        $this->assertSame(50, DB::table('reconciliation_log')->where('passed', true)->where('assertion_key', '!=', '_run')->count());
         $this->assertSame(1, DB::table('reconciliation_log')->where('assertion_key', '_run')->count());
     }
 

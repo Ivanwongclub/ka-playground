@@ -33,6 +33,7 @@ use App\Services\Reconciliation\Assertions\QueueEscalationLivenessAssertion;
 use App\Services\Reconciliation\Assertions\AccountProvenanceAssertion;
 use App\Services\Reconciliation\Assertions\NoActiveWithoutApprovalAssertion;
 use App\Services\Reconciliation\Assertions\GuardianAdditionVisibilityAssertion;
+use App\Services\Reconciliation\Assertions\BatchNoStuckAssertion;
 use App\Services\Reconciliation\Assertions\BatchRowConservationAssertion;
 use App\Services\Reconciliation\Assertions\BatchScanGatedAssertion;
 use App\Services\Reconciliation\Assertions\VouchScopeAssertion;
@@ -142,6 +143,8 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new BatchScanGatedAssertion);
             // S04E STEP 2 — every committed batch row conserved, reasoned, no waiting
             $registry->register(new BatchRowConservationAssertion);
+            // S04E STEP 3 — no batch stuck in a transient state (liveness)
+            $registry->register(new BatchNoStuckAssertion);
 
             return $registry;
         });

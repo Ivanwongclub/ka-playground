@@ -89,9 +89,44 @@ class EnrolmentBatchController extends Controller
     }
 
     /**
+     * S04E STEP 3 — the batch dashboard (H4), "where are my batches". Lists the
+     * school's batches by status/programme/age; the Exceptions view is simply the
+     * `failed` batches (D-13 — the batch status IS the FR066 ledger). RLS scopes
+     * it: another school's admin sees zero.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $batches = EnrolmentBatch::query()->orderByDesc('created_at')->get([
+            'id', 'school_id', 'programme_id', 'status', 'failure_reason',
+            'total_rows', 'enrolled_count', 'not_enrolled_count', 'skipped_count', 'failed_count',
+            'created_at', 'committed_at',
+        ]);
+
+        return response()->json([
+            'batches' => $batches->map(fn ($b) => [
+                'batch_id' => $b->id,
+                'programme_id' => $b->programme_id,
+                'status' => $b->status,
+                'failure_reason' => $b->failure_reason,
+                'age_days' => (int) now()->diffInDays($b->created_at, absolute: true),
+                'counts' => [
+                    'total' => $b->total_rows, 'enrolled' => $b->enrolled_count,
+                    'not_enrolled' => $b->not_enrolled_count, 'skipped' => $b->skipped_count, 'failed' => $b->failed_count,
+                ],
+            ]),
+            // the FR066 ledger (D-13): failed batches are the actionable exceptions
+            'exceptions' => $batches->where('status', EnrolmentBatch::STATUS_FAILED)
+                ->map(fn ($b) => ['batch_id' => $b->id, 'reason' => $b->failure_reason, 'age_days' => (int) now()->diffInDays($b->created_at, absolute: true)])
+                ->values(),
+        ]);
+    }
+
+    /**
      * The dry-run / post-commit report — batch status, counts, and every row's
-     * disposition/outcome/reason. RLS scopes it: an admin of another school gets
-     * 404 (five-branch).
+     * disposition/outcome/reason. Enrolled rows are ENRICHED with their LIVE
+     * enrolment status (a second source — the current enrolment state — not a
+     * re-derivation of the stored disposition). RLS scopes it: an admin of
+     * another school gets 404 (five-branch).
      */
     public function show(Request $request, string $batch): JsonResponse
     {
@@ -99,6 +134,15 @@ class EnrolmentBatchController extends Controller
         if ($model === null) {
             return response()->json(['message' => 'Not found'], 404);
         }
+
+        $rows = $model->rows()->orderBy('row_number')->get([
+            'row_number', 'name', 'email', 'status', 'disposition', 'reason', 'matched_user_id', 'enrolment_id', 'committed',
+        ]);
+        // Live enrolment status for enrolled rows — read under a system elevation
+        // (the student's enrolment is outside the school admin's derived scope; the
+        // dashboard shows only the STATUS enum, never consent content).
+        $statuses = $this->enrolmentStatuses($rows->pluck('enrolment_id')->filter()->all());
+        $rows->each(fn ($r) => $r->enrolment_status = $r->enrolment_id ? ($statuses[$r->enrolment_id] ?? null) : null);
 
         return response()->json([
             'batch_id' => $model->id,
@@ -114,10 +158,26 @@ class EnrolmentBatchController extends Controller
                 'skipped' => $model->skipped_count,
                 'failed' => $model->failed_count,
             ],
-            'rows' => $model->rows()->orderBy('row_number')->get([
-                'row_number', 'name', 'email', 'status', 'disposition', 'reason', 'matched_user_id', 'enrolment_id', 'committed',
-            ]),
+            'rows' => $rows,
+            // the actionable join-back to S04D — children awaiting a guardian
+            'not_enrolled' => $rows->where('status', 'not_enrolled')->map(fn ($r) => ['name' => $r->name, 'email' => $r->email, 'reason' => $r->reason])->values(),
         ]);
+    }
+
+    /**
+     * @param  list<string>  $enrolmentIds
+     * @return array<string,string>  enrolment_id → live status
+     */
+    private function enrolmentStatuses(array $enrolmentIds): array
+    {
+        if ($enrolmentIds === []) {
+            return [];
+        }
+
+        return $this->scope->asSystem(
+            'S04E STEP 3 dashboard enrichment (Spec Part H H4): reads the LIVE status of this batch\'s own enrolments (status enum only, no consent content) so the school sees how far each bulk-enrolled child has progressed. The enrolments are outside the school admin\'s derived scope; the read is confined to this batch\'s enrolment ids.',
+            fn (): array => DB::table('enrolments')->whereIn('id', $enrolmentIds)->pluck('status', 'id')->all(),
+        );
     }
 
     /**
