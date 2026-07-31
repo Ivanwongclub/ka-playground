@@ -100,6 +100,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/school/students/{id}', [SchoolAdminController::class, 'student']);
         Route::get('/school/teachers', [SchoolAdminController::class, 'teachers']);
         Route::post('/school/teachers/invite', [SchoolAdminController::class, 'inviteTeacher']);
+        // S04D step 4 — bulk-create students on the school's roll (rows, not CSV).
+        Route::post('/school/bulk-students', [SchoolAdminController::class, 'bulkStudents']);
     });
     // Ops contrast (the platform owner CAN cross schools): all school links
     Route::get('/admin/students', fn () => response()->json([

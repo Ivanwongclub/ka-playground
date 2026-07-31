@@ -20,7 +20,28 @@ class SchoolAdminController extends Controller
     public function __construct(
         private readonly AuditService $audit,
         private readonly InvitationService $invitations,
+        private readonly \App\Services\Identity\BulkStudentCreationService $bulk,
     ) {}
+
+    /**
+     * S04D STEP 4 — bulk-create students on the school's roll (OD-23 pt 5). Rows,
+     * not CSV (S04E). Returns a full row-by-row report — created / skipped
+     * (already exists) / rejected (not your school / failed) — never a silent
+     * partial. Roll authority is enforced PER ROW inside the service.
+     */
+    public function bulkStudents(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'rows' => ['required', 'array', 'min:1', 'max:500'],
+            'rows.*.name' => ['required', 'string', 'max:120'],
+            'rows.*.email' => ['required', 'email', 'max:190'],
+            'rows.*.school_id' => ['required', 'integer'],
+        ]);
+
+        $report = $this->bulk->create($request->user(), $validated['rows']);
+
+        return response()->json($report, 201);
+    }
 
     public function students(): JsonResponse
     {

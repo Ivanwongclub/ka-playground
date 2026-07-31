@@ -73,6 +73,13 @@ class AccessIdentityReportController extends Controller
                     'materialised' => DB::table('held_links')->where('status', 'materialised')->count(),
                     'expired' => DB::table('held_links')->where('status', 'expired')->count(),
                 ],
+                // S04D STEP 4 — bulk student creation by school (roll authority visible to the academy)
+                'bulk_created_by_school' => DB::table('school_links')
+                    ->where('status', 'active')->where('origin', 'bulk')
+                    ->join('schools', 'schools.id', '=', 'school_links.school_id')
+                    ->groupBy('schools.id', 'schools.name_en')
+                    ->orderBy('schools.name_en')
+                    ->get([DB::raw('schools.id AS school_id'), 'schools.name_en', DB::raw('count(*) AS created')]),
             ],
         ]);
     }
