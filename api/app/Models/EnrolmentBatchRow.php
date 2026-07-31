@@ -18,6 +18,11 @@ class EnrolmentBatchRow extends Model
 
     public const STATUS_FAILED = 'failed';
 
+    // STEP 2 commit outcomes (from a 'validated' row)
+    public const STATUS_ENROLLED = 'enrolled';
+
+    public const STATUS_NOT_ENROLLED = 'not_enrolled';
+
     public const DISPOSITION_EXISTING = 'match_existing';
 
     public const DISPOSITION_NEW = 'new';

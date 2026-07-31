@@ -20,6 +20,12 @@ class EnrolmentBatch extends Model
 
     public const STATUS_READY = 'ready';
 
+    public const STATUS_COMMITTING = 'committing';
+
+    public const STATUS_COMPLETE = 'complete';
+
+    public const STATUS_PARTIALLY_COMPLETE = 'partially_complete';
+
     public const STATUS_FAILED = 'failed';
 
     public $incrementing = false;

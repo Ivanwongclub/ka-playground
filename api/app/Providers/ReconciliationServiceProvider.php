@@ -33,6 +33,7 @@ use App\Services\Reconciliation\Assertions\QueueEscalationLivenessAssertion;
 use App\Services\Reconciliation\Assertions\AccountProvenanceAssertion;
 use App\Services\Reconciliation\Assertions\NoActiveWithoutApprovalAssertion;
 use App\Services\Reconciliation\Assertions\GuardianAdditionVisibilityAssertion;
+use App\Services\Reconciliation\Assertions\BatchRowConservationAssertion;
 use App\Services\Reconciliation\Assertions\BatchScanGatedAssertion;
 use App\Services\Reconciliation\Assertions\VouchScopeAssertion;
 use App\Services\Reconciliation\Assertions\ConsentCompleteAtConfirmAssertion;
@@ -139,6 +140,8 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new VouchScopeAssertion);
             // S04E STEP 1 — the BI-10 scan gate, path-independent
             $registry->register(new BatchScanGatedAssertion);
+            // S04E STEP 2 — every committed batch row conserved, reasoned, no waiting
+            $registry->register(new BatchRowConservationAssertion);
 
             return $registry;
         });

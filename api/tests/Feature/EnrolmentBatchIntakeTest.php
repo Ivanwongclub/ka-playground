@@ -53,6 +53,14 @@ class EnrolmentBatchIntakeTest extends TestCase
         return $this->sys(fn () => School::query()->create(['name_en' => 'S'.Str::random(4), 'name_tc' => '甲', 'name_sc' => '甲']));
     }
 
+    private function publishedProgrammeId(): int
+    {
+        return $this->sys(fn () => \App\Models\Programme::query()->create([
+            'code' => 'BI-'.Str::upper(Str::random(4)), 'name_en' => 'P', 'name_tc' => 'P', 'name_sc' => 'P',
+            'jurisdiction' => 'HK', 'status' => 'published',
+        ])->id);
+    }
+
     private function admin(int $schoolId): User
     {
         $u = User::factory()->create(['role' => 'school_admin']);
@@ -61,13 +69,14 @@ class EnrolmentBatchIntakeTest extends TestCase
         return $u;
     }
 
-    private function upload(User $admin, int $schoolId, string $csv)
+    private function upload(User $admin, int $schoolId, string $csv, ?int $programmeId = null)
     {
         $this->app['auth']->forgetGuards();
         Sanctum::actingAs($admin);
         $file = UploadedFile::fake()->createWithContent('roll.csv', $csv);
+        $payload = ['file' => $file, 'school_id' => $schoolId, 'programme_id' => $programmeId ?? $this->publishedProgrammeId()];
 
-        return $this->postJson('/api/school/enrolment-batches', ['file' => $file, 'school_id' => $schoolId]);
+        return $this->postJson('/api/school/enrolment-batches', $payload);
     }
 
     private function report(User $admin, string $batchId)
@@ -108,6 +117,20 @@ class EnrolmentBatchIntakeTest extends TestCase
 
         $this->assertSame(0, $this->sys(fn () => DB::table('enrolment_batches')->count()), 'no batch created');
         $this->assertSame($before, $this->sys(fn () => DB::table('uploads')->count()), 'no upload created');
+    }
+
+    // ── programme is now required at upload (D-10) ────────────────────────────
+
+    public function test_upload_without_a_programme_is_rejected(): void
+    {
+        $school = $this->school();
+        $admin = $this->admin($school->id);
+        $this->app['auth']->forgetGuards();
+        Sanctum::actingAs($admin);
+        $file = UploadedFile::fake()->createWithContent('roll.csv', "name,email\nA,a@x.test\n");
+        // no programme_id → 422 validation, nothing persisted
+        $this->postJson('/api/school/enrolment-batches', ['file' => $file, 'school_id' => $school->id])->assertStatus(422);
+        $this->assertSame(0, $this->sys(fn () => DB::table('enrolment_batches')->count()));
     }
 
     // ── structural defect → whole-file reject, zero rows ──────────────────────
@@ -151,7 +174,7 @@ class EnrolmentBatchIntakeTest extends TestCase
 
         $rep = $this->report($admin, $batchId)->assertStatus(200);
         $this->assertSame('ready', $rep->json('status'));
-        $this->assertSame(['total' => 5, 'new' => 1, 'existing' => 1, 'skipped' => 1, 'failed' => 2], $rep->json('counts'));
+        $this->assertSame(['total' => 5, 'new' => 1, 'existing' => 1, 'enrolled' => 0, 'not_enrolled' => 0, 'skipped' => 1, 'failed' => 2], $rep->json('counts'));
 
         $rows = collect($rep->json('rows'));
         $this->assertSame('new', $rows->firstWhere('name', 'NewKid')['disposition']);

@@ -6,6 +6,7 @@ use App\Jobs\ValidateEnrolmentBatch;
 use App\Models\EnrolmentBatch;
 use App\Services\Audit\AuditService;
 use App\Services\Authz\ScopeContext;
+use App\Services\Enrolment\EnrolmentBatchCommitService;
 use App\Services\Uploads\UploadService;
 use App\Services\Uploads\VirusScanner;
 use Illuminate\Http\JsonResponse;
@@ -31,6 +32,7 @@ class EnrolmentBatchController extends Controller
         $validated = $request->validate([
             'file' => ['required', 'file'],
             'school_id' => ['required', 'integer'],
+            'programme_id' => ['required', 'integer'],   // D-10 — the cohort's enrolment target
         ]);
         $admin = $request->user();
 
@@ -42,6 +44,12 @@ class EnrolmentBatchController extends Controller
             ->where('status', 'active')->exists();
         if (! $administers) {
             return response()->json(['message' => 'Not a school you administer'], 403);
+        }
+
+        // The enrolment target must be a published programme (D-10).
+        $programme = DB::table('programmes')->where('id', $validated['programme_id'])->first();
+        if ($programme === null || $programme->status !== 'published') {
+            return response()->json(['message' => 'Programme is not open for enrolment'], 422);
         }
 
         // Fail-closed (D-4): if the scanner is unreachable, refuse BEFORE intake —
@@ -58,6 +66,7 @@ class EnrolmentBatchController extends Controller
                 $batch = EnrolmentBatch::query()->create([
                     'id' => (string) \Illuminate\Support\Str::uuid7(),
                     'school_id' => $validated['school_id'],
+                    'programme_id' => $validated['programme_id'],
                     'upload_id' => $upload->id,
                     'status' => EnrolmentBatch::STATUS_SCANNING,
                     'created_by' => $admin->id,
@@ -67,7 +76,7 @@ class EnrolmentBatchController extends Controller
                     entityId: $batch->id,
                     action: 'batch.created',
                     toState: EnrolmentBatch::STATUS_SCANNING,
-                    payloadAfter: ['school_id' => $validated['school_id'], 'upload_id' => $upload->id],
+                    payloadAfter: ['school_id' => $validated['school_id'], 'programme_id' => $validated['programme_id'], 'upload_id' => $upload->id],
                     actor: $admin,
                 );
                 ValidateEnrolmentBatch::dispatch($batch->id);
@@ -80,8 +89,9 @@ class EnrolmentBatchController extends Controller
     }
 
     /**
-     * The dry-run report — batch status, counts, and every row's disposition/
-     * reason. RLS scopes it: an admin of another school gets 404 (five-branch).
+     * The dry-run / post-commit report — batch status, counts, and every row's
+     * disposition/outcome/reason. RLS scopes it: an admin of another school gets
+     * 404 (five-branch).
      */
     public function show(Request $request, string $batch): JsonResponse
     {
@@ -93,17 +103,45 @@ class EnrolmentBatchController extends Controller
         return response()->json([
             'batch_id' => $model->id,
             'status' => $model->status,
+            'programme_id' => $model->programme_id,
             'failure_reason' => $model->failure_reason,
             'counts' => [
                 'total' => $model->total_rows,
                 'new' => $model->new_count,
                 'existing' => $model->existing_count,
+                'enrolled' => $model->enrolled_count,
+                'not_enrolled' => $model->not_enrolled_count,
                 'skipped' => $model->skipped_count,
                 'failed' => $model->failed_count,
             ],
             'rows' => $model->rows()->orderBy('row_number')->get([
-                'row_number', 'name', 'email', 'status', 'disposition', 'reason', 'matched_user_id',
+                'row_number', 'name', 'email', 'status', 'disposition', 'reason', 'matched_user_id', 'enrolment_id', 'committed',
             ]),
         ]);
+    }
+
+    /**
+     * S04E STEP 2 — commit the validated batch. Intent only (OD-31): reuses
+     * EnrolmentService::create per row for students with an active guardian;
+     * guardian-less rows land not_enrolled. Idempotent (DB unique + committed
+     * flag) — a re-commit is a clean no-op that re-evaluates guardian eligibility.
+     */
+    public function commit(Request $request, string $batch, EnrolmentBatchCommitService $committer): JsonResponse
+    {
+        $model = EnrolmentBatch::query()->find($batch);
+        if ($model === null) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+        if (! in_array($model->status, [
+            EnrolmentBatch::STATUS_READY,
+            EnrolmentBatch::STATUS_PARTIALLY_COMPLETE,   // re-commit to pick up newly-guardianed rows
+            EnrolmentBatch::STATUS_COMPLETE,             // re-commit is an idempotent no-op
+        ], true)) {
+            return response()->json(['message' => "Batch is not committable (status: {$model->status})"], 409);
+        }
+
+        $report = $committer->commit($model, $request->user());
+
+        return response()->json(['batch_id' => $model->id, 'status' => $model->fresh()->status, 'counts' => $report], 200);
     }
 }

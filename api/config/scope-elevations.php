@@ -19,6 +19,8 @@ return [
 
     'App\Services\Enrolment\EnrolmentBatchCsvParser::parse' => 'S04E STEP 1 CSV parse (Spec Part H / OD-25): writes enrolment_batch_rows dispositions for a scan-clean roll. The batch and its rows are outside any single actor\'s derived scope (they are a school-wide operation) and the tables are system-write by construction; disposition reads users/school_links across the school roll. DRY RUN — creates no account and no enrolment.',
 
+    'App\Services\Enrolment\EnrolmentBatchCommitService::commit' => 'S04E STEP 2 batch commit (Spec Part H / OD-31): drives the existing enrolment machinery row-by-row from a validated batch. The batch/rows/enrolments are a school-wide operation outside any single actor\'s derived scope; enrolment inserts are system-context here (the school admin is not the student\'s guardian). Re-evaluates guardian eligibility LIVE; reuses BulkStudentCreationService::create + EnrolmentService::create; DRY-of-orders (intent only, OD-31).',
+
     'App\Http\Controllers\LinkController::schoolVouch' => 'School vouch (OD-30): the vouching school admin\'s single audited act creates an ACTIVE guardian-student link for a student verified ON THEIR ROLL (the in-school check precedes this). The guardian and the activation are outside the admin\'s derived scope; the active write is system-context by construction. Writes the link, its to_state=active audit, and OD-24 visibility records to every existing guardian (never silent).',
     // OD-27: GuardianStudentService::createStudent RETIRED in S04C STEP 4 — the
     // guardian-creates-student path is replaced by self-registration + approval.
