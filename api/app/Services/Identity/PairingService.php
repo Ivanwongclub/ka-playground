@@ -127,12 +127,14 @@ class PairingService
             throw ValidationException::withMessages(['link' => ['No pending request to confirm']]);
         }
 
-        $link->forceFill($accept
-            ? ['status' => 'active', 'verified_at' => now()]
-            : ['status' => 'cancelled'])->save();
+        // 2.30 (OD-27): the student's confirmation establishes MUTUAL INTENT — it
+        // no longer COMPLETES the link. Accept → pending_approval (awaiting the
+        // admin's decision, which activates via LinkageService::approveLink and
+        // sets verified_at); decline → cancelled. The ceremony never self-activates.
+        $link->forceFill(['status' => $accept ? 'pending_approval' : 'cancelled'])->save();
         $this->audit->record(
             'guardian_link', $link->id,
-            $accept ? 'guardian_link.confirmed' : 'guardian_link.rejected',
+            $accept ? 'guardian_link.confirmed' : 'guardian_link.declined',
             fromState: 'pending_confirmation',
             toState: $link->status,
             actor: $student,

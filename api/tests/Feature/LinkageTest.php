@@ -231,8 +231,8 @@ class LinkageTest extends TestCase
         $glId = $this->sys(fn () => DB::table('guardian_links')->where('guardian_id', $guardian->id)->value('id'));
 
         $this->asUser($ops, fn () => app(LinkageService::class)->rejectLink($glId, $ops, 'Not this family'));
-        $this->assertSame('cancelled', $this->link($glId)->status);
-        $this->assertSame(1, $this->sys(fn () => DB::table('audit_events')->where('entity_id', $glId)->where('to_state', 'cancelled')->count()));
+        $this->assertSame('rejected', $this->link($glId)->status); // 2.30: admin refusal is 'rejected'
+        $this->assertSame(1, $this->sys(fn () => DB::table('audit_events')->where('entity_id', $glId)->where('to_state', 'rejected')->count()));
     }
 
     // ── held-link expiry: the terminal exit for an unmaterialised claim ───────

@@ -176,13 +176,15 @@ class LinkageService
         if ($link->status !== 'pending_approval') {
             throw ValidationException::withMessages(['link' => ['This link is not awaiting approval']]);
         }
+        // 2.30: the admin's refusal of a pending relationship is 'rejected'
+        // (distinct from a student CANCELLING a ceremony at pending_confirmation).
         $updated = DB::table('guardian_links')->where('id', $link->id)->where('status', 'pending_approval')
-            ->update(['status' => 'cancelled', 'updated_at' => now()]);
+            ->update(['status' => 'rejected', 'updated_at' => now()]);
         if ($updated !== 1) {
             throw ValidationException::withMessages(['link' => ['This link is not awaiting approval']]);
         }
         $this->audit->record('guardian_link', $link->id, 'guardian_link.rejected',
-            fromState: 'pending_approval', toState: 'cancelled', reason: $reason, actor: $approver);
+            fromState: 'pending_approval', toState: 'rejected', reason: $reason, actor: $approver);
     }
 
     /** The terminal exit for a held link that never materialised. Console (system). */

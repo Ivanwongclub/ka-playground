@@ -47,8 +47,10 @@ class LinkingFlowsTest extends TestCase
         $this->postJson('/api/my/pairing-codes')->assertStatus(422);
     }
 
-    public function test_redeem_then_student_confirms_to_active(): void
+    public function test_redeem_confirm_pends_for_admin_then_approval_activates(): void
     {
+        // 2.30: the ceremony establishes mutual intent → pending_approval; only an
+        // admin's decision activates. The pairing flow no longer self-activates.
         $student = $this->student();
         $guardian = $this->guardian();
         Sanctum::actingAs($student);
@@ -58,16 +60,24 @@ class LinkingFlowsTest extends TestCase
         Sanctum::actingAs($guardian);
         $linkId = $this->postJson('/api/pairing-codes/redeem', ['code' => $code])
             ->assertStatus(201)->assertJsonPath('status', 'pending_confirmation')->json('link_id');
+        $this->postJson('/api/pairing-codes/redeem', ['code' => $code])->assertStatus(422); // consumed (B4)
 
-        // Code is consumed on first successful use (B4)
-        $this->postJson('/api/pairing-codes/redeem', ['code' => $code])->assertStatus(422);
-
+        // student confirmation → pending_approval (NOT active)
         $this->app['auth']->forgetGuards();
         Sanctum::actingAs($student);
         $this->postJson("/api/my/guardian-requests/{$linkId}/confirm", ['accept' => true])
-            ->assertOk()->assertJsonPath('status', 'active');
+            ->assertOk()->assertJsonPath('status', 'pending_approval');
+        $this->assertDatabaseHas('audit_events', ['action' => 'guardian_link.confirmed', 'entity_id' => $linkId, 'to_state' => 'pending_approval']);
+        $this->assertDatabaseMissing('guardian_links', ['id' => $linkId, 'status' => 'active']);
 
-        $this->assertDatabaseHas('audit_events', ['action' => 'guardian_link.confirmed', 'entity_id' => $linkId]);
+        // only the admin's decision activates (the S04C approveLink gate), audited to_state='active'
+        $admin = User::factory()->create(['role' => 'academy_admin']);
+        DB::table('admin_capabilities')->insert(['id' => (string) Str::uuid7(), 'user_id' => $admin->id, 'capability' => 'operations', 'granted_by' => $admin->id, 'granted_at' => now()]);
+        $this->app['auth']->forgetGuards();
+        Sanctum::actingAs($admin);
+        $this->postJson("/api/admin/guardian-links/{$linkId}/approve")->assertOk();
+        $this->assertDatabaseHas('guardian_links', ['id' => $linkId, 'status' => 'active']);
+        $this->assertDatabaseHas('audit_events', ['entity_type' => 'guardian_link', 'entity_id' => $linkId, 'to_state' => 'active']);
     }
 
     public function test_code_is_case_sensitive(): void
