@@ -98,7 +98,7 @@ class RolesTrackerTest extends TestCase
     /** @return User the guardian (so tests can act as a member's guardian) */
     private function pooledStudent(Programme $programme, ?School $school, ?User &$guardianOut = null): User
     {
-        app(ScopeContext::class)->set($this->ops);
+        app(ScopeContext::class)->setSystem();
         $guardian = User::factory()->create(['role' => 'guardian']);
         $student = User::factory()->create(['role' => 'student']);
         DB::table('guardian_links')->insert(['id' => (string) Str::uuid7(), 'student_id' => $student->id, 'guardian_id' => $guardian->id, 'status' => 'active', 'origin' => 'onboarding', 'created_at' => now(), 'updated_at' => now()]);

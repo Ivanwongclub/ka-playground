@@ -9,9 +9,10 @@
 return [
     'App\Services\Identity\LinkRevocationService::revoke' => 'Sole-guardian integrity check (2.2): sole-ness must count ALL active links, while RLS correctly hides co-guardians from each other. Read-only count; result never exposes the hidden rows.',
 
-    'App\Http\Controllers\LinkController::requestByEmail' => 'B4 parent-initiated flow: pre-link student lookup by exact email — the target is by definition outside the guardian\'s scope until the link exists. Response is identical whether or not the account exists; only a pending link (student-confirmable) results.',
+    'App\Http\Controllers\LinkController::requestByEmail' => 'B4 parent-initiated flow: pre-link student lookup by exact email — the target is by definition outside the guardian\'s scope until the link exists. Response is identical whether or not the account exists; only a pending link (student-confirmable) results. Also counts the student\'s existing guardians (OD-24 second-guardian check) which are likewise outside scope.',
+    'App\Services\Identity\PairingService::redeem' => 'OD-24 second-guardian check (pairing redeem): a would-be additional guardian is outside the scope of the student\'s existing guardians, so counting them requires system context. Read-only; refuses a non-vouch second-guardian self-add.',
 
-    'App\Http\Controllers\LinkController::schoolVouch' => 'B4 school-mediated flow: guardian lookup by exact email for a student already verified to be in the acting school. The guardian is outside the school\'s scope until this link creates the relationship.',
+    'App\Http\Controllers\LinkController::schoolVouch' => 'School vouch (OD-30): the vouching school admin\'s single audited act creates an ACTIVE guardian-student link for a student verified ON THEIR ROLL (the in-school check precedes this). The guardian and the activation are outside the admin\'s derived scope; the active write is system-context by construction. Writes the link, its to_state=active audit, and OD-24 visibility records to every existing guardian (never silent).',
     // OD-27: GuardianStudentService::createStudent RETIRED in S04C STEP 4 — the
     // guardian-creates-student path is replaced by self-registration + approval.
 

@@ -19,6 +19,7 @@ class LinkController extends Controller
         private readonly LinkRevocationService $revocation,
         private readonly AuditService $audit,
         private readonly ScopeContext $scope,
+        private readonly \App\Services\Identity\LinkageService $linkage,
     ) {}
 
     public function generateCode(Request $request): JsonResponse
@@ -55,13 +56,20 @@ class LinkController extends Controller
     public function requestByEmail(Request $request): JsonResponse
     {
         $validated = $request->validate(['student_email' => ['required', 'email']]);
-        $student = $this->scope->asSystem(
-            'B4 parent-initiated flow: pre-link student lookup by exact email — the target is by definition outside the guardian\'s scope until the link exists. Response is identical whether or not the account exists; only a pending link (student-confirmable) results.',
-            fn () => User::query()->where('email', $validated['student_email'])
-                ->where('role', 'student')->first(),
+        $requesterId = (int) $request->user()->id;
+        [$student, $isSecond] = $this->scope->asSystem(
+            'B4 parent-initiated flow: pre-link student lookup by exact email — the target is by definition outside the guardian\'s scope until the link exists. Response is identical whether or not the account exists; only a pending link (student-confirmable) results. Also counts the student\'s existing guardians (OD-24 second-guardian check) which are likewise outside scope.',
+            function () use ($validated, $requesterId): array {
+                $student = User::query()->where('email', $validated['student_email'])->where('role', 'student')->first();
+                $isSecond = $student !== null && $this->linkage->isUninitiatedSecondGuardian((int) $student->id, $requesterId);
+
+                return [$student, $isSecond];
+            },
         );
-        if ($student === null) {
-            // Identical response either way — never confirm account existence
+        // Identical 202 either way — never confirm account existence, AND never leak
+        // (via a different response) that the student already has a guardian (OD-24):
+        // a non-vouch second-guardian self-add silently produces no link.
+        if ($student === null || $isSecond) {
             return response()->json(['status' => 'processed'], 202);
         }
         $link = GuardianLink::query()->create([
@@ -104,38 +112,36 @@ class LinkController extends Controller
             abort(404);
         }
 
-        $guardian = $this->scope->asSystem(
-            'B4 school-mediated flow: guardian lookup by exact email for a student already verified to be in the acting school. The guardian is outside the school\'s scope until this link creates the relationship.',
-            fn () => User::query()->where('email', $validated['guardian_email'])
-                ->where('role', 'guardian')->firstOrFail(),
-        );
-        try {
-            // Savepoint: if the RLS backstop refuses, the connection stays
-            // healthy and the refusal becomes an audited 403, never a 500
-            $link = \Illuminate\Support\Facades\DB::transaction(fn () => GuardianLink::query()->create([
-                'id' => (string) Str::uuid7(),
-                'student_id' => $validated['student_id'],
-                'guardian_id' => $guardian->id,
-                'status' => 'active', // the school vouched (B4)
-                'verified_at' => now(),
-                'origin' => 'school_mediated',
-            ]));
-        } catch (\Illuminate\Database\QueryException $e) {
-            if (($e->errorInfo[0] ?? '') === '42501') { // row-level security violation
+        // OD-30: the vouch is the school admin's single audited act. The active
+        // write now runs INSIDE the elevation (system-context) so it passes the
+        // S04D hardening (only system writes status='active') — the roll authority
+        // is the $inSchool check above, no longer an RLS backstop. Writes the link
+        // + its activation audit + OD-24 visibility to every existing guardian.
+        $actor = $request->user();
+        $link = $this->scope->asSystem(
+            'School vouch (OD-30): the vouching school admin\'s single audited act creates an ACTIVE guardian-student link for a student verified ON THEIR ROLL (the in-school check precedes this). The guardian and the activation are outside the admin\'s derived scope; the active write is system-context by construction. Writes the link, its to_state=active audit, and OD-24 visibility records to every existing guardian (never silent).',
+            function () use ($validated, $actor): GuardianLink {
+                $guardian = User::query()->where('email', $validated['guardian_email'])
+                    ->where('role', 'guardian')->firstOrFail();
+                $link = GuardianLink::query()->create([
+                    'id' => (string) Str::uuid7(),
+                    'student_id' => $validated['student_id'],
+                    'guardian_id' => $guardian->id,
+                    'status' => 'active', // the school vouched (OD-30)
+                    'verified_at' => now(),
+                    'origin' => 'school_mediated',
+                ]);
                 $this->audit->record(
-                    'user', (string) $validated['student_id'], 'scope.denied',
-                    reason: 'RLS refused a cross-scope guardian-link write (FR006 backstop)',
-                    actor: $request->user(),
+                    'guardian_link', $link->id, 'guardian_link.created',
+                    toState: 'active',
+                    payloadAfter: ['origin' => 'school_mediated', 'vouched_by' => $actor->id],
+                    actor: $actor,
                 );
-                abort(403);
-            }
-            throw $e;
-        }
-        $this->audit->record(
-            'guardian_link', $link->id, 'guardian_link.created',
-            toState: 'active',
-            payloadAfter: ['origin' => 'school_mediated', 'vouched_by' => $request->user()->id],
-            actor: $request->user(),
+                // OD-24 — never silent, vouched additions included.
+                $this->linkage->recordGuardianAdditionVisibility((int) $validated['student_id'], (int) $guardian->id, $link->id, 'school_mediated');
+
+                return $link;
+            },
         );
 
         return response()->json(['link_id' => $link->id], 201);

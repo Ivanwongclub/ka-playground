@@ -23,7 +23,11 @@ class PairingService
 
     public const INVALIDATION_THRESHOLD = 10;
 
-    public function __construct(private readonly AuditService $audit) {}
+    public function __construct(
+        private readonly AuditService $audit,
+        private readonly \App\Services\Authz\ScopeContext $scope,
+        private readonly LinkageService $linkage,
+    ) {}
 
     public function generate(User $student): PairingCode
     {
@@ -74,6 +78,18 @@ class PairingService
         if ($alreadyLinked) {
             $this->recordFailure($codeString);
             throw ValidationException::withMessages(['code' => ['You are already linked to this student']]);
+        }
+        // OD-24 (Leo 2026-07-31): a non-vouch SECOND-guardian self-add is refused —
+        // a student who already has a guardian gains a further one only via the
+        // existing guardian's action (deferred) or a school vouch. The check sees
+        // ALL guardians, so it elevates.
+        $isSecond = $this->scope->asSystem(
+            'OD-24 second-guardian check (pairing redeem): a would-be additional guardian is outside the scope of the student\'s existing guardians, so counting them requires system context. Read-only; refuses a non-vouch second-guardian self-add.',
+            fn () => $this->linkage->isUninitiatedSecondGuardian((int) $code->student_id, (int) $guardian->id),
+        );
+        if ($isSecond) {
+            $this->recordFailure($codeString);
+            throw ValidationException::withMessages(['code' => ['This student already has a guardian — a further guardian is added by the school (OD-24)']]);
         }
 
         $code->forceFill(['used_at' => now()])->save(); // first successful use consumes (B4)

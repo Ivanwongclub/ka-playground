@@ -269,7 +269,7 @@ class DeadlineMatchingTest extends TestCase
         [$programme, , ] = $this->publishedProgramme(backstopDays: -1);
         $student = $this->pooledStudent($programme);
         $enrolmentId = $this->enrolmentId($programme, $student);
-        app(ScopeContext::class)->set($this->ops); // an academy-admin context (as publishedProgramme leaves) admits the bare guardian_link insert
+        app(ScopeContext::class)->setSystem(); // an academy-admin context (as publishedProgramme leaves) admits the bare guardian_link insert
         $orphan = $this->pooledStudent($programme);          // pooled but NEVER parked
         $orphanEnrolment = $this->enrolmentId($programme, $orphan);
 

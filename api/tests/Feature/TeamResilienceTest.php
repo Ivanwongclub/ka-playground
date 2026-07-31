@@ -78,7 +78,7 @@ class TeamResilienceTest extends TestCase
 
     private function pooledStudent(Programme $programme): User
     {
-        app(ScopeContext::class)->set($this->ops); // an academy-admin context admits the bare guardian_link insert
+        app(ScopeContext::class)->setSystem(); // an academy-admin context admits the bare guardian_link insert
         $guardian = User::factory()->create(['role' => 'guardian']);
         $student = User::factory()->create(['role' => 'student']);
         DB::table('guardian_links')->insert(['id' => (string) Str::uuid7(), 'student_id' => $student->id, 'guardian_id' => $guardian->id, 'status' => 'active', 'origin' => 'onboarding', 'created_at' => now(), 'updated_at' => now()]);

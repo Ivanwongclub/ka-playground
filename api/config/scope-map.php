@@ -74,6 +74,9 @@ return [
         // S04C STEP 4: the approval-queue escalation ledger. Read = academy
         // (ops/audit); write = system (the daily sweep).
         'onboarding_exceptions',
+        // S04D STEP 3 (OD-24): guardian-addition visibility records. Read = the
+        // addressed guardian + ops/audit; write = system (never silent).
+        'link_visibility_events',
     ],
 
     // Deliberately unscoped — each with its recorded reason

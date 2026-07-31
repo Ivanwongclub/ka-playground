@@ -32,6 +32,8 @@ use App\Services\Reconciliation\Assertions\NoUnverifiedMaterialisationAssertion;
 use App\Services\Reconciliation\Assertions\QueueEscalationLivenessAssertion;
 use App\Services\Reconciliation\Assertions\AccountProvenanceAssertion;
 use App\Services\Reconciliation\Assertions\NoActiveWithoutApprovalAssertion;
+use App\Services\Reconciliation\Assertions\GuardianAdditionVisibilityAssertion;
+use App\Services\Reconciliation\Assertions\VouchScopeAssertion;
 use App\Services\Reconciliation\Assertions\ConsentCompleteAtConfirmAssertion;
 use App\Services\Reconciliation\Assertions\LadderLivenessAssertion;
 use App\Services\Reconciliation\Assertions\LearnGateIntegrityAssertion;
@@ -131,6 +133,9 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new AccountProvenanceAssertion);
             // S04D STEP 1 — the all-three-tables activation provenance backstop
             $registry->register(new NoActiveWithoutApprovalAssertion);
+            // S04D STEP 3 — OD-24 never-silent + OD-30 vouch scope
+            $registry->register(new GuardianAdditionVisibilityAssertion);
+            $registry->register(new VouchScopeAssertion);
 
             return $registry;
         });

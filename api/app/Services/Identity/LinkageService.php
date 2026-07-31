@@ -158,6 +158,8 @@ class LinkageService
                     fromState: 'pending_approval', toState: 'active',
                     payloadAfter: ['student_id' => $link->student_id, 'guardian_id' => $link->guardian_id, 'origin' => $link->origin],
                     actor: $approver);
+                // OD-24 — never silent: every existing guardian sees this addition.
+                $this->recordGuardianAdditionVisibility((int) $link->student_id, (int) $link->guardian_id, $link->id, (string) $link->origin);
             },
         );
     }
@@ -227,5 +229,46 @@ class LinkageService
     private function opposite(string $role): string
     {
         return $role === 'guardian' ? 'student' : 'guardian';
+    }
+
+    /**
+     * OD-24 (never silent) — when a guardian is ADDED, every OTHER active guardian
+     * of the student gets a visibility record (including vouched additions, OD-30).
+     * A first/sole guardian produces none (nobody to notify). System-context only.
+     */
+    public function recordGuardianAdditionVisibility(int $studentId, int $newGuardianId, string $newLinkId, string $origin): void
+    {
+        $existing = DB::table('guardian_links')
+            ->where('student_id', $studentId)->where('status', 'active')
+            ->where('guardian_id', '!=', $newGuardianId)
+            ->pluck('guardian_id');
+
+        foreach ($existing as $guardianId) {
+            DB::table('link_visibility_events')->insert([
+                'id' => (string) Str::uuid7(),
+                'student_id' => $studentId,
+                'new_guardian_id' => $newGuardianId,
+                'new_link_id' => $newLinkId,
+                'addressed_guardian_id' => $guardianId,
+                'origin' => $origin,
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+    }
+
+    /**
+     * OD-24 refusal (Leo 2026-07-31): a non-vouch SECOND-guardian SELF-add is
+     * refused — a student who already has an active guardian may only gain a
+     * further one through the existing guardian's action (deferred) or a school
+     * VOUCH. True when the student already has an active guardian and $requesterId
+     * is not one of them. System-context (sees all guardians).
+     */
+    public function isUninitiatedSecondGuardian(int $studentId, int $requesterId): bool
+    {
+        $guardians = DB::table('guardian_links')
+            ->where('student_id', $studentId)->where('status', 'active')
+            ->pluck('guardian_id')->map(fn ($g) => (int) $g);
+
+        return $guardians->isNotEmpty() && ! $guardians->contains($requesterId);
     }
 }

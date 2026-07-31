@@ -70,8 +70,10 @@ bulk. **The credential-only-at-activation pattern lives in ONE service.**
    active `guardian_link` write INTO the elevation (today it writes active in the school_admin's
    non-system context)**; `vouch` origin marked forever; build `link_visibility_events` (greenfield);
    **every guardian-addition activation — vouched included — writes visibility records to ALL existing
-   guardians (OD-24, never silent)**; additional-guardian ceremonies (non-vouch) require the existing
-   guardian's initiating action. **Now that confirm (STEP 2) and vouch both write `active` only in
+   guardians (OD-24, never silent)**. **A non-vouch SECOND-guardian SELF-add is REFUSED** (Leo ruling
+   2026-07-31: the existing-guardian-initiates-co-guardian ceremony is DEFERRED; VOUCH is the Phase-1
+   path to add a further guardian, and it carries the OD-24 visibility). **Now that confirm (STEP 2)
+   and vouch both write `active` only in
    system context, apply the WRITE-POLICY HARDENING: a non-system/non-admin actor cannot insert/update
    any of the three link tables to `active` — build check: REFUSE stray direct-`active`, PERMIT the
    sanctioned elevated paths (`approveLink`, D-i `approve`, `schoolVouch`, invitation, bulk).** VERIFY:
@@ -90,7 +92,9 @@ bulk. **The credential-only-at-activation pattern lives in ONE service.**
 CSV batch intake, per-row states, batch dashboard, consolidated invoicing (S04E) · registration
 forms/queue mechanics (S04C, done) · notification delivery (S09 — the records exist, delivery follows) ·
 **a student-requests-to-join-a-school ceremony (school/teacher links stay admin-authority-activated,
-D-i-3)** · any change to `team_teacher_links` or the Learn-gate authority (S05, guardrail above).
+D-i-3)** · **the existing-guardian-initiates-co-guardian ceremony (deferred, Leo 2026-07-31 — vouch is
+the Phase-1 second-guardian path; STEP 3 only REFUSES a non-vouch second-guardian self-add)** · any
+change to `team_teacher_links` or the Learn-gate authority (S05, guardrail above).
 
 ## KEY VERIFICATIONS
 Five-branch per touched table after every policy amendment · **the write hardening refuses stray
