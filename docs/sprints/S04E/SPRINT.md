@@ -20,6 +20,22 @@
 > never run synchronously in the upload request.
 > **D-7** — the real-clamd end-to-end check for `batch-csv` stays an **S10 acceptance item** (verify
 > against the live daemon before go-live); S04E proves its gate on the `EicarOnlyScanner` double.
+>
+> **RECONCILED (STEP 2) 2026-08-01** per `docs/sprints/S04E/PROPOSED-S04E-STEP2-REVIEW.md` and Leo's
+> three rulings, after a machinery recon found the card's STEP 2 was written against a superseded
+> enrolment model:
+> **D-8** — enrolment is **guardian-consent-gated** (OD-10): `EnrolmentService::create()` requires an
+> active `guardian_links` row and auto-issues consent to the student's guardians. STEP 2 therefore
+> **enrols only rows that already have an active guardian**; guardian-less rows (all `new`, plus
+> guardian-less `existing`) get the defined outcome `not_enrolled: awaiting guardian & consent` —
+> never silent (P4). Bulk enrolment does not bypass the consenting-guardian requirement.
+> **D-9** — enrolment is **pure INTENT** (OD-31): no seat, no `FOR UPDATE`, no capacity, no waitlist,
+> **no order** at enrolment. STEP 2 creates intent only (`submitted → pending_consent`, consent
+> auto-issued). Orders/成團/capacity and the consolidated invoice are **S05-and-later**; the card's
+> STEP 2 capacity-boundary VERIFY and STEP 3 invoicing are re-scoped accordingly (see those steps).
+> **D-10** — the batch carries its **programme target (+ optional OD-25 payer) captured at the STEP 1
+> upload**; a new nullable `programme_id` (+ `payer_party`/`payer_school_id`) is added to
+> `enrolment_batches` and the upload endpoint requires the programme.
 
 ## GOAL
 A school administrator enrols a cohort in one auditable batch: **CSV** in, per-row outcomes out,
@@ -72,17 +88,28 @@ in Phase 1** (D-5).
    → **503**, no batch row; hostile CSV (formula-cell `=+-@`, wrong/missing columns, oversize,
    bad encoding) → whole-file reject **and** per-row reasons pasted; clean CSV → dry-run report paste;
    `scope.public_context_confinement` green.
-2. **Batch commit (H2/H3).** Row-by-row: **new-student rows through `create()`** (reused, not
-   re-built), **existing rows matched** on the school roll, then **all rows enrolled through the REAL
-   S04A machinery** — seat lock (2.7), idempotency (2.8), waitlist on full (2.18), consent issuance
-   job per enrolment; batch is resumable, never half-silent; failures → per-row reasons + FR066
-   exception on batch failure. VERIFY: batch spanning capacity boundary — some Enrolled, overflow
-   Waiting, reasons pasted; re-commit idempotent (no duplicate accounts *or* enrolments) paste.
-3. **Batch dashboard (H4) + consolidated invoicing (OD-25).** School admin sees Active | Complete |
-   Exceptions with per-row drill-down (2.28/Q4 3.4); when payer_party = school, one consolidated
-   invoice aggregates the batch's orders (OD-18 fields; academy is the recipient of funds, always);
-   guardian-payer rows bill individually as S04A built. VERIFY: invoice totals equal the sum of
-   member order lines (paste); OD-18 schema paste; school admin of ANOTHER school sees zero (five-branch).
+2. **Batch commit (H2/H3) — intent only (D-8/D-9).** Row-by-row from the dry-run dispositions:
+   **`new` rows → `create()`** (reused mint + roll link, born-unverified), **`match_existing` rows
+   matched** on the roll, then — for rows that **have an active guardian** — **enrol via
+   `EnrolmentService::create(programme_id, student_id, actingGuardian)`** under a system elevation
+   (school admin is not the guardian; enrolment enters `submitted` and auto-issues consent →
+   `pending_consent`). **No seats, no waitlist, no orders** (OD-31 — those are S05). **Guardian-less
+   rows** (all `new`, plus guardian-less `existing`) → per-row `not_enrolled: awaiting guardian &
+   consent` (P4, never silent). Batch is **resumable/idempotent**: the DB partial-unique
+   `(student_id, programme_id)` returns the original enrolment on re-commit; each row records its
+   `enrolment_id` + a `committed` status so a re-upload does not double-create accounts *or*
+   enrolments. Batch state `ready → committing → complete | partially_complete`; batch-level failure
+   → FR066 exception. VERIFY: a mixed batch — guardian-having rows Enrolled (`pending_consent`,
+   consent issued, pasted); guardian-less rows `not_enrolled` with reason (pasted); re-commit
+   idempotent (no duplicate accounts *or* enrolments) pasted; another school's admin five-branch.
+3. **Batch dashboard (H4) + consolidated invoicing (OD-25) — RE-SCOPED, needs its own reconciliation
+   (D-9).** School admin sees Active | Complete | Exceptions with per-row drill-down (2.28/Q4 3.4).
+   **The consolidated invoice cannot be built at batch time — there are no batch-time orders** (orders
+   exist only after the batch's enrolments reach 成團/confirmation at S05; OD-25 school-payer is
+   additionally unwired — both obligation call sites hardcode guardian payer). So STEP 3 splits: the
+   **dashboard (H4)** is buildable now; the **consolidated invoice** is deferred to when S05 orders
+   exist and gets a dedicated reconciliation (flagged before STEP 3 is built). VERIFY (dashboard):
+   batch drill-down + per-row outcomes; school admin of ANOTHER school sees zero (five-branch).
 
 ## STEP 1 PLAN (intake layer — the reviewed detail)
 The front end of Part H, and where the PROPOSED-review's Q1–Q5 land. Sequenced by the async gate:
@@ -154,16 +181,18 @@ per batch (received / clean / quarantined / scan-unreachable-refused)**; consoli
 with order-line reconciliation.
 
 ## ASSERTIONS (--tag=S04E)
-- `batches.row_conservation` — every committed batch's rows sum to Enrolled + Skipped + Failed +
-  Waiting, each non-Enrolled with a reason.
-- `batches.scan_gated` — no `enrolment_batch_rows` exist for a batch whose upload is not `CLEAN`
-  (a parsed row implies a passed scan — the BI-10 gate, assertable).
-- `invoices.line_reconciliation` — every consolidated invoice total equals the sum of its member
-  order lines (integer minor units, same currency).
-- `batches.no_stuck` — no batch in Scanning/Validating/Committing older than its job-timeout window.
+- `batches.scan_gated` — no parsed `enrolment_batch_rows` exist under an upload that is not `CLEAN`
+  (a parsed row implies a passed scan — the BI-10 gate, path-independent). **[STEP 1, shipped]**
+- `batches.row_conservation` — every committed batch's rows sum to Enrolled + NotEnrolled + Skipped +
+  Failed, each non-Enrolled carrying a reason (P4). **No "Waiting"** — enrolment is intent (OD-31),
+  there is no capacity/waitlist at batch time. **[STEP 2]**
+- `batches.no_stuck` — no batch in Scanning/Validating/Committing older than its job-timeout window. **[STEP 2]**
+- ~~`invoices.line_reconciliation`~~ — **deferred (D-9)**: there are no batch-time orders to invoice
+  (orders exist post-成團, S05). Moves to the STEP 3 consolidated-invoice reconciliation.
 
 ## EXIT GATE
 Tests + `--tag=S04E` + all prior tags green + STEP 1 scan-gate/fail-closed/hostile-CSV pastes +
-capacity-boundary batch paste + invoice reconciliation paste + five-branch pastes + AUDIT.md
-(**record the D-7 S10 acceptance item: verify real-clamd `batch-csv` end-to-end with the live daemon
-before go-live**), gate commit.
+**STEP 2 mixed-batch paste (guardian-having Enrolled→pending_consent + consent issued; guardian-less
+`not_enrolled`; re-commit idempotent — no duplicate accounts or enrolments)** + five-branch pastes +
+AUDIT.md (**record the D-7 S10 acceptance item: verify real-clamd `batch-csv` end-to-end with the live
+daemon before go-live; and the D-9 deferral of consolidated invoicing to S05-order time**), gate commit.
