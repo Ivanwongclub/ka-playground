@@ -216,6 +216,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // S07-3 — sponsorship/charity: declare the project type + funding target (Pitch, OD-4).
     Route::post('/teams/{team}/fundraising', [\App\Http\Controllers\FundraisingController::class, 'declare']);
     Route::get('/teams/{team}/fundraising', [\App\Http\Controllers\FundraisingController::class, 'show']);
+    // S07-4 — Team Finance Verification Report (P&L, budget/actual/verified, aging, evidence drill-down).
+    Route::get('/teams/{team}/finance-report', [\App\Http\Controllers\FinanceReportController::class, 'show']);
     // S05-6 audit element — the Team & Capacity Report (RLS-shaped)
     Route::get('/admin/programmes/{id}/team-capacity-report', [\App\Http\Controllers\TeamCapacityReportController::class, 'show']);
     // S06-2 — session lifecycle (2.3) + reschedule/clash (2.24) + mentor lifecycle (2.6); authority in-service

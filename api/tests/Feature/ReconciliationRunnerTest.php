@@ -44,10 +44,11 @@ class ReconciliationRunnerTest extends TestCase
             ->expectsOutputToContain('PASS  finance.verified_has_evidence')
             ->expectsOutputToContain('PASS  finance.verification_sod')
             ->expectsOutputToContain('PASS  finance.charity_no_distribution')
-            ->expectsOutputToContain('RECONCILE PASS — 57 assertion(s), 57 passed, 0 failed')
+            ->expectsOutputToContain('PASS  finance.budget_actuals_match')
+            ->expectsOutputToContain('RECONCILE PASS — 58 assertion(s), 58 passed, 0 failed')
             ->assertExitCode(0);
 
-        $this->assertSame(57, DB::table('reconciliation_log')->where('passed', true)->where('assertion_key', '!=', '_run')->count());
+        $this->assertSame(58, DB::table('reconciliation_log')->where('passed', true)->where('assertion_key', '!=', '_run')->count());
         $this->assertSame(1, DB::table('reconciliation_log')->where('assertion_key', '_run')->count());
     }
 

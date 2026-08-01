@@ -36,6 +36,7 @@ use App\Services\Reconciliation\Assertions\GuardianAdditionVisibilityAssertion;
 use App\Services\Reconciliation\Assertions\BatchNoStuckAssertion;
 use App\Services\Reconciliation\Assertions\BatchRowConservationAssertion;
 use App\Services\Reconciliation\Assertions\BatchScanGatedAssertion;
+use App\Services\Reconciliation\Assertions\BudgetActualsMatchAssertion;
 use App\Services\Reconciliation\Assertions\CharityNoDistributionAssertion;
 use App\Services\Reconciliation\Assertions\BudgetApprovedProvenanceAssertion;
 use App\Services\Reconciliation\Assertions\TransactionVerificationSodAssertion;
@@ -165,6 +166,8 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new TransactionVerificationSodAssertion);
             // S07 STEP 3 — charity funds never distributed to a member (OD-4)
             $registry->register(new CharityNoDistributionAssertion);
+            // S07 STEP 4 — budget actuals reconcile to approved spend (spec:1776)
+            $registry->register(new BudgetActualsMatchAssertion);
 
             return $registry;
         });
