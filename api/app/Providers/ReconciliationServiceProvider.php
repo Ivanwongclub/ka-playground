@@ -37,6 +37,8 @@ use App\Services\Reconciliation\Assertions\BatchNoStuckAssertion;
 use App\Services\Reconciliation\Assertions\BatchRowConservationAssertion;
 use App\Services\Reconciliation\Assertions\BatchScanGatedAssertion;
 use App\Services\Reconciliation\Assertions\BudgetApprovedProvenanceAssertion;
+use App\Services\Reconciliation\Assertions\TransactionVerificationSodAssertion;
+use App\Services\Reconciliation\Assertions\VerifiedHasEvidenceAssertion;
 use App\Services\Reconciliation\Assertions\InvoiceLineReconciliationAssertion;
 use App\Services\Reconciliation\Assertions\NoSilentOverdueAssertion;
 use App\Services\Reconciliation\Assertions\ObligationPayerMatchesProgrammeAssertion;
@@ -157,6 +159,9 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new NoSilentOverdueAssertion);
             // S07 STEP 1 — every active team budget carries an approving audit (FR061)
             $registry->register(new BudgetApprovedProvenanceAssertion);
+            // S07 STEP 2 — verified transactions have clean evidence + recorder≠verifier (D-16)
+            $registry->register(new VerifiedHasEvidenceAssertion);
+            $registry->register(new TransactionVerificationSodAssertion);
 
             return $registry;
         });

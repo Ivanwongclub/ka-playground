@@ -205,6 +205,14 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/budgets/{budget}/request-changes', [\App\Http\Controllers\BudgetController::class, 'requestChanges']);
     Route::post('/budgets/{budget}/revise', [\App\Http\Controllers\BudgetController::class, 'revise']);
     Route::post('/budgets/{budget}/close', [\App\Http\Controllers\BudgetController::class, 'close']);
+    // S07-2 — team-project transactions + verification (record-only, SoD core).
+    Route::get('/teams/{team}/transactions', [\App\Http\Controllers\TransactionController::class, 'index']);
+    Route::post('/teams/{team}/transactions', [\App\Http\Controllers\TransactionController::class, 'record']);
+    Route::post('/transactions/{transaction}/evidence', [\App\Http\Controllers\TransactionController::class, 'attachEvidence']);
+    Route::post('/transactions/{transaction}/submit', [\App\Http\Controllers\TransactionController::class, 'submit']);
+    Route::post('/transactions/{transaction}/approve', [\App\Http\Controllers\TransactionController::class, 'approve']);
+    Route::post('/transactions/{transaction}/reject', [\App\Http\Controllers\TransactionController::class, 'reject']);
+    Route::post('/transactions/{transaction}/verify', [\App\Http\Controllers\TransactionController::class, 'verify']);
     // S05-6 audit element — the Team & Capacity Report (RLS-shaped)
     Route::get('/admin/programmes/{id}/team-capacity-report', [\App\Http\Controllers\TeamCapacityReportController::class, 'show']);
     // S06-2 — session lifecycle (2.3) + reschedule/clash (2.24) + mentor lifecycle (2.6); authority in-service

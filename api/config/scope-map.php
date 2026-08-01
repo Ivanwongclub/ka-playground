@@ -35,6 +35,7 @@ return [
         'consolidated_invoices',
         'team_budgets',
         'budget_lines',
+        'team_transactions',
         'enrolment_batches',
         'enrolment_batch_rows',
         'credit_notes',
