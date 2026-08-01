@@ -52,6 +52,11 @@ class TransactionService
             if ($data['budget_line_id'] !== null && ! DB::table('budget_lines')->where('id', $data['budget_line_id'])->where('team_id', $teamId)->exists()) {
                 throw ValidationException::withMessages(['budget_line_id' => ['That budget line does not belong to this team']]);
             }
+            // OD-4: a charity project may never distribute funds to a team member.
+            if ($data['type'] === 'expense' && $data['beneficiary_member_id'] !== null
+                && DB::table('team_fundraising')->where('team_id', $teamId)->value('project_type') === 'charity') {
+                throw ValidationException::withMessages(['beneficiary_member_id' => ['A charity project cannot distribute funds to a team member (OD-4)']]);
+            }
             $txn = TeamTransaction::query()->create([
                 'id' => (string) Str::uuid7(), 'team_id' => $teamId, 'type' => $data['type'],
                 'amount_minor' => $data['amount_minor'], 'currency' => 'HKD',

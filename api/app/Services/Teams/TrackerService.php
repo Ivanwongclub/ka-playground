@@ -61,6 +61,19 @@ class TrackerService
                     && ! DB::table('team_budgets')->where('team_id', $team->id)->where('status', 'active')->exists()) {
                     abort(422, 'Plan gate requires an approved (active) team budget (Spec:210)');
                 }
+                // S07 STEP 3 (Pitch reframe, spec:213): if the team declared a funding target,
+                // the Pitch gate requires it reached (Σ verified income) — read LIVE. A team
+                // that declared no target is unconstrained here (the existing gate behaviour).
+                if ($stage === 'Pitch') {
+                    $target = (int) DB::table('team_fundraising')->where('team_id', $team->id)->value('funding_target_minor');
+                    if ($target > 0) {
+                        $raised = (int) DB::table('team_transactions')->where('team_id', $team->id)
+                            ->where('type', 'income')->where('status', 'verified')->sum('amount_minor');
+                        if ($raised < $target) {
+                            abort(422, "Pitch gate requires the funding target reached: {$raised}/{$target} minor units raised (verified income) — spec:213");
+                        }
+                    }
+                }
                 $learnSnapshot = null;
                 if ($stage === 'Learn') {
                     $e = $this->learn->eligibility($team);

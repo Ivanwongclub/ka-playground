@@ -213,6 +213,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/transactions/{transaction}/approve', [\App\Http\Controllers\TransactionController::class, 'approve']);
     Route::post('/transactions/{transaction}/reject', [\App\Http\Controllers\TransactionController::class, 'reject']);
     Route::post('/transactions/{transaction}/verify', [\App\Http\Controllers\TransactionController::class, 'verify']);
+    // S07-3 — sponsorship/charity: declare the project type + funding target (Pitch, OD-4).
+    Route::post('/teams/{team}/fundraising', [\App\Http\Controllers\FundraisingController::class, 'declare']);
+    Route::get('/teams/{team}/fundraising', [\App\Http\Controllers\FundraisingController::class, 'show']);
     // S05-6 audit element — the Team & Capacity Report (RLS-shaped)
     Route::get('/admin/programmes/{id}/team-capacity-report', [\App\Http\Controllers\TeamCapacityReportController::class, 'show']);
     // S06-2 — session lifecycle (2.3) + reschedule/clash (2.24) + mentor lifecycle (2.6); authority in-service

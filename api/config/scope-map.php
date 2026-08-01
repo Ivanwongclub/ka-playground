@@ -36,6 +36,7 @@ return [
         'team_budgets',
         'budget_lines',
         'team_transactions',
+        'team_fundraising',
         'enrolment_batches',
         'enrolment_batch_rows',
         'credit_notes',

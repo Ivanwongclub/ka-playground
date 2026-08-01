@@ -36,6 +36,7 @@ use App\Services\Reconciliation\Assertions\GuardianAdditionVisibilityAssertion;
 use App\Services\Reconciliation\Assertions\BatchNoStuckAssertion;
 use App\Services\Reconciliation\Assertions\BatchRowConservationAssertion;
 use App\Services\Reconciliation\Assertions\BatchScanGatedAssertion;
+use App\Services\Reconciliation\Assertions\CharityNoDistributionAssertion;
 use App\Services\Reconciliation\Assertions\BudgetApprovedProvenanceAssertion;
 use App\Services\Reconciliation\Assertions\TransactionVerificationSodAssertion;
 use App\Services\Reconciliation\Assertions\VerifiedHasEvidenceAssertion;
@@ -162,6 +163,8 @@ class ReconciliationServiceProvider extends ServiceProvider
             // S07 STEP 2 — verified transactions have clean evidence + recorder≠verifier (D-16)
             $registry->register(new VerifiedHasEvidenceAssertion);
             $registry->register(new TransactionVerificationSodAssertion);
+            // S07 STEP 3 — charity funds never distributed to a member (OD-4)
+            $registry->register(new CharityNoDistributionAssertion);
 
             return $registry;
         });
