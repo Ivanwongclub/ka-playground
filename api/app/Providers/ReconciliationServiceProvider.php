@@ -36,6 +36,7 @@ use App\Services\Reconciliation\Assertions\GuardianAdditionVisibilityAssertion;
 use App\Services\Reconciliation\Assertions\BatchNoStuckAssertion;
 use App\Services\Reconciliation\Assertions\BatchRowConservationAssertion;
 use App\Services\Reconciliation\Assertions\BatchScanGatedAssertion;
+use App\Services\Reconciliation\Assertions\InvoiceLineReconciliationAssertion;
 use App\Services\Reconciliation\Assertions\ObligationPayerMatchesProgrammeAssertion;
 use App\Services\Reconciliation\Assertions\VouchScopeAssertion;
 use App\Services\Reconciliation\Assertions\ConsentCompleteAtConfirmAssertion;
@@ -148,6 +149,8 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new BatchNoStuckAssertion);
             // S04F STEP 1 — obligation/order payer matches its programme E6 (OD-25/D-18)
             $registry->register(new ObligationPayerMatchesProgrammeAssertion);
+            // S04F STEP 2 — invoice original = Σ its covered orders (OD-25)
+            $registry->register(new InvoiceLineReconciliationAssertion);
 
             return $registry;
         });

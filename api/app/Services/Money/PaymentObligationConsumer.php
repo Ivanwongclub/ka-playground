@@ -19,6 +19,7 @@ class PaymentObligationConsumer
     public function __construct(
         private readonly OrderService $orders,
         private readonly AuditService $audit,
+        private readonly ConsolidatedInvoiceService $invoices,
     ) {}
 
     /** @return int obligations consumed ($limit exists so tests can kill mid-batch) */
@@ -45,6 +46,10 @@ class PaymentObligationConsumer
             if (in_array($obligation->payer_party, ['guardian', 'student'], true)) {
                 // OD-50b: the payment surfaces as a PORTAL TASK; S09 delivers
                 \App\Events\PaymentRequested::dispatch($order->id, $obligation->enrolment_id, (string) $order->payment_due_at);
+            } elseif ($obligation->payer_party === 'school') {
+                // OD-25 / S04F STEP 2: no family task — the order joins the school's
+                // (school, programme) consolidated invoice (the receivable covers it).
+                $this->invoices->coverOrder($order);
             }
             $this->audit->record('payment_obligation', $obligation->id, 'payment_obligation.consumed',
                 toState: 'consumed', programmeId: (int) $obligation->programme_id,
