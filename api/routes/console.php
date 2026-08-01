@@ -28,6 +28,13 @@ Schedule::command('teams:run-lapse-detection')
     ->timezone('Asia/Hong_Kong')
     ->dailyAt('02:20');
 
+// S04F-3 school-settled invoice aging (OD-55). Ages unpaid school invoices past
+// terms+grace to overdue before the 03:00 reconciliation so invoices.no_silent_overdue
+// is satisfied. Touches ONLY consolidated_invoices — never a child's enrolment.
+Schedule::command('invoices:age-school-settled')
+    ->timezone('Asia/Hong_Kong')
+    ->dailyAt('02:45');
+
 // S06-1 enrolment activation (R3). Runs before the reconciliation (03:00) so a
 // started programme's confirmed enrolments are Active by the time
 // enrolments.activation_liveness is checked.
