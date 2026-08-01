@@ -1,8 +1,21 @@
 # SPRINT KAP-S07 — Team finance (record-only)
 
+> **RECONCILED 2026-08-01** per `docs/sprints/S07/PROPOSED-S07-REVIEW.md` and Leo's rulings:
+> **D-15** — this card is **team-PROJECT finance only** (team budgets / transactions / verification /
+> P&L / charity). The **OD-25 school-payer enrolment consolidated invoicing** that the S04E hand-off
+> parked here is a DIFFERENT domain (the S04B money model) and has been **split out to its own card,
+> `S04F`** — done FIRST because it is small and closes the live S04E hand-off. This card (Track B) gets
+> its **own think-first pass later**, separately.
+> **D-16** — the "one approval engine" consolidation is **DESCOPED**. It would re-home 6 money-critical,
+> DB-enforced approval mechanisms (incl BI-9 separation-of-duties, a fraud control) onto a new engine —
+> exactly the change that risks the invariants. Six explicit verified DB-enforced mechanisms are SAFER
+> than one clever engine for a fraud control. S07's team-finance approvals may be their own mechanism;
+> the existing S04B/S05 money approvals are **left alone** (adapter-only at most, likely not even that).
+> **OD-4** confirmed RESOLVED — the STOP precondition is clear (charity is a valid `project_type`).
+
 ## GOAL
-Budgets, transactions and verification for money the platform never touches — evidence-first, one
-approval engine for everything.
+Budgets, transactions and verification for money the platform never touches — evidence-first.
+(Approval-engine consolidation DESCOPED — D-16. OD-25 invoicing SPLIT to S04F — D-15.)
 
 ## PRECONDITIONS  S06 gate PASSED · OD-4 (charity project_type) decided — **STOP if open**.
 
