@@ -29,6 +29,7 @@ class TeamResolutionService
         private readonly ScopeContext $scope,
         private readonly EnrolmentService $enrolments,
         private readonly TeamExceptionService $exceptions,
+        private readonly \App\Services\Money\PayerResolver $payer,
     ) {}
 
     /** ASSIGN — place an unplaced in_pool student into the below-min team, claiming one seat + issuing their obligation. */
@@ -37,7 +38,7 @@ class TeamResolutionService
         $this->assertAcademyOperator($admin);
 
         return $this->scope->asSystem(
-            'Below-min resolution — ASSIGN (S05-4, OD-37): an admin places an unplaced student into a below-min team; one seat is claimed under FOR UPDATE, the enrolment moves in_pool → teamed → confirmed, and a guardian payment_obligation is written. Admin authority + lobby eligibility checked before the elevation.',
+            'Below-min resolution — ASSIGN (S05-4, OD-37): an admin places an unplaced student into a below-min team; one seat is claimed under FOR UPDATE, the enrolment moves in_pool → teamed → confirmed, and a payment_obligation is written with the payer resolved from the programme E6 (S04F). Admin authority + lobby eligibility checked before the elevation.',
             function () use ($teamId, $enrolmentId, $admin): array {
                 return DB::transaction(function () use ($teamId, $enrolmentId, $admin): array {
                     $team = DB::table('teams')->where('id', $teamId)->first() ?? abort(404);
@@ -74,10 +75,13 @@ class TeamResolutionService
                     // dissolution) claims the seat and confirms, but gets NO second obligation.
                     $oid = null;
                     if (! DB::table('orders')->where('enrolment_id', $enrolment->id)->where('status', 'paid')->exists()) {
+                        // payer resolved from the programme E6 (S04F STEP 1) — same helper as 成團,
+                        // loud on an unresolvable school payer, never a silent guardian fallback (D-18).
+                        $payer = $this->payer->resolve((int) $team->programme_id, (int) $enrolment->student_id);
                         $oid = (string) Str::uuid7();
                         DB::table('payment_obligations')->insert([
                             'id' => $oid, 'enrolment_id' => $enrolment->id, 'programme_id' => $team->programme_id,
-                            'student_id' => $enrolment->student_id, 'payer_party' => 'guardian', 'payer_school_id' => null,
+                            'student_id' => $enrolment->student_id, 'payer_party' => $payer['payer_party'], 'payer_school_id' => $payer['payer_school_id'],
                             'created_at' => now(),
                         ]);
                     }

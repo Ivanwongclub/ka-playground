@@ -66,7 +66,7 @@ return [
 
     'App\Services\Teams\LapseDetectionService::run' => 'Lapse-detection job (S05-4, OD-45): the SYSTEM scans family-paid unpaid orders past payment_due_at + grace and, for each, writes a lapse audit, suspends the member on team_members, and raises an FR066 lapse (+ below_min) exception. teams/team_members/team_exceptions are system-only writes; this is the scheduled actor.',
 
-    'App\Services\Teams\TeamResolutionService::assign' => 'Below-min resolution — ASSIGN (S05-4, OD-37): an admin places an unplaced student into a below-min team; one seat is claimed under FOR UPDATE, the enrolment moves in_pool → teamed → confirmed, and a guardian payment_obligation is written. Admin authority + lobby eligibility checked before the elevation.',
+    'App\Services\Teams\TeamResolutionService::assign' => 'Below-min resolution — ASSIGN (S05-4, OD-37): an admin places an unplaced student into a below-min team; one seat is claimed under FOR UPDATE, the enrolment moves in_pool → teamed → confirmed, and a payment_obligation is written with the payer resolved from the programme E6 (S04F). Admin authority + lobby eligibility checked before the elevation.',
 
     'App\Services\Teams\TeamResolutionService::extendGrace' => 'Below-min resolution — GRACE-ONCE (S05-4, OD-37): an admin extends a suspended member\'s payment grace exactly once and un-suspends them. A second extension is refused (grace is not a loop, OD-31/37). team_members is a system-only write; authority checked before the elevation.',
 

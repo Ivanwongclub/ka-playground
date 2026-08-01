@@ -28,6 +28,7 @@ class TeamConfirmationService
         private readonly ScopeContext $scope,
         private readonly EnrolmentService $enrolments,
         private readonly ConsentSigningService $consent,
+        private readonly \App\Services\Money\PayerResolver $payer,
     ) {}
 
     /** Submit a forming team for approval (the submitter, a student). */
@@ -107,7 +108,8 @@ class TeamConfirmationService
                     }
                     DB::update('UPDATE programme_capacity SET claimed = claimed + ?, updated_at = now() WHERE programme_id = ?', [$n, $team->programme_id]);
 
-                    // teamed → confirmed + one obligation per member (family-paid; school-settled is S04E)
+                    // teamed → confirmed + one obligation per member; payer resolved from the
+                    // programme's E6 payer_party (S04F STEP 1 / OD-25) — NOT hardcoded guardian.
                     $obligationIds = [];
                     foreach ($members as $m) {
                         $this->enrolments->transition($m->enrolment_id, 'confirmed', $approver, "成團 of team {$team->id}");
@@ -118,10 +120,12 @@ class TeamConfirmationService
                         if (DB::table('orders')->where('enrolment_id', $m->enrolment_id)->where('status', 'paid')->exists()) {
                             continue;
                         }
+                        // Loud on an unresolvable school payer — never a silent guardian fallback (D-18).
+                        $payer = $this->payer->resolve((int) $team->programme_id, (int) $m->student_id);
                         $oid = (string) Str::uuid7();
                         DB::table('payment_obligations')->insert([
                             'id' => $oid, 'enrolment_id' => $m->enrolment_id, 'programme_id' => $team->programme_id,
-                            'student_id' => $m->student_id, 'payer_party' => 'guardian', 'payer_school_id' => null,
+                            'student_id' => $m->student_id, 'payer_party' => $payer['payer_party'], 'payer_school_id' => $payer['payer_school_id'],
                             'created_at' => now(),
                         ]);
                         $obligationIds[] = $oid;
