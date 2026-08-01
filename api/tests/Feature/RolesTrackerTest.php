@@ -144,8 +144,21 @@ class RolesTrackerTest extends TestCase
         Sanctum::actingAs($this->ops);
         $this->postJson("/api/teams/{$teamId}/confirm")->assertOk();
         $this->app['auth']->forgetGuards();
+        // S07 STEP 1: the Plan gate now requires an active team budget (Spec:210) —
+        // seed one so the existing tracker-gate tests still exercise Plan approval.
+        $this->seedActiveBudget($teamId);
 
         return [$teamId, $students, $guardians];
+    }
+
+    private function seedActiveBudget(string $teamId): void
+    {
+        $this->sys(function () use ($teamId) {
+            $bid = (string) Str::uuid7();
+            DB::table('team_budgets')->insert(['id' => $bid, 'team_id' => $teamId, 'status' => 'active', 'currency' => 'HKD', 'activated_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
+            DB::table('budget_lines')->insert(['id' => (string) Str::uuid7(), 'budget_id' => $bid, 'team_id' => $teamId, 'category' => 'other', 'name' => 'seed', 'planned_amount_minor' => 0, 'currency' => 'HKD', 'created_at' => now(), 'updated_at' => now()]);
+            app(\App\Services\Audit\AuditService::class)->record('team_budget', $bid, 'team_budget.approved', toState: 'active', payloadAfter: ['team_id' => $teamId]);
+        });
     }
 
     private function enrolmentId(Programme $programme, User $student): string

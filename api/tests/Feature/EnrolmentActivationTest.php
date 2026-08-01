@@ -189,6 +189,13 @@ class EnrolmentActivationTest extends TestCase
         // the programme begins (starts_on moves into the past) → the gate is allowed
         $this->sys(fn () => DB::table('wizard_sections')->where('programme_id', $programme->id)->where('section_key', 'basics')
             ->update(['data' => json_encode(['enrolment_closes_on' => '2026-06-10', 'starts_on' => '2026-06-30'])]));
+        // S07 STEP 1: the Plan gate now requires an active budget (Spec:210) — seed one.
+        $this->sys(function () use ($teamId) {
+            $bid = (string) Str::uuid7();
+            DB::table('team_budgets')->insert(['id' => $bid, 'team_id' => $teamId, 'status' => 'active', 'currency' => 'HKD', 'activated_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
+            DB::table('budget_lines')->insert(['id' => (string) Str::uuid7(), 'budget_id' => $bid, 'team_id' => $teamId, 'category' => 'other', 'name' => 'seed', 'planned_amount_minor' => 0, 'currency' => 'HKD', 'created_at' => now(), 'updated_at' => now()]);
+            app(\App\Services\Audit\AuditService::class)->record('team_budget', $bid, 'team_budget.approved', toState: 'active', payloadAfter: ['team_id' => $teamId]);
+        });
         Sanctum::actingAs($teacher);
         $this->postJson("/api/teams/{$teamId}/gates/Plan/approve")->assertOk()->assertJsonPath('approver_kind', 'teacher');
         $this->app['auth']->forgetGuards();

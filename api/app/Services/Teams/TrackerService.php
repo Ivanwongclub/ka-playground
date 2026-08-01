@@ -53,6 +53,14 @@ class TrackerService
                 // the team must be Learn-eligible (enough members qualify on attendance). The
                 // threshold gates the teacher's approval; it does not replace it. 0/0 (no
                 // attendance yet) → not-yet-assessable → refused (never silently passed).
+                // S07 STEP 1 (Spec:210): the Plan gate carries a HARD PRECONDITION — the
+                // team must have an ACTIVE (approved) budget. Read LIVE from the finance
+                // module (spec:241), never a cached flag; the threshold gates the teacher's
+                // approval, it does not replace it.
+                if ($stage === 'Plan'
+                    && ! DB::table('team_budgets')->where('team_id', $team->id)->where('status', 'active')->exists()) {
+                    abort(422, 'Plan gate requires an approved (active) team budget (Spec:210)');
+                }
                 $learnSnapshot = null;
                 if ($stage === 'Learn') {
                     $e = $this->learn->eligibility($team);
@@ -84,6 +92,17 @@ class TrackerService
                 return ['gate_id' => $id, 'stage' => $stage, 'approver_kind' => $kind];
             },
         );
+    }
+
+    /**
+     * S07: the SAME OD-61 authority resolution, exposed READ-ONLY so team-finance
+     * (budget/transaction approval) reuses it without re-homing it (D-16). The
+     * gate mechanism itself is unchanged — this only surfaces the existing
+     * private resolution; aborts 403 when the actor may not approve for this team.
+     */
+    public function approverKindFor(User $approver, object $team): string
+    {
+        return $this->gateApproverKind($approver, $team);
     }
 
     /** OD-61 authority resolution; aborts 403 when the actor may not approve this team's gate. */

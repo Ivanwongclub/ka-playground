@@ -36,6 +36,7 @@ use App\Services\Reconciliation\Assertions\GuardianAdditionVisibilityAssertion;
 use App\Services\Reconciliation\Assertions\BatchNoStuckAssertion;
 use App\Services\Reconciliation\Assertions\BatchRowConservationAssertion;
 use App\Services\Reconciliation\Assertions\BatchScanGatedAssertion;
+use App\Services\Reconciliation\Assertions\BudgetApprovedProvenanceAssertion;
 use App\Services\Reconciliation\Assertions\InvoiceLineReconciliationAssertion;
 use App\Services\Reconciliation\Assertions\NoSilentOverdueAssertion;
 use App\Services\Reconciliation\Assertions\ObligationPayerMatchesProgrammeAssertion;
@@ -154,6 +155,8 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new InvoiceLineReconciliationAssertion);
             // S04F STEP 3 — no school invoice past due+grace left un-aged (OD-55)
             $registry->register(new NoSilentOverdueAssertion);
+            // S07 STEP 1 — every active team budget carries an approving audit (FR061)
+            $registry->register(new BudgetApprovedProvenanceAssertion);
 
             return $registry;
         });

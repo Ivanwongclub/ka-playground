@@ -196,6 +196,15 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/teams/{id}/teacher-link', [\App\Http\Controllers\RolesTrackerController::class, 'linkTeacher']);
     Route::post('/teams/{id}/roles', [\App\Http\Controllers\RolesTrackerController::class, 'assignRole']);
     Route::post('/teams/{id}/gates/{stage}/approve', [\App\Http\Controllers\RolesTrackerController::class, 'approveGate']);
+    // S07-1 — team-project budgets (record-only). Authority (team member / reused S05 approver) in-service.
+    Route::get('/teams/{team}/budget', [\App\Http\Controllers\BudgetController::class, 'show']);
+    Route::post('/teams/{team}/budget', [\App\Http\Controllers\BudgetController::class, 'create']);
+    Route::post('/budgets/{budget}/lines', [\App\Http\Controllers\BudgetController::class, 'addLine']);
+    Route::post('/budgets/{budget}/submit', [\App\Http\Controllers\BudgetController::class, 'submit']);
+    Route::post('/budgets/{budget}/approve', [\App\Http\Controllers\BudgetController::class, 'approve']);
+    Route::post('/budgets/{budget}/request-changes', [\App\Http\Controllers\BudgetController::class, 'requestChanges']);
+    Route::post('/budgets/{budget}/revise', [\App\Http\Controllers\BudgetController::class, 'revise']);
+    Route::post('/budgets/{budget}/close', [\App\Http\Controllers\BudgetController::class, 'close']);
     // S05-6 audit element — the Team & Capacity Report (RLS-shaped)
     Route::get('/admin/programmes/{id}/team-capacity-report', [\App\Http\Controllers\TeamCapacityReportController::class, 'show']);
     // S06-2 — session lifecycle (2.3) + reschedule/clash (2.24) + mentor lifecycle (2.6); authority in-service
