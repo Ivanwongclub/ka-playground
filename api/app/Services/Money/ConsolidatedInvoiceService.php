@@ -50,15 +50,26 @@ class ConsolidatedInvoiceService
                     ->where('school_id', $schoolId)->where('programme_id', $programmeId)
                     ->value('id');
                 if ($invoiceId === null) {
-                    $invoiceId = (string) Str::uuid7();
-                    DB::table('consolidated_invoices')->insert([
-                        'id' => $invoiceId, 'school_id' => $schoolId, 'programme_id' => $programmeId,
-                        'original_amount_minor' => 0, 'balance_minor' => 0, 'currency' => $order->currency,
-                        'status' => 'issued', 'created_at' => now(), 'updated_at' => now(),
-                    ]);
-                    $this->audit->record('consolidated_invoice', $invoiceId, 'consolidated_invoice.issued',
-                        toState: 'issued', programmeId: $programmeId,
-                        payloadAfter: ['school_id' => $schoolId, 'currency' => $order->currency]);
+                    $newId = (string) Str::uuid7();
+                    // due_at is the receivable's clock — set ONCE at issuance (never moved
+                    // by later covered orders; only extendTerms moves it).
+                    $dueAt = now()->addDays((int) config('finance.school_invoice_terms_days', 30));
+                    try {
+                        DB::table('consolidated_invoices')->insert([
+                            'id' => $newId, 'school_id' => $schoolId, 'programme_id' => $programmeId,
+                            'original_amount_minor' => 0, 'balance_minor' => 0, 'currency' => $order->currency,
+                            'status' => 'issued', 'due_at' => $dueAt, 'created_at' => now(), 'updated_at' => now(),
+                        ]);
+                        $invoiceId = $newId;
+                        $this->audit->record('consolidated_invoice', $invoiceId, 'consolidated_invoice.issued',
+                            toState: 'issued', programmeId: $programmeId,
+                            payloadAfter: ['school_id' => $schoolId, 'currency' => $order->currency, 'due_at' => (string) $dueAt]);
+                    } catch (\Illuminate\Database\UniqueConstraintViolationException) {
+                        // a concurrent coverOrder created it first — re-read the winner (the
+                        // UNIQUE(school_id, programme_id) makes double-create impossible).
+                        $invoiceId = DB::table('consolidated_invoices')
+                            ->where('school_id', $schoolId)->where('programme_id', $programmeId)->value('id');
+                    }
                 }
 
                 // Attach the order — only if not already covered (idempotent).

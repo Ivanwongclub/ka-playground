@@ -23,6 +23,12 @@ return [
 
     'App\Services\Money\ConsolidatedInvoiceService::coverOrder' => 'S04F STEP 2 consolidated invoice issuance (OD-25): attaches a school-payer order to its (school, programme) consolidated invoice (find-or-create), marks the order covered_by_invoice, and recomputes the invoice original from the covered-order set. The invoice is a school-wide receivable outside any single actor\'s derived scope; the table is system-write by construction. Idempotent recompute — never double-counts.',
 
+    'App\Services\Money\InvoiceAgingService::run' => 'S04F STEP 3 invoice aging (OD-55): the SYSTEM scans school-settled invoices past due_at + grace and ages each unpaid one to overdue, audited. It writes ONLY consolidated_invoices — never an enrolment/order/team_member/consent — so a school\'s non-payment can never lapse a child. consolidated_invoices is system-write by construction; this is the scheduled actor.',
+
+    'App\Services\Money\InvoiceAgingService::extendTerms' => 'S04F STEP 3 extend terms (OD-55): an academy operator resets an overdue school invoice\'s due_at forward and returns it to issued — the "extend terms" resolution. Writes ONLY consolidated_invoices; the authority check precedes this elevation.',
+
+    'App\Services\Money\InvoiceAgingService::markPaid' => 'S04F STEP 3 mark paid (OD-55): records that a school settled its consolidated invoice (offline, record-only), moving it to paid — the resolved-on-pay terminal fate. Writes ONLY consolidated_invoices; the authority check precedes this elevation.',
+
     'App\Services\Enrolment\EnrolmentBatchCommitService::commit' => 'S04E STEP 2 batch commit (Spec Part H / OD-31): drives the existing enrolment machinery row-by-row from a validated batch. The batch/rows/enrolments are a school-wide operation outside any single actor\'s derived scope; enrolment inserts are system-context here (the school admin is not the student\'s guardian). Re-evaluates guardian eligibility LIVE; reuses BulkStudentCreationService::create + EnrolmentService::create; DRY-of-orders (intent only, OD-31).',
 
     'App\Http\Controllers\LinkController::schoolVouch' => 'School vouch (OD-30): the vouching school admin\'s single audited act creates an ACTIVE guardian-student link for a student verified ON THEIR ROLL (the in-school check precedes this). The guardian and the activation are outside the admin\'s derived scope; the active write is system-context by construction. Writes the link, its to_state=active audit, and OD-24 visibility records to every existing guardian (never silent).',

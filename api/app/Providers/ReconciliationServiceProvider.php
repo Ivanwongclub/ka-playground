@@ -37,6 +37,7 @@ use App\Services\Reconciliation\Assertions\BatchNoStuckAssertion;
 use App\Services\Reconciliation\Assertions\BatchRowConservationAssertion;
 use App\Services\Reconciliation\Assertions\BatchScanGatedAssertion;
 use App\Services\Reconciliation\Assertions\InvoiceLineReconciliationAssertion;
+use App\Services\Reconciliation\Assertions\NoSilentOverdueAssertion;
 use App\Services\Reconciliation\Assertions\ObligationPayerMatchesProgrammeAssertion;
 use App\Services\Reconciliation\Assertions\VouchScopeAssertion;
 use App\Services\Reconciliation\Assertions\ConsentCompleteAtConfirmAssertion;
@@ -151,6 +152,8 @@ class ReconciliationServiceProvider extends ServiceProvider
             $registry->register(new ObligationPayerMatchesProgrammeAssertion);
             // S04F STEP 2 — invoice original = Σ its covered orders (OD-25)
             $registry->register(new InvoiceLineReconciliationAssertion);
+            // S04F STEP 3 — no school invoice past due+grace left un-aged (OD-55)
+            $registry->register(new NoSilentOverdueAssertion);
 
             return $registry;
         });
