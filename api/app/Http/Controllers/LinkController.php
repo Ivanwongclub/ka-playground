@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\GuardianLinkActivated;
 use App\Models\GuardianLink;
 use App\Models\User;
 use App\Services\Identity\LinkRevocationService;
@@ -143,6 +144,10 @@ class LinkController extends Controller
                 return $link;
             },
         );
+
+        // S-FIX-consent-reissue (D1): the vouch is a direct activation — re-issue consent to the
+        // newly-active guardian for the student's pre-confirm enrolments (the OD-24 second-guardian case).
+        GuardianLinkActivated::dispatch((int) $link->student_id, (int) $link->guardian_id, $link->id, (string) $link->origin, (int) $actor->id);
 
         return response()->json(['link_id' => $link->id], 201);
     }

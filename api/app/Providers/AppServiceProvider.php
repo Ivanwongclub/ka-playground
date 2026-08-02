@@ -35,6 +35,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // S-FIX-consent-reissue (D1): re-issue consent to a newly-active guardian, synchronously,
+        // from the one explicit activation event (fired by approveLink AND schoolVouch).
+        \Illuminate\Support\Facades\Event::listen(
+            \App\Events\GuardianLinkActivated::class,
+            \App\Listeners\ReissueConsentOnGuardianActivation::class,
+        );
+
         // Throttling (2.13): auth 5/min/IP · API default 60/min/user ·
         // pairing codes 5/hour/account (consumed by the step-5 redemption flow;
         // the 10-global-fails hard invalidation is data-level in that flow)

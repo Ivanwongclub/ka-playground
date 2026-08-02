@@ -2,6 +2,7 @@
 
 namespace App\Services\Identity;
 
+use App\Events\GuardianLinkActivated;
 use App\Models\User;
 use App\Services\Audit\AuditService;
 use App\Services\Authz\ScopeContext;
@@ -15,9 +16,13 @@ use Illuminate\Validation\ValidationException;
  * The whole design serves one rule: "approving a PERSON is not approving a
  * RELATIONSHIP." So a claimed counterpart never becomes an active link on its
  * own. It travels one of two roads, and BOTH terminate at the SAME gate —
- * approveLink() — which is the ONLY place a guardian_link reaches 'active', and
- * the ONLY place the to_state='active' audit (FLAG #2, which S06's requires_all
- * consent hardening reads) is written:
+ * approveLink() — the CAS pending_approval→active transition that writes the
+ * to_state='active' audit (FLAG #2, which S06's requires_all consent hardening reads).
+ * NOTE (S-FIX-consent-reissue / D5): approveLink is NOT the only path to 'active' —
+ * LinkController::schoolVouch (OD-30) writes an active guardian_link DIRECTLY, bypassing
+ * pending_approval, with its own to_state='active' audit. Both activation sites dispatch
+ * GuardianLinkActivated so consent is re-issued to the newly-active guardian. The two roads
+ * into pending_approval (both then activated by approveLink) are:
  *
  *   road A (counterpart already a VERIFIED account) — a pending_approval link is
  *          created at the claimant's approval, straight into the queue.
@@ -137,9 +142,9 @@ class LinkageService
             throw ValidationException::withMessages(['link' => ['This link is not awaiting approval']]);
         }
 
-        $this->scope->asSystem(
+        $activated = $this->scope->asSystem(
             'Guardian-link approval (OD-23/2.30 · FLAG #2): the admin\'s decision — separate from approving either person — activates the relationship. CAS pending_approval→active; writes the to_state=\'active\' audit that S06 requires_all consent hardening depends on. Elevated because a not-yet-affiliated student is outside the reviewer\'s derived scope.',
-            function () use ($link, $approver): void {
+            function () use ($link, $approver): bool {
                 // CAS: exactly one approval flips pending_approval → active
                 $claimed = DB::update(
                     "UPDATE guardian_links SET status = 'active', verified_at = now(), updated_at = now()
@@ -149,7 +154,7 @@ class LinkageService
                 if ($claimed !== 1) {
                     $fresh = DB::table('guardian_links')->where('id', $link->id)->value('status');
                     if ($fresh === 'active') {
-                        return; // a concurrent approval won — idempotent
+                        return false; // a concurrent approval won — idempotent, it already reissued
                     }
                     throw ValidationException::withMessages(['link' => ['This link is not awaiting approval']]);
                 }
@@ -160,8 +165,15 @@ class LinkageService
                     actor: $approver);
                 // OD-24 — never silent: every existing guardian sees this addition.
                 $this->recordGuardianAdditionVisibility((int) $link->student_id, (int) $link->guardian_id, $link->id, (string) $link->origin);
+
+                return true;
             },
         );
+
+        // S-FIX-consent-reissue (D1): on a fresh activation, re-issue consent to the new guardian.
+        if ($activated) {
+            GuardianLinkActivated::dispatch((int) $link->student_id, (int) $link->guardian_id, $link->id, (string) $link->origin, (int) $approver->id);
+        }
     }
 
     /** Reject a pending link (a form-claim the reviewer does not confirm). Terminal. */
