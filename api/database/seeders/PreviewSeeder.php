@@ -188,6 +188,38 @@ class PreviewSeeder extends Seeder
         DB::table('payment_links')->where('order_id', $zoeOrder->id)->where('status', 'active')->update(['status' => 'expired']); // retire stale demo links
         $zoeLink = $links->mint($zoeOrder->id, $guardian);
 
+        // ── S-UX3-1: pending items for the approval queues (fresh → under the 7-day escalation
+        // threshold, so no open exception is required; all satisfy the provenance assertions) ──
+        // Pending registration (a student self-registering, naming Wendy as counterpart guardian).
+        if (! DB::table('registration_requests')->where('applicant_email', 'nina.pending@demo.ka')->exists()) {
+            DB::table('registration_requests')->insert([
+                'id' => (string) Str::uuid7(), 'kind' => 'student', 'applicant_name' => 'Nina Ng (demo)',
+                'applicant_email' => 'nina.pending@demo.ka', 'preferred_language' => 'en', 'routing' => 'academy',
+                'school_id' => null, 'counterpart_email' => 'wendy@demo.ka', 'counterpart_name' => 'Wendy Chan (demo)',
+                'status' => 'submitted', 'reference' => 'DEMO-'.Str::upper(Str::random(8)),
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+        // Pending guardian link: a guardian awaiting approval on a NEW student with NO enrolment —
+        // so approving it violates no invariant (coverage needs an active guardian only for students
+        // WITH a non-terminal enrolment; consent issuance-completeness is N/A without an enrolment).
+        // NB: approving a 2nd guardian on a student who ALREADY has a pre-team enrolment would red
+        // consent.issuance_completeness — approveLink activates the link but does not re-issue consent
+        // to the new guardian (server behaviour flagged for a ruling); the seed avoids that scenario.
+        $gordon = $acct('gordon@demo.ka', 'Gordon Chan (demo)', 'guardian');
+        $theo = $acct('theo@demo.ka', 'Theo Ng (demo)', 'student');
+        DB::table('guardian_links')->updateOrInsert(
+            ['student_id' => $theo->id, 'guardian_id' => $gordon->id],
+            ['id' => (string) Str::uuid7(), 'status' => 'pending_approval', 'origin' => 'onboarding', 'updated_at' => now(), 'created_at' => now()],
+        );
+        // Pending withdrawal — driven through the REAL WithdrawalService (genuine provenance + audit);
+        // pending only, so the enrolment/receipt are untouched until an admin decides.
+        $withdrawals = app(\App\Services\Enrolments\WithdrawalService::class);
+        $kaiEnrolmentId = DB::table('enrolments')->where('student_id', $students['kai']->id)->orderByDesc('created_at')->value('id');
+        if ($kaiEnrolmentId !== null && ! DB::table('withdrawal_requests')->where('enrolment_id', $kaiEnrolmentId)->exists()) {
+            $withdrawals->request($kaiEnrolmentId, 'Family relocating overseas (demo)', $guardian);
+        }
+
         $this->command->info('');
         $this->command->info('════ PREVIEW SEED READY ════');
         $this->command->info('Password for every account: password');

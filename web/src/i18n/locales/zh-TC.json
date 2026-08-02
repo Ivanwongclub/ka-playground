@@ -28,7 +28,9 @@
     "consentTemplates": "同意書範本",
     "enrolments": "報名",
     "enrolmentPool": "報名池",
-    "financialIntegrity": "財務完整性"
+    "financialIntegrity": "財務完整性",
+    "approvals": "審批",
+    "withdrawals": "退出申請"
   },
   "shell": {
     "openNavigation": "開啟導覽",
@@ -466,5 +468,53 @@
     "min": "最小",
     "max": "最大",
     "percent": "%"
+  },
+  "common": {
+    "reasonLabel": "原因",
+    "cancel": "取消",
+    "confirm": "確認"
+  },
+  "mutate": {
+    "success": "已完成",
+    "failed": "操作未成功",
+    "forbidden": "你沒有此權限",
+    "network": "網絡錯誤——請重試"
+  },
+  "approvals": {
+    "title": "審批",
+    "subtitle": "待你決定的註冊與監護人連結申請。",
+    "pendingRegistrations": "待審註冊",
+    "pendingLinks": "待審連結",
+    "linksNote": "批准連結與批准人員是兩項獨立決定（OD-28）。",
+    "applicant": "申請人",
+    "kind": "類型",
+    "age": "時長",
+    "ageDays": "{{n}}天",
+    "relationship": "關係",
+    "link": "{{guardian}} → {{student}}",
+    "approve": "批准",
+    "decline": "拒絕",
+    "reject": "駁回",
+    "approveRegTitle": "批准註冊？",
+    "approveRegBody": "這將為 {{name}} 建立帳戶。",
+    "declineTitle": "拒絕註冊",
+    "approveLinkTitle": "批准監護人連結？",
+    "approveLinkBody": "這將授予 {{guardian}} 存取 {{student}} 記錄的權限。",
+    "rejectLinkTitle": "駁回監護人連結",
+    "noneRegistrations": "沒有待審註冊",
+    "noneLinks": "沒有待審連結"
+  },
+  "withdrawals": {
+    "title": "退出申請",
+    "subtitle": "待決定的報名退出申請。",
+    "student": "學生",
+    "requestedBy": "申請人",
+    "reason": "原因",
+    "decided": "已決定",
+    "approve": "批准",
+    "reject": "駁回",
+    "approveTitle": "批准 {{student}} 的退出？",
+    "approveBody": "此為終局操作——報名將結束。",
+    "rejectTitle": "駁回退出"
   }
 }

@@ -49,6 +49,8 @@ const AdminConsentTemplates = lazy(() => import('./pages/AdminConsentTemplates')
 const Enrolments = lazy(() => import('./pages/Enrolments').then((m) => ({ default: m.Enrolments })));
 const EnrolmentPool = lazy(() => import('./pages/EnrolmentPool').then((m) => ({ default: m.EnrolmentPool })));
 const FinancialIntegrity = lazy(() => import('./pages/FinancialIntegrity').then((m) => ({ default: m.FinancialIntegrity })));
+const Approvals = lazy(() => import('./pages/Approvals').then((m) => ({ default: m.Approvals })));
+const Withdrawals = lazy(() => import('./pages/Withdrawals').then((m) => ({ default: m.Withdrawals })));
 
 function RequireAuth({ children }: { children: React.ReactElement }) {
   const location = useLocation();
@@ -101,6 +103,8 @@ function Root() {
               <Route path="/enrolments" element={<Enrolments />} />
               <Route path="/admin/enrolment-pool" element={<EnrolmentPool />} />
               <Route path="/admin/financial-integrity" element={<FinancialIntegrity />} />
+              <Route path="/admin/approvals" element={<Approvals />} />
+              <Route path="/admin/withdrawals" element={<Withdrawals />} />
               {/* Catch-all: any unknown authed path (incl. /style-guide in prod) → 404 within the shell. */}
               <Route path="*" element={<NotFound />} />
             </Route>

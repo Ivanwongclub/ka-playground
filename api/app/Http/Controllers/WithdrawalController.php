@@ -48,7 +48,13 @@ class WithdrawalController extends Controller
     /** RLS-shaped list. */
     public function index(): JsonResponse
     {
-        return response()->json(['data' => DB::table('withdrawal_requests')->orderBy('created_at')
-            ->get(['id', 'enrolment_id', 'student_id', 'requested_by', 'reason', 'status', 'decided_by', 'decided_at'])]);
+        // S-UX3-1: additive names (LEFT — decided_by is null until decided; never drop a row).
+        return response()->json(['data' => DB::table('withdrawal_requests as w')
+            ->leftJoin('users as s', 's.id', '=', 'w.student_id')
+            ->leftJoin('users as rb', 'rb.id', '=', 'w.requested_by')
+            ->leftJoin('users as db', 'db.id', '=', 'w.decided_by')
+            ->orderBy('w.created_at')
+            ->get(['w.id', 'w.enrolment_id', 'w.student_id', 'w.requested_by', 'w.reason', 'w.status', 'w.decided_by', 'w.decided_at',
+                's.name as student_name', 'rb.name as requested_by_name', 'db.name as decided_by_name'])]);
     }
 }

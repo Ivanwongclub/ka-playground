@@ -244,6 +244,36 @@ class DisplayNamesTest extends TestCase
         $this->assertCount($srcCount, $report['auth_events'], 'LEFT join neither dropped nor multiplied auth_events');
     }
 
+    // ── S-UX3-1: approval-queue display names (onboarding links + withdrawals) ────────────────────
+
+    public function test_approval_queues_carry_display_names(): void
+    {
+        $newGuardian = User::factory()->create(['role' => 'guardian', 'name' => 'Grandpa Gee']);
+        $enrolId = DB::table('enrolments')->where('student_id', $this->studentA->id)->value('id');
+        $this->sys(function () use ($newGuardian, $enrolId) {
+            DB::table('guardian_links')->insert(['id' => (string) Str::uuid7(), 'student_id' => $this->studentA->id, 'guardian_id' => $newGuardian->id, 'status' => 'pending_approval', 'origin' => 'onboarding', 'created_at' => now(), 'updated_at' => now()]);
+            DB::table('withdrawal_requests')->insert(['id' => (string) Str::uuid7(), 'enrolment_id' => $enrolId, 'student_id' => $this->studentA->id, 'requested_by' => $this->guardianA->id, 'reason' => 'demo', 'status' => 'pending', 'created_at' => now(), 'updated_at' => now()]);
+        });
+
+        $this->act($this->ops);
+
+        // onboarding queue: the pending link names BOTH parties (decision-safety for the approver)
+        $link = collect($this->getJson('/api/admin/onboarding-queue')->json('links'))->firstWhere('student_id', $this->studentA->id);
+        $this->assertNotNull($link);
+        $this->assertSame('Student Alpha', $link['student_name']);
+        $this->assertSame('Grandpa Gee', $link['guardian_name']);
+
+        // withdrawal queue: student + requester names; decided_by_name null while pending (LEFT join)
+        $w = collect($this->getJson('/api/withdrawal-requests')->json('data'))->firstWhere('student_id', $this->studentA->id);
+        $this->assertNotNull($w);
+        foreach (['id', 'enrolment_id', 'student_id', 'requested_by', 'reason', 'status'] as $k) {
+            $this->assertArrayHasKey($k, $w, "pre-existing key {$k} preserved");
+        }
+        $this->assertSame('Student Alpha', $w['student_name']);
+        $this->assertSame('Guardian Alpha', $w['requested_by_name']);
+        $this->assertNull($w['decided_by_name']);
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────────────────────────
 
     private function act(User $u): void

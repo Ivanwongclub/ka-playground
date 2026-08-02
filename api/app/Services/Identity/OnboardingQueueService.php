@@ -34,9 +34,14 @@ class OnboardingQueueService
             ->get(['id', 'kind', 'routing', 'applicant_name', 'created_at'])
             ->map(fn ($r) => ['id' => $r->id, 'kind' => $r->kind, 'routing' => $r->routing, 'applicant_name' => $r->applicant_name, 'age_days' => $age($r->created_at)])->all();
 
-        $links = DB::table('guardian_links')->where('status', 'pending_approval')->orderBy('created_at')
-            ->get(['id', 'student_id', 'guardian_id', 'origin', 'created_at'])
-            ->map(fn ($r) => ['id' => $r->id, 'student_id' => $r->student_id, 'guardian_id' => $r->guardian_id, 'origin' => $r->origin, 'age_days' => $age($r->created_at)])->all();
+        // S-UX3-1: additive student_name/guardian_name (LEFT — never drop a pending row) so the
+        // approver names both parties before granting access (OD-28 decision-safety, not cosmetics).
+        $links = DB::table('guardian_links as gl')
+            ->leftJoin('users as s', 's.id', '=', 'gl.student_id')
+            ->leftJoin('users as g', 'g.id', '=', 'gl.guardian_id')
+            ->where('gl.status', 'pending_approval')->orderBy('gl.created_at')
+            ->get(['gl.id', 'gl.student_id', 'gl.guardian_id', 'gl.origin', 'gl.created_at', 's.name as student_name', 'g.name as guardian_name'])
+            ->map(fn ($r) => ['id' => $r->id, 'student_id' => $r->student_id, 'guardian_id' => $r->guardian_id, 'student_name' => $r->student_name, 'guardian_name' => $r->guardian_name, 'origin' => $r->origin, 'age_days' => $age($r->created_at)])->all();
 
         $held = DB::table('held_links')->where('status', 'held')->orderBy('created_at')
             ->get(['id', 'counterpart_email', 'created_at'])

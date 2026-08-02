@@ -11,11 +11,13 @@
 // offers only working screens; each S-UX3 domain card reveals its own item when it lands.
 import {
   BookOpen,
+  ClipboardCheck,
   FileCheck,
   FileSignature,
   FileText,
   GraduationCap,
   LayoutDashboard,
+  LogOut,
   ShieldCheck,
   Users,
 } from 'lucide-react';
@@ -60,6 +62,18 @@ export const NAV: NavGroup[] = [
   {
     i18nKey: 'navGroup.administration',
     items: [
+      {
+        path: '/admin/approvals',
+        i18nKey: 'nav.approvals',
+        icon: <ClipboardCheck size={16} aria-hidden />,
+        visible: (h) => h('operations.manage'),
+      },
+      {
+        path: '/admin/withdrawals',
+        i18nKey: 'nav.withdrawals',
+        icon: <LogOut size={16} aria-hidden />,
+        visible: (h) => h('operations.manage'),
+      },
       {
         path: '/admin/programmes',
         i18nKey: 'nav.programmes',

@@ -28,7 +28,9 @@
     "consentTemplates": "Consent Templates",
     "enrolments": "Enrolments",
     "enrolmentPool": "Enrolment Pool",
-    "financialIntegrity": "Financial Integrity"
+    "financialIntegrity": "Financial Integrity",
+    "approvals": "Approvals",
+    "withdrawals": "Withdrawals"
   },
   "shell": {
     "openNavigation": "Open navigation",
@@ -466,5 +468,53 @@
     "min": "Min",
     "max": "Max",
     "percent": "%"
+  },
+  "common": {
+    "reasonLabel": "Reason",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+  "mutate": {
+    "success": "Done",
+    "failed": "That didn't go through",
+    "forbidden": "You don't have permission for that",
+    "network": "Network error — try again"
+  },
+  "approvals": {
+    "title": "Approvals",
+    "subtitle": "Pending registrations and guardian-link requests awaiting your decision.",
+    "pendingRegistrations": "Pending registrations",
+    "pendingLinks": "Pending links",
+    "linksNote": "Approving a link is a separate decision from approving a person (OD-28).",
+    "applicant": "Applicant",
+    "kind": "Type",
+    "age": "Age",
+    "ageDays": "{{n}}d",
+    "relationship": "Relationship",
+    "link": "{{guardian}} → {{student}}",
+    "approve": "Approve",
+    "decline": "Decline",
+    "reject": "Reject",
+    "approveRegTitle": "Approve registration?",
+    "approveRegBody": "This creates an account for {{name}}.",
+    "declineTitle": "Decline registration",
+    "approveLinkTitle": "Approve guardian link?",
+    "approveLinkBody": "This grants {{guardian}} access to {{student}}'s records.",
+    "rejectLinkTitle": "Reject guardian link",
+    "noneRegistrations": "No pending registrations",
+    "noneLinks": "No pending links"
+  },
+  "withdrawals": {
+    "title": "Withdrawals",
+    "subtitle": "Enrolment withdrawal requests awaiting a decision.",
+    "student": "Student",
+    "requestedBy": "Requested by",
+    "reason": "Reason",
+    "decided": "Decided",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approveTitle": "Approve withdrawal for {{student}}?",
+    "approveBody": "This is terminal — the enrolment ends.",
+    "rejectTitle": "Reject withdrawal"
   }
 }
