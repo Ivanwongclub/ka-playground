@@ -8,6 +8,7 @@ import { Alert, Button, Card, DatePicker, Flex, Form, Input, Radio, Result, Sele
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { asset } from '../assets';
+import { LocaleSwitcher } from '../components/LocaleSwitcher';
 
 const { Title, Paragraph } = Typography;
 
@@ -79,6 +80,7 @@ export function Register() {
   if (reference) {
     return (
       <div className="ka-register">
+        <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 10 }}><LocaleSwitcher /></div>
         <Card className="ka-register-card">
           <Result
             status="success"

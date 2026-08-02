@@ -6,6 +6,7 @@ import { Alert, Button, Card, Flex, Form, Input, Result, Typography } from 'antd
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { asset } from '../assets';
+import { LocaleSwitcher } from '../components/LocaleSwitcher';
 
 const { Title, Paragraph } = Typography;
 
@@ -39,6 +40,7 @@ export function Activate() {
 
   return (
     <div className="ka-register">
+      <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 10 }}><LocaleSwitcher /></div>
       <Card className="ka-pay-card">
         <Flex vertical align="center" gap={4} style={{ marginBottom: 16 }}>
           <img src={asset('brand/armour-academy-logo.webp')} alt={t('activate.logoAlt')} style={{ height: 36 }} />

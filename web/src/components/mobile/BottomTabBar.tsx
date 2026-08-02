@@ -1,37 +1,31 @@
-// §17.2 — fixed bottom tab bar, 5 items, 56px + safe-area. Active = gold icon + label;
-// inactive = muted icon only. Role-specific sets arrive with auth in S01; the shell
-// renders the student set as the scaffold default.
-import { LayoutDashboard, Route, Users, GraduationCap, User } from 'lucide-react';
+// §17.2 — fixed bottom tab bar (56px + safe-area). Active = gold icon + label;
+// inactive = muted icon only. S-UX1: role-aware — renders the caller's first few
+// visible nav leaves (from AppShell); the rest live in the drawer.
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { kaColors } from '../../theme/theme';
+import type { NavLeaf } from '../../nav';
 
-const TABS = [
-  { key: '/', i18nKey: 'nav.dashboard', Icon: LayoutDashboard },
-  { key: '/tracker', i18nKey: 'nav.tracker', Icon: Route },
-  { key: '/team', i18nKey: 'nav.team', Icon: Users },
-  { key: '/learn', i18nKey: 'nav.learn', Icon: GraduationCap },
-  { key: '/profile', i18nKey: 'nav.profile', Icon: User },
-] as const;
-
-export function BottomTabBar() {
+export function BottomTabBar({ leaves }: { leaves: NavLeaf[] }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const tabs = leaves.slice(0, 5); // 56px bar holds up to five; overflow lives in the drawer
 
   return (
     <nav className="ka-tabbar" aria-label={t('nav.dashboard')}>
-      {TABS.map(({ key, i18nKey, Icon }) => {
-        const active = pathname === key;
+      {tabs.map(({ path, i18nKey, icon }) => {
+        const active = pathname === path;
         return (
           <button
-            key={key}
+            key={path}
             type="button"
             className="ka-tabbar-item"
             aria-current={active ? 'page' : undefined}
-            onClick={() => void navigate(key)}
+            onClick={() => void navigate(path)}
+            style={{ color: active ? kaColors.gold : kaColors.mutedForeground }}
           >
-            <Icon size={20} color={active ? kaColors.gold : kaColors.mutedForeground} aria-hidden />
+            {icon}
             {active && <span className="ka-tabbar-label">{t(i18nKey)}</span>}
           </button>
         );

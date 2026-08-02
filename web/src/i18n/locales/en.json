@@ -33,7 +33,8 @@
   "shell": {
     "openNavigation": "Open navigation",
     "close": "Close",
-    "back": "Back"
+    "back": "Back",
+    "logoAlt": "Armour Academy"
   },
   "styleGuide": {
     "title": "Style Guide",
@@ -387,5 +388,32 @@
     "errorToken": "This activation link is invalid or has expired. Ask an administrator to re-issue it.",
     "errorGeneric": "Please check the form and try again.",
     "errorNetwork": "Connection problem — please try again."
+  },
+  "navGroup": {
+    "overview": "Overview",
+    "programme": "My Programme",
+    "administration": "Administration"
+  },
+  "role": {
+    "student": "Student",
+    "guardian": "Parent / Guardian",
+    "teacher": "Teacher",
+    "school_admin": "School Administrator",
+    "academy_admin": "Academy Administrator",
+    "member": "Member"
+  },
+  "userMenu": {
+    "label": "Account menu"
+  },
+  "dashboard": {
+    "greeting": "Welcome, {{name}}",
+    "subtitle": "Here's where things stand today.",
+    "empty": "Your dashboard will fill in as you take part.",
+    "enrolments": "Enrolments",
+    "openConsent": "Open consent tasks",
+    "liveLinks": "Live payment links",
+    "poolProgrammes": "Programmes with a pool",
+    "issuanceGaps": "Issuance gaps",
+    "orders": "Orders"
   }
 }

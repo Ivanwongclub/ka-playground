@@ -33,7 +33,8 @@
   "shell": {
     "openNavigation": "開啟導覽",
     "close": "關閉",
-    "back": "返回"
+    "back": "返回",
+    "logoAlt": "Armour Academy"
   },
   "styleGuide": {
     "title": "樣式指南",
@@ -387,5 +388,32 @@
     "errorToken": "此啟用連結無效或已過期。請聯絡管理員重新發出。",
     "errorGeneric": "請檢查表格內容後再試一次。",
     "errorNetwork": "連線發生問題，請再試一次。"
+  },
+  "navGroup": {
+    "overview": "總覽",
+    "programme": "我的課程",
+    "administration": "管理"
+  },
+  "role": {
+    "student": "學生",
+    "guardian": "家長／監護人",
+    "teacher": "教師",
+    "school_admin": "學校管理員",
+    "academy_admin": "學院管理員",
+    "member": "會員"
+  },
+  "userMenu": {
+    "label": "帳戶選單"
+  },
+  "dashboard": {
+    "greeting": "歡迎，{{name}}",
+    "subtitle": "以下是今天的概況。",
+    "empty": "當你開始參與，儀表板會逐步顯示內容。",
+    "enrolments": "報名",
+    "openConsent": "待處理同意事項",
+    "liveLinks": "有效付款連結",
+    "poolProgrammes": "設有候補池的課程",
+    "issuanceGaps": "發出缺口",
+    "orders": "訂單"
   }
 }

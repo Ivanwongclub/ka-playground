@@ -33,7 +33,8 @@
   "shell": {
     "openNavigation": "打开导航",
     "close": "关闭",
-    "back": "返回"
+    "back": "返回",
+    "logoAlt": "Armour Academy"
   },
   "styleGuide": {
     "title": "样式指南",
@@ -387,5 +388,32 @@
     "errorToken": "此激活链接无效或已过期。请联系管理员重新发送。",
     "errorGeneric": "请检查表格内容后重试。",
     "errorNetwork": "连接出现问题，请重试。"
+  },
+  "navGroup": {
+    "overview": "总览",
+    "programme": "我的课程",
+    "administration": "管理"
+  },
+  "role": {
+    "student": "学生",
+    "guardian": "家长／监护人",
+    "teacher": "教师",
+    "school_admin": "学校管理员",
+    "academy_admin": "学院管理员",
+    "member": "会员"
+  },
+  "userMenu": {
+    "label": "账户菜单"
+  },
+  "dashboard": {
+    "greeting": "欢迎，{{name}}",
+    "subtitle": "以下是今天的概况。",
+    "empty": "当你开始参与，仪表板会逐步显示内容。",
+    "enrolments": "报名",
+    "openConsent": "待处理同意事项",
+    "liveLinks": "有效付款链接",
+    "poolProgrammes": "设有候补池的课程",
+    "issuanceGaps": "发出缺口",
+    "orders": "订单"
   }
 }

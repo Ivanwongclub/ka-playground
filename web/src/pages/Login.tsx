@@ -4,15 +4,19 @@
 import { useState } from 'react';
 import { Alert, Button, Checkbox, Flex, Input, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { asset } from '../assets';
 import { setToken } from '../auth/session';
+import { LocaleSwitcher } from '../components/LocaleSwitcher';
 
 const { Title, Paragraph, Text } = Typography;
 
 export function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Return-to: RequireAuth stashes the intended path in location.state.from.
+  const from = (location.state as { from?: string } | null)?.from ?? '/';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
@@ -31,7 +35,7 @@ export function Login() {
       if (res.ok) {
         const body = (await res.json()) as { token: string };
         setToken(body.token);
-        void navigate('/');
+        void navigate(from, { replace: true });
         return;
       }
       if (res.status === 403) setError(t('login.errorUnverified'));
@@ -47,6 +51,9 @@ export function Login() {
   return (
     <div className="ka-login">
       <section className="ka-login-form">
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <LocaleSwitcher />
+        </div>
         <img
           src={asset('brand/armour-academy-logo.webp')}
           alt={t('login.logoAlt')}

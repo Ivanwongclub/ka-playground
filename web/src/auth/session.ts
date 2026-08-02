@@ -22,3 +22,14 @@ export async function authFetch(input: string, init: RequestInit = {}): Promise<
   }
   return response;
 }
+
+// S-UX1 — explicit sign-out: revoke server-side, then clear the local token.
+// Clears locally even if the network call fails, so the session always ends.
+export async function logout(): Promise<void> {
+  try {
+    await authFetch('/api/auth/logout', { method: 'POST' });
+  } catch {
+    /* clear locally regardless of a network failure */
+  }
+  clearToken();
+}

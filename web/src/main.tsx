@@ -24,11 +24,16 @@ import { AppShell } from './AppShell';
 import { Navigate, useLocation } from 'react-router-dom';
 import { getToken } from './auth/session';
 import { Placeholder } from './pages/Placeholder';
+import { Dashboard } from './pages/Dashboard';
 import './index.css';
 
 // Route-level code-splitting (S01 step 7): heavy pages load on navigation.
 // The charts library rides only the style-guide chunk.
-const StyleGuide = lazy(() => import('./pages/StyleGuide').then((m) => ({ default: m.StyleGuide })));
+// Development-only: DEV-gating the import (not just the route) so the Style Guide — and the
+// charts library it carries — is dead-code-eliminated from production builds (S-UX1).
+const StyleGuide = import.meta.env.DEV
+  ? lazy(() => import('./pages/StyleGuide').then((m) => ({ default: m.StyleGuide })))
+  : null;
 const Register = lazy(() => import('./pages/Register').then((m) => ({ default: m.Register })));
 const PublicPay = lazy(() => import('./pages/PublicPay').then((m) => ({ default: m.PublicPay })));
 const Activate = lazy(() => import('./pages/Activate').then((m) => ({ default: m.Activate })));
@@ -76,12 +81,15 @@ function Root() {
             <Route path="/pay/:token" element={<PublicPay />} />
             <Route path="/activate/:token" element={<Activate />} />
             <Route element={<RequireAuth><AppShell /></RequireAuth>}>
-              <Route index element={<Placeholder titleKey="empty.title" />} />
+              <Route index element={<Dashboard />} />
+              {/* S-UX3 domain screens — routes retained as stubs; their nav items are hidden
+                  until each S-UX3 card builds the screen and reveals its item (D-UX1.1). */}
               <Route path="/tracker" element={<Placeholder titleKey="empty.title" />} />
               <Route path="/team" element={<Placeholder titleKey="empty.title" />} />
               <Route path="/learn" element={<Placeholder titleKey="empty.title" />} />
               <Route path="/profile" element={<Placeholder titleKey="empty.title" />} />
-              <Route path="/style-guide" element={<StyleGuide />} />
+              {/* Style Guide is a development-only design surface — never shipped in prod (S-UX1). */}
+              {import.meta.env.DEV && StyleGuide && <Route path="/style-guide" element={<StyleGuide />} />}
               <Route path="/admin/audit" element={<AdminAudit />} />
               <Route path="/admin/access-identity" element={<AccessIdentity />} />
               <Route path="/admin/programmes" element={<AdminProgrammes />} />

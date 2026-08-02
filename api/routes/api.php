@@ -24,6 +24,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
         501,
     );
 
+    // S-UX1 — canonical current-identity (id, name, role, effective permissions) for the SPA shell.
+    Route::get('/me', [\App\Http\Controllers\MeController::class, 'show']);
+
     // S04C step 2 — registration review (routed reviewer decides; RLS scopes which
     // requests are theirs — school admin = own routed, academy ops = direct + all).
     Route::post('/admin/registration-requests/{id}/approve', [\App\Http\Controllers\RegistrationReviewController::class, 'approve']);

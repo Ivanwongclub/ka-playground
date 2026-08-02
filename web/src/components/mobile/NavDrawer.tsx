@@ -1,20 +1,27 @@
 // §17.2 — navigation drawer (left, 85% width, scrim). Opened by avatar tap or
 // left-edge swipe-in; closed by scrim tap, left swipe or back. Never a hamburger.
+// S-UX1: role-aware — renders the caller's visible nav groups + a real user card
+// (name/role) and Logout. Stub items (notifications/settings/help/style-guide) removed.
 import { useEffect } from 'react';
 import { Avatar, Drawer, Menu } from 'antd';
-import { Bell, CircleHelp, LogOut, Palette, Settings } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { kaColors } from '../../theme/theme';
+import { useIdentity } from '../../auth/identity';
+import { logout } from '../../auth/session';
+import type { NavGroup } from '../../nav';
 
 interface NavDrawerProps {
   open: boolean;
   onClose: () => void;
+  groups: NavGroup[];
 }
 
-export function NavDrawer({ open, onClose }: NavDrawerProps) {
+export function NavDrawer({ open, onClose, groups }: NavDrawerProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { identity } = useIdentity();
 
   // §17.6 — browser back closes the topmost layer first
   useEffect(() => {
@@ -24,6 +31,20 @@ export function NavDrawer({ open, onClose }: NavDrawerProps) {
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, [open, onClose]);
+
+  const name = identity?.name ?? t('app.academy');
+  const roleLabel = identity ? t(`role.${identity.role}`) : t('app.title');
+
+  const items = [
+    ...groups.map((g) => ({
+      key: g.i18nKey,
+      type: 'group' as const,
+      label: t(g.i18nKey),
+      children: g.items.map((it) => ({ key: it.path, icon: it.icon, label: t(it.i18nKey) })),
+    })),
+    { type: 'divider' as const },
+    { key: 'sign-out', icon: <LogOut size={16} aria-hidden />, label: t('nav.signOut') },
+  ];
 
   return (
     <Drawer
@@ -36,11 +57,11 @@ export function NavDrawer({ open, onClose }: NavDrawerProps) {
     >
       <div className="ka-drawer-usercard">
         <Avatar size={40} style={{ background: kaColors.card, color: kaColors.gold }}>
-          KA
+          {name.split(/\s+/).filter(Boolean).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || 'KA'}
         </Avatar>
         <div>
-          <div className="ka-drawer-username">{t('app.academy')}</div>
-          <div className="ka-drawer-usermeta">{t('app.title')}</div>
+          <div className="ka-drawer-username">{name}</div>
+          <div className="ka-drawer-usermeta">{roleLabel}</div>
         </div>
       </div>
       <Menu
@@ -49,22 +70,14 @@ export function NavDrawer({ open, onClose }: NavDrawerProps) {
         selectable={false}
         style={{ background: 'transparent', border: 'none' }}
         onClick={({ key }) => {
-          if (key === 'style-guide') void navigate('/style-guide');
           if (key === 'sign-out') {
-            void fetch('/api/auth/logout', { method: 'POST', headers: { Accept: 'application/json' } });
-            localStorage.removeItem('ka.token');
-            void navigate('/login');
+            void logout().finally(() => navigate('/login'));
+          } else {
+            void navigate(key);
           }
           onClose();
         }}
-        items={[
-          { key: 'notifications', icon: <Bell size={16} aria-hidden />, label: t('nav.notifications') },
-          { key: 'style-guide', icon: <Palette size={16} aria-hidden />, label: t('nav.styleGuide') },
-          { key: 'settings', icon: <Settings size={16} aria-hidden />, label: t('nav.settings') },
-          { key: 'help', icon: <CircleHelp size={16} aria-hidden />, label: t('nav.help') },
-          { type: 'divider' },
-          { key: 'sign-out', icon: <LogOut size={16} aria-hidden />, label: t('nav.signOut') },
-        ]}
+        items={items}
       />
     </Drawer>
   );
