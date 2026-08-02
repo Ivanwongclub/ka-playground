@@ -201,6 +201,49 @@ class DisplayNamesTest extends TestCase
         $this->assertNull($rows[0]['acting_guardian'], 'guardian name is NULL — hidden by users_read, not leaked, row survives');
     }
 
+    // ── S-UX2b-f: access-identity report display names (LEFT-joined, additive) ────────────────────
+
+    public function test_access_identity_report_carries_actor_and_student_names(): void
+    {
+        $actor = User::factory()->create(['role' => 'academy_admin', 'name' => 'Log Actor']);
+        $this->sys(function () use ($actor) {
+            $audit = app(\App\Services\Audit\AuditService::class);
+            $audit->record('user', $actor->id, 'login', actor: $actor);
+            $audit->record('user', $actor->id, 'capability.granted', actor: $actor);
+            DB::table('guardian_replacement_exceptions')->insert([
+                'id' => (string) Str::uuid7(), 'student_id' => $this->studentA->id, 'revoked_link_id' => (string) Str::uuid7(),
+                'reason' => 'guardian departed', 'deadline' => now()->addDays(14), 'status' => 'open',
+                'created_by' => $this->ops->id, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        });
+
+        $this->act($this->ops);
+        $report = $this->getJson('/api/reports/access-identity')->assertOk()->json();
+
+        // auth_events — actor_name resolves; every pre-existing key intact
+        $login = collect($report['auth_events'])->firstWhere('action', 'login');
+        $this->assertNotNull($login);
+        $this->assertSame('Log Actor', $login['actor_name']);
+        foreach (['occurred_at', 'action', 'actor_id', 'actor_role', 'reason'] as $k) {
+            $this->assertArrayHasKey($k, $login, "pre-existing key {$k} preserved");
+        }
+
+        // capability_log — actor_name resolves
+        $cap = collect($report['capability_log'])->firstWhere('action', 'capability.granted');
+        $this->assertNotNull($cap);
+        $this->assertSame('Log Actor', $cap['actor_name']);
+
+        // replacement_exceptions — student_name resolves
+        $exc = collect($report['replacement_exceptions'])->firstWhere('student_id', $this->studentA->id);
+        $this->assertNotNull($exc);
+        $this->assertSame('Student Alpha', $exc['student_name']);
+
+        // LEFT join integrity: no drop, no fan-out — auth_events count equals the source row count (cap 50)
+        $authActions = ['login', 'logout', 'failed_login', 'lockout', 'lockout_cleared', 'reset_requested', 'reset_completed', 'invitation_accepted', 'email_verified'];
+        $srcCount = (int) $this->sys(fn () => DB::table('audit_events')->whereIn('action', $authActions)->limit(50)->count());
+        $this->assertCount($srcCount, $report['auth_events'], 'LEFT join neither dropped nor multiplied auth_events');
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────────────────────────
 
     private function act(User $u): void

@@ -12,11 +12,11 @@ const { Title, Paragraph } = Typography;
 
 interface Report {
   funnel: { issued: number; accepted: number; verified: number };
-  auth_events: { occurred_at: string; action: string; actor_id: number | null; actor_role: string | null; reason: string | null }[];
+  auth_events: { occurred_at: string; action: string; actor_id: number | null; actor_name: string | null; actor_role: string | null; reason: string | null }[];
   links_per_student: { student_id: number; name: string; active_links: number }[];
   sole_guardian_students: { student_id: number; name: string }[];
-  replacement_exceptions: { id: string; student_id: number; reason: string; deadline: string }[];
-  capability_log: { occurred_at: string; action: string; actor_id: number | null; reason: string | null }[];
+  replacement_exceptions: { id: string; student_id: number; student_name: string | null; reason: string; deadline: string }[];
+  capability_log: { occurred_at: string; action: string; actor_id: number | null; actor_name: string | null; reason: string | null }[];
   onboarding: {
     funnel: { submitted: number; approved: number; declined: number; verified: number };
     queue: { pending_accounts: number; pending_links: number; held: number; open_escalations: number; oldest_pending_days: number };
@@ -109,10 +109,8 @@ export function AccessIdentity() {
         columns={[
           { title: t('audit.colTime'), dataIndex: 'occurred_at', width: 150, render: hkt },
           { title: t('audit.colAction'), dataIndex: 'action', render: (a: string) => <Tooltip title={a}><Tag color={a.includes('fail') || a === 'lockout' ? 'error' : 'default'}>{humanise(a)}</Tag></Tooltip> },
-          // FLAG (S-UX2a): the access-identity report returns actor_id (int) with NO name field — this
-          // report was NOT in S-UX2b's scope. Left raw rather than add a backend field under a frontend
-          // card. Needs an actor_name join in AccessIdentityReportController (an S-UX2b-follow).
-          { title: t('audit.colActor'), dataIndex: 'actor_id', width: 90, render: (v: number | null) => v ?? '—' },
+          // S-UX2b-f: actor_name; null (system actor / since-deleted user) → "System".
+          { title: t('audit.colActor'), dataIndex: 'actor_name', width: 150, render: (v: string | null) => v ?? t('audit.system') },
           { title: t('audit.colReason'), dataIndex: 'reason', render: (v: string | null) => v ?? '—' },
         ]}
       />
@@ -144,7 +142,7 @@ export function AccessIdentity() {
           dataSource={report.replacement_exceptions}
           pagination={false}
           columns={[
-            { title: t('accessReport.student'), dataIndex: 'student_id', width: 100 },
+            { title: t('accessReport.student'), dataIndex: 'student_name', width: 160, render: (v: string | null) => v ?? '—' }, // S-UX2b-f
             { title: t('audit.colReason'), dataIndex: 'reason' },
             { title: t('accessReport.deadline'), dataIndex: 'deadline', width: 150, render: hkt },
           ]}
@@ -159,7 +157,7 @@ export function AccessIdentity() {
         columns={[
           { title: t('audit.colTime'), dataIndex: 'occurred_at', width: 150, render: hkt },
           { title: t('audit.colAction'), dataIndex: 'action', render: (a: string) => <Tooltip title={a}><Tag color={a.includes('refused') ? 'error' : 'success'}>{humanise(a)}</Tag></Tooltip> },
-          { title: t('accessReport.grantor'), dataIndex: 'actor_id', width: 90, render: (v: number | null) => v ?? '—' }, // FLAG: actor_id raw — see note above
+          { title: t('accessReport.grantor'), dataIndex: 'actor_name', width: 150, render: (v: string | null) => v ?? t('audit.system') }, // S-UX2b-f
           { title: t('audit.colReason'), dataIndex: 'reason', render: (v: string | null) => v ?? '—' },
         ]}
       />

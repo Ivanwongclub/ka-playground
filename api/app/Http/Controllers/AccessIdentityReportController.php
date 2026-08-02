@@ -27,10 +27,13 @@ class AccessIdentityReportController extends Controller
 
         return response()->json([
             'funnel' => ['issued' => $issued, 'accepted' => $accepted, 'verified' => $verified],
-            'auth_events' => DB::table('audit_events')
-                ->whereIn('action', self::AUTH_ACTIONS)
-                ->orderByDesc('occurred_at')->limit(50)
-                ->get(['occurred_at', 'action', 'actor_id', 'actor_role', 'entity_id', 'reason']),
+            // S-UX2b-f: additive actor_name via LEFT JOIN (actor may be null/system or a since-deleted
+            // user — audit rows outlive users, BI-1 — so the join must not drop a row).
+            'auth_events' => DB::table('audit_events as ae')
+                ->leftJoin('users as u', 'u.id', '=', 'ae.actor_id')
+                ->whereIn('ae.action', self::AUTH_ACTIONS)
+                ->orderByDesc('ae.occurred_at')->limit(50)
+                ->get(['ae.occurred_at', 'ae.action', 'ae.actor_id', 'ae.actor_role', 'ae.entity_id', 'ae.reason', 'u.name as actor_name']),
             'links_per_student' => DB::table('guardian_links')
                 ->join('users', 'users.id', '=', 'guardian_links.student_id')
                 ->where('guardian_links.status', 'active')
@@ -43,13 +46,15 @@ class AccessIdentityReportController extends Controller
                 ->groupBy('users.id', 'users.name')
                 ->havingRaw('count(*) = 1')
                 ->get([DB::raw('users.id AS student_id'), 'users.name']),
-            'replacement_exceptions' => DB::table('guardian_replacement_exceptions')
-                ->where('status', 'open')->orderBy('deadline')
-                ->get(['id', 'student_id', 'reason', 'deadline', 'created_at']),
-            'capability_log' => DB::table('audit_events')
-                ->where('action', 'like', 'capability.%')
-                ->orderByDesc('occurred_at')->limit(50)
-                ->get(['occurred_at', 'action', 'actor_id', 'entity_id', 'reason', 'payload_after']),
+            'replacement_exceptions' => DB::table('guardian_replacement_exceptions as gre')
+                ->leftJoin('users as u', 'u.id', '=', 'gre.student_id') // S-UX2b-f: additive student_name
+                ->where('gre.status', 'open')->orderBy('gre.deadline')
+                ->get(['gre.id', 'gre.student_id', 'gre.reason', 'gre.deadline', 'gre.created_at', 'u.name as student_name']),
+            'capability_log' => DB::table('audit_events as ae')
+                ->leftJoin('users as u', 'u.id', '=', 'ae.actor_id') // S-UX2b-f: additive actor_name (LEFT — dangling-safe)
+                ->where('ae.action', 'like', 'capability.%')
+                ->orderByDesc('ae.occurred_at')->limit(50)
+                ->get(['ae.occurred_at', 'ae.action', 'ae.actor_id', 'ae.entity_id', 'ae.reason', 'ae.payload_after', 'u.name as actor_name']),
             // S04C STEP 4 — the onboarding front door: funnel, queue age, held ledger
             'onboarding' => [
                 'funnel' => [
