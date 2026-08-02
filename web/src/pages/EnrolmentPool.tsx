@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { Alert, Card, Space, Table, Tag, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '../auth/session';
+import { formatHktDate } from '../display/date';
+import { StatusTag } from '../display/status';
 
 const { Title } = Typography;
 
@@ -41,7 +43,7 @@ interface Report {
 }
 
 export function EnrolmentPool() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState(false);
 
@@ -70,7 +72,7 @@ export function EnrolmentPool() {
             { title: t('enrol.pool.inPool'), dataIndex: 'in_pool' },
             { title: t('enrol.pool.teamedPlus'), dataIndex: 'teamed_plus' },
             { title: t('enrol.pool.terminal'), dataIndex: 'terminal' },
-            { title: t('enrol.pool.deadline'), dataIndex: 'formation_deadline_on' },
+            { title: t('enrol.pool.deadline'), dataIndex: 'formation_deadline_on', render: (v: string | null) => formatHktDate(v, i18n.language) },
           ]}
         />
       </Card>
@@ -81,8 +83,12 @@ export function EnrolmentPool() {
           dataSource={report?.timelines ?? []}
           pagination={{ pageSize: 10 }}
           columns={[
+            // S-UX2a: the timelines endpoint returns student_name + acting_guardian but only a raw
+            // programme_id (no name) — S-UX2b did not cover this report's timelines. Rather than add a
+            // backend field under a frontend card, the redundant programme_id column is dropped (the
+            // pool-by-programme table above already gives the per-programme breakdown). Flagged for a
+            // ruling if the programme should be shown here (needs a programme join in the report).
             { title: t('enrol.student'), dataIndex: 'student_name' },
-            { title: t('enrol.programme'), dataIndex: 'programme_id' },
             { title: t('enrol.actingGuardian'), dataIndex: 'acting_guardian' },
             { title: '', dataIndex: 'status', render: (s: string) => <Tag>{t(`enrol.status.${s}`)}</Tag> },
           ]}
@@ -96,7 +102,7 @@ export function EnrolmentPool() {
           pagination={false}
           columns={[
             { title: t('enrol.pool.reason'), dataIndex: 'reason' },
-            { title: '', dataIndex: 'status', render: (s: string) => <Tag>{s}</Tag> },
+            { title: '', dataIndex: 'status', render: (s: string) => <StatusTag domain="withdrawalStatus" value={s} /> },
             { title: t('enrol.pool.decidedBy'), dataIndex: 'decided_by_name' },
           ]}
         />

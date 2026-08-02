@@ -11,6 +11,11 @@ import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router-dom';
 import { authFetch } from '../auth/session';
 import { kaColors } from '../theme/theme';
+import type { KaLocale } from '../i18n';
+import { useResource, DataBoundary } from '../api/useResource';
+import { programmeName, personName } from '../display/names';
+import { formatHkt } from '../display/date';
+import { StatusTag } from '../display/status';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -21,6 +26,10 @@ interface RequestRow {
   programme_id: number;
   student_id: number;
   status: string;
+  programme_name_en: string | null;
+  programme_name_tc: string | null;
+  programme_name_sc: string | null;
+  student_name: string | null;
 }
 
 interface DocumentPayload {
@@ -46,39 +55,39 @@ const statusColor: Record<string, string> = {
 };
 
 export function ConsentList() {
-  const { t } = useTranslation();
-  const [rows, setRows] = useState<RequestRow[]>([]);
-
-  useEffect(() => {
-    void authFetch('/api/consent-requests')
-      .then((r) => r.json())
-      .then((d: { data: RequestRow[] }) => setRows(d.data));
-  }, []);
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language as KaLocale;
+  // S-UX2a: the shared fetch convention — res.ok guarded, errors caught (was an unguarded
+  // r.json() that crashed the promise chain on any error response), loading/empty/error states.
+  const { data, loading, error } = useResource<{ data: RequestRow[] }>('/api/consent-requests');
+  const rows = data?.data ?? [];
 
   return (
     <Card>
       <Title level={3}>{t('consent.listTitle')}</Title>
       <Paragraph type="secondary">{t('consent.listCaption')}</Paragraph>
-      <Table<RequestRow>
-        rowKey="id"
-        dataSource={rows}
-        pagination={false}
-        columns={[
-          { title: t('consent.programme'), dataIndex: 'programme_id' },
-          { title: t('consent.student'), dataIndex: 'student_id' },
-          {
-            title: t('consent.evidence.statusCol'), dataIndex: 'status',
-            render: (s: string) => <Tag color={statusColor[s]}>{t(`consent.status.${s}`)}</Tag>,
-          },
-          {
-            title: '', dataIndex: 'id',
-            render: (id: string, row) =>
-              ['sent', 'viewed'].includes(row.status)
-                ? <Link to={`/consents/${id}`}>{t('consent.open')}</Link>
-                : null,
-          },
-        ]}
-      />
+      <DataBoundary loading={loading} error={error} empty={rows.length === 0}>
+        <Table<RequestRow>
+          rowKey="id"
+          dataSource={rows}
+          pagination={false}
+          columns={[
+            { title: t('consent.programme'), render: (_, row) => programmeName(row, locale) },
+            { title: t('consent.student'), render: (_, row) => personName(row.student_name) },
+            {
+              title: t('consent.evidence.statusCol'), dataIndex: 'status',
+              render: (s: string) => <Tag color={statusColor[s]}>{t(`consent.status.${s}`)}</Tag>,
+            },
+            {
+              title: '', dataIndex: 'id',
+              render: (id: string, row) =>
+                ['sent', 'viewed'].includes(row.status)
+                  ? <Link to={`/consents/${id}`}>{t('consent.open')}</Link>
+                  : null,
+            },
+          ]}
+        />
+      </DataBoundary>
     </Card>
   );
 }
@@ -140,7 +149,7 @@ function SignaturePad({ strokes, onChange }: { strokes: Stroke[]; onChange: (s: 
 }
 
 export function ConsentSign() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { message } = AntApp.useApp();
   const { id } = useParams<{ id: string }>();
   const [language, setLanguage] = useState('en');
@@ -215,10 +224,10 @@ export function ConsentSign() {
       <Card>
         <Title level={3}>{t('consent.signedTitle')}</Title>
         <Descriptions column={1} bordered size="small">
-          <Descriptions.Item label={t('consent.signedLanguage')}>{signed.language}</Descriptions.Item>
+          <Descriptions.Item label={t('consent.signedLanguage')}><StatusTag domain="language" value={signed.language} /></Descriptions.Item>
           <Descriptions.Item label={t('consent.templateHash')}><Text code>{signed.template_sha256}</Text></Descriptions.Item>
           <Descriptions.Item label={t('consent.renderedHash')}><Text code>{signed.rendered_sha256}</Text></Descriptions.Item>
-          <Descriptions.Item label={t('consent.signedAt')}>{signed.signed_at}</Descriptions.Item>
+          <Descriptions.Item label={t('consent.signedAt')}>{formatHkt(signed.signed_at, i18n.language)}</Descriptions.Item>
         </Descriptions>
       </Card>
     );

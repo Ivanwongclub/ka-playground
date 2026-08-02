@@ -43,69 +43,50 @@ export function Dashboard() {
     };
 
     async function load() {
-      const out: Metric[] = [];
-
+      // S-UX2a: the per-role reads run in PARALLEL (Promise.all), not sequentially.
+      const tasks: Promise<Metric[]>[] = [];
       if (has('enrolment.view')) {
-        const d = await json('/api/enrolments');
-        out.push({
-          key: 'enrolments',
-          labelKey: 'dashboard.enrolments',
-          value: (d?.data ?? []).length,
-          icon: <GraduationCap size={18} aria-hidden />,
-          to: '/enrolments',
-        });
+        tasks.push(
+          json('/api/enrolments').then((d) => [
+            { key: 'enrolments', labelKey: 'dashboard.enrolments', value: (d?.data ?? []).length, icon: <GraduationCap size={18} aria-hidden />, to: '/enrolments' },
+          ]),
+        );
       }
       if (has('consent.view')) {
-        const d = await json('/api/consent-requests');
-        out.push({
-          key: 'consent',
-          labelKey: 'dashboard.openConsent',
-          value: (d?.data ?? []).filter((r: { status: string }) => OPEN_CONSENT.has(r.status)).length,
-          icon: <FileSignature size={18} aria-hidden />,
-          to: '/consents',
-        });
+        tasks.push(
+          json('/api/consent-requests').then((d) => [
+            { key: 'consent', labelKey: 'dashboard.openConsent', value: (d?.data ?? []).filter((r: { status: string }) => OPEN_CONSENT.has(r.status)).length, icon: <FileSignature size={18} aria-hidden />, to: '/consents' },
+          ]),
+        );
       }
       if (identity?.role === 'guardian') {
-        const d = await json('/api/my/payment-links');
-        out.push({
-          key: 'links',
-          labelKey: 'dashboard.liveLinks',
-          value: (d?.data ?? []).filter((r: { status: string }) => !SETTLED_LINK.has(r.status)).length,
-          icon: <Link2 size={18} aria-hidden />,
-          to: '/enrolments',
-        });
+        tasks.push(
+          json('/api/my/payment-links').then((d) => [
+            { key: 'links', labelKey: 'dashboard.liveLinks', value: (d?.data ?? []).filter((r: { status: string }) => !SETTLED_LINK.has(r.status)).length, icon: <Link2 size={18} aria-hidden />, to: '/enrolments' },
+          ]),
+        );
       }
       if (has('audit.read')) {
-        const d = await json('/api/reports/enrolment-pool');
-        const gaps = (d?.issuance_gaps ?? []).length;
-        out.push({
-          key: 'pool',
-          labelKey: 'dashboard.poolProgrammes',
-          value: (d?.pool_by_programme ?? []).length,
-          icon: <Users size={18} aria-hidden />,
-          to: '/admin/enrolment-pool',
-        });
-        out.push({
-          key: 'gaps',
-          labelKey: 'dashboard.issuanceGaps',
-          value: gaps,
-          icon: <CircleAlert size={18} aria-hidden />,
-          to: '/admin/enrolment-pool',
-          alert: gaps > 0,
-        });
+        tasks.push(
+          json('/api/reports/enrolment-pool').then((d) => {
+            const gaps = (d?.issuance_gaps ?? []).length;
+            return [
+              { key: 'pool', labelKey: 'dashboard.poolProgrammes', value: (d?.pool_by_programme ?? []).length, icon: <Users size={18} aria-hidden />, to: '/admin/enrolment-pool' },
+              { key: 'gaps', labelKey: 'dashboard.issuanceGaps', value: gaps, icon: <CircleAlert size={18} aria-hidden />, to: '/admin/enrolment-pool', alert: gaps > 0 },
+            ];
+          }),
+        );
       }
       if (has('finance.record')) {
-        const d = await json('/api/reports/financial-integrity');
-        out.push({
-          key: 'orders',
-          labelKey: 'dashboard.orders',
-          value: (d?.orders ?? []).length,
-          icon: <Scale size={18} aria-hidden />,
-          to: '/admin/financial-integrity',
-        });
+        tasks.push(
+          json('/api/reports/financial-integrity').then((d) => [
+            { key: 'orders', labelKey: 'dashboard.orders', value: (d?.orders ?? []).length, icon: <Scale size={18} aria-hidden />, to: '/admin/financial-integrity' },
+          ]),
+        );
       }
 
-      if (alive) setMetrics(out);
+      const results = await Promise.all(tasks);
+      if (alive) setMetrics(results.flat());
     }
 
     void load();

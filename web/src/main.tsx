@@ -25,6 +25,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { getToken } from './auth/session';
 import { Placeholder } from './pages/Placeholder';
 import { Dashboard } from './pages/Dashboard';
+import { NotFound } from './pages/NotFound';
 import './index.css';
 
 // Route-level code-splitting (S01 step 7): heavy pages load on navigation.
@@ -100,6 +101,8 @@ function Root() {
               <Route path="/enrolments" element={<Enrolments />} />
               <Route path="/admin/enrolment-pool" element={<EnrolmentPool />} />
               <Route path="/admin/financial-integrity" element={<FinancialIntegrity />} />
+              {/* Catch-all: any unknown authed path (incl. /style-guide in prod) → 404 within the shell. */}
+              <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
           </Suspense>

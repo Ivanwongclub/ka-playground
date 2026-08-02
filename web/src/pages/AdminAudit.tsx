@@ -1,10 +1,12 @@
 // S00 audit element: Admin › Audit — the append-only log, filterable by
 // actor / entity / action / date (BI-1, GR003). Read-only by construction.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Button, DatePicker, Flex, Input, Table, Tag, Typography } from 'antd';
+import { Alert, Button, DatePicker, Flex, Input, Table, Typography } from 'antd';
 import type { Dayjs } from 'dayjs';
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '../auth/session';
+import { formatHkt } from '../display/date';
+import { AuditCode, humanise } from '../display/status';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -12,6 +14,7 @@ interface AuditRow {
   event_id: string;
   occurred_at: string;
   actor_id: number | null;
+  actor_name: string | null; // S-UX2b — null for a system actor or a since-deleted user
   entity_type: string;
   entity_id: string;
   action: string;
@@ -25,19 +28,6 @@ interface Filters {
   entity_type?: string;
   action?: string;
   range?: [Dayjs | null, Dayjs | null] | null;
-}
-
-function formatHkt(iso: string, locale: string): string {
-  const formatted = new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : locale, {
-    timeZone: 'Asia/Hong_Kong',
-    day: 'numeric',
-    month: locale === 'en' ? 'short' : 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(new Date(iso));
-  return formatted;
 }
 
 export function AdminAudit() {
@@ -141,26 +131,28 @@ export function AdminAudit() {
           {
             title: t('audit.colActor'),
             dataIndex: 'actor_id',
-            width: 90,
-            render: (v: number | null) => v ?? <Text type="secondary">{t('audit.system')}</Text>,
+            width: 150,
+            // S-UX2b name; null (system actor / since-deleted user) → "System".
+            render: (_: number | null, r) => r.actor_name ?? <Text type="secondary">{t('audit.system')}</Text>,
           },
           {
             title: t('audit.colEntity'),
             key: 'entity',
+            // entity_type humanised + raw preserved (audit surface, D-UX2a.1); entity_id stays raw
+            // (polymorphic UUID — S-UX2b deferral).
             render: (_, r) => (
               <span>
-                <Tag>{r.entity_type}</Tag>
-                <Text code>{r.entity_id}</Text>
+                <AuditCode code={r.entity_type} /> <Text code>{r.entity_id}</Text>
               </span>
             ),
           },
-          { title: t('audit.colAction'), dataIndex: 'action' },
+          { title: t('audit.colAction'), dataIndex: 'action', render: (a: string) => <AuditCode code={a} /> },
           {
             title: t('audit.colStates'),
             key: 'states',
             render: (_, r) =>
               r.from_state || r.to_state ? (
-                <span className="ka-tabular-nums">{r.from_state ?? '—'} → {r.to_state ?? '—'}</span>
+                <span>{r.from_state ? humanise(r.from_state) : '—'} → {r.to_state ? humanise(r.to_state) : '—'}</span>
               ) : (
                 '—'
               ),

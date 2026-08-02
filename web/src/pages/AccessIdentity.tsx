@@ -1,10 +1,12 @@
 // S01 audit element: Access & Identity Report — invitation funnel, auth log,
 // links per student, sole-guardian list, replacement exceptions, capability log.
 import { useEffect, useState } from 'react';
-import { Alert, Card, Col, Row, Statistic, Table, Tag, Typography } from 'antd';
+import { Alert, Card, Col, Row, Statistic, Table, Tag, Tooltip, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '../auth/session';
 import { kaColors } from '../theme/theme';
+import { formatHkt } from '../display/date';
+import { humanise } from '../display/status';
 
 const { Title, Paragraph } = Typography;
 
@@ -22,15 +24,9 @@ interface Report {
   };
 }
 
-function hkt(iso: string): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Hong_Kong', day: 'numeric', month: 'short',
-    hour: '2-digit', minute: '2-digit', hour12: false,
-  }).format(new Date(iso));
-}
-
 export function AccessIdentity() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const hkt = (iso: string) => formatHkt(iso, i18n.language);
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState(false);
 
@@ -112,7 +108,10 @@ export function AccessIdentity() {
         pagination={{ pageSize: 10, showSizeChanger: false }}
         columns={[
           { title: t('audit.colTime'), dataIndex: 'occurred_at', width: 150, render: hkt },
-          { title: t('audit.colAction'), dataIndex: 'action', render: (a: string) => <Tag color={a.includes('fail') || a === 'lockout' ? 'error' : 'default'}>{a}</Tag> },
+          { title: t('audit.colAction'), dataIndex: 'action', render: (a: string) => <Tooltip title={a}><Tag color={a.includes('fail') || a === 'lockout' ? 'error' : 'default'}>{humanise(a)}</Tag></Tooltip> },
+          // FLAG (S-UX2a): the access-identity report returns actor_id (int) with NO name field — this
+          // report was NOT in S-UX2b's scope. Left raw rather than add a backend field under a frontend
+          // card. Needs an actor_name join in AccessIdentityReportController (an S-UX2b-follow).
           { title: t('audit.colActor'), dataIndex: 'actor_id', width: 90, render: (v: number | null) => v ?? '—' },
           { title: t('audit.colReason'), dataIndex: 'reason', render: (v: string | null) => v ?? '—' },
         ]}
@@ -159,8 +158,8 @@ export function AccessIdentity() {
         pagination={{ pageSize: 10, showSizeChanger: false }}
         columns={[
           { title: t('audit.colTime'), dataIndex: 'occurred_at', width: 150, render: hkt },
-          { title: t('audit.colAction'), dataIndex: 'action', render: (a: string) => <Tag color={a.includes('refused') ? 'error' : 'success'}>{a}</Tag> },
-          { title: t('accessReport.grantor'), dataIndex: 'actor_id', width: 90, render: (v: number | null) => v ?? '—' },
+          { title: t('audit.colAction'), dataIndex: 'action', render: (a: string) => <Tooltip title={a}><Tag color={a.includes('refused') ? 'error' : 'success'}>{humanise(a)}</Tag></Tooltip> },
+          { title: t('accessReport.grantor'), dataIndex: 'actor_id', width: 90, render: (v: number | null) => v ?? '—' }, // FLAG: actor_id raw — see note above
           { title: t('audit.colReason'), dataIndex: 'reason', render: (v: string | null) => v ?? '—' },
         ]}
       />

@@ -271,7 +271,8 @@
       "placeholderAdminBanner": "此範本現行版本為佔位文字 — 非法律、不具約束力(R15)。正式上線前請以律師審定之文本取代。",
       "versions": "版本"
     },
-    "r15": "R15"
+    "r15": "R15",
+    "placeholderOption": "佔位同意書（S03）"
   },
   "enrol": {
     "listTitle": "報名",
@@ -330,7 +331,9 @@
     "reconciliation": "發票/貸記對賬",
     "creditedViaNotes": "貸記單合計",
     "originalMinusBalance": "原額 − 結餘",
-    "loadError": "無法載入報告"
+    "loadError": "無法載入報告",
+    "reconciled": "已對帳",
+    "notReconciled": "不一致"
   },
   "register": {
     "logoAlt": "Armour Academy",
@@ -415,5 +418,53 @@
     "poolProgrammes": "設有候補池的課程",
     "issuanceGaps": "發出缺口",
     "orders": "訂單"
+  },
+  "status": {
+    "order": {
+      "issued": "已發出",
+      "paid": "已付款",
+      "covered_by_invoice": "由發票支付",
+      "refunded": "已退款",
+      "cancelled": "已取消"
+    },
+    "origin": {
+      "provider": "網關",
+      "manual": "手動記錄"
+    },
+    "refund": {
+      "requested": "已請求",
+      "approved": "已批准",
+      "confirmed": "已確認",
+      "rejected": "已拒絕"
+    },
+    "party": {
+      "guardian": "家長",
+      "student": "學生",
+      "school": "學校"
+    },
+    "withdrawal": {
+      "pending": "待處理",
+      "approved": "已批准",
+      "rejected": "已拒絕",
+      "cancelled": "已取消"
+    },
+    "template": {
+      "draft": "草稿",
+      "published": "已發佈"
+    }
+  },
+  "data": {
+    "error": "無法載入",
+    "empty": "暫無資料"
+  },
+  "notFound": {
+    "title": "找不到頁面",
+    "caption": "此頁面不存在或已移動。",
+    "backHome": "返回總覽"
+  },
+  "field": {
+    "min": "最小",
+    "max": "最大",
+    "percent": "%"
   }
 }

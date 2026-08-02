@@ -271,7 +271,8 @@
       "placeholderAdminBanner": "This template's live versions are PLACEHOLDER wording — non-legal and non-binding (R15). Replace with the lawyer-approved text before go-live.",
       "versions": "Versions"
     },
-    "r15": "R15"
+    "r15": "R15",
+    "placeholderOption": "Placeholder consent (S03)"
   },
   "enrol": {
     "listTitle": "Enrolments",
@@ -330,7 +331,9 @@
     "reconciliation": "Invoice/credit reconciliation",
     "creditedViaNotes": "Credited via notes",
     "originalMinusBalance": "Original − balance",
-    "loadError": "Could not load the report"
+    "loadError": "Could not load the report",
+    "reconciled": "Reconciled",
+    "notReconciled": "Mismatch"
   },
   "register": {
     "logoAlt": "Armour Academy",
@@ -415,5 +418,53 @@
     "poolProgrammes": "Programmes with a pool",
     "issuanceGaps": "Issuance gaps",
     "orders": "Orders"
+  },
+  "status": {
+    "order": {
+      "issued": "Issued",
+      "paid": "Paid",
+      "covered_by_invoice": "Covered by invoice",
+      "refunded": "Refunded",
+      "cancelled": "Cancelled"
+    },
+    "origin": {
+      "provider": "Gateway",
+      "manual": "Manually recorded"
+    },
+    "refund": {
+      "requested": "Requested",
+      "approved": "Approved",
+      "confirmed": "Confirmed",
+      "rejected": "Rejected"
+    },
+    "party": {
+      "guardian": "Guardian",
+      "student": "Student",
+      "school": "School"
+    },
+    "withdrawal": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "template": {
+      "draft": "Draft",
+      "published": "Published"
+    }
+  },
+  "data": {
+    "error": "Couldn't load this",
+    "empty": "Nothing to show yet"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "caption": "This page doesn't exist or has moved.",
+    "backHome": "Back to dashboard"
+  },
+  "field": {
+    "min": "Min",
+    "max": "Max",
+    "percent": "%"
   }
 }

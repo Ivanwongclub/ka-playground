@@ -271,7 +271,8 @@
       "placeholderAdminBanner": "此模板现行版本为占位文字 — 非法律、不具约束力(R15)。正式上线前请以律师审定之文本取代。",
       "versions": "版本"
     },
-    "r15": "R15"
+    "r15": "R15",
+    "placeholderOption": "占位同意书（S03）"
   },
   "enrol": {
     "listTitle": "报名",
@@ -330,7 +331,9 @@
     "reconciliation": "发票/贷记对账",
     "creditedViaNotes": "贷记单合计",
     "originalMinusBalance": "原额 − 结余",
-    "loadError": "无法加载报告"
+    "loadError": "无法加载报告",
+    "reconciled": "已对账",
+    "notReconciled": "不一致"
   },
   "register": {
     "logoAlt": "Armour Academy",
@@ -415,5 +418,53 @@
     "poolProgrammes": "设有候补池的课程",
     "issuanceGaps": "发出缺口",
     "orders": "订单"
+  },
+  "status": {
+    "order": {
+      "issued": "已发出",
+      "paid": "已付款",
+      "covered_by_invoice": "由发票支付",
+      "refunded": "已退款",
+      "cancelled": "已取消"
+    },
+    "origin": {
+      "provider": "网关",
+      "manual": "手动记录"
+    },
+    "refund": {
+      "requested": "已请求",
+      "approved": "已批准",
+      "confirmed": "已确认",
+      "rejected": "已拒绝"
+    },
+    "party": {
+      "guardian": "家长",
+      "student": "学生",
+      "school": "学校"
+    },
+    "withdrawal": {
+      "pending": "待处理",
+      "approved": "已批准",
+      "rejected": "已拒绝",
+      "cancelled": "已取消"
+    },
+    "template": {
+      "draft": "草稿",
+      "published": "已发布"
+    }
+  },
+  "data": {
+    "error": "无法加载",
+    "empty": "暂无数据"
+  },
+  "notFound": {
+    "title": "找不到页面",
+    "caption": "此页面不存在或已移动。",
+    "backHome": "返回总览"
+  },
+  "field": {
+    "min": "最小",
+    "max": "最大",
+    "percent": "%"
   }
 }

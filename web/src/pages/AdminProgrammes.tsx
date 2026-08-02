@@ -56,10 +56,17 @@ export function AdminProgrammes() {
   const [findings, setFindings] = useState<Finding[] | null>(null);
   const [openSection, setOpenSection] = useState<Section | null>(null);
   const [sectionDraft, setSectionDraft] = useState<Record<string, unknown>>({});
+  const [loadError, setLoadError] = useState(false);
 
   const loadProgrammes = useCallback(async () => {
-    const res = await authFetch('/api/admin/programmes');
-    if (res.ok) setRows(((await res.json()) as { data: ProgrammeRow[] }).data);
+    try {
+      const res = await authFetch('/api/admin/programmes');
+      if (!res.ok) throw new Error(String(res.status));
+      setRows(((await res.json()) as { data: ProgrammeRow[] }).data);
+      setLoadError(false);
+    } catch {
+      setLoadError(true); // S-UX2a: surface a load failure instead of a silently-blank table
+    }
   }, []);
 
   const loadWizard = useCallback(async (programme: ProgrammeRow) => {
@@ -125,6 +132,7 @@ export function AdminProgrammes() {
     <div style={{ maxWidth: 1100 }}>
       <Title level={1}>{t('wizard.title')}</Title>
       <Paragraph type="secondary">{t('wizard.subtitle')}</Paragraph>
+      {loadError && <Alert type="error" showIcon message={t('data.error')} style={{ marginBottom: 16 }} />}
 
       <Table<ProgrammeRow>
         rowKey="id"
@@ -269,7 +277,7 @@ function SectionFields({
         <>
           <label className="ka-label">{t('wizard.sections.eligibility')}</label>
           <InputNumber
-            addonBefore="min"
+            addonBefore={t('field.min')}
             value={(draft.min_enrolment as number) ?? undefined}
             onChange={(v) => set('min_enrolment', v)}
           />
@@ -293,22 +301,22 @@ function SectionFields({
             style={{ width: '100%' }}
             value={(draft.template_ref as string) ?? undefined}
             onChange={(v) => set('template_ref', v)}
-            options={[{ value: 'placeholder-s03', label: 'placeholder-s03' }]}
+            options={[{ value: 'placeholder-s03', label: t('consent.placeholderOption') }]}
           />
         </>
       );
     case 'team_rules':
       return (
         <Flex gap={12}>
-          <InputNumber addonBefore="min" value={(draft.min_size as number) ?? undefined} onChange={(v) => set('min_size', v)} />
-          <InputNumber addonBefore="max" value={(draft.max_size as number) ?? undefined} onChange={(v) => set('max_size', v)} />
+          <InputNumber addonBefore={t('field.min')} value={(draft.min_size as number) ?? undefined} onChange={(v) => set('min_size', v)} />
+          <InputNumber addonBefore={t('field.max')} value={(draft.max_size as number) ?? undefined} onChange={(v) => set('max_size', v)} />
         </Flex>
       );
     case 'learning':
     case 'certification':
       return (
         <InputNumber
-          addonBefore="%"
+          addonBefore={t('field.percent')}
           min={0}
           max={100}
           value={(draft.attendance_threshold_pct as number) ?? undefined}
