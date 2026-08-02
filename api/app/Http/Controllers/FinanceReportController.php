@@ -60,8 +60,17 @@ class FinanceReportController extends Controller
                 ->map(fn ($t) => ['id' => $t->id, 'type' => $t->type, 'amount_minor' => (int) $t->amount_minor, 'description' => $t->description,
                     'age_days' => $t->recorded_at ? (int) now()->diffInDays($t->recorded_at, absolute: true) : null]),
             // approval chain + evidence drill-down handle per transaction
-            'transactions' => DB::table('team_transactions')->where('team_id', $team)->orderByDesc('occurred_on')
-                ->get(['id', 'type', 'amount_minor', 'description', 'status', 'recorded_by', 'verified_by', 'evidence_upload_id', 'over_budget_acknowledged']),
+            // S-UX2b: additive recorder/verifier names via LEFT JOINs (never drop a row). NOTE (for the
+            // S-UX3 consumer): each name is gated by users_read, which currently admits self + ops/audit
+            // admins only — team co-members are mutually invisible in the users table, so for a typical
+            // student-member caller these resolve to their own name or NULL. Full co-member name display
+            // needs a users_read branch for active team co-membership: a scoped RLS change, its own ruling.
+            'transactions' => DB::table('team_transactions as t')
+                ->leftJoin('users as rb', 'rb.id', '=', 't.recorded_by')
+                ->leftJoin('users as vb', 'vb.id', '=', 't.verified_by')
+                ->where('t.team_id', $team)->orderByDesc('t.occurred_on')
+                ->get(['t.id', 't.type', 't.amount_minor', 't.description', 't.status', 't.recorded_by', 't.verified_by',
+                    't.evidence_upload_id', 't.over_budget_acknowledged', 'rb.name as recorded_by_name', 'vb.name as verified_by_name']),
         ]);
     }
 }

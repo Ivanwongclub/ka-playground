@@ -24,13 +24,18 @@ class AuditEventController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
+        // S-UX2b: additive actor_name via a LEFT JOIN (actor may be null/system → NULL, row survives).
+        // Filters qualified to audit_events.* to stay unambiguous under the join. entity_id stays raw
+        // (polymorphic across entity types — its per-type name resolver is a separate, later card).
         $events = AuditEvent::query()
-            ->when($validated['actor_id'] ?? null, fn ($q, $v) => $q->where('actor_id', $v))
-            ->when($validated['entity_type'] ?? null, fn ($q, $v) => $q->where('entity_type', $v))
-            ->when($validated['action'] ?? null, fn ($q, $v) => $q->where('action', 'like', $v.'%'))
-            ->when($validated['from'] ?? null, fn ($q, $v) => $q->where('occurred_at', '>=', $v))
-            ->when($validated['to'] ?? null, fn ($q, $v) => $q->where('occurred_at', '<=', $v))
-            ->orderByDesc('occurred_at')
+            ->leftJoin('users', 'users.id', '=', 'audit_events.actor_id')
+            ->select('audit_events.*', 'users.name as actor_name')
+            ->when($validated['actor_id'] ?? null, fn ($q, $v) => $q->where('audit_events.actor_id', $v))
+            ->when($validated['entity_type'] ?? null, fn ($q, $v) => $q->where('audit_events.entity_type', $v))
+            ->when($validated['action'] ?? null, fn ($q, $v) => $q->where('audit_events.action', 'like', $v.'%'))
+            ->when($validated['from'] ?? null, fn ($q, $v) => $q->where('audit_events.occurred_at', '>=', $v))
+            ->when($validated['to'] ?? null, fn ($q, $v) => $q->where('audit_events.occurred_at', '<=', $v))
+            ->orderByDesc('audit_events.occurred_at')
             ->paginate($validated['per_page'] ?? 20);
 
         return response()->json($events);

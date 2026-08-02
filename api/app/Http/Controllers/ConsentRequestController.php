@@ -32,12 +32,23 @@ class ConsentRequestController extends Controller
         return response()->json($this->signing->derivedStatus($programmeId, $studentId, $request->user()));
     }
 
-    /** RLS-shaped list: each session sees exactly its branch of the read set. */
+    /**
+     * RLS-shaped list: each session sees exactly its branch of the read set.
+     * S-UX2b: additive display names via LEFT JOINs (never drop a row); each name is gated by the
+     * joined table's own RLS (programmes, users_read) — resolves iff the caller could read it, else NULL.
+     */
     public function index(): JsonResponse
     {
-        return response()->json(['data' => DB::table('consent_requests')
-            ->orderBy('created_at')
-            ->get(['id', 'template_id', 'programme_id', 'student_id', 'signer_id', 'status', 'expires_at'])]);
+        return response()->json(['data' => DB::table('consent_requests as r')
+            ->leftJoin('programmes as p', 'p.id', '=', 'r.programme_id')
+            ->leftJoin('users as s', 's.id', '=', 'r.student_id')
+            ->leftJoin('users as sg', 'sg.id', '=', 'r.signer_id')
+            ->orderBy('r.created_at')
+            ->get([
+                'r.id', 'r.template_id', 'r.programme_id', 'r.student_id', 'r.signer_id', 'r.status', 'r.expires_at',
+                'p.name_en as programme_name_en', 'p.name_tc as programme_name_tc', 'p.name_sc as programme_name_sc',
+                's.name as student_name', 'sg.name as signer_name',
+            ])]);
     }
 
     /** Render the document to the ADDRESSED SIGNER; the served language is recorded server-side. */
@@ -78,9 +89,10 @@ class ConsentRequestController extends Controller
     /** Signature evidence — RLS-shaped: signer alone among portal roles + compliance staff. */
     public function signatures(): JsonResponse
     {
-        return response()->json(['data' => DB::table('consent_signatures')
-            ->orderBy('signed_at')
-            ->get(['id', 'request_id', 'signer_id', 'language', 'template_sha256', 'rendered_sha256', 'method', 'signed_at'])]);
+        return response()->json(['data' => DB::table('consent_signatures as cs')
+            ->leftJoin('users as sg', 'sg.id', '=', 'cs.signer_id') // S-UX2b: additive signer_name, RLS-gated, never drops a row
+            ->orderBy('cs.signed_at')
+            ->get(['cs.id', 'cs.request_id', 'cs.signer_id', 'cs.language', 'cs.template_sha256', 'cs.rendered_sha256', 'cs.method', 'cs.signed_at', 'sg.name as signer_name'])]);
     }
 
     /** FR037 decline: terminal, reasoned, audited. Signer only. */
@@ -95,9 +107,10 @@ class ConsentRequestController extends Controller
     /** Evidence documents — RLS-shaped: signer's own + compliance staff. */
     public function documents(): JsonResponse
     {
-        return response()->json(['data' => DB::table('consent_documents')
-            ->orderBy('created_at')
-            ->get(['id', 'signature_id', 'request_id', 'signer_id', 'language', 'pdf_sha256', 'generator', 'created_at'])]);
+        return response()->json(['data' => DB::table('consent_documents as cd')
+            ->leftJoin('users as sg', 'sg.id', '=', 'cd.signer_id') // S-UX2b: additive signer_name, RLS-gated, never drops a row
+            ->orderBy('cd.created_at')
+            ->get(['cd.id', 'cd.signature_id', 'cd.request_id', 'cd.signer_id', 'cd.language', 'cd.pdf_sha256', 'cd.generator', 'cd.created_at', 'sg.name as signer_name'])]);
     }
 
     /** The signed PDF itself (FR038). BI-10: 409 until the scan passes. */

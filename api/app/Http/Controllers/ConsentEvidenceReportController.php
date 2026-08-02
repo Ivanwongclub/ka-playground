@@ -28,9 +28,17 @@ class ConsentEvidenceReportController extends Controller
                 DB::raw("count(*) FILTER (WHERE r.status IN ('superseded','voided')) as superseded_or_voided"),
             ]);
 
-        $byStatus = fn (array $statuses) => DB::table('consent_requests')
-            ->whereIn('status', $statuses)->orderBy('created_at')
-            ->get(['id', 'template_id', 'programme_id', 'student_id', 'signer_id', 'status', 'created_at']);
+        // S-UX2b: additive display names via LEFT JOINs (never drop a row); RLS-gated per joined table.
+        $byStatus = fn (array $statuses) => DB::table('consent_requests as r')
+            ->leftJoin('programmes as p', 'p.id', '=', 'r.programme_id')
+            ->leftJoin('users as s', 's.id', '=', 'r.student_id')
+            ->leftJoin('users as sg', 'sg.id', '=', 'r.signer_id')
+            ->whereIn('r.status', $statuses)->orderBy('r.created_at')
+            ->get([
+                'r.id', 'r.template_id', 'r.programme_id', 'r.student_id', 'r.signer_id', 'r.status', 'r.created_at',
+                'p.name_en as programme_name_en', 'p.name_tc as programme_name_tc', 'p.name_sc as programme_name_sc',
+                's.name as student_name', 'sg.name as signer_name',
+            ]);
 
         return response()->json([
             'coverage_by_version_and_language' => $coverage,
