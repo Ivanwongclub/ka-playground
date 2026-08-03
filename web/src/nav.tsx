@@ -24,6 +24,9 @@ import {
   Users,
   Users2,
   UserPlus,
+  CalendarDays,
+  Contact,
+  IdCard,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -69,6 +72,17 @@ export const NAV: NavGroup[] = [
         icon: <UserPlus size={16} aria-hidden />,
         visible: (h) => h('teams.view') && !h('operations.manage'),
       },
+    ],
+  },
+  {
+    // S-UX3-8 — the Member (Kings Network) surfaces. Gated member_directory.view (member + academy_admin
+    // base); the reads/writes are member-scoped server-side, so an academy admin sees an empty/creatable
+    // state rather than another member's data.
+    i18nKey: 'navGroup.community',
+    items: [
+      { path: '/events', i18nKey: 'nav.events', icon: <CalendarDays size={16} aria-hidden />, visible: (h) => h('member_directory.view') },
+      { path: '/directory', i18nKey: 'nav.directory', icon: <Contact size={16} aria-hidden />, visible: (h) => h('member_directory.view') },
+      { path: '/profile', i18nKey: 'nav.profile', icon: <IdCard size={16} aria-hidden />, visible: (h) => h('member_directory.view') },
     ],
   },
   {

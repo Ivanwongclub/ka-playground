@@ -54,6 +54,9 @@ const Withdrawals = lazy(() => import('./pages/Withdrawals').then((m) => ({ defa
 const Payments = lazy(() => import('./pages/Payments').then((m) => ({ default: m.Payments })));
 const Teams = lazy(() => import('./pages/Teams').then((m) => ({ default: m.Teams })));
 const StudentTeam = lazy(() => import('./pages/StudentTeam').then((m) => ({ default: m.StudentTeam })));
+const MemberEvents = lazy(() => import('./pages/Community').then((m) => ({ default: m.MemberEvents })));
+const MemberDirectory = lazy(() => import('./pages/Community').then((m) => ({ default: m.MemberDirectory })));
+const MemberProfile = lazy(() => import('./pages/Community').then((m) => ({ default: m.MemberProfile })));
 const Refunds = lazy(() => import('./pages/Refunds').then((m) => ({ default: m.Refunds })));
 
 function RequireAuth({ children }: { children: React.ReactElement }) {
@@ -97,7 +100,10 @@ function Root() {
               {/* S-UX3-3b — the student team-formation surface (distinct from the ops /team). */}
               <Route path="/my/team" element={<StudentTeam />} />
               <Route path="/learn" element={<Placeholder titleKey="empty.title" />} />
-              <Route path="/profile" element={<Placeholder titleKey="empty.title" />} />
+              {/* S-UX3-8 — Member surfaces (events / directory / profile). */}
+              <Route path="/events" element={<MemberEvents />} />
+              <Route path="/directory" element={<MemberDirectory />} />
+              <Route path="/profile" element={<MemberProfile />} />
               {/* Style Guide is a development-only design surface — never shipped in prod (S-UX1). */}
               {import.meta.env.DEV && StyleGuide && <Route path="/style-guide" element={<StyleGuide />} />}
               <Route path="/admin/audit" element={<AdminAudit />} />

@@ -33,7 +33,9 @@
     "withdrawals": "Withdrawals",
     "payments": "Payments",
     "refunds": "Refunds",
-    "myTeam": "My Team"
+    "myTeam": "My Team",
+    "events": "Events",
+    "directory": "Directory"
   },
   "shell": {
     "openNavigation": "Open navigation",
@@ -402,7 +404,8 @@
   "navGroup": {
     "overview": "Overview",
     "programme": "My Programme",
-    "administration": "Administration"
+    "administration": "Administration",
+    "community": "Community"
   },
   "role": {
     "student": "Student",
@@ -687,5 +690,26 @@
       "confirmed": "Confirmed — proceed to payment.",
       "disbanded": "Disbanded."
     }
+  },
+  "community": {
+    "eventsTitle": "Events",
+    "eventsSubtitle": "Network events — RSVP to let the academy know you're coming.",
+    "rsvpGoing": "Going",
+    "rsvpMaybe": "Maybe",
+    "rsvpNotGoing": "Not going",
+    "rsvpSaved": "RSVP saved.",
+    "noEvents": "No events yet.",
+    "dirTitle": "Member directory",
+    "dirSubtitle": "Fellow Kings Network members who have chosen to be listed.",
+    "noDir": "No members listed yet.",
+    "profileTitle": "My profile",
+    "profileSubtitle": "Your directory listing — visible to other members when you opt in.",
+    "displayName": "Display name",
+    "headline": "Headline",
+    "visible": "List me in the member directory",
+    "visibleHint": "When off, you are removed from the directory but keep your profile. Only your chosen display name and headline are ever shown — never your account name or email.",
+    "save": "Save profile",
+    "saved": "Profile saved.",
+    "notAMember": "The member profile is available to Kings Network members."
   }
 }

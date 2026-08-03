@@ -33,7 +33,9 @@
     "withdrawals": "退出申請",
     "payments": "付款",
     "refunds": "退款",
-    "myTeam": "我的團隊"
+    "myTeam": "我的團隊",
+    "events": "活動",
+    "directory": "成員目錄"
   },
   "shell": {
     "openNavigation": "開啟導覽",
@@ -402,7 +404,8 @@
   "navGroup": {
     "overview": "總覽",
     "programme": "我的課程",
-    "administration": "管理"
+    "administration": "管理",
+    "community": "社群"
   },
   "role": {
     "student": "學生",
@@ -687,5 +690,26 @@
       "confirmed": "已確認 — 請前往付款。",
       "disbanded": "已解散。"
     }
+  },
+  "community": {
+    "eventsTitle": "活動",
+    "eventsSubtitle": "網絡活動 — 回覆出席讓學院知道你會參加。",
+    "rsvpGoing": "出席",
+    "rsvpMaybe": "或許",
+    "rsvpNotGoing": "不出席",
+    "rsvpSaved": "已記錄回覆。",
+    "noEvents": "暫無活動。",
+    "dirTitle": "成員目錄",
+    "dirSubtitle": "選擇公開的 Kings Network 成員。",
+    "noDir": "暫無成員公開。",
+    "profileTitle": "我的檔案",
+    "profileSubtitle": "你的目錄資料 — 當你選擇公開時對其他成員可見。",
+    "displayName": "顯示名稱",
+    "headline": "一句簡介",
+    "visible": "在成員目錄中顯示我",
+    "visibleHint": "關閉後，你將從目錄中移除，但仍保留檔案。目錄只會顯示你選擇的顯示名稱與簡介 — 絕不顯示你的帳戶名稱或電郵。",
+    "save": "儲存檔案",
+    "saved": "已儲存檔案。",
+    "notAMember": "成員檔案僅供 Kings Network 成員使用。"
   }
 }
