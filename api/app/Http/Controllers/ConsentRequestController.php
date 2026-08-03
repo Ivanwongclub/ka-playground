@@ -33,6 +33,21 @@ class ConsentRequestController extends Controller
     }
 
     /**
+     * S-UX3-3b — the STUDENT's own consent-satisfied boolean, for the formation UI advisory. Self-scoped:
+     * the studentId IS the authenticated student (no param to name another). NO elevation — the student
+     * sees their own guardian_links + consent_requests under RLS, so consentSatisfied is correct. This is
+     * the SELF read; the team-wide ops roster (TeamConsentStatusController, OD-39) 403s guardians/members.
+     */
+    public function selfStatus(Request $request): JsonResponse
+    {
+        $programmeId = (int) $request->validate(['programme_id' => ['required', 'integer']])['programme_id'];
+
+        return response()->json([
+            'satisfied' => $this->signing->consentSatisfied($programmeId, (int) $request->user()->id),
+        ]);
+    }
+
+    /**
      * RLS-shaped list: each session sees exactly its branch of the read set.
      * S-UX2b: additive display names via LEFT JOINs (never drop a row); each name is gated by the
      * joined table's own RLS (programmes, users_read) — resolves iff the caller could read it, else NULL.

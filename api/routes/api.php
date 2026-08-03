@@ -166,6 +166,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // remain the addressed guardian's alone (consent.sign held by NO capability).
     Route::post('/admin/consent-requests/{id}/void', [ConsentRequestController::class, 'void'])
         ->middleware('permission:operations.manage');
+    Route::get('/my/consent-status', [ConsentRequestController::class, 'selfStatus'])->middleware('role:student'); // S-UX3-3b: student's OWN satisfied boolean (self-scoped, no elevation)
     Route::get('/my/students/{studentId}/consent-status', [ConsentRequestController::class, 'derivedStatus'])
         ->middleware('role:guardian');
     Route::get('/consent-requests', [ConsentRequestController::class, 'index']); // RLS-shaped
@@ -205,6 +206,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // S05 step 5 — roles & tracker (OD-15/61); authority in-service
     Route::post('/admin/teams/{id}/teacher-link', [\App\Http\Controllers\RolesTrackerController::class, 'linkTeacher']);
     Route::get('/teams/{team}/roles', [\App\Http\Controllers\TeamRolesController::class, 'show']); // S-UX3-3a STEP 3 B3: RLS-shaped roles/tenure read (member-readable, no elevation)
+    Route::get('/teams/{team}/members', [\App\Http\Controllers\TeamMembersController::class, 'index']); // S-UX3-3b B2: member-gated roster (names+role+count via allowlisted elevation; joinable → count only)
     Route::post('/teams/{id}/roles', [\App\Http\Controllers\RolesTrackerController::class, 'assignRole']);
     Route::post('/teams/{id}/gates/{stage}/approve', [\App\Http\Controllers\RolesTrackerController::class, 'approveGate']);
     // S07-1 — team-project budgets (record-only). Authority (team member / reused S05 approver) in-service.
