@@ -212,8 +212,10 @@
       "roleLibrary": "角色庫",
       "learning": "學習(課程與活動)",
       "certification": "證書與徽章",
-      "integration": "系統整合"
-    }
+      "integration": "系統整合",
+      "marketing": "市場推廣（門面）"
+    },
+    "statusOptional": "選填"
   },
   "consent": {
     "listTitle": "同意書請求",
@@ -647,5 +649,13 @@
     "resLeaveTitle": "記錄離校？",
     "resLeaveBody": "隊伍將維持（OD-62）；並開立學院例外。此並非退出。",
     "resDone": "完成 — 已記錄處理。"
+  },
+  "marketing": {
+    "tagline": "標語",
+    "category": "類別",
+    "ageRange": "年齡範圍",
+    "duration": "時長",
+    "brandColor": "品牌顏色",
+    "imageryDeferred": "圖像為後續步驟 — 文字與品牌顏色即可在公開目錄中展示課程。"
   }
 }

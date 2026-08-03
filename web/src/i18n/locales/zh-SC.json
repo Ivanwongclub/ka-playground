@@ -212,8 +212,10 @@
       "roleLibrary": "角色库",
       "learning": "学习(课程与活动)",
       "certification": "证书与徽章",
-      "integration": "系统整合"
-    }
+      "integration": "系统整合",
+      "marketing": "市场推广（门面）"
+    },
+    "statusOptional": "选填"
   },
   "consent": {
     "listTitle": "同意书请求",
@@ -647,5 +649,13 @@
     "resLeaveTitle": "记录离校？",
     "resLeaveBody": "队伍将维持（OD-62）；并开立学院例外。此并非退出。",
     "resDone": "完成 — 已记录处理。"
+  },
+  "marketing": {
+    "tagline": "标语",
+    "category": "类别",
+    "ageRange": "年龄范围",
+    "duration": "时长",
+    "brandColor": "品牌颜色",
+    "imageryDeferred": "图像为后续步骤 — 文字与品牌颜色即可在公开目录中展示课程。"
   }
 }

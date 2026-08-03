@@ -77,9 +77,12 @@ no screenshots (backend gate, editor is STEP 3). Diff to `~/Downloads`, held for
 
 - The trilingual marketing fields + brand-color picker in the programme wizard (so a programme can be made
   marketing-complete). S-UX2a display kit; trilingual; darkAlgorithm.
-- **Imagery (flagged, deferrable):** `uploads.contexts.marketing` via the built `UploadService` (BI-10) +
-  a **new anonymous scan-clean image serving route** — never external URLs, never bypassing the scan.
-  Line-by-line if included; else fast-follow.
+- **Imagery — DEFERRED (Leo's ruling, this build):** STEP 3 ships the editor **text-first, WITHOUT
+  imagery** (brand-colour card only) — the public catalogue works on trilingual text + brand_color. The
+  upload + anonymous image-serving route is a **separate sub-step, NOT built here**: `uploads.contexts.
+  marketing` via the built `UploadService` (BI-10) + a **new anonymous scan-clean serving route** (a
+  second anonymous surface) — never external URLs, never bypassing the scan. It gets its **own
+  line-by-line review** if/when wanted; not in S-MARKETPLACE-A.
 
 ## Constraints / invariants
 - **No migration** (text rides `wizard_sections.data`). **Battery 58/58** (in-pattern extension).

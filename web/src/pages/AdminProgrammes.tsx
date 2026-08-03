@@ -45,6 +45,7 @@ const SECTION_KEY_MAP: Record<string, string> = {
   basics: 'basics', eligibility: 'eligibility', fees: 'fees', consent: 'consent',
   tracker: 'tracker', team_rules: 'teamRules', role_library: 'roleLibrary',
   learning: 'learning', certification: 'certification', integration: 'integration',
+  marketing: 'marketing',
 };
 
 export function AdminProgrammes() {
@@ -86,7 +87,13 @@ export function AdminProgrammes() {
     incomplete: t('wizard.statusIncomplete'),
     complete: t('wizard.statusComplete'),
     deferred: t('wizard.statusDeferred'),
+    optional: t('wizard.statusOptional'),
   };
+  // Marketing (S-MARKETPLACE-A) is OPTIONAL-but-available: with no saved row the backend returns
+  // 'deferred' (the shared optional default), which would read as Phase-2 "Deferred" and disable its
+  // editor. It is available now — surface it as "Optional" and keep its editor open. (Integration stays
+  // genuinely deferred.)
+  const displayStatus = (s: Section) => (s.key === 'marketing' && s.status === 'deferred' ? 'optional' : s.status);
 
   const saveSection = async (status: 'complete' | 'incomplete') => {
     if (!selected || !openSection) return;
@@ -98,14 +105,22 @@ export function AdminProgrammes() {
         body: JSON.stringify({ status, data: sectionDraft }),
       },
     );
-    if (res.status === 423) {
-      message.error(t('wizard.publishDisabled'));
-      return;
-    }
     if (res.ok) {
       setOpenSection(null);
       await loadWizard(selected);
+      return;
     }
+    // Surface the server's message — the 423 lock, or a 422 validation error such as the marketing
+    // section's `marketing.language_incomplete` (STEP 1 gate). The server is authoritative; never swallow.
+    let msg = t('wizard.publishDisabled');
+    try {
+      const body = (await res.json()) as { message?: string; errors?: Record<string, string[]> };
+      const firstError = body.errors ? Object.values(body.errors)[0]?.[0] : undefined;
+      if (firstError ?? body.message) msg = (firstError ?? body.message) as string;
+    } catch {
+      /* no JSON body */
+    }
+    void message.error(msg);
   };
 
   const runPreFlight = async () => {
@@ -176,10 +191,12 @@ export function AdminProgrammes() {
                   <Button
                     key="open"
                     type="text"
-                    disabled={section.status === 'deferred'}
+                    disabled={displayStatus(section) === 'deferred'}
                     onClick={() => {
                       setOpenSection(section);
-                      setSectionDraft(section.data ?? {});
+                      // Seed the marketing brand-colour default so a never-touched picker (which already
+                      // DISPLAYS a colour) counts toward completeness instead of a confusing "missing" reject.
+                      setSectionDraft(section.data ?? (section.key === 'marketing' ? { brand_color: '#7A3B57' } : {}));
                     }}
                   >
                     {t('styleGuide.tabTwo')}
@@ -191,11 +208,12 @@ export function AdminProgrammes() {
                   description={
                     <Tag
                       color={
-                        section.status === 'complete' ? 'success'
-                          : section.status === 'incomplete' ? 'warning' : 'default'
+                        displayStatus(section) === 'complete' ? 'success'
+                          : displayStatus(section) === 'incomplete' ? 'warning'
+                            : displayStatus(section) === 'optional' ? 'processing' : 'default'
                       }
                     >
-                      {statusLabel[section.status]}
+                      {statusLabel[displayStatus(section)]}
                     </Tag>
                   }
                 />
@@ -323,6 +341,34 @@ function SectionFields({
           onChange={(v) => set('attendance_threshold_pct', v)}
         />
       );
+    case 'marketing': {
+      // S-MARKETPLACE-A STEP 3 (text-first — no imagery). Each field is trilingual (EN/繁/简); a
+      // `complete` save with any language gap is rejected server-side (marketing.language_incomplete).
+      const tri = (field: string) => (draft[field] as Record<string, string> | undefined) ?? {};
+      const setLang = (field: string, lang: string, v: string) =>
+        onChange({ ...draft, [field]: { ...tri(field), [lang]: v } });
+      const fields: Array<[string, string]> = [
+        ['tagline', t('marketing.tagline')], ['category', t('marketing.category')],
+        ['age_range', t('marketing.ageRange')], ['duration', t('marketing.duration')],
+      ];
+      return (
+        <>
+          {fields.map(([f, label]) => (
+            <div key={f}>
+              <label className="ka-label">{label}</label>
+              <Input placeholder="EN" value={tri(f).en ?? ''} onChange={(e) => setLang(f, 'en', e.target.value)} />
+              <Input placeholder="繁體中文" value={tri(f).tc ?? ''} onChange={(e) => setLang(f, 'tc', e.target.value)} style={{ marginTop: 6 }} />
+              <Input placeholder="简体中文" value={tri(f).sc ?? ''} onChange={(e) => setLang(f, 'sc', e.target.value)} style={{ marginTop: 6 }} />
+            </div>
+          ))}
+          <div>
+            <label className="ka-label">{t('marketing.brandColor')}</label>
+            <Input type="color" value={(draft.brand_color as string) ?? '#7A3B57'} onChange={(e) => set('brand_color', e.target.value)} style={{ width: 96 }} />
+          </div>
+          <Text type="secondary" style={{ fontSize: 12 }}>{t('marketing.imageryDeferred')}</Text>
+        </>
+      );
+    }
     default:
       return (
         <Input.TextArea

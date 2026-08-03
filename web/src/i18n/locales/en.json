@@ -212,8 +212,10 @@
       "roleLibrary": "Role Library",
       "learning": "Learning (Lessons & Events)",
       "certification": "Certification & Badges",
-      "integration": "Integration"
-    }
+      "integration": "Integration",
+      "marketing": "Marketing (storefront)"
+    },
+    "statusOptional": "Optional"
   },
   "consent": {
     "listTitle": "Consent requests",
@@ -647,5 +649,13 @@
     "resLeaveTitle": "Record a school leave?",
     "resLeaveBody": "The team STANDS (OD-62); an academy exception is opened. This is not a withdrawal.",
     "resDone": "Done — the resolution was recorded."
+  },
+  "marketing": {
+    "tagline": "Tagline",
+    "category": "Category",
+    "ageRange": "Age range",
+    "duration": "Duration",
+    "brandColor": "Brand colour",
+    "imageryDeferred": "Imagery is a later step — text + brand colour list the programme in the public catalogue."
   }
 }
