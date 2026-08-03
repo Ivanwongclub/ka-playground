@@ -23,6 +23,7 @@ import {
   Undo2,
   Users,
   Users2,
+  UserPlus,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -59,6 +60,14 @@ export const NAV: NavGroup[] = [
         i18nKey: 'nav.consents',
         icon: <FileSignature size={16} aria-hidden />,
         visible: (h) => h('consent.view'),
+      },
+      {
+        // S-UX3-3b — the student team-formation surface. teams.view is the student role default; hidden
+        // from academy ops (operations.manage) who use the ops /team instead — shown-not-hidden, no dual nav.
+        path: '/my/team',
+        i18nKey: 'nav.myTeam',
+        icon: <UserPlus size={16} aria-hidden />,
+        visible: (h) => h('teams.view') && !h('operations.manage'),
       },
     ],
   },

@@ -32,7 +32,8 @@
     "approvals": "审批",
     "withdrawals": "退出申请",
     "payments": "付款",
-    "refunds": "退款"
+    "refunds": "退款",
+    "myTeam": "我的团队"
   },
   "shell": {
     "openNavigation": "打开导航",
@@ -657,5 +658,34 @@
     "duration": "时长",
     "brandColor": "品牌颜色",
     "imageryDeferred": "图像为后续步骤 — 文字与品牌颜色即可在公开目录中展示课程。"
+  },
+  "studentTeam": {
+    "title": "我的团队",
+    "subtitle": "组建或加入团队，然后提交以确认成团。",
+    "noPool": "你需要一个已同意且未编队的报名才能组建或加入团队。",
+    "roster": "团队成员",
+    "consentSatisfied": "✓ 你的同意已满足 — 你的团队可以成团。",
+    "consentNotSatisfiedTitle": "你的同意尚未满足",
+    "consentNotSatisfied": "在你的同意满足之前，你的团队无法确认成团。请家长完成同意 — 否则学院不会确认团队。",
+    "submit": "提交成团",
+    "submitTitle": "提交“{{team}}”成团？",
+    "submitBody": "此举会将你的团队送交学院确认。提交后将无法再加入成员。",
+    "submitted": "已提交 — 等待学院确认。",
+    "leaveDisabled": "加入后将无法离开团队 — 只有成团或学院决定才能改变。",
+    "formOrJoin": "组建或加入团队 — {{programme}}",
+    "joinTitle": "加入现有团队",
+    "join": "加入",
+    "members": "{{n}} 名成员",
+    "joinedOk": "已加入团队。",
+    "createTitle": "创建新团队",
+    "createLobby": "选择大堂",
+    "createName": "团队名称",
+    "createCta": "创建团队",
+    "createdOk": "已创建团队。",
+    "state": {
+      "submitted": "待成团",
+      "confirmed": "已确认 — 请前往付款。",
+      "disbanded": "已解散。"
+    }
   }
 }

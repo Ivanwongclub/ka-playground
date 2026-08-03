@@ -56,8 +56,11 @@ migrations 0 (reads only); ScopeElevationTest green. No screenshots (backend rea
 
 ## STEP 2 — the student formation UI (FRONTEND-SCAN)
 
-- **`/my/team` + a "My Team" nav item** gated `teams.view` (student role default) — distinct from the
-  ops `/team` (operations.manage). Roles never stack → a student gets "My Team", an ops admin gets "Team".
+- **`/my/team` + a "My Team" nav item** gated **`teams.view && !operations.manage`** — the student role
+  default, **hidden from academy ops** (who use the ops `/team`) so no account carries dual team-nav
+  (shown-not-hidden). Distinct from the ops `/team` (operations.manage). "My team" is detected by
+  `member_count >= 1` in the RLS-shaped `GET /teams` (a student sees only their own `team_members` row —
+  the same `tm_read` dependency as B2; joinable teams read 0).
 - Flow: pick a **lobby** (`GET /programmes/{id}/lobbies`) → **create** (name a team) or **join** a forming
   lobby team (**count only** shown, never names pre-join) → **my-team** view (roster from B2, status) →
   the **self-consent advisory** (own `satisfied` from the self-read; never a teammate's) → **submit**

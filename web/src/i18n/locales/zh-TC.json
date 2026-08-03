@@ -32,7 +32,8 @@
     "approvals": "審批",
     "withdrawals": "退出申請",
     "payments": "付款",
-    "refunds": "退款"
+    "refunds": "退款",
+    "myTeam": "我的團隊"
   },
   "shell": {
     "openNavigation": "開啟導覽",
@@ -657,5 +658,34 @@
     "duration": "時長",
     "brandColor": "品牌顏色",
     "imageryDeferred": "圖像為後續步驟 — 文字與品牌顏色即可在公開目錄中展示課程。"
+  },
+  "studentTeam": {
+    "title": "我的團隊",
+    "subtitle": "組建或加入團隊，然後提交以確認成團。",
+    "noPool": "你需要一個已同意且未編隊的報名才能組建或加入團隊。",
+    "roster": "團隊成員",
+    "consentSatisfied": "✓ 你的同意已滿足 — 你的團隊可以成團。",
+    "consentNotSatisfiedTitle": "你的同意尚未滿足",
+    "consentNotSatisfied": "在你的同意滿足之前，你的團隊無法確認成團。請家長完成同意 — 否則學院不會確認團隊。",
+    "submit": "提交成團",
+    "submitTitle": "提交「{{team}}」成團？",
+    "submitBody": "此舉會將你的團隊送交學院確認。提交後將無法再加入成員。",
+    "submitted": "已提交 — 等待學院確認。",
+    "leaveDisabled": "加入後將無法離開團隊 — 只有成團或學院決定才能改變。",
+    "formOrJoin": "組建或加入團隊 — {{programme}}",
+    "joinTitle": "加入現有團隊",
+    "join": "加入",
+    "members": "{{n}} 名成員",
+    "joinedOk": "已加入團隊。",
+    "createTitle": "建立新團隊",
+    "createLobby": "選擇大堂",
+    "createName": "團隊名稱",
+    "createCta": "建立團隊",
+    "createdOk": "已建立團隊。",
+    "state": {
+      "submitted": "待成團",
+      "confirmed": "已確認 — 請前往付款。",
+      "disbanded": "已解散。"
+    }
   }
 }

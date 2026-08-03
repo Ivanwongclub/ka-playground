@@ -53,6 +53,7 @@ const Approvals = lazy(() => import('./pages/Approvals').then((m) => ({ default:
 const Withdrawals = lazy(() => import('./pages/Withdrawals').then((m) => ({ default: m.Withdrawals })));
 const Payments = lazy(() => import('./pages/Payments').then((m) => ({ default: m.Payments })));
 const Teams = lazy(() => import('./pages/Teams').then((m) => ({ default: m.Teams })));
+const StudentTeam = lazy(() => import('./pages/StudentTeam').then((m) => ({ default: m.StudentTeam })));
 const Refunds = lazy(() => import('./pages/Refunds').then((m) => ({ default: m.Refunds })));
 
 function RequireAuth({ children }: { children: React.ReactElement }) {
@@ -93,6 +94,8 @@ function Root() {
               <Route path="/tracker" element={<Placeholder titleKey="empty.title" />} />
               {/* S-UX3-3a STEP 2 — the ops 成團 view now occupies /team (nav item revealed). */}
               <Route path="/team" element={<Teams />} />
+              {/* S-UX3-3b — the student team-formation surface (distinct from the ops /team). */}
+              <Route path="/my/team" element={<StudentTeam />} />
               <Route path="/learn" element={<Placeholder titleKey="empty.title" />} />
               <Route path="/profile" element={<Placeholder titleKey="empty.title" />} />
               {/* Style Guide is a development-only design surface — never shipped in prod (S-UX1). */}

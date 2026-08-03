@@ -32,7 +32,8 @@
     "approvals": "Approvals",
     "withdrawals": "Withdrawals",
     "payments": "Payments",
-    "refunds": "Refunds"
+    "refunds": "Refunds",
+    "myTeam": "My Team"
   },
   "shell": {
     "openNavigation": "Open navigation",
@@ -657,5 +658,34 @@
     "duration": "Duration",
     "brandColor": "Brand colour",
     "imageryDeferred": "Imagery is a later step — text + brand colour list the programme in the public catalogue."
+  },
+  "studentTeam": {
+    "title": "My Team",
+    "subtitle": "Form or join a team, then submit it for confirmation (成團).",
+    "noPool": "You need a consented, unteamed enrolment to form or join a team.",
+    "roster": "Team members",
+    "consentSatisfied": "✓ Your consent is satisfied — your team can be confirmed.",
+    "consentNotSatisfiedTitle": "Your consent is not yet satisfied",
+    "consentNotSatisfied": "Your team CANNOT be confirmed (成團) until your consent is satisfied. Ask your guardian to complete consent — the academy will not confirm the team otherwise.",
+    "submit": "Submit for 成團",
+    "submitTitle": "Submit \"{{team}}\" for 成團?",
+    "submitBody": "This sends your team to the academy for confirmation. You cannot add members after submitting.",
+    "submitted": "Submitted — awaiting the academy's confirmation.",
+    "leaveDisabled": "You cannot leave a team once you have joined — only 成團 or an academy decision changes it.",
+    "formOrJoin": "Form or join a team — {{programme}}",
+    "joinTitle": "Join an existing team",
+    "join": "Join",
+    "members": "{{n}} members",
+    "joinedOk": "Joined the team.",
+    "createTitle": "Create a new team",
+    "createLobby": "Choose a lobby",
+    "createName": "Team name",
+    "createCta": "Create team",
+    "createdOk": "Team created.",
+    "state": {
+      "submitted": "Awaiting 成團",
+      "confirmed": "Confirmed — proceed to payment.",
+      "disbanded": "Disbanded."
+    }
   }
 }
