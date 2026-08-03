@@ -1,0 +1,163 @@
+/* KA Playground — Design System v2 (PROTOTYPE foundation) — evolves v2.1, does not replace it.
+   Aubergine/gold, dark-only. Tokens carried verbatim from theme.ts; the NEW layer is the density
+   system, the trilingual-input pattern, the wizard rail, and a tightened type scale. Prototype-only:
+   this file is not production CSS — it exists so the anchor screens render the proposed direction. */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&family=Noto+Sans+HK:wght@400;500&family=Noto+Sans+SC:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* ── carried from theme.ts (v2.1) ── */
+  --bg: #0F0B15;
+  --card: #1A1326;
+  --muted: #1E1729;
+  --fg: #F4F4F5;
+  --fg-muted: #A1A1AA;
+  --gold: #C9A962;
+  --gold-hover: #D4B876;
+  --border: #2A2235;          /* decorative separators */
+  --border-strong: #726889;   /* control boundaries (1.4.11) */
+  --success: #22C55E;
+  --warning: #FBBF24;
+  --danger: #EF4444;
+  /* category accents (§3.3) */
+  --cat-language: #6366F1; --cat-stem: #A855F7; --cat-arts: #EC4899; --cat-maths: #F97316; --cat-featured: #06B6D4;
+
+  /* ── NEW in v2: a gold "attestation" tint — gold means VERIFIED/SEALED, not just primary ── */
+  --gold-tint: rgba(201,169,98,0.10);
+  --gold-line: rgba(201,169,98,0.28);
+  --seal: radial-gradient(circle at 30% 30%, #E4CE8C, #C9A962 55%, #9C7F3F);
+
+  /* ── type ── */
+  --font-display: 'Montserrat', sans-serif;
+  --font-body: 'Inter', 'Noto Sans HK', 'Noto Sans SC', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-sc: 'Noto Sans SC', 'Noto Sans HK', var(--font-body);
+
+  /* ── NEW: density system. --gap/--row flip between admin (compact) and product (airy) ── */
+  --r-sm: 6px; --r-md: 8px; --r-lg: 10px; --r-xl: 16px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.4);
+  --shadow-gold: 0 4px 16px rgba(201,169,98,.3);
+}
+
+/* density scopes — the ONE decision that makes admin dense and product airy from the same tokens */
+[data-density="admin"]   { --pad: 16px; --gap: 12px; --row: 40px; --page-x: 32px; --stack: 20px; }
+[data-density="product"] { --pad: 24px; --gap: 20px; --row: 52px; --page-x: 40px; --stack: 32px; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+:lang(zh) { line-height: 1.8; }
+
+h1,h2,h3 { font-family: var(--font-display); letter-spacing: -0.01em; color: var(--fg); }
+h1 { font-size: 32px; font-weight: 700; }
+h2 { font-size: 24px; font-weight: 600; }
+h3 { font-size: 18px; font-weight: 600; }
+.eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.muted { color: var(--fg-muted); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* card */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--pad); }
+.card + .card { margin-top: var(--gap); }
+
+/* the gold "seal" — the v2 signature: an attestation mark for verified/audited/sealed states */
+.seal { width: 18px; height: 18px; border-radius: 50%; background: var(--seal); box-shadow: 0 0 0 3px var(--gold-tint); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.seal svg { width: 10px; height: 10px; stroke: #241a12; stroke-width: 3; fill: none; }
+.attested { border-left: 2px solid var(--gold-line); }
+
+/* status tag */
+.tag { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: var(--r-sm); font-size: 12px; font-weight: 500; border: 1px solid transparent; white-space: nowrap; }
+.tag .dot { width: 6px; height: 6px; border-radius: 50%; }
+.tag.ok       { color: var(--success); background: rgba(34,197,94,.10); }   .tag.ok .dot { background: var(--success); }
+.tag.warn     { color: var(--warning); background: rgba(251,191,36,.10); }  .tag.warn .dot { background: var(--warning); }
+.tag.danger   { color: var(--danger);  background: rgba(239,68,68,.10); }   .tag.danger .dot { background: var(--danger); }
+.tag.info     { color: var(--gold);    background: var(--gold-tint); }       .tag.info .dot { background: var(--gold); }
+.tag.neutral  { color: var(--fg-muted);background: var(--muted); }           .tag.neutral .dot { background: var(--fg-muted); }
+
+/* buttons */
+.btn { height: var(--row); min-height: 36px; padding: 0 16px; border-radius: var(--r-md); border: 1px solid var(--border-strong); background: transparent; color: var(--fg); font-family: var(--font-body); font-size: 14px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all .15s; }
+.btn:hover { background: var(--muted); border-color: var(--gold-line); }
+.btn.primary { background: var(--gold); color: #241a12; border-color: var(--gold); font-weight: 600; }
+.btn.primary:hover { background: var(--gold-hover); box-shadow: var(--shadow-gold); transform: translateY(-1px); }
+.btn.ghost { border-color: transparent; }
+.btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.btn.sm { height: 30px; padding: 0 10px; font-size: 13px; }
+
+/* form field — the trilingual pattern lives here */
+.field { margin-bottom: var(--stack); }
+.field > label { display: block; font-size: 13px; font-weight: 500; color: var(--fg); margin-bottom: 6px; }
+.field .help { font-size: 12px; color: var(--fg-muted); margin-top: 6px; }
+.field .optional { color: var(--fg-muted); font-weight: 400; }
+.input, .textarea, .select { width: 100%; height: var(--row); background: var(--bg); border: 1px solid var(--border-strong); border-radius: var(--r-md); color: var(--fg); padding: 0 12px; font-family: var(--font-body); font-size: 14px; }
+.textarea { height: auto; min-height: 80px; padding: 10px 12px; resize: vertical; line-height: 1.6; }
+.input:focus, .textarea:focus, .select:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-tint); }
+.input::placeholder { color: #6b6478; }
+
+/* ── THE TRILINGUAL INPUT (v2 decision) ── segmented tri-tab with completeness dots.
+   Preserves the at-a-glance-empty property (each tab shows filled/empty) without three stacked inputs. */
+.tri { border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; }
+.tri-tabs { display: flex; background: var(--muted); border-bottom: 1px solid var(--border); }
+.tri-tab { flex: 1; height: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 13px; color: var(--fg-muted); background: transparent; border: none; cursor: pointer; border-right: 1px solid var(--border); }
+.tri-tab:last-child { border-right: none; }
+.tri-tab[aria-selected="true"] { color: var(--gold); background: var(--card); box-shadow: inset 0 -2px 0 var(--gold); }
+.tri-tab .cdot { width: 6px; height: 6px; border-radius: 50%; background: #4a4358; }        /* empty */
+.tri-tab .cdot.filled { background: var(--success); }                                        /* has content */
+.tri-panel { padding: 10px; display: none; }
+.tri-panel.active { display: block; }
+.tri-panel .input, .tri-panel .textarea { background: var(--card); border-color: var(--border-strong); }
+.tri-summary { display: flex; gap: 6px; align-items: center; margin-top: 6px; font-size: 12px; color: var(--fg-muted); }
+
+/* table */
+.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tbl thead th { text-align: left; font-size: 12px; font-weight: 600; color: var(--gold); text-transform: none; padding: 10px 12px; border-bottom: 1px solid var(--border); background: var(--card); position: sticky; top: 0; }
+.tbl tbody td { padding: 0 12px; height: var(--row); border-bottom: 1px solid var(--border); vertical-align: middle; }
+.tbl tbody tr:hover { background: var(--muted); }
+.tbl .r { text-align: right; }
+.tbl .num { font-variant-numeric: tabular-nums; }
+
+/* layout shell */
+.shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.sider { background: var(--bg); border-right: 1px solid var(--border); padding: 16px 12px; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 18px; }
+.brand .crest { width: 30px; height: 30px; border-radius: 8px; background: var(--seal); display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; color: #241a12; font-size: 15px; }
+.brand b { font-family: var(--font-display); font-weight: 700; font-size: 15px; }
+.navgroup { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #6b6478; padding: 14px 8px 6px; }
+.navitem { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 10px; border-radius: var(--r-md); color: var(--fg-muted); font-size: 14px; cursor: pointer; }
+.navitem:hover { background: var(--muted); }
+.navitem.active { background: var(--muted); color: var(--gold); }
+.navitem svg { width: 16px; height: 16px; }
+.main { min-width: 0; }
+.topbar { height: 56px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 var(--page-x); }
+.crumbs { font-size: 13px; color: var(--fg-muted); }
+.crumbs b { color: var(--fg); font-weight: 500; }
+.page { padding: 24px var(--page-x); max-width: 1200px; }
+.page-head { margin-bottom: var(--stack); }
+.page-head h1 { margin-bottom: 4px; }
+
+/* progress rail (wizard) */
+.rail { display: flex; flex-direction: column; gap: 2px; }
+.rail-phase { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #6b6478; padding: 14px 12px 6px; }
+.step { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: var(--r-md); cursor: pointer; color: var(--fg-muted); }
+.step:hover { background: var(--muted); }
+.step.current { background: var(--muted); color: var(--fg); box-shadow: inset 2px 0 0 var(--gold); }
+.step .ic { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border-strong); display: grid; place-items: center; flex: 0 0 auto; font-size: 11px; }
+.step.done .ic { background: var(--gold); border-color: var(--gold); color: #241a12; }
+.step.done { color: var(--fg); }
+.step.locked .ic { border-style: dashed; }
+.step .lbl { flex: 1; font-size: 14px; }
+.step .meta { font-size: 11px; color: #6b6478; }
+.step.blocked .ic { border-color: var(--warning); color: var(--warning); }
+
+/* kpi */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: var(--gap); }
+.kpi { background: var(--card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 16px; }
+.kpi .k { font-size: 12px; color: var(--fg-muted); }
+.kpi .v { font-family: var(--font-display); font-size: 28px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.kpi .v.gold { color: var(--gold); }
+
+.row { display: flex; align-items: center; gap: var(--gap); }
+.between { justify-content: space-between; }
+.wrap { flex-wrap: wrap; }
+.grow { flex: 1; min-width: 0; }
+hr.hair { border: none; border-top: 1px solid var(--border); margin: var(--stack) 0; }
