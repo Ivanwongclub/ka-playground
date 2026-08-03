@@ -47,7 +47,18 @@ class ManualPaymentController extends Controller
     /** RLS-shaped within the finance.view gate (Member 403 preserved from S01). */
     public function index(): JsonResponse
     {
-        return response()->json(['data' => DB::table('payments')->orderBy('created_at')
-            ->get(['id', 'order_id', 'origin', 'provider', 'amount_minor', 'currency', 'via_link', 'status', 'recorded_by', 'confirmed_by', 'paid_at'])]);
+        // S-UX3-2: additive names. recorded_by/confirmed_by resolve for finance staff (academy_admins
+        // are mutually visible under users_read) — so the confirmer can SEE the recorder (BI-9 legibility).
+        // student_name resolves for ops/audit; NULL for finance-only (users_read does not admit students).
+        return response()->json(['data' => DB::table('payments as p')
+            ->leftJoin('orders as o', 'o.id', '=', 'p.order_id')
+            ->leftJoin('users as s', 's.id', '=', 'o.student_id')
+            ->leftJoin('programmes as pr', 'pr.id', '=', 'o.programme_id')
+            ->leftJoin('users as rb', 'rb.id', '=', 'p.recorded_by')
+            ->leftJoin('users as cb', 'cb.id', '=', 'p.confirmed_by')
+            ->orderBy('p.created_at')
+            ->get(['p.id', 'p.order_id', 'p.origin', 'p.provider', 'p.amount_minor', 'p.currency', 'p.via_link', 'p.status', 'p.recorded_by', 'p.confirmed_by', 'p.paid_at',
+                'rb.name as recorded_by_name', 'cb.name as confirmed_by_name', 's.name as student_name',
+                'pr.name_en as programme_name_en', 'pr.name_tc as programme_name_tc', 'pr.name_sc as programme_name_sc'])]);
     }
 }

@@ -51,6 +51,8 @@ const EnrolmentPool = lazy(() => import('./pages/EnrolmentPool').then((m) => ({ 
 const FinancialIntegrity = lazy(() => import('./pages/FinancialIntegrity').then((m) => ({ default: m.FinancialIntegrity })));
 const Approvals = lazy(() => import('./pages/Approvals').then((m) => ({ default: m.Approvals })));
 const Withdrawals = lazy(() => import('./pages/Withdrawals').then((m) => ({ default: m.Withdrawals })));
+const Payments = lazy(() => import('./pages/Payments').then((m) => ({ default: m.Payments })));
+const Refunds = lazy(() => import('./pages/Refunds').then((m) => ({ default: m.Refunds })));
 
 function RequireAuth({ children }: { children: React.ReactElement }) {
   const location = useLocation();
@@ -105,6 +107,8 @@ function Root() {
               <Route path="/admin/financial-integrity" element={<FinancialIntegrity />} />
               <Route path="/admin/approvals" element={<Approvals />} />
               <Route path="/admin/withdrawals" element={<Withdrawals />} />
+              <Route path="/admin/payments" element={<Payments />} />
+              <Route path="/admin/refunds" element={<Refunds />} />
               {/* Catch-all: any unknown authed path (incl. /style-guide in prod) → 404 within the shell. */}
               <Route path="*" element={<NotFound />} />
             </Route>

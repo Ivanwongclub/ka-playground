@@ -12,6 +12,7 @@
 import {
   BookOpen,
   ClipboardCheck,
+  CreditCard,
   FileCheck,
   FileSignature,
   FileText,
@@ -19,6 +20,7 @@ import {
   LayoutDashboard,
   LogOut,
   ShieldCheck,
+  Undo2,
   Users,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -91,6 +93,18 @@ export const NAV: NavGroup[] = [
         i18nKey: 'nav.enrolmentPool',
         icon: <Users size={16} aria-hidden />,
         visible: (h) => h('audit.read'),
+      },
+      {
+        path: '/admin/payments',
+        i18nKey: 'nav.payments',
+        icon: <CreditCard size={16} aria-hidden />,
+        visible: (h) => h('finance.record') || h('finance.confirm'),
+      },
+      {
+        path: '/admin/refunds',
+        i18nKey: 'nav.refunds',
+        icon: <Undo2 size={16} aria-hidden />,
+        visible: (h) => h('finance.record') || h('finance.confirm'),
       },
       {
         path: '/admin/financial-integrity',

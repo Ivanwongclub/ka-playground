@@ -30,7 +30,9 @@
     "enrolmentPool": "報名池",
     "financialIntegrity": "財務完整性",
     "approvals": "審批",
-    "withdrawals": "退出申請"
+    "withdrawals": "退出申請",
+    "payments": "付款",
+    "refunds": "退款"
   },
   "shell": {
     "openNavigation": "開啟導覽",
@@ -453,6 +455,11 @@
     "template": {
       "draft": "草稿",
       "published": "已發佈"
+    },
+    "payment": {
+      "pending_confirmation": "待確認",
+      "confirmed": "已確認",
+      "rejected": "已拒絕"
     }
   },
   "data": {
@@ -516,5 +523,43 @@
     "approveTitle": "批准 {{student}} 的退出？",
     "approveBody": "此為終局操作——報名將結束。",
     "rejectTitle": "駁回退出"
+  },
+  "refund": {
+    "title": "退款",
+    "subtitle": "批准並確認退款（由第二位財務人員確認）。",
+    "student": "學生",
+    "amount": "金額",
+    "destination": "退回",
+    "approvedBy": "批准人",
+    "approve": "批准",
+    "confirm": "確認",
+    "reject": "駁回",
+    "approveTitle": "批准退款",
+    "confirmTitle": "確認退款？",
+    "confirmBody": "此操作確認退款。必須由批准者以外的人員確認。",
+    "rejectTitle": "駁回退款"
+  },
+  "payments": {
+    "title": "付款",
+    "subtitle": "記錄人手付款，再由第二位財務人員確認。",
+    "ordersAwaiting": "待付款訂單",
+    "pendingConfirmation": "待確認付款",
+    "record": "記錄付款",
+    "confirm": "確認",
+    "reject": "駁回",
+    "recordedBy": "記錄人",
+    "recordTitle": "記錄付款",
+    "recordBody": "為 {{student}} — {{programme}} 記錄 {{amount}}。付款只可全額記錄（不接受部分付款）。",
+    "evidence": "新增憑證",
+    "evidenceRequired": "至少需要一張憑證圖片。",
+    "note": "備註（選填）",
+    "confirmTitle": "確認付款？",
+    "confirmBody": "此操作確認付款並發出收據。必須由記錄者以外的人員確認。",
+    "rejectTitle": "駁回付款",
+    "noOrders": "沒有待付款訂單",
+    "noPending": "沒有待確認付款",
+    "student": "學生",
+    "programme": "課程",
+    "amount": "金額"
   }
 }

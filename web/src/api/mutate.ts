@@ -12,10 +12,13 @@ export interface MutateResult {
 
 export async function mutate(url: string, body?: unknown): Promise<MutateResult> {
   try {
+    // FormData (evidence upload, BI-10) rides the same wrapper: no Content-Type header so the browser
+    // sets the multipart boundary; JSON bodies are stringified as before. Same res.ok/error handling.
+    const isForm = body instanceof FormData;
     const res = await authFetch(url, {
       method: 'POST',
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      headers: body === undefined || isForm ? undefined : { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
     });
     if (res.ok) return { ok: true, status: res.status };
     let message: string | undefined;

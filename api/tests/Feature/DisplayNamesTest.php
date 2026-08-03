@@ -274,6 +274,41 @@ class DisplayNamesTest extends TestCase
         $this->assertNull($w['decided_by_name']);
     }
 
+    // ── S-UX3-2: money-list display names (BI-9 legibility) ──────────────────────────────────────
+
+    public function test_payment_and_refund_lists_carry_names(): void
+    {
+        // a minimal issued order for studentA + a manually-recorded payment (recorder finance1)
+        $fin1 = User::factory()->create(['role' => 'academy_admin', 'name' => 'Fin One']);
+        [$orderId, $refundId] = $this->sys(function () use ($fin1) {
+            $eid = DB::table('enrolments')->where('student_id', $this->studentA->id)->value('id');
+            $oid = (string) Str::uuid7();
+            DB::table('orders')->insert(['id' => $oid, 'enrolment_id' => $eid, 'programme_id' => $this->programme->id, 'student_id' => $this->studentA->id, 'payer_party' => 'guardian', 'status' => 'issued', 'total_amount_minor' => 250000, 'currency' => 'HKD', 'created_at' => now(), 'updated_at' => now()]);
+            DB::table('payments')->insert(['id' => (string) Str::uuid7(), 'order_id' => $oid, 'origin' => 'manual', 'amount_minor' => 250000, 'currency' => 'HKD', 'via_link' => false, 'status' => 'pending_confirmation', 'recorded_by' => $fin1->id, 'created_at' => now(), 'updated_at' => now()]);
+            $wid = (string) Str::uuid7();
+            DB::table('withdrawal_requests')->insert(['id' => $wid, 'enrolment_id' => $eid, 'student_id' => $this->studentA->id, 'requested_by' => $this->guardianA->id, 'reason' => 'demo', 'status' => 'pending', 'created_at' => now(), 'updated_at' => now()]);
+            $rid = (string) Str::uuid7();
+            DB::table('refunds')->insert(['id' => $rid, 'order_id' => $oid, 'withdrawal_request_id' => $wid, 'amount_minor' => 250000, 'currency' => 'HKD', 'destination_party' => 'guardian', 'status' => 'approved', 'approved_by' => $fin1->id, 'created_at' => now(), 'updated_at' => now()]);
+
+            return [$oid, $rid];
+        });
+
+        $this->act($this->ops);
+        // payments: recorded_by_name resolves (finance staff are mutually visible); pre-existing keys intact
+        $pay = collect($this->getJson('/api/payments')->json('data'))->firstWhere('order_id', $orderId);
+        $this->assertNotNull($pay);
+        foreach (['id', 'order_id', 'amount_minor', 'currency', 'status', 'recorded_by'] as $k) {
+            $this->assertArrayHasKey($k, $pay, "pre-existing key {$k} preserved");
+        }
+        $this->assertSame('Fin One', $pay['recorded_by_name']);
+        $this->assertNull($pay['confirmed_by_name']);
+
+        // refunds: approved_by_name resolves
+        $ref = collect($this->getJson('/api/refunds')->json('data'))->firstWhere('id', $refundId);
+        $this->assertNotNull($ref);
+        $this->assertSame('Fin One', $ref['approved_by_name']);
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────────────────────────
 
     private function act(User $u): void

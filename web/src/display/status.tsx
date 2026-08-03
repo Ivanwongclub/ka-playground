@@ -22,6 +22,11 @@ const REGISTRY: Record<string, Record<string, Entry>> = {
     provider: { labelKey: 'status.origin.provider', color: 'processing' },
     manual: { labelKey: 'status.origin.manual', color: 'default' },
   },
+  paymentStatus: {
+    pending_confirmation: { labelKey: 'status.payment.pending_confirmation', color: 'warning' },
+    confirmed: { labelKey: 'status.payment.confirmed', color: 'success' },
+    rejected: { labelKey: 'status.payment.rejected', color: 'error' },
+  },
   refundStatus: {
     requested: { labelKey: 'status.refund.requested', color: 'processing' },
     approved: { labelKey: 'status.refund.approved', color: 'gold' },

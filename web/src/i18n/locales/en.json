@@ -30,7 +30,9 @@
     "enrolmentPool": "Enrolment Pool",
     "financialIntegrity": "Financial Integrity",
     "approvals": "Approvals",
-    "withdrawals": "Withdrawals"
+    "withdrawals": "Withdrawals",
+    "payments": "Payments",
+    "refunds": "Refunds"
   },
   "shell": {
     "openNavigation": "Open navigation",
@@ -453,6 +455,11 @@
     "template": {
       "draft": "Draft",
       "published": "Published"
+    },
+    "payment": {
+      "pending_confirmation": "Pending confirmation",
+      "confirmed": "Confirmed",
+      "rejected": "Rejected"
     }
   },
   "data": {
@@ -516,5 +523,43 @@
     "approveTitle": "Approve withdrawal for {{student}}?",
     "approveBody": "This is terminal — the enrolment ends.",
     "rejectTitle": "Reject withdrawal"
+  },
+  "refund": {
+    "title": "Refunds",
+    "subtitle": "Approve and confirm refund payouts (a second finance person confirms).",
+    "student": "Student",
+    "amount": "Amount",
+    "destination": "To",
+    "approvedBy": "Approved by",
+    "approve": "Approve",
+    "confirm": "Confirm",
+    "reject": "Reject",
+    "approveTitle": "Approve refund",
+    "confirmTitle": "Confirm refund?",
+    "confirmBody": "This confirms the payout. It must be confirmed by someone other than who approved it.",
+    "rejectTitle": "Reject refund"
+  },
+  "payments": {
+    "title": "Payments",
+    "subtitle": "Record manual payments, then a second finance person confirms them.",
+    "ordersAwaiting": "Orders awaiting payment",
+    "pendingConfirmation": "Payments pending confirmation",
+    "record": "Record payment",
+    "confirm": "Confirm",
+    "reject": "Reject",
+    "recordedBy": "Recorded by",
+    "recordTitle": "Record payment",
+    "recordBody": "Record {{amount}} for {{student}} — {{programme}}. Payments are recorded in full only (no partial).",
+    "evidence": "Add evidence",
+    "evidenceRequired": "At least one evidence image is required.",
+    "note": "Note (optional)",
+    "confirmTitle": "Confirm payment?",
+    "confirmBody": "This confirms the payment and issues a receipt. It must be confirmed by someone other than who recorded it.",
+    "rejectTitle": "Reject payment",
+    "noOrders": "No orders awaiting payment",
+    "noPending": "No payments pending confirmation",
+    "student": "Student",
+    "programme": "Programme",
+    "amount": "Amount"
   }
 }

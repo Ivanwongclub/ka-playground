@@ -220,6 +220,60 @@ class PreviewSeeder extends Seeder
             $withdrawals->request($kaiEnrolmentId, 'Family relocating overseas (demo)', $guardian);
         }
 
+        // ── S-UX3-2: money-mutation demo data ──
+        // Two fresh students with ISSUED orders: Pat's is left awaiting (the RECORD demo); Quinn's gets a
+        // manual payment RECORDED by finance1 via the REAL ManualPaymentService (pending_confirmation) —
+        // the CONFIRM / BI-9 demo (finance1 recorded → only finance2 may confirm).
+        $moneyStudents = [];
+        foreach (['pat' => 'Pat Chan (demo)', 'quinn' => 'Quinn Chan (demo)'] as $key => $name) {
+            $s = $acct("{$key}@demo.ka", $name, 'student');
+            DB::table('guardian_links')->updateOrInsert(
+                ['student_id' => $s->id, 'guardian_id' => $guardian->id],
+                ['id' => (string) Str::uuid7(), 'status' => 'active', 'origin' => 'onboarding', 'updated_at' => now(), 'created_at' => now()],
+            );
+            $lid = DB::table('guardian_links')->where('student_id', $s->id)->where('guardian_id', $guardian->id)->value('id');
+            if (! DB::table('audit_events')->where('entity_type', 'guardian_link')->where('entity_id', $lid)->where('to_state', 'active')->exists()) {
+                DB::table('audit_events')->insert(['event_id' => (string) Str::uuid7(), 'occurred_at' => now(), 'entity_type' => 'guardian_link', 'entity_id' => $lid, 'action' => 'guardian_link.created', 'to_state' => 'active', 'actor_role' => 'system', 'request_id' => (string) Str::uuid7()]);
+            }
+            $moneyStudents[$key] = $s;
+        }
+        $patOrder = null;
+        if (DB::table('orders')->where('student_id', $moneyStudents['pat']->id)->doesntExist()) {
+            $enrol($moneyStudents['pat']);
+            $sign($moneyStudents['pat']);
+            $patOrder = $confirmOrder($moneyStudents['pat']); // issued, left awaiting → RECORD demo
+        }
+        $quinnOrder = DB::table('orders')->where('student_id', $moneyStudents['quinn']->id)->first();
+        if ($quinnOrder === null) {
+            $enrol($moneyStudents['quinn']);
+            $sign($moneyStudents['quinn']);
+            $quinnOrder = $confirmOrder($moneyStudents['quinn']);
+        }
+        if (DB::table('payments')->where('order_id', $quinnOrder->id)->doesntExist()) {
+            // record a manual payment via the REAL service (with a real clean image → the real scan
+            // pipeline; a genuine photo scans CLEAN, unlike a tiny stub which clamd quarantines).
+            $tmp = tempnam(sys_get_temp_dir(), 'ev').'.jpg';
+            copy(base_path('../web/public/assets/auth/featured-sc5.jpg'), $tmp);
+            $evidence = new \Illuminate\Http\UploadedFile($tmp, 'evidence.jpg', 'image/jpeg', null, true);
+            app(\App\Services\Money\ManualPaymentService::class)->record($quinnOrder->id, (int) $quinnOrder->total_amount_minor, $quinnOrder->currency, [$evidence], 'Bank transfer received (demo)', $fin1);
+        }
+        // A refund 'requested' for the approve/confirm/BI-9 demo. NOTE: refunds normally arise from the
+        // async ApplyWithdrawal job on a withdrawal approval — not a synchronous service. To avoid that
+        // destructive async path (and preserve Kai's PAID/receipt demo), the seed inserts a structurally
+        // valid 'requested' refund directly (assertion-safe: origin is not backstop_auto). Battery stays green.
+        $kaiOrderId = DB::table('orders')->where('student_id', $students['kai']->id)->value('id');
+        $kaiWithdrawalId = DB::table('withdrawal_requests')->where('student_id', $students['kai']->id)->value('id');
+        if ($kaiOrderId !== null && $kaiWithdrawalId !== null && DB::table('refunds')->where('order_id', $kaiOrderId)->doesntExist()) {
+            $total = (int) DB::table('orders')->where('id', $kaiOrderId)->value('total_amount_minor');
+            DB::table('refunds')->insert(['id' => (string) Str::uuid7(), 'order_id' => $kaiOrderId, 'withdrawal_request_id' => $kaiWithdrawalId,
+                'amount_minor' => $total, 'currency' => 'HKD', 'destination_party' => 'guardian', 'status' => 'requested',
+                'requested_by' => $guardian->id, 'created_at' => now(), 'updated_at' => now()]);
+        }
+
+        // R3 activation: the new confirmed enrolments are in a started programme — activate them (as
+        // the scheduled job does for kai/zoe) so enrolments.activation_liveness holds. Payment-decoupled.
+        app(\App\Services\Enrolments\EnrolmentActivationService::class)->run();
+
         $this->command->info('');
         $this->command->info('════ PREVIEW SEED READY ════');
         $this->command->info('Password for every account: password');
