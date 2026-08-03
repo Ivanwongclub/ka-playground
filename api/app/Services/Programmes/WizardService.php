@@ -32,6 +32,11 @@ class WizardService
         'learning' => ['required' => true, 'depends' => ['basics']],
         'certification' => ['required' => true, 'depends' => ['tracker', 'learning']],
         'integration' => ['required' => false, 'depends' => ['basics']], // deferred (Phase 2)
+        // S-MARKETPLACE-A (Option B): storefront copy. OPTIONAL — NOT a publish prerequisite; a programme
+        // can operate (enrol / form teams / take payment) without it. Marketing-completeness gates whether
+        // a programme APPEARS in the public catalogue (the STEP-2 read filters on it), never whether it can
+        // publish. So preFlight never errors on this section.
+        'marketing' => ['required' => false, 'depends' => ['basics']],
     ];
 
     /** Sections locked once Published (D5 one-way door). */
@@ -73,6 +78,34 @@ class WizardService
     }
 
     /** @param array<string, mixed> $data */
+    /**
+     * S-MARKETPLACE-A (Option B) — the storefront-completeness DEFINITION (not a publish gate). The four
+     * marketing text fields each need a non-empty EN + 繁 + 简 (OD-19); brand_color a valid hex. Returns
+     * the list of gaps (empty ⇒ complete). Pure + static so `saveSection` AND the reconcile assertion AND
+     * the STEP-2 public read all filter on the SAME predicate.
+     *
+     * @param  array<string, mixed>  $data
+     * @return list<string>
+     */
+    public static function marketingLanguageGaps(array $data): array
+    {
+        $gaps = [];
+        foreach (['tagline', 'category', 'age_range', 'duration'] as $field) {
+            foreach (['en', 'tc', 'sc'] as $lang) {
+                $v = $data[$field][$lang] ?? null;
+                if (! is_string($v) || trim($v) === '') {
+                    $gaps[] = "{$field}.{$lang}";
+                }
+            }
+        }
+        $brand = $data['brand_color'] ?? null;
+        if (! is_string($brand) || preg_match('/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/', $brand) !== 1) {
+            $gaps[] = 'brand_color';
+        }
+
+        return $gaps;
+    }
+
     public function saveSection(Programme $programme, string $key, array $data, string $status, User $actor): WizardSection
     {
         if (! array_key_exists($key, self::SECTIONS)) {
@@ -112,6 +145,24 @@ class WizardService
                 'Programme capacity edit (S05-2): the seat counter is a system-only table (claimed moves only through 成團); this raises/lowers the CAPACITY column after the OD-31 lower-below-claimed guard, never claimed. Config authority was established by the wizard route before this call.',
                 fn () => DB::table('programme_capacity')->where('programme_id', $programme->id)->update(['capacity' => (int) $data['capacity'], 'updated_at' => now()]),
             );
+        }
+
+        // S-MARKETPLACE-A (Option B) — marketing storefront copy. A `complete`-status save must be fully
+        // trilingual (OD-19). On a PUBLISHED programme marketing is editable but never DEGRADABLE — it must
+        // stay complete-trilingual (mirrors the post-publish date re-validation for basics/team_rules), so
+        // the public storefront never reads a half-filled row. This governs the marketing save ONLY — it
+        // never blocks publish (preFlight ignores this optional section).
+        if ($key === 'marketing') {
+            $published = $programme->status !== 'draft';
+            if ($status === 'complete' || $published) {
+                $gaps = self::marketingLanguageGaps($data);
+                if ($gaps !== []) {
+                    throw ValidationException::withMessages(['marketing' => ['marketing.language_incomplete: missing '.implode(', ', $gaps)]]);
+                }
+            }
+            if ($published && $status !== 'complete') {
+                throw ValidationException::withMessages(['marketing' => ['A published programme\'s marketing cannot be set incomplete — it is editable but not degradable (Option B)']]);
+            }
         }
 
         $section = WizardSection::query()->updateOrCreate(
