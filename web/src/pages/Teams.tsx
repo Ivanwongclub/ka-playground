@@ -14,14 +14,16 @@ import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
 import { mutate, type MutateResult } from '../api/mutate';
-import { StatusTag } from '../display/status';
+import { StatusTag, humanise } from '../display/status';
 import { programmeName, personName } from '../display/names';
 import { formatHkt } from '../display/date';
+import { ReasonModal } from '../components/ReasonModal';
 
 const { Title, Paragraph, Text } = Typography;
 
 interface TeamRow {
   id: string;
+  programme_id: number;
   name: string;
   status: string;
   created_by_name: string | null;
@@ -102,7 +104,15 @@ export function Teams() {
   const [assign, setAssign] = useState<RoleRow | null>(null);
   const [pick, setPick] = useState<string | undefined>(undefined);
 
-  const queue = (data?.data ?? []).filter((r) => r.status === 'submitted');
+  const allTeams = data?.data ?? [];
+  const queue = allTeams.filter((r) => r.status === 'submitted');
+  // Programmes the caller can see (from the RLS-shaped team list) drive the resolution console's picker.
+  const progOptions = Object.values(
+    allTeams.reduce((a, r) => {
+      a[r.programme_id] = { value: r.programme_id, label: programmeName(r, locale) };
+      return a;
+    }, {} as Record<number, { value: number; label: string }>),
+  );
 
   const surfaceError = (r: MutateResult) =>
     void message.error(
@@ -268,6 +278,9 @@ export function Teams() {
         </Card>
       </DataBoundary>
 
+      {/* S-UX3-3a STEP 4 — below-min / matching + resolution (programme-scoped, academy-operations). */}
+      <ResolutionConsole programmes={progOptions} teams={allTeams} />
+
       <Drawer
         width={560}
         open={open !== null}
@@ -335,5 +348,224 @@ export function Teams() {
         )}
       </Modal>
     </Space>
+  );
+}
+
+// ── S-UX3-3a STEP 4 — below-min / matching + resolution ─────────────────────────────────────────────
+// Reads: B4 (matching, additive student names + min) + B5 (capacity report, additive approver/student/
+// waived_by names) — both RLS-shaped (no elevation); the exception ledger is academy-ops/audit only per
+// team_exceptions RLS. Writes: the five OD-37/OD-62 terminal actions, each SHOWN + ENABLED with a
+// consequence-stating confirm; the server (academy operations) is authoritative and every refusal is
+// rendered (403 authority, 409 wrong-state, 422 precondition). The RAISE stays system-automatic — no UI.
+interface MatchTeam { team_id: string; name: string; member_count: number }
+interface UnplacedRow { id: string; student_id: number; student_name: string | null }
+interface ParkedRow { id: string; enrolment_id: string; student_name: string | null; backstop_at: string | null }
+interface MatchingData { min_team_size: number | null; under_strength_teams: MatchTeam[]; unplaced_students: UnplacedRow[]; parked: ParkedRow[] }
+interface ExceptionRow { id: string; type: string; status: string; team_id: string | null; enrolment_id: string | null; student_name: string | null; days_to_backstop: number | null }
+interface WaiverRow { team_id: string; waiver_reason: string; waived_by_name: string | null; waived_at: string | null }
+// confirm_log (approver names, B5) is audit-gated (audit_events RLS); the ACTIONABLE confirmed-team
+// list is driven instead by the RLS-shaped GET /teams (not audit-gated) so a pure-ops admin — the OD-37
+// authority — can see and resolve teams without needing audit.read.
+interface CapacityReport { exception_ledger: ExceptionRow[]; waiver_register: WaiverRow[] }
+
+function ResolutionConsole({ programmes, teams }: { programmes: { value: number; label: string }[]; teams: TeamRow[] }) {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language as KaLocale;
+  const { modal, message } = App.useApp();
+  const [pid, setPid] = useState<number | undefined>(undefined);
+  const matching = useResource<MatchingData>(pid ? `/api/admin/programmes/${pid}/matching` : '');
+  const report = useResource<CapacityReport>(pid ? `/api/admin/programmes/${pid}/team-capacity-report` : '');
+  const [assignTeam, setAssignTeam] = useState<string | null>(null);
+  const [assignPick, setAssignPick] = useState<string | undefined>(undefined);
+  const [waiveTeam, setWaiveTeam] = useState<string | null>(null);
+
+  const refresh = () => { matching.reload(); report.reload(); };
+  const surface = (r: MutateResult) => {
+    if (r.ok) { void message.success(t('teams.resDone')); refresh(); return; }
+    void message.error(r.message ?? (r.status === 403 ? t('mutate.forbidden') : r.status === 0 ? t('mutate.network') : t('mutate.failed')));
+  };
+
+  const dissolve = (teamId: string) =>
+    modal.confirm({
+      title: t('teams.resDissolveTitle'), content: t('teams.resDissolveBody'),
+      okText: t('teams.resDissolve'), cancelText: t('common.cancel'), okButtonProps: { danger: true },
+      onOk: async () => surface(await mutate(`/api/admin/teams/${teamId}/dissolve`)),
+    });
+  const grace = (enrolmentId: string, teamId: string) =>
+    modal.confirm({
+      title: t('teams.resGraceTitle'), content: t('teams.resGraceBody'),
+      okText: t('teams.resExtendGrace'), cancelText: t('common.cancel'),
+      onOk: async () => surface(await mutate(`/api/admin/teams/${teamId}/extend-grace`, { enrolment_id: enrolmentId })),
+    });
+  const schoolLeave = (enrolmentId: string) =>
+    modal.confirm({
+      title: t('teams.resLeaveTitle'), content: t('teams.resLeaveBody'),
+      okText: t('teams.resSchoolLeave'), cancelText: t('common.cancel'),
+      onOk: async () => surface(await mutate(`/api/admin/team-members/${enrolmentId}/school-leave`)),
+    });
+  const doAssign = async () => {
+    if (!assignTeam || !assignPick) return;
+    const r = await mutate(`/api/admin/teams/${assignTeam}/assign`, { enrolment_id: assignPick });
+    setAssignTeam(null); setAssignPick(undefined); surface(r);
+  };
+  const doWaive = async (reason: string) => {
+    const team = waiveTeam; setWaiveTeam(null);
+    if (team) surface(await mutate(`/api/admin/teams/${team}/waive`, { reason }));
+  };
+
+  const m = matching.data; const rep = report.data; const min = m?.min_team_size ?? null;
+  const teamName = (id: string) => teams.find((x) => x.id === id)?.name ?? id.slice(0, 8);
+  const confirmed = teams.filter((x) => x.programme_id === pid && x.status === 'confirmed');
+
+  return (
+    <Card title={t('teams.resTitle')}>
+      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <Select
+          style={{ maxWidth: 380 }}
+          placeholder={t('teams.resPickProgramme')}
+          value={pid}
+          onChange={(v) => setPid(v)}
+          options={programmes}
+        />
+        {pid && (
+          <DataBoundary loading={matching.loading || report.loading} error={matching.error || report.error}>
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <div>
+                <Text strong>{t('teams.resUnderStrength')}</Text>
+                <Table<MatchTeam>
+                  rowKey="team_id" size="small" pagination={false} dataSource={m?.under_strength_teams ?? []}
+                  locale={{ emptyText: t('teams.resNone') }}
+                  columns={[
+                    { title: t('teams.name'), dataIndex: 'name' },
+                    { title: t('teams.resMemberCount'), key: 'mc', render: (_, r) => `${r.member_count}${min !== null ? ` / ${t('teams.resMin')} ${min}` : ''}` },
+                  ]}
+                />
+              </div>
+
+              <div>
+                <Text strong>{t('teams.resUnplaced')}</Text>
+                <Table<UnplacedRow>
+                  rowKey="id" size="small" pagination={false} dataSource={m?.unplaced_students ?? []}
+                  locale={{ emptyText: t('teams.resNone') }}
+                  columns={[{ title: t('teams.member'), dataIndex: 'student_name', render: (v: string | null) => personName(v) }]}
+                />
+              </div>
+
+              <div>
+                <Text strong>{t('teams.resParked')}</Text>
+                <Table<ParkedRow>
+                  rowKey="id" size="small" pagination={false} dataSource={m?.parked ?? []}
+                  locale={{ emptyText: t('teams.resNone') }}
+                  columns={[
+                    { title: t('teams.member'), dataIndex: 'student_name', render: (v: string | null) => personName(v) },
+                    {
+                      title: t('teams.resBackstop'), key: 'bs',
+                      render: (_, r) => {
+                        if (!r.backstop_at) return '—';
+                        const days = Math.ceil((new Date(r.backstop_at).getTime() - Date.now()) / 86400000);
+                        return <Tag color={days <= 0 ? 'error' : days <= 14 ? 'warning' : 'default'}>{t('teams.resDays', { n: days })}</Tag>;
+                      },
+                    },
+                  ]}
+                />
+              </div>
+
+              <div>
+                <Text strong>{t('teams.resConfirmedTeams')}</Text>
+                <Table<TeamRow>
+                  rowKey="id" size="small" pagination={false} dataSource={confirmed}
+                  locale={{ emptyText: t('teams.resNone') }}
+                  columns={[
+                    { title: t('teams.name'), dataIndex: 'name' },
+                    { title: t('teams.resMemberCount'), key: 'mc', render: (_, r) => `${r.member_count}${min !== null ? ` / ${t('teams.resMin')} ${min}` : ''}` },
+                    {
+                      title: '', key: 'act',
+                      render: (_, r) => (
+                        <Space>
+                          <Button size="small" onClick={() => { setAssignTeam(r.id); setAssignPick(undefined); }}>{t('teams.resAssign')}</Button>
+                          <Button size="small" onClick={() => setWaiveTeam(r.id)}>{t('teams.resWaive')}</Button>
+                          <Button size="small" danger onClick={() => dissolve(r.id)}>{t('teams.resDissolve')}</Button>
+                        </Space>
+                      ),
+                    },
+                  ]}
+                />
+              </div>
+
+              <div>
+                <Text strong>{t('teams.resExceptions')}</Text>
+                <Table<ExceptionRow>
+                  rowKey="id" size="small" pagination={false} dataSource={rep?.exception_ledger ?? []}
+                  locale={{ emptyText: t('teams.resNone') }}
+                  columns={[
+                    { title: t('teams.resType'), dataIndex: 'type', render: (v: string) => humanise(v) },
+                    { title: t('teams.resStatus'), dataIndex: 'status', render: (v: string) => humanise(v) },
+                    { title: t('teams.member'), dataIndex: 'student_name', render: (v: string | null) => personName(v) },
+                    { title: t('teams.resBackstop'), dataIndex: 'days_to_backstop', render: (v: number | null) => (v === null ? '—' : t('teams.resDays', { n: v })) },
+                    {
+                      title: '', key: 'act',
+                      render: (_, r) =>
+                        r.enrolment_id ? (
+                          <Space>
+                            <Button size="small" onClick={() => grace(r.enrolment_id!, r.team_id ?? '')}>{t('teams.resExtendGrace')}</Button>
+                            <Button size="small" onClick={() => schoolLeave(r.enrolment_id!)}>{t('teams.resSchoolLeave')}</Button>
+                          </Space>
+                        ) : null,
+                    },
+                  ]}
+                />
+              </div>
+
+              <div>
+                <Text strong>{t('teams.resWaivers')}</Text>
+                <Table<WaiverRow>
+                  rowKey="team_id" size="small" pagination={false} dataSource={rep?.waiver_register ?? []}
+                  locale={{ emptyText: t('teams.resNone') }}
+                  columns={[
+                    { title: t('teams.name'), key: 'nm', render: (_, r) => teamName(r.team_id) },
+                    { title: t('teams.resReason'), dataIndex: 'waiver_reason' },
+                    { title: t('teams.resApprover'), dataIndex: 'waived_by_name', render: (v: string | null) => personName(v) },
+                    { title: '', key: 'when', render: (_, r) => (r.waived_at ? formatHkt(r.waived_at, locale) : '—') },
+                  ]}
+                />
+              </div>
+            </Space>
+          </DataBoundary>
+        )}
+      </Space>
+
+      <ReasonModal
+        open={waiveTeam !== null}
+        title={t('teams.resWaiveTitle')}
+        consequence={t('teams.resWaiveBody')}
+        okText={t('teams.resWaive')}
+        onOk={doWaive}
+        onCancel={() => setWaiveTeam(null)}
+      />
+
+      <Modal
+        open={assignTeam !== null}
+        title={t('teams.resAssignTitle')}
+        okText={t('teams.resAssign')}
+        cancelText={t('common.cancel')}
+        okButtonProps={{ disabled: !assignPick }}
+        onOk={doAssign}
+        onCancel={() => { setAssignTeam(null); setAssignPick(undefined); }}
+      >
+        <Select
+          style={{ width: '100%' }}
+          placeholder={t('teams.resUnplaced')}
+          value={assignPick}
+          onChange={setAssignPick}
+          options={(m?.unplaced_students ?? []).map((u) => ({ value: u.id, label: personName(u.student_name) }))}
+        />
+        {assignPick && (
+          <Alert
+            type="warning" showIcon style={{ marginTop: 12 }}
+            message={t('teams.resAssignBody', { name: personName(m?.unplaced_students.find((u) => u.id === assignPick)?.student_name) })}
+          />
+        )}
+      </Modal>
+    </Card>
   );
 }

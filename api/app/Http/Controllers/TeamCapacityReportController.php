@@ -22,22 +22,31 @@ class TeamCapacityReportController extends Controller
             ->where('programme_id', $programmeId)->where('section_key', 'team_rules')->value('data'), true) ?? []);
         $poolDepth = DB::table('enrolments')->where('programme_id', $programmeId)->where('status', 'in_pool')->count();
 
-        $confirmLog = DB::table('audit_events')
-            ->where('programme_id', $programmeId)->where('action', 'team.confirmed')
-            ->orderByDesc('occurred_at')
-            ->get(['entity_id as team_id', 'actor_id as approver_id', 'payload_after', 'occurred_at'])
+        // Backend delta B5 — ADDITIVE names (S-UX2b), each a double-gated LEFT join to users_read
+        // (NULL when the caller may not see that user; count-preserving). The report runs under the
+        // caller's RLS — NO elevation. approver_name on the confirm log's actor_id:
+        $confirmLog = DB::table('audit_events as a')
+            ->leftJoin('users as u', 'u.id', '=', 'a.actor_id')
+            ->where('a.programme_id', $programmeId)->where('a.action', 'team.confirmed')
+            ->orderByDesc('a.occurred_at')
+            ->get(['a.entity_id as team_id', 'a.actor_id as approver_id', 'u.name as approver_name', 'a.payload_after', 'a.occurred_at'])
             ->map(fn ($r) => [
                 'team_id' => $r->team_id,
                 'approver_id' => $r->approver_id,
+                'approver_name' => $r->approver_name,
                 'occurred_at' => $r->occurred_at,
                 'seats_claimed' => json_decode((string) $r->payload_after, true)['seats_claimed'] ?? null,
                 'member_count' => json_decode((string) $r->payload_after, true)['member_count'] ?? null,
             ]);
 
         $now = now();
-        $exceptions = DB::table('team_exceptions')->where('programme_id', $programmeId)
-            ->orderByDesc('created_at')
-            ->get(['id', 'type', 'status', 'team_id', 'enrolment_id', 'backstop_at', 'resolution', 'created_at'])
+        // B5 — the exception ledger's bare enrolment_id gains the student's name (exception → enrolment → user).
+        $exceptions = DB::table('team_exceptions as x')
+            ->leftJoin('enrolments as e', 'e.id', '=', 'x.enrolment_id')
+            ->leftJoin('users as u', 'u.id', '=', 'e.student_id')
+            ->where('x.programme_id', $programmeId)
+            ->orderByDesc('x.created_at')
+            ->get(['x.id', 'x.type', 'x.status', 'x.team_id', 'x.enrolment_id', 'u.name as student_name', 'x.backstop_at', 'x.resolution', 'x.created_at'])
             ->map(fn ($r) => (array) $r + [
                 // days until (positive) or past (negative) the 90-day backstop, for parked rows
                 'days_to_backstop' => $r->backstop_at !== null
@@ -45,8 +54,11 @@ class TeamCapacityReportController extends Controller
                     : null,
             ]);
 
-        $waivers = DB::table('teams')->where('programme_id', $programmeId)->whereNotNull('waiver_reason')
-            ->get(['id as team_id', 'waiver_reason', 'waived_by', 'waived_at']);
+        // B5 — the waiver register's bare waived_by gains the waiving admin's name.
+        $waivers = DB::table('teams as t')
+            ->leftJoin('users as u', 'u.id', '=', 't.waived_by')
+            ->where('t.programme_id', $programmeId)->whereNotNull('t.waiver_reason')
+            ->get(['t.id as team_id', 't.waiver_reason', 't.waived_by', 'u.name as waived_by_name', 't.waived_at']);
 
         return response()->json([
             'capacity' => [
