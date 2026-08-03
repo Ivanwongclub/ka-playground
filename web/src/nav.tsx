@@ -30,6 +30,9 @@ import {
   CalendarClock,
   CalendarCheck,
   NotebookPen,
+  Baby,
+  Wallet,
+  UsersRound,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -98,6 +101,31 @@ export const NAV: NavGroup[] = [
         path: '/attendance',
         i18nKey: 'nav.attendance',
         icon: <CalendarCheck size={16} aria-hidden />,
+        visible: (h) => h('teams.approve') && !h('operations.manage'),
+      },
+      {
+        // S-UX3-9 — guardian "My Children". consent.sign is guardian-unique (capability_forbidden bars
+        // ops; students hold consent.view, not .sign).
+        path: '/my/children',
+        i18nKey: 'nav.myChildren',
+        icon: <Baby size={16} aria-hidden />,
+        visible: (h) => h('consent.sign'),
+      },
+      {
+        // S-UX3-9 — guardian "My Payments" (read-only obligations/receipts + get-payment-link). Guardian-
+        // scoped via consent.sign (a guardian's finance.view is "their own money"; consent.sign keeps it
+        // guardian-only, not school_admin/ops).
+        path: '/my/payments',
+        i18nKey: 'nav.myPayments',
+        icon: <Wallet size={16} aria-hidden />,
+        visible: (h) => h('consent.sign'),
+      },
+      {
+        // S-UX3-9 — teacher "My Students" (school roll). teams.approve ∧ ¬operations.manage = teacher
+        // (matches the S-UX3-4 mentor gate; both are teacher surfaces).
+        path: '/my/students',
+        i18nKey: 'nav.myStudents',
+        icon: <UsersRound size={16} aria-hidden />,
         visible: (h) => h('teams.approve') && !h('operations.manage'),
       },
     ],

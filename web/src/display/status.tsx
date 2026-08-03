@@ -76,6 +76,18 @@ const REGISTRY: Record<string, Record<string, Entry>> = {
     cancelled: { labelKey: 'status.session.cancelled', color: 'default' },
     rescheduled: { labelKey: 'status.session.rescheduled', color: 'default' },
   },
+  // S-UX3-9 — enrolment lifecycle (guardian My Children).
+  enrolmentStatus: {
+    submitted: { labelKey: 'status.enrolment.submitted', color: 'processing' },
+    pending_consent: { labelKey: 'status.enrolment.pending_consent', color: 'warning' },
+    in_pool: { labelKey: 'status.enrolment.in_pool', color: 'processing' },
+    teamed: { labelKey: 'status.enrolment.teamed', color: 'gold' },
+    confirmed: { labelKey: 'status.enrolment.confirmed', color: 'success' },
+    active: { labelKey: 'status.enrolment.active', color: 'success' },
+    completed: { labelKey: 'status.enrolment.completed', color: 'success' },
+    withdrawn: { labelKey: 'status.enrolment.withdrawn', color: 'default' },
+    released: { labelKey: 'status.enrolment.released', color: 'default' },
+  },
 };
 
 /** code → readable ("enrolment.submitted" → "Enrolment submitted"). Never i18n'd (open set). */

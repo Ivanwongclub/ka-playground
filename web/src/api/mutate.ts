@@ -8,6 +8,7 @@ export interface MutateResult {
   ok: boolean;
   status: number;
   message?: string; // the server's message, when present
+  data?: unknown; // the parsed success body, when the server returns JSON (e.g. a minted payment link)
 }
 
 export async function mutate(url: string, body?: unknown): Promise<MutateResult> {
@@ -20,7 +21,15 @@ export async function mutate(url: string, body?: unknown): Promise<MutateResult>
       headers: body === undefined || isForm ? undefined : { 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
     });
-    if (res.ok) return { ok: true, status: res.status };
+    if (res.ok) {
+      let data: unknown;
+      try {
+        data = await res.json();
+      } catch {
+        /* no JSON body — fine, callers that don't need it ignore data */
+      }
+      return { ok: true, status: res.status, data };
+    }
     let message: string | undefined;
     try {
       message = ((await res.json()) as { message?: string }).message;

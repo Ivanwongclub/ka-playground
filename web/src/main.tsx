@@ -58,6 +58,9 @@ const MySessions = lazy(() => import('./pages/SessionAttendance').then((m) => ({
 const ChildSessions = lazy(() => import('./pages/SessionAttendance').then((m) => ({ default: m.ChildSessions })));
 const MentorAttendance = lazy(() => import('./pages/SessionAttendance').then((m) => ({ default: m.MentorAttendance })));
 const OpsAttendance = lazy(() => import('./pages/SessionAttendance').then((m) => ({ default: m.OpsAttendance })));
+const MyChildren = lazy(() => import('./pages/SelfService').then((m) => ({ default: m.MyChildren })));
+const MyPayments = lazy(() => import('./pages/SelfService').then((m) => ({ default: m.MyPayments })));
+const MyStudents = lazy(() => import('./pages/SelfService').then((m) => ({ default: m.MyStudents })));
 const MemberEvents = lazy(() => import('./pages/Community').then((m) => ({ default: m.MemberEvents })));
 const MemberDirectory = lazy(() => import('./pages/Community').then((m) => ({ default: m.MemberDirectory })));
 const MemberProfile = lazy(() => import('./pages/Community').then((m) => ({ default: m.MemberProfile })));
@@ -108,6 +111,10 @@ function Root() {
               <Route path="/family/sessions" element={<ChildSessions />} />
               <Route path="/attendance" element={<MentorAttendance />} />
               <Route path="/admin/attendance" element={<OpsAttendance />} />
+              {/* S-UX3-9 — guardian/teacher self-service (My Children / My Payments / My Students). */}
+              <Route path="/my/children" element={<MyChildren />} />
+              <Route path="/my/payments" element={<MyPayments />} />
+              <Route path="/my/students" element={<MyStudents />} />
               <Route path="/learn" element={<Placeholder titleKey="empty.title" />} />
               {/* S-UX3-8 — Member surfaces (events / directory / profile). */}
               <Route path="/events" element={<MemberEvents />} />

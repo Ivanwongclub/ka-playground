@@ -39,7 +39,10 @@
     "mySessions": "我的課節",
     "childSessions": "子女的課節",
     "attendance": "點名",
-    "attendanceOversight": "點名總覽"
+    "attendanceOversight": "點名總覽",
+    "myChildren": "我的子女",
+    "myPayments": "我的付款",
+    "myStudents": "我的學生"
   },
   "shell": {
     "openNavigation": "開啟導覽",
@@ -492,6 +495,17 @@
       "completed": "已完成",
       "cancelled": "已取消",
       "rescheduled": "已改期"
+    },
+    "enrolment": {
+      "submitted": "已提交",
+      "pending_consent": "待同意",
+      "in_pool": "候配中",
+      "teamed": "已分隊",
+      "confirmed": "已確認",
+      "active": "進行中",
+      "completed": "已完成",
+      "withdrawn": "已退出",
+      "released": "已釋放"
     }
   },
   "data": {
@@ -755,5 +769,23 @@
     "opsSubtitle": "課程各課節的出席情況。",
     "pickProgramme": "選擇課程",
     "open": "開啟"
+  },
+  "selfService": {
+    "childrenTitle": "我的子女",
+    "childrenSubtitle": "你子女的報名與同意狀況。",
+    "viewSessions": "查看課節",
+    "consentNeeded": "需要你簽署",
+    "consentMet": "同意已完成",
+    "consentPending": "同意待處理",
+    "paymentsTitle": "我的付款",
+    "paymentsSubtitle": "你家庭的費用、收據與付款連結。",
+    "getLink": "取得付款連結",
+    "due": "到期",
+    "receiptsTitle": "收據",
+    "receipt": "收據",
+    "linkReady": "付款連結 — 轉發給付款人",
+    "studentsTitle": "我的學生",
+    "studentsSubtitle": "你校名冊上的學生。",
+    "noStudents": "名冊上暫無學生。"
   }
 }

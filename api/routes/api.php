@@ -250,6 +250,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/my/sessions', [\App\Http\Controllers\SessionReadController::class, 'mySessions'])->middleware('role:student');
     Route::get('/my/students/{studentId}/sessions', [\App\Http\Controllers\SessionReadController::class, 'childSessions'])->middleware('role:guardian');
     Route::get('/my/mentor/sessions', [\App\Http\Controllers\SessionReadController::class, 'mentorSessions'])->middleware('role:teacher'); // S-UX3-4 STEP 2: mentor session-list (metadata only, no elevation)
+    Route::get('/teacher/students', [\App\Http\Controllers\TeacherStudentsController::class, 'index'])->middleware('role:teacher'); // S-UX3-9: teacher's school roll (allowlist {student_id,student_name}, elevation-free). NOT /my/students — that path is the RETIRED guardian-create endpoint (OD-27), which must keep 404ing.
     Route::get('/admin/sessions/{id}/roster', [\App\Http\Controllers\SessionReadController::class, 'roster']); // authority in-controller (mentor/ops)
     // S06-4b — assessment lifecycle (2.5); the result read is RLS-embargoed (hidden until Released)
     Route::post('/admin/programmes/{programmeId}/assessments', [\App\Http\Controllers\AssessmentController::class, 'store']);

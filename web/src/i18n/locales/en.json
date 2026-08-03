@@ -39,7 +39,10 @@
     "mySessions": "My Sessions",
     "childSessions": "My Child's Sessions",
     "attendance": "Attendance",
-    "attendanceOversight": "Attendance Oversight"
+    "attendanceOversight": "Attendance Oversight",
+    "myChildren": "My Children",
+    "myPayments": "My Payments",
+    "myStudents": "My Students"
   },
   "shell": {
     "openNavigation": "Open navigation",
@@ -492,6 +495,17 @@
       "completed": "Completed",
       "cancelled": "Cancelled",
       "rescheduled": "Rescheduled"
+    },
+    "enrolment": {
+      "submitted": "Submitted",
+      "pending_consent": "Pending consent",
+      "in_pool": "In pool",
+      "teamed": "Teamed",
+      "confirmed": "Confirmed",
+      "active": "Active",
+      "completed": "Completed",
+      "withdrawn": "Withdrawn",
+      "released": "Released"
     }
   },
   "data": {
@@ -755,5 +769,23 @@
     "opsSubtitle": "Attendance across a programme's sessions.",
     "pickProgramme": "Choose a programme",
     "open": "Open"
+  },
+  "selfService": {
+    "childrenTitle": "My Children",
+    "childrenSubtitle": "Your children's enrolments and consent.",
+    "viewSessions": "View sessions",
+    "consentNeeded": "Your signature needed",
+    "consentMet": "Consent complete",
+    "consentPending": "Consent pending",
+    "paymentsTitle": "My Payments",
+    "paymentsSubtitle": "Your family's fees, receipts, and payment links.",
+    "getLink": "Get payment link",
+    "due": "due",
+    "receiptsTitle": "Receipts",
+    "receipt": "Receipt",
+    "linkReady": "Payment link — forward this to whoever pays",
+    "studentsTitle": "My Students",
+    "studentsSubtitle": "Students on your school's roll.",
+    "noStudents": "No students on your roll yet."
   }
 }
