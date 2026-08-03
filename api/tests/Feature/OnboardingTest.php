@@ -43,12 +43,13 @@ class OnboardingTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_member_invitations_are_refused_until_s06(): void
+    public function test_member_invitations_are_enabled_once_s06_surfaces_ship(): void
     {
+        // S-UX3-8 (OD-22): the Member surfaces are now delivered, so the member-invitation deferral is
+        // LIFTED — a member invitation is issued like any other invitable role. (Was: refused-until-s06.)
         Sanctum::actingAs($this->opsAdmin());
         $this->postJson('/api/admin/invitations', ['email' => 'm@example.test', 'role' => 'member'])
-            ->assertStatus(422)
-            ->assertJsonPath('errors.role.0', fn ($m) => str_contains($m, 'OD-22'));
+            ->assertStatus(201);
     }
 
     public function test_student_invitations_are_refused_guardian_led(): void

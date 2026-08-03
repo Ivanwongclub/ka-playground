@@ -43,4 +43,21 @@ class MemberController extends Controller
 
         return response()->json(['status' => 'saved']);
     }
+
+    /**
+     * S-UX3-8 — the member's OWN profile (pre-fills the editor). Self-scoped: user_id = the authenticated
+     * member (no param to name another), own row, NO elevation (member_profiles_read admits the member for
+     * their own via user_id = actor, even when visible=false). Absent → a null/creatable shape, not an error.
+     */
+    public function myProfile(Request $request): JsonResponse
+    {
+        $row = DB::table('member_profiles')->where('user_id', $request->user()->id)
+            ->first(['display_name', 'headline', 'visible']);
+
+        return response()->json([
+            'display_name' => $row->display_name ?? null,
+            'headline' => $row->headline ?? null,
+            'visible' => $row !== null ? (bool) $row->visible : true,
+        ]);
+    }
 }

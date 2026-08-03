@@ -20,7 +20,10 @@ use Illuminate\Validation\ValidationException;
  */
 class InvitationService
 {
-    public const INVITABLE_ROLES = ['guardian', 'teacher', 'school_admin', 'academy_admin'];
+    // S-UX3-8 (OD-22): 'member' becomes invitable now that the Member surfaces are delivered — the
+    // school-less accept path (doAccept) mints a member with exactly the member role's caps; the
+    // teacher-only school-vouch branch is cleanly skipped for a member (school_id === null).
+    public const INVITABLE_ROLES = ['guardian', 'teacher', 'school_admin', 'academy_admin', 'member'];
 
     public function __construct(
         private readonly AuditService $audit,

@@ -257,6 +257,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/events/{id}/rsvp', [\App\Http\Controllers\MemberController::class, 'rsvp'])->middleware('role:member');
     Route::get('/my/rsvps', [\App\Http\Controllers\MemberController::class, 'myRsvps'])->middleware('role:member');
     Route::get('/directory', [\App\Http\Controllers\MemberController::class, 'directory']); // RLS-shaped (Members only)
+    Route::get('/my/profile', [\App\Http\Controllers\MemberController::class, 'myProfile'])->middleware('role:member'); // S-UX3-8: self-read (pre-fills the editor)
     Route::put('/my/profile', [\App\Http\Controllers\MemberController::class, 'profile'])->middleware('role:member');
 
     // Reads shaped by RLS alone (S05 formation will consume these)
