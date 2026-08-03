@@ -393,6 +393,59 @@ class ConsentSigningService
         return $activeGuardians->isNotEmpty() && $activeGuardians->diff($signedSigners)->isEmpty();
     }
 
+    /**
+     * S-UX3-3a — aggregate consent summary for the 成團 gate. BOOLEANS/COUNTS ONLY: no guardian id,
+     * name, request row, timestamp or signing order leaves this method (§1 privacy allowlist).
+     * `satisfied` DELEGATES to consentSatisfied — the single source; the read never re-derives the gate.
+     * Advisory only — the confirm-time FOR SHARE re-check in TeamConfirmationService is the authority.
+     *
+     * @return array{satisfied: bool, requires_all: bool, signed_count: int, guardian_count: int, blocker: ?string}
+     */
+    public function consentSummary(int $programmeId, int $studentId): array
+    {
+        $requiresAll = (bool) (json_decode((string) DB::table('wizard_sections')
+            ->where('programme_id', $programmeId)->where('section_key', 'consent')
+            ->value('data'), true)['requires_all_guardians'] ?? false);
+
+        $activeGuardians = DB::table('guardian_links')
+            ->where('student_id', $studentId)->where('status', 'active')->pluck('guardian_id');
+        $signedSigners = DB::table('consent_requests')
+            ->where('programme_id', $programmeId)->where('student_id', $studentId)
+            ->where('status', 'signed')->pluck('signer_id')->unique();
+        $signedActive = $activeGuardians->intersect($signedSigners);
+
+        $satisfied = $this->consentSatisfied($programmeId, $studentId); // single source — never re-derived
+
+        $blocker = null;
+        if (! $satisfied) {
+            // Coarse aggregate reason across the active guardians who lack a signed request. NO id
+            // leaves this loop — only the enum is returned.
+            $anyNoRequest = false;
+            $anyStale = false;
+            foreach ($activeGuardians->diff($signedSigners) as $guardianId) {
+                $statuses = DB::table('consent_requests')
+                    ->where('programme_id', $programmeId)->where('student_id', $studentId)
+                    ->where('signer_id', $guardianId)->pluck('status');
+                if ($statuses->isEmpty()) {
+                    $anyNoRequest = true;
+                    break;
+                }
+                if ($statuses->contains('superseded') && ! $statuses->contains('signed')) {
+                    $anyStale = true;
+                }
+            }
+            $blocker = $anyNoRequest ? 'not_requested' : ($anyStale ? 'stale' : 'awaiting_signature');
+        }
+
+        return [
+            'satisfied' => $satisfied,
+            'requires_all' => $requiresAll,
+            'signed_count' => $signedActive->count(),
+            'guardian_count' => $activeGuardians->count(),
+            'blocker' => $blocker,
+        ];
+    }
+
     // ── internals ──
 
     private function assertSigner(object $request, User $signer): void

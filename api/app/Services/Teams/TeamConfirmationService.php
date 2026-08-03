@@ -141,7 +141,9 @@ class TeamConfirmationService
         );
     }
 
-    private function assertApprover(object $team, User $approver): void
+    /** OD-39 authority (single source): lobby school-admin of the team's category, or academy ops/super.
+     *  Public so the S-UX3-3a consent-status read reuses the SAME gate as the 成團 confirm. */
+    public function assertApprover(object $team, User $approver): void
     {
         // academy operations / super always
         if ($approver->role === 'academy_admin') {
