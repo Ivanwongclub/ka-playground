@@ -281,6 +281,14 @@ Route::get('/pay/{token}', [\App\Http\Controllers\PaymentLinkController::class, 
 Route::post('/pay/{token}/confirm', [\App\Http\Controllers\PaymentLinkController::class, 'confirm'])
     ->middleware('throttle:payment-link');
 
+// S-MARKETPLACE-A STEP 2 — the public programme catalogue (anonymous READ, the S04C-analogue). The
+// filter (published + non-template + marketing-complete) is the SOLE storefront safety gate under
+// Option B; constant-shape not-found; no PII; throttled per-IP.
+Route::get('/programmes', [\App\Http\Controllers\MarketplaceController::class, 'catalogue'])
+    ->middleware('throttle:catalogue');
+Route::get('/programmes/{id}', [\App\Http\Controllers\MarketplaceController::class, 'show'])
+    ->middleware('throttle:catalogue');
+
 // S04C step 1 — the platform's FIRST anonymous WRITE (OD-23). The picker read
 // is a filtered listed-schools read; submit is the confined public-context write.
 // Constant-shape 202, no status endpoint. throttle:registration on both.

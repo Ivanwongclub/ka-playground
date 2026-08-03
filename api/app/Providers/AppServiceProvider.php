@@ -50,6 +50,8 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('payment-link', fn (Request $r) => Limit::perMinute(10)->by('paylink:'.$r->ip()));
         // S04C: the anonymous registration surface (first anonymous write), per-IP.
         RateLimiter::for('registration', fn (Request $r) => Limit::perMinute(10)->by('register:'.$r->ip()));
+        // S-MARKETPLACE-A STEP 2: the anonymous public programme catalogue (read); browse-friendly per-IP.
+        RateLimiter::for('catalogue', fn (Request $r) => Limit::perMinute(60)->by('catalogue:'.$r->ip()));
         RateLimiter::for('pairing', fn (Request $r) => Limit::perHour(5)->by('pairing:'.($r->user()?->id ?? $r->ip())));
 
         // Session policy (2.11): 12h IDLE expiry (last_used_at), remember-me 30d.
