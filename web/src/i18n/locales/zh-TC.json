@@ -460,6 +460,12 @@
       "pending_confirmation": "待確認",
       "confirmed": "已確認",
       "rejected": "已拒絕"
+    },
+    "team": {
+      "forming": "組建中",
+      "submitted": "待成團",
+      "confirmed": "已成團",
+      "disbanded": "已解散"
     }
   },
   "data": {
@@ -561,5 +567,39 @@
     "student": "學生",
     "programme": "課程",
     "amount": "金額"
+  },
+  "teams": {
+    "title": "團隊",
+    "subtitle": "確認成團、佔用名額並為每位成員發出付款責任。",
+    "queueTitle": "待成團",
+    "name": "團隊",
+    "programme": "課程",
+    "category": "大堂",
+    "createdBy": "建立者",
+    "members": "成員",
+    "review": "查看",
+    "detailTitle": "{{team}} — 同意狀態",
+    "consentMode": "同意",
+    "mode": {
+      "any-one": "任一監護人",
+      "requires_all": "所有監護人"
+    },
+    "allSatisfied": "所有成員已滿足",
+    "blockingCount": "{{m}} 位尚未滿足",
+    "member": "成員",
+    "guardiansSigned": "已簽署",
+    "signedOf": "{{total}} 位中已簽 {{signed}} 位",
+    "satisfied": "已滿足",
+    "notSatisfied": "未滿足",
+    "blocker": {
+      "awaiting_signature": "等待簽署",
+      "stale": "已被取代 — 需重新發出",
+      "not_requested": "尚未發出"
+    },
+    "confirmTitle": "確認成團「{{team}}」？",
+    "confirmBody": "此操作將佔用課程容量中的 {{n}} 個名額，並為 {{n}} 位成員各自發出付款責任。在此無法撤銷。",
+    "confirmAdvisory": "⚠️ {{m}} 位成員的同意尚未滿足 — 成團將被拒絕，直至解決。",
+    "confirmCta": "確認成團",
+    "confirmed": "已成團 — 名額已佔用，付款責任已發出。"
   }
 }

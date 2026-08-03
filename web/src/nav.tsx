@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   Undo2,
   Users,
+  Users2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -74,6 +75,14 @@ export const NAV: NavGroup[] = [
         path: '/admin/withdrawals',
         i18nKey: 'nav.withdrawals',
         icon: <LogOut size={16} aria-hidden />,
+        visible: (h) => h('operations.manage'),
+      },
+      {
+        // S-UX3-3a — the ops 成團 view. Gated on operations.manage like its sibling ops queues;
+        // lobby school-admins retain direct server access (OD-39) under shown-not-hidden.
+        path: '/team',
+        i18nKey: 'nav.team',
+        icon: <Users2 size={16} aria-hidden />,
         visible: (h) => h('operations.manage'),
       },
       {

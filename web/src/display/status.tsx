@@ -48,6 +48,12 @@ const REGISTRY: Record<string, Record<string, Entry>> = {
     draft: { labelKey: 'status.template.draft', color: 'default' },
     published: { labelKey: 'status.template.published', color: 'success' },
   },
+  teamStatus: {
+    forming: { labelKey: 'status.team.forming', color: 'default' },
+    submitted: { labelKey: 'status.team.submitted', color: 'processing' },
+    confirmed: { labelKey: 'status.team.confirmed', color: 'success' },
+    disbanded: { labelKey: 'status.team.disbanded', color: 'default' },
+  },
   language: {
     en: { labelKey: 'locale.en', color: 'default' },
     'zh-TC': { labelKey: 'locale.zh-TC', color: 'default' },

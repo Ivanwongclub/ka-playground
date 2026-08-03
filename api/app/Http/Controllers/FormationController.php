@@ -36,10 +36,34 @@ class FormationController extends Controller
         return response()->json(['joined' => true]);
     }
 
-    /** RLS-shaped: members see their team; lobby school admin sees teams in their lobby. */
+    /**
+     * RLS-shaped: members see their team; lobby school admin sees teams in their lobby.
+     *
+     * S-UX3-3a Backend delta B1 — ADDITIVE names (S-UX2b): programme, category/lobby and the
+     * `created_by` person, each LEFT-joined so the row count is preserved (a name resolves or is
+     * NULL, the team never drops). `created_by_name` rides `users_read`'s own gate (double-gated):
+     * NULL when the caller may not see that user — expected, never the raw id on screen. Plus an
+     * additive active-member count for the 成團 queue. No column removed; existing keys unchanged.
+     */
     public function index(): JsonResponse
     {
-        return response()->json(['data' => DB::table('teams')->orderBy('created_at')
-            ->get(['id', 'programme_id', 'category_id', 'name', 'status', 'created_by'])]);
+        $rows = DB::table('teams as t')
+            ->leftJoin('programmes as p', 'p.id', '=', 't.programme_id')
+            ->leftJoin('team_categories as c', 'c.id', '=', 't.category_id')
+            ->leftJoin('users as u', 'u.id', '=', 't.created_by')
+            ->orderBy('t.created_at')
+            ->get([
+                't.id', 't.programme_id', 't.category_id', 't.name', 't.status', 't.created_by',
+                'p.name_en as programme_name_en', 'p.name_tc as programme_name_tc', 'p.name_sc as programme_name_sc',
+                'c.name_en as category_name_en', 'c.name_tc as category_name_tc', 'c.name_sc as category_name_sc',
+                'u.name as created_by_name',
+            ]);
+
+        // Additive active-member count, resolved under the caller's RLS (advisory queue signal).
+        $counts = DB::table('team_members')->where('status', 'active')
+            ->select('team_id', DB::raw('count(*) as n'))->groupBy('team_id')->pluck('n', 'team_id');
+        $rows->each(fn ($r) => $r->member_count = (int) ($counts[$r->id] ?? 0));
+
+        return response()->json(['data' => $rows]);
     }
 }

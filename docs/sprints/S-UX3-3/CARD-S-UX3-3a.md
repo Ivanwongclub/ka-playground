@@ -73,6 +73,22 @@ issuance trigger and the ops UI offers **no "fix from here" control** that bypas
   B1) + member count.
 - **Team detail:** members roster (Backend delta B2) with **per-member consent status** from STEP 1 —
   ✅ satisfied / ⚠️ with the coarse reason, and "X of N guardians signed" for requires_all.
+  - **Count is the primary signal, blocker is secondary (STEP-1 review note 1).** `signed_count` /
+    `guardian_count` render **prominently** as the actionable "X of N signed" gap — the coarse `blocker`
+    word is a **subordinate** hint, never the sole signal. Rationale: `consentSummary` collapses a mixed
+    team (a stale-only guardian AND a separately-awaiting guardian) to **one** `blocker` by a fixed
+    precedence — it picks **`stale` over `awaiting_signature`** — so the single word can under-describe a
+    multi-guardian gap; the count cannot.
+  - **DECISION (state in build, one line):** the `stale > awaiting_signature` precedence in
+    `consentSummary` is **intentional and retained** — `stale` names a supersession the operator must act
+    on (a re-issue), which strictly out-ranks a not-yet-signed live request; STEP 2 surfaces the count as
+    the truth and does **not** flip it. *(If review disagrees, the flip is a STEP-1 change, not a STEP-2
+    one — noted, not silently done.)*
+  - **STANDING CONSTRAINT (STEP-1 review note 2) — do NOT enrich the blocker.** The `blocker` loop reads
+    `signer_id` **internally only** (never returned); STEP 2 (and every later step) renders **only** the
+    STEP-1 allowlist keys — it must **never** expand `blocker` into a per-guardian / who-is-stale
+    breakdown, which would reintroduce the guardian-identity leak surface. The STEP-1c key-allowlist +
+    string-search privacy tooth stays **green and unchanged**; no STEP-2 code adds a guardian field.
 - **成團 confirm (ruling 2a — enabled + advisory):** the button is **shown and ENABLED** (never
   client-disabled). The **consequence-stating confirm modal** (from PROPOSED §6):
   > *Confirm formation of "[team]"? This claims **N seats** against the programme's capacity and issues

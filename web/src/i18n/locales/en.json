@@ -460,6 +460,12 @@
       "pending_confirmation": "Pending confirmation",
       "confirmed": "Confirmed",
       "rejected": "Rejected"
+    },
+    "team": {
+      "forming": "Forming",
+      "submitted": "Awaiting 成團",
+      "confirmed": "Confirmed",
+      "disbanded": "Disbanded"
     }
   },
   "data": {
@@ -561,5 +567,39 @@
     "student": "Student",
     "programme": "Programme",
     "amount": "Amount"
+  },
+  "teams": {
+    "title": "Teams",
+    "subtitle": "Confirm formation (成團), claim seats and issue each member's payment obligation.",
+    "queueTitle": "Awaiting 成團",
+    "name": "Team",
+    "programme": "Programme",
+    "category": "Lobby",
+    "createdBy": "Created by",
+    "members": "Members",
+    "review": "Review",
+    "detailTitle": "{{team}} — consent status",
+    "consentMode": "Consent",
+    "mode": {
+      "any-one": "Any one guardian",
+      "requires_all": "All guardians"
+    },
+    "allSatisfied": "All members satisfied",
+    "blockingCount": "{{m}} not yet satisfied",
+    "member": "Member",
+    "guardiansSigned": "Signed",
+    "signedOf": "{{signed}} of {{total}} signed",
+    "satisfied": "Satisfied",
+    "notSatisfied": "Not satisfied",
+    "blocker": {
+      "awaiting_signature": "Awaiting signature",
+      "stale": "Superseded — re-issue needed",
+      "not_requested": "Not yet requested"
+    },
+    "confirmTitle": "Confirm formation of \"{{team}}\"?",
+    "confirmBody": "This claims {{n}} seats against the programme's capacity and issues a payment obligation for each of the {{n}} members. It cannot be undone here.",
+    "confirmAdvisory": "⚠️ {{m}} members' consent is not yet satisfied — 成團 will be refused until resolved.",
+    "confirmCta": "Confirm formation",
+    "confirmed": "Team formed — seats claimed and obligations issued."
   }
 }
