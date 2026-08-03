@@ -54,6 +54,10 @@ const Withdrawals = lazy(() => import('./pages/Withdrawals').then((m) => ({ defa
 const Payments = lazy(() => import('./pages/Payments').then((m) => ({ default: m.Payments })));
 const Teams = lazy(() => import('./pages/Teams').then((m) => ({ default: m.Teams })));
 const StudentTeam = lazy(() => import('./pages/StudentTeam').then((m) => ({ default: m.StudentTeam })));
+const MySessions = lazy(() => import('./pages/SessionAttendance').then((m) => ({ default: m.MySessions })));
+const ChildSessions = lazy(() => import('./pages/SessionAttendance').then((m) => ({ default: m.ChildSessions })));
+const MentorAttendance = lazy(() => import('./pages/SessionAttendance').then((m) => ({ default: m.MentorAttendance })));
+const OpsAttendance = lazy(() => import('./pages/SessionAttendance').then((m) => ({ default: m.OpsAttendance })));
 const MemberEvents = lazy(() => import('./pages/Community').then((m) => ({ default: m.MemberEvents })));
 const MemberDirectory = lazy(() => import('./pages/Community').then((m) => ({ default: m.MemberDirectory })));
 const MemberProfile = lazy(() => import('./pages/Community').then((m) => ({ default: m.MemberProfile })));
@@ -99,6 +103,11 @@ function Root() {
               <Route path="/team" element={<Teams />} />
               {/* S-UX3-3b — the student team-formation surface (distinct from the ops /team). */}
               <Route path="/my/team" element={<StudentTeam />} />
+              {/* S-UX3-4 — sessions / attendance surfaces (child-data reads gated in STEP 1). */}
+              <Route path="/my/sessions" element={<MySessions />} />
+              <Route path="/family/sessions" element={<ChildSessions />} />
+              <Route path="/attendance" element={<MentorAttendance />} />
+              <Route path="/admin/attendance" element={<OpsAttendance />} />
               <Route path="/learn" element={<Placeholder titleKey="empty.title" />} />
               {/* S-UX3-8 — Member surfaces (events / directory / profile). */}
               <Route path="/events" element={<MemberEvents />} />

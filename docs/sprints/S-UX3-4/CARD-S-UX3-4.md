@@ -66,7 +66,24 @@ enrolment check is at BOOK time, not MARK time. STEP 1 does **not** modify the w
 
 ---
 
-## STEP 2 — the UI + nav (FRONTEND-SCAN, batched, ZERO screenshots). **NOT in this pass.**
-Built only after STEP 1 is reviewed and cleared. Student *My Sessions* (book/cancel + own attendance),
-mentor *Attendance* (roster → mark, refusals shown-not-hidden), ops report view (reuse the built
-attendance-report), Learn threshold display; nav per §6 of the PROPOSED; trilingual i18n parity.
+## STEP 2 — the UI + nav (FRONTEND-SCAN, batched, ONE risk shot). Commit HELD.
+Built after STEP 1 cleared. **One sanctioned backend addition** (Leo, 2026-08-04): a thin
+`GET /my/mentor/sessions` — a mentor's own sessions, METADATA ONLY (title/time/status/capacity +
+attendance-count aggregates), **no minor identity**, **no elevation** (ps_read mentor clause). Without it
+a mentor had no way to discover a session to open (roster is by-id; a mentor reaches neither the
+`role:student` `/my/sessions` nor the ops report). Tested in the STEP-1 battery.
+
+Surfaces (`web/src/pages/SessionAttendance.tsx`, one shared `RosterMark`):
+- **Student** *My Sessions* — `/my/sessions`; book/cancel (existing writes) + own attendance chip.
+- **Guardian** *My Child's Sessions* — child picker from `/api/consent-requests` (no new endpoint) →
+  `/my/students/{id}/sessions`, read-only.
+- **Mentor** *Attendance* — `/my/mentor/sessions` → open → `/admin/sessions/{id}/roster` → mark
+  (attended/no_show) with refusals **shown-not-hidden**.
+- **Ops oversight** — programme picker → `/admin/programmes/{id}/attendance-report` → session → same
+  RosterMark. Gated `configuration.manage` (the programme list's gate); an operations-only admin has no
+  programme-list source — a documented follow-on.
+
+Nav gates: student `enrolment.view ∩ events.rsvp`; guardian `consent.sign`; mentor
+`teams.approve ∧ ¬operations.manage`; ops `configuration.manage`. Trilingual (i18n 647/647/647).
+The mark write is **binary** (attended/no_show) — "late" is not a built S06 status, so the control
+offers Present(attended)/Absent(no_show) only. ONE risk shot: a mark 409 refusal rendered.

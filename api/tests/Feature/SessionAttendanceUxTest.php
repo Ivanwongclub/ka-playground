@@ -231,9 +231,44 @@ class SessionAttendanceUxTest extends TestCase
     {
         $allow = array_keys(config('scope-elevations'));
         $this->assertContains('App\Http\Controllers\SessionReadController::roster', $allow);
-        // the self/child reads are pure RLS — no controller-scoped elevation for them
+        // the self/child/mentor-list reads are pure RLS — no controller-scoped elevation for them
         $this->assertNotContains('App\Http\Controllers\SessionReadController::mySessions', $allow);
         $this->assertNotContains('App\Http\Controllers\SessionReadController::childSessions', $allow);
+        $this->assertNotContains('App\Http\Controllers\SessionReadController::mentorSessions', $allow);
+    }
+
+    // ── STEP 2 read — the mentor session-list: their own sessions only, metadata only, no elevation ──────
+    public function test_mentor_sessions_list_is_own_metadata_only(): void
+    {
+        $mentor = User::factory()->create(['role' => 'teacher']);
+        $otherTeacher = User::factory()->create(['role' => 'teacher']);
+        $mine = $this->publishedSession(5, $mentor->id);
+        $this->publishedSession(5, $otherTeacher->id); // another mentor's session — must not appear
+        $s1 = $this->participant('Listed Student');
+        $this->book($mine, $s1);
+        $this->transition($mine, 'in_progress');
+        Sanctum::actingAs($mentor);
+        $this->postJson("/api/admin/sessions/{$mine}/attendance", ['student_id' => $s1->id, 'status' => 'attended'])->assertOk();
+
+        $body = $this->getJson('/api/my/mentor/sessions')->assertOk()->json();
+        $this->app['auth']->forgetGuards();
+
+        // only the mentor's OWN session, with count aggregates
+        $this->assertCount(1, $body['sessions']);
+        $this->assertSame($mine, $body['sessions'][0]['id']);
+        $this->assertSame(1, $body['sessions'][0]['booked']);
+        $this->assertSame(1, $body['sessions'][0]['attended']);
+        // metadata only — NO student identity in the list (that is the by-id roster's job)
+        $blob = json_encode($body);
+        $this->assertStringNotContainsStringIgnoringCase('Listed Student', $blob);
+        $this->assertStringNotContainsStringIgnoringCase('student_id', $blob);
+        $this->assertStringNotContainsStringIgnoringCase('student_name', $blob);
+
+        // a non-teacher (student) is refused by the role gate
+        $student = $this->participant('Not A Teacher');
+        Sanctum::actingAs($student);
+        $this->getJson('/api/my/mentor/sessions')->assertStatus(403);
+        $this->app['auth']->forgetGuards();
     }
 
     // ── Test 4 — the mark write stays clean (authority + session-state; no Learn/enrolment precondition) ──

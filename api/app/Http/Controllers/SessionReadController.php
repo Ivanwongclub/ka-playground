@@ -91,6 +91,42 @@ class SessionReadController extends Controller
         ])->all()]);
     }
 
+    /**
+     * A mentor lists the sessions they are the assigned mentor of — METADATA ONLY (title/time/status/
+     * capacity + attendance-count aggregates). NO minor identity leaves this list (that is the by-id
+     * roster's job). NO elevation: ps_read admits mentor_id=actor, and the counts run over session_bookings
+     * the mentor's own RLS already admits (mentor clause). Added S-UX3-4 STEP 2 to feed the mentor UI.
+     */
+    public function mentorSessions(Request $request): JsonResponse
+    {
+        $uid = $request->user()->id;
+
+        $sessions = DB::table('programme_sessions as ps')
+            ->where('ps.mentor_id', $uid) // belt-and-suspenders alongside ps_read's mentor clause
+            ->orderBy('ps.starts_at')
+            ->get(['ps.id', 'ps.title', 'ps.starts_at', 'ps.ends_at', 'ps.status', 'ps.capacity']);
+
+        $counts = DB::table('session_bookings')
+            ->whereIn('session_id', $sessions->pluck('id'))
+            ->selectRaw("session_id,
+                COUNT(*) FILTER (WHERE status IN ('booked','attended','no_show')) AS booked,
+                COUNT(*) FILTER (WHERE status = 'attended') AS attended,
+                COUNT(*) FILTER (WHERE status = 'no_show') AS no_show")
+            ->groupBy('session_id')->get()->keyBy('session_id');
+
+        return response()->json(['sessions' => $sessions->map(fn ($s): array => [
+            'id' => $s->id,
+            'title' => $s->title,
+            'starts_at' => $s->starts_at,
+            'ends_at' => $s->ends_at,
+            'status' => $s->status,
+            'capacity' => $s->capacity,
+            'booked' => (int) ($counts[$s->id]->booked ?? 0),
+            'attended' => (int) ($counts[$s->id]->attended ?? 0),
+            'no_show' => (int) ($counts[$s->id]->no_show ?? 0),
+        ])->all()]);
+    }
+
     /** The session's mentor (or academy ops/audit) reads THIS session's attendance roster. */
     public function roster(Request $request, string $id): JsonResponse
     {

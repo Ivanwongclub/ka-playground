@@ -27,6 +27,9 @@ import {
   CalendarDays,
   Contact,
   IdCard,
+  CalendarClock,
+  CalendarCheck,
+  NotebookPen,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -72,6 +75,31 @@ export const NAV: NavGroup[] = [
         icon: <UserPlus size={16} aria-hidden />,
         visible: (h) => h('teams.view') && !h('operations.manage'),
       },
+      {
+        // S-UX3-4 — student "My Sessions" (book/cancel + own attendance). enrolment.view ∩ events.rsvp
+        // uniquely identifies a student: a member lacks enrolment.view; a guardian/teacher/ops lacks
+        // events.rsvp. Matches the role:student gate on /my/sessions.
+        path: '/my/sessions',
+        i18nKey: 'nav.mySessions',
+        icon: <CalendarClock size={16} aria-hidden />,
+        visible: (h) => h('enrolment.view') && h('events.rsvp'),
+      },
+      {
+        // S-UX3-4 — guardian "My Child's Sessions" (read-only). consent.sign is guardian-unique
+        // (capability_forbidden bars academy admins; students hold consent.view, not .sign).
+        path: '/family/sessions',
+        i18nKey: 'nav.childSessions',
+        icon: <CalendarDays size={16} aria-hidden />,
+        visible: (h) => h('consent.sign'),
+      },
+      {
+        // S-UX3-4 — teacher (mentor) "Attendance" (roster → mark). teams.approve is held by teacher + ops;
+        // excluding operations.manage leaves the teacher. Matches the role:teacher gate on /my/mentor/sessions.
+        path: '/attendance',
+        i18nKey: 'nav.attendance',
+        icon: <CalendarCheck size={16} aria-hidden />,
+        visible: (h) => h('teams.approve') && !h('operations.manage'),
+      },
     ],
   },
   {
@@ -107,6 +135,15 @@ export const NAV: NavGroup[] = [
         i18nKey: 'nav.team',
         icon: <Users2 size={16} aria-hidden />,
         visible: (h) => h('operations.manage'),
+      },
+      {
+        // S-UX3-4 — ops attendance oversight (programme → report → roster + mark). Gated
+        // configuration.manage because the programme list (/api/admin/programmes) is; an
+        // operations-only admin has no programme-list source yet (a follow-on).
+        path: '/admin/attendance',
+        i18nKey: 'nav.attendanceOversight',
+        icon: <NotebookPen size={16} aria-hidden />,
+        visible: (h) => h('configuration.manage'),
       },
       {
         path: '/admin/programmes',

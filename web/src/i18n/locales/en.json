@@ -35,7 +35,11 @@
     "refunds": "Refunds",
     "myTeam": "My Team",
     "events": "Events",
-    "directory": "Directory"
+    "directory": "Directory",
+    "mySessions": "My Sessions",
+    "childSessions": "My Child's Sessions",
+    "attendance": "Attendance",
+    "attendanceOversight": "Attendance Oversight"
   },
   "shell": {
     "openNavigation": "Open navigation",
@@ -472,6 +476,22 @@
       "submitted": "Awaiting 成團",
       "confirmed": "Confirmed",
       "disbanded": "Disbanded"
+    },
+    "booking": {
+      "booked": "Booked",
+      "waitlisted": "Waitlisted",
+      "attended": "Attended",
+      "no_show": "No show",
+      "cancelled": "Cancelled"
+    },
+    "session": {
+      "draft": "Draft",
+      "published": "Published",
+      "full": "Full",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "rescheduled": "Rescheduled"
     }
   },
   "data": {
@@ -711,5 +731,29 @@
     "save": "Save profile",
     "saved": "Profile saved.",
     "notAMember": "The member profile is available to Kings Network members."
+  },
+  "attendance": {
+    "myTitle": "My Sessions",
+    "mySubtitle": "Your programme sessions — book a seat and see your attendance.",
+    "book": "Book",
+    "cancel": "Cancel",
+    "booked": "Seat booked",
+    "cancelled": "Booking cancelled",
+    "childTitle": "My Child's Sessions",
+    "childSubtitle": "Your child's sessions and attendance.",
+    "childPick": "Choose a child",
+    "mentorTitle": "Attendance",
+    "mentorSubtitle": "Your sessions — take the register once a session is in progress.",
+    "take": "Take register",
+    "close": "Close",
+    "attendedOf": "{{attended}} / {{booked}} present",
+    "marked": "Attendance saved",
+    "present": "Present",
+    "absent": "Absent",
+    "rosterEmpty": "No booked students yet.",
+    "opsTitle": "Attendance Oversight",
+    "opsSubtitle": "Attendance across a programme's sessions.",
+    "pickProgramme": "Choose a programme",
+    "open": "Open"
   }
 }

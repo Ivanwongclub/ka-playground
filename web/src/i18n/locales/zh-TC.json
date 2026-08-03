@@ -35,7 +35,11 @@
     "refunds": "退款",
     "myTeam": "我的團隊",
     "events": "活動",
-    "directory": "成員目錄"
+    "directory": "成員目錄",
+    "mySessions": "我的課節",
+    "childSessions": "子女的課節",
+    "attendance": "點名",
+    "attendanceOversight": "點名總覽"
   },
   "shell": {
     "openNavigation": "開啟導覽",
@@ -472,6 +476,22 @@
       "submitted": "待成團",
       "confirmed": "已成團",
       "disbanded": "已解散"
+    },
+    "booking": {
+      "booked": "已預約",
+      "waitlisted": "候補中",
+      "attended": "已出席",
+      "no_show": "缺席",
+      "cancelled": "已取消"
+    },
+    "session": {
+      "draft": "草稿",
+      "published": "已發佈",
+      "full": "已滿",
+      "in_progress": "進行中",
+      "completed": "已完成",
+      "cancelled": "已取消",
+      "rescheduled": "已改期"
     }
   },
   "data": {
@@ -711,5 +731,29 @@
     "save": "儲存檔案",
     "saved": "已儲存檔案。",
     "notAMember": "成員檔案僅供 Kings Network 成員使用。"
+  },
+  "attendance": {
+    "myTitle": "我的課節",
+    "mySubtitle": "你的課程課節 — 預約座位並查看出席紀錄。",
+    "book": "預約",
+    "cancel": "取消",
+    "booked": "已預約座位",
+    "cancelled": "已取消預約",
+    "childTitle": "子女的課節",
+    "childSubtitle": "你子女的課節與出席紀錄。",
+    "childPick": "選擇子女",
+    "mentorTitle": "點名",
+    "mentorSubtitle": "你的課節 — 課節開始後即可點名。",
+    "take": "開始點名",
+    "close": "關閉",
+    "attendedOf": "{{attended}} / {{booked}} 已出席",
+    "marked": "出席紀錄已儲存",
+    "present": "出席",
+    "absent": "缺席",
+    "rosterEmpty": "尚未有已預約的學生。",
+    "opsTitle": "點名總覽",
+    "opsSubtitle": "課程各課節的出席情況。",
+    "pickProgramme": "選擇課程",
+    "open": "開啟"
   }
 }

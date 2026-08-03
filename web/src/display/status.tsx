@@ -59,6 +59,23 @@ const REGISTRY: Record<string, Record<string, Entry>> = {
     'zh-TC': { labelKey: 'locale.zh-TC', color: 'default' },
     'zh-SC': { labelKey: 'locale.zh-SC', color: 'default' },
   },
+  // S-UX3-4 — a booking's per-student state and a session's lifecycle state.
+  bookingStatus: {
+    booked: { labelKey: 'status.booking.booked', color: 'processing' },
+    waitlisted: { labelKey: 'status.booking.waitlisted', color: 'warning' },
+    attended: { labelKey: 'status.booking.attended', color: 'success' },
+    no_show: { labelKey: 'status.booking.no_show', color: 'error' },
+    cancelled: { labelKey: 'status.booking.cancelled', color: 'default' },
+  },
+  sessionStatus: {
+    draft: { labelKey: 'status.session.draft', color: 'default' },
+    published: { labelKey: 'status.session.published', color: 'processing' },
+    full: { labelKey: 'status.session.full', color: 'warning' },
+    in_progress: { labelKey: 'status.session.in_progress', color: 'gold' },
+    completed: { labelKey: 'status.session.completed', color: 'success' },
+    cancelled: { labelKey: 'status.session.cancelled', color: 'default' },
+    rescheduled: { labelKey: 'status.session.rescheduled', color: 'default' },
+  },
 };
 
 /** code → readable ("enrolment.submitted" → "Enrolment submitted"). Never i18n'd (open set). */

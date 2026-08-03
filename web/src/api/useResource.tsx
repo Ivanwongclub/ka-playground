@@ -14,7 +14,7 @@ interface ResourceState<T> {
   reload: () => void;
 }
 
-export function useResource<T>(url: string): ResourceState<T> {
+export function useResource<T>(url: string | null | undefined): ResourceState<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
