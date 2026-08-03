@@ -19,3 +19,8 @@
 - (C) is pure engine-ahead-of-UI: no new backend, just nav + screens over built endpoints.
 - Cross-cutting provisioning gap (from the map §6-A): **`teacher` and `school_admin` have no seeded demo
   account** — fold into Leo's fresh re-seed under **S-UX4**, alongside the cards above.
+- **Deferred design/visual polish (DELIBERATE, not a miss):** the UX phase is functional-first; the admin
+  surfaces are below visual standard by design (dense trilingual forms, flat 11-section wizard, no
+  guided flow). A coherent design pass is deferred to after the functional surfaces substantially land
+  (post-Marketplace-B + Member surfaces) and gets its own think-first — the observations + design
+  questions are captured in **[S-UX-POLISH](../sprints/S-UX-POLISH/PROPOSED-UX-POLISH.md)** (living record).
