@@ -578,7 +578,7 @@
     "createdBy": "创建者",
     "members": "成员",
     "review": "查看",
-    "detailTitle": "{{team}} — 同意状态",
+    "detailTitle": "{{team}} — 团队详情",
     "consentMode": "同意",
     "mode": {
       "any-one": "任一监护人",
@@ -600,6 +600,19 @@
     "confirmBody": "此操作将占用课程容量中的 {{n}} 个名额，并为 {{n}} 位成员各自发出付款责任。在此无法撤销。",
     "confirmAdvisory": "⚠️ {{m}} 位成员的同意尚未满足 — 成团将被拒绝，直至解决。",
     "confirmCta": "确认成团",
-    "confirmed": "已成团 — 名额已占用，付款责任已发出。"
+    "confirmed": "已成团 — 名额已占用，付款责任已发出。",
+    "tabConsent": "同意状态",
+    "rolesTitle": "角色与任期",
+    "roleCurrent": "现任",
+    "roleVacant": "空缺",
+    "rolePast": "历任",
+    "roleAssign": "指派 / 轮替",
+    "roleMandatory": "必需",
+    "rolePickMember": "选择成员",
+    "roleAssignTitle": "指派 {{role}}",
+    "roleAssignBody": "将 {{role}} 指派给 {{name}}？此举会结束 {{current}} 的任期并开始新任期 — 一个角色只有一位在任者。",
+    "roleAssignBodyNew": "将 {{role}} 指派给 {{name}}？此举会开始新任期 — 一个角色只有一位在任者。",
+    "roleAssignCta": "指派",
+    "roleAssigned": "已指派角色 — 任期分类账已更新。"
   }
 }

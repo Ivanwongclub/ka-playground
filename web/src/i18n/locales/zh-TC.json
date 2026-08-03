@@ -578,7 +578,7 @@
     "createdBy": "建立者",
     "members": "成員",
     "review": "查看",
-    "detailTitle": "{{team}} — 同意狀態",
+    "detailTitle": "{{team}} — 團隊詳情",
     "consentMode": "同意",
     "mode": {
       "any-one": "任一監護人",
@@ -600,6 +600,19 @@
     "confirmBody": "此操作將佔用課程容量中的 {{n}} 個名額，並為 {{n}} 位成員各自發出付款責任。在此無法撤銷。",
     "confirmAdvisory": "⚠️ {{m}} 位成員的同意尚未滿足 — 成團將被拒絕，直至解決。",
     "confirmCta": "確認成團",
-    "confirmed": "已成團 — 名額已佔用，付款責任已發出。"
+    "confirmed": "已成團 — 名額已佔用，付款責任已發出。",
+    "tabConsent": "同意狀態",
+    "rolesTitle": "角色與任期",
+    "roleCurrent": "現任",
+    "roleVacant": "懸空",
+    "rolePast": "歷任",
+    "roleAssign": "指派 / 輪替",
+    "roleMandatory": "必需",
+    "rolePickMember": "選擇成員",
+    "roleAssignTitle": "指派 {{role}}",
+    "roleAssignBody": "將 {{role}} 指派給 {{name}}？此舉會結束 {{current}} 的任期並開始新任期 — 一個角色只有一位在任者。",
+    "roleAssignBodyNew": "將 {{role}} 指派給 {{name}}？此舉會開始新任期 — 一個角色只有一位在任者。",
+    "roleAssignCta": "指派",
+    "roleAssigned": "已指派角色 — 任期分類帳已更新。"
   }
 }

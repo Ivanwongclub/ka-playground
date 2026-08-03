@@ -204,6 +204,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/team-members/{id}/school-leave', [\App\Http\Controllers\TeamResolutionController::class, 'schoolLeave']); // OD-62; {id} = enrolment id
     // S05 step 5 — roles & tracker (OD-15/61); authority in-service
     Route::post('/admin/teams/{id}/teacher-link', [\App\Http\Controllers\RolesTrackerController::class, 'linkTeacher']);
+    Route::get('/teams/{team}/roles', [\App\Http\Controllers\TeamRolesController::class, 'show']); // S-UX3-3a STEP 3 B3: RLS-shaped roles/tenure read (member-readable, no elevation)
     Route::post('/teams/{id}/roles', [\App\Http\Controllers\RolesTrackerController::class, 'assignRole']);
     Route::post('/teams/{id}/gates/{stage}/approve', [\App\Http\Controllers\RolesTrackerController::class, 'approveGate']);
     // S07-1 — team-project budgets (record-only). Authority (team member / reused S05 approver) in-service.

@@ -578,7 +578,7 @@
     "createdBy": "Created by",
     "members": "Members",
     "review": "Review",
-    "detailTitle": "{{team}} — consent status",
+    "detailTitle": "{{team}} — team detail",
     "consentMode": "Consent",
     "mode": {
       "any-one": "Any one guardian",
@@ -600,6 +600,19 @@
     "confirmBody": "This claims {{n}} seats against the programme's capacity and issues a payment obligation for each of the {{n}} members. It cannot be undone here.",
     "confirmAdvisory": "⚠️ {{m}} members' consent is not yet satisfied — 成團 will be refused until resolved.",
     "confirmCta": "Confirm formation",
-    "confirmed": "Team formed — seats claimed and obligations issued."
+    "confirmed": "Team formed — seats claimed and obligations issued.",
+    "tabConsent": "Consent status",
+    "rolesTitle": "Roles & tenure",
+    "roleCurrent": "Current holder",
+    "roleVacant": "Vacant",
+    "rolePast": "Past holders",
+    "roleAssign": "Assign / rotate",
+    "roleMandatory": "Required",
+    "rolePickMember": "Select a member",
+    "roleAssignTitle": "Assign {{role}}",
+    "roleAssignBody": "Assign {{role}} to {{name}}? This ends {{current}}'s tenure and starts a new one — a role has one active holder.",
+    "roleAssignBodyNew": "Assign {{role}} to {{name}}? This starts a new tenure — a role has one active holder.",
+    "roleAssignCta": "Assign",
+    "roleAssigned": "Role assigned — tenure ledger updated."
   }
 }
