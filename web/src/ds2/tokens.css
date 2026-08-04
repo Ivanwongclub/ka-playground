@@ -15,7 +15,7 @@
   --ka-card: #1A1326;
   --ka-muted: #1E1729;
   --ka-fg: #F4F4F5;
-  --ka-fg-muted: #A1A1AA;
+  --ka-muted-fg: #A1A1AA;   /* same name as the existing index.css --ka-* layer — one coherent palette */
   --ka-gold: #C9A962;
   --ka-gold-hover: #D4B876;
   --ka-border: #2A2235;         /* decorative separators (v2.1 §3.1) */

@@ -10,6 +10,10 @@
 // Adopting DS2 is a DELIBERATE act — a rollout card adds its surface to the guard's allowlist in its slot.
 import './tokens.css';
 
+// The atom kit (STEP 2) — each enforces its rule by API shape (structured props, no free-text slot).
+export { StatusAtom, StatChip, MetaChip, StateBadge, ProgressRing, DatedBadge, Seal } from './atoms';
+export type { BadgeState } from './atoms';
+
 // Status pills + money/date/name formatting — the existing display layer, re-exported (not reinvented).
 export { StatusTag, AuditCode, humanise } from '../display/status';
 export { formatMoney } from '../display/money';

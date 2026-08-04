@@ -1,0 +1,37 @@
+/* DS2 atom kit — styles on the --ka-* token layer (loads with the atoms, i.e. when @/ds2 is imported).
+ * Class prefix `.ds2-` — never collides with the existing `.ka-*` utilities. darkAlgorithm-native (the
+ * tokens mirror theme.ts, so antd-rendered surroundings and DS2 atoms share one palette). */
+
+/* Seal — the D3 attestation mark */
+.ds2-seal { border-radius: 50%; background: var(--ka-seal); box-shadow: 0 0 0 3px var(--ka-gold-tint); display: inline-grid; place-items: center; flex: 0 0 auto; }
+.ds2-seal svg { width: 55%; height: 55%; stroke: #241a12; stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+/* StateBadge — state as a visual (D7) */
+.ds2-sbadge { width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; border: 2px solid var(--ka-card); }
+.ds2-sbadge svg { width: 11px; height: 11px; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.ds2-sbadge--sealed { background: var(--ka-seal); } .ds2-sbadge--sealed svg { stroke: #241a12; }
+.ds2-sbadge--ok { background: var(--ka-success); } .ds2-sbadge--ok svg { stroke: #0b1a10; }
+.ds2-sbadge--warn, .ds2-sbadge--action { background: var(--ka-warning); }
+.ds2-sbadge--warn svg, .ds2-sbadge--action svg { stroke: #241a12; }
+
+/* StatusAtom — D5 hierarchy: loud status + demoted detail (fixed weights, separate slots) */
+.ds2-statusatom { display: flex; align-items: center; gap: 11px; }
+.ds2-statusatom__icon { display: inline-flex; flex: 0 0 auto; }
+.ds2-atom { font-family: var(--ka-font-display); font-weight: 700; font-size: 14px; color: var(--ka-fg); line-height: 1.25; }
+.ds2-subatom { font-size: 12px; color: var(--ka-muted-fg); margin-top: 2px; line-height: 1.45; }
+.ds2-tone--action .ds2-statusatom__icon { color: var(--ka-warning); }
+.ds2-tone--attested .ds2-statusatom__icon { color: var(--ka-gold); }
+
+/* StatChip — a datum as an atom (D7) */
+.ds2-statchip { display: inline-flex; align-items: baseline; gap: 5px; background: var(--ka-muted); border: 1px solid var(--ka-border); border-radius: var(--ka-r-sm); padding: 3px 9px; font-size: 12px; color: var(--ka-muted-fg); }
+.ds2-statchip b { font-family: var(--ka-font-display); font-weight: 700; font-size: 14px; color: var(--ka-fg); font-variant-numeric: tabular-nums; }
+
+/* MetaChip / DatedBadge — meta + dated fact chips (D7) */
+.ds2-chip { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: var(--ka-r-sm); background: var(--ka-muted); border: 1px solid var(--ka-border); font-size: 12px; color: var(--ka-muted-fg); white-space: nowrap; }
+.ds2-chip__i { display: inline-flex; }
+.ds2-chip__i svg { width: 12px; height: 12px; stroke: var(--ka-muted-fg); stroke-width: 1.8; fill: none; opacity: 0.9; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ProgressRing — readiness as a visual (D7) */
+.ds2-ring { position: relative; width: 46px; height: 46px; border-radius: 50%; background: conic-gradient(var(--ka-gold) calc(var(--p, 0) * 1%), var(--ka-border) 0); display: inline-grid; place-items: center; flex: 0 0 auto; }
+.ds2-ring::before { content: ''; position: absolute; inset: 4px; border-radius: 50%; background: var(--ka-card); }
+.ds2-ring b { position: relative; font-family: var(--ka-font-display); font-weight: 700; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--ka-gold); }

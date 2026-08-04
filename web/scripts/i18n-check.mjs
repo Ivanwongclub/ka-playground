@@ -39,7 +39,9 @@ const walk = (dir) => {
   for (const entry of readdirSync(dir)) {
     const p = join(dir, entry);
     if (statSync(p).isDirectory()) walk(p);
-    else if (/\.(tsx|ts)$/.test(entry) && !p.includes('/i18n/')) files.push(p);
+    // Ds2Gallery is a DEV-only component reference (dead-code-eliminated from prod); its labels are
+    // developer-facing component/prop-state names, not translatable product copy — excluded from the scan.
+    else if (/\.(tsx|ts)$/.test(entry) && !p.includes('/i18n/') && !p.includes('Ds2Gallery')) files.push(p);
   }
 };
 walk(join(root, 'src'));

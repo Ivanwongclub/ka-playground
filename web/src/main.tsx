@@ -35,6 +35,10 @@ import './index.css';
 const StyleGuide = import.meta.env.DEV
   ? lazy(() => import('./pages/StyleGuide').then((m) => ({ default: m.StyleGuide })))
   : null;
+// DEV-only DS2 component gallery — dead-code-eliminated from production, like the Style Guide (DS2 STEP 2).
+const Ds2Gallery = import.meta.env.DEV
+  ? lazy(() => import('./pages/Ds2Gallery').then((m) => ({ default: m.Ds2Gallery })))
+  : null;
 const Register = lazy(() => import('./pages/Register').then((m) => ({ default: m.Register })));
 const PublicPay = lazy(() => import('./pages/PublicPay').then((m) => ({ default: m.PublicPay })));
 const Activate = lazy(() => import('./pages/Activate').then((m) => ({ default: m.Activate })));
@@ -122,6 +126,7 @@ function Root() {
               <Route path="/profile" element={<MemberProfile />} />
               {/* Style Guide is a development-only design surface — never shipped in prod (S-UX1). */}
               {import.meta.env.DEV && StyleGuide && <Route path="/style-guide" element={<StyleGuide />} />}
+              {import.meta.env.DEV && Ds2Gallery && <Route path="/ds2-gallery" element={<Ds2Gallery />} />}
               <Route path="/admin/audit" element={<AdminAudit />} />
               <Route path="/admin/access-identity" element={<AccessIdentity />} />
               <Route path="/admin/programmes" element={<AdminProgrammes />} />

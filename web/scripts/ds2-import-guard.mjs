@@ -15,7 +15,7 @@ const srcDir = join(root, 'src');
 // Allowed importers of @/ds2. Grows ONLY when a rollout card deliberately adopts DS2 on a surface.
 const ALLOWED = [
   'src/ds2/', // the library itself
-  // 'src/pages/Ds2Gallery.tsx',  // the dev-only gallery — added in STEP 2
+  'src/pages/Ds2Gallery.tsx', // the DEV-only gallery (STEP 2) — dead-code-eliminated from production
 ];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {
