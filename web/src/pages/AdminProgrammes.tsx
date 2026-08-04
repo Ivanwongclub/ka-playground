@@ -3,14 +3,29 @@
 // Publish stays disabled until 100% (D1). Config only — no personal data.
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Alert, App, Button, Card, Drawer, Flex, Input, InputNumber, List, Progress,
+  Alert, App, Button, Card, Drawer, Flex, Input, InputNumber,
   Select, Switch, Table, Tag, Typography,
 } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '../auth/session';
 import { kaColors } from '../theme/theme';
+// DS2 (anchors STEP 2 — the wizard). AdminProgrammes.tsx is an ALLOWED adopter (import-guard).
+import { WizardRail, ProgressRing, FormLanguageSwitcher } from '@/ds2';
+import type { RailPhase, StepState, Ds2Lang } from '@/ds2';
+import { MARKETING_FIELDS, setMarketingLang, marketingLangComplete, triOf } from './marketing-payload';
 
-const { Title, Paragraph, Text } = Typography;
+const { Title, Text } = Typography;
+
+// Prototype phase grouping — the 11 sections mapped to the WizardRail's phases (display only).
+const WIZARD_PHASES: Array<{ titleKey: string; keys: string[] }> = [
+  { titleKey: 'wizard.phaseSetup', keys: ['basics', 'eligibility'] },
+  { titleKey: 'wizard.phaseMoney', keys: ['fees', 'consent'] },
+  { titleKey: 'wizard.phaseTeams', keys: ['team_rules', 'role_library', 'tracker'] },
+  { titleKey: 'wizard.phaseLearning', keys: ['learning', 'certification'] },
+  { titleKey: 'wizard.phaseOptional', keys: ['integration', 'marketing'] },
+];
+// D5 §LOCKED_WHEN_PUBLISHED — the server enforces the lock (423 on saveSection); the glyph is a cosmetic hint.
+const LOCKED_ON_PUBLISH = new Set(['fees', 'consent']);
 
 interface ProgrammeRow {
   id: number;
@@ -82,13 +97,6 @@ export function AdminProgrammes() {
   const nameFor = (row: ProgrammeRow) =>
     i18n.language === 'zh-TC' ? row.name_tc : i18n.language === 'zh-SC' ? row.name_sc : row.name_en;
 
-  const statusLabel: Record<string, string> = {
-    not_started: t('wizard.statusNotStarted'),
-    incomplete: t('wizard.statusIncomplete'),
-    complete: t('wizard.statusComplete'),
-    deferred: t('wizard.statusDeferred'),
-    optional: t('wizard.statusOptional'),
-  };
   // Marketing (S-MARKETPLACE-A) is OPTIONAL-but-available: with no saved row the backend returns
   // 'deferred' (the shared optional default), which would read as Phase-2 "Deferred" and disable its
   // editor. It is available now — surface it as "Optional" and keep its editor open. (Integration stays
@@ -143,10 +151,38 @@ export function AdminProgrammes() {
 
   const ready = wizard ? wizard.readiness.complete >= wizard.readiness.required : false;
 
+  // WizardRail phases (display only) — map each section to its step state; the OPEN section is 'current'.
+  const stepStateOf = (s: Section): StepState => {
+    if (openSection?.key === s.key) return 'current';
+    const d = displayStatus(s);
+    return d === 'complete' ? 'done' : d === 'incomplete' ? 'wip' : d === 'optional' ? 'optional' : d === 'deferred' ? 'deferred' : 'todo';
+  };
+  const railPhases: RailPhase[] = selected && wizard
+    ? WIZARD_PHASES.map((ph) => ({
+        title: t(ph.titleKey),
+        steps: ph.keys
+          .map((k) => wizard.sections.find((x) => x.key === k))
+          .filter((x): x is Section => Boolean(x))
+          .map((s) => ({
+            key: s.key,
+            label: t(`wizard.sections.${SECTION_KEY_MAP[s.key]}`),
+            state: stepStateOf(s),
+            locked: selected.status === 'published' && LOCKED_ON_PUBLISH.has(s.key),
+            num: wizard.sections.findIndex((x) => x.key === s.key) + 1,
+          })),
+      }))
+    : [];
+  // Open a section's editor from the rail — IDENTICAL to the old List button (incl. the marketing default seed).
+  const openFromRail = (key: string) => {
+    const s = wizard?.sections.find((x) => x.key === key);
+    if (!s || displayStatus(s) === 'deferred') return;
+    setOpenSection(s);
+    setSectionDraft(s.data ?? (s.key === 'marketing' ? { brand_color: '#7A3B57' } : {}));
+  };
+
   return (
-    <div style={{ maxWidth: 1100 }}>
-      <Title level={1}>{t('wizard.title')}</Title>
-      <Paragraph type="secondary">{t('wizard.subtitle')}</Paragraph>
+    <div style={{ maxWidth: 1100 }} data-density="admin">
+      <Title level={3}>{t('wizard.title')}</Title>
       {loadError && <Alert type="error" showIcon message={t('data.error')} style={{ marginBottom: 16 }} />}
 
       <Table<ProgrammeRow>
@@ -177,49 +213,11 @@ export function AdminProgrammes() {
 
       {selected && wizard && (
         <Card style={{ marginTop: 24 }} title={<span>{nameFor(selected)} <Tag color={selected.status === 'published' ? 'success' : 'default'}>{selected.status === 'published' ? t('wizard.published') : t('wizard.draft')}</Tag></span>}>
-          <Paragraph className="ka-tabular-nums">
-            {t('wizard.readiness', wizard.readiness)}
-          </Paragraph>
-          <Progress
-            percent={Math.round((wizard.readiness.complete / wizard.readiness.required) * 100)}
-          />
-          <List
-            dataSource={wizard.sections}
-            renderItem={(section, index) => (
-              <List.Item
-                actions={[
-                  <Button
-                    key="open"
-                    type="text"
-                    disabled={displayStatus(section) === 'deferred'}
-                    onClick={() => {
-                      setOpenSection(section);
-                      // Seed the marketing brand-colour default so a never-touched picker (which already
-                      // DISPLAYS a colour) counts toward completeness instead of a confusing "missing" reject.
-                      setSectionDraft(section.data ?? (section.key === 'marketing' ? { brand_color: '#7A3B57' } : {}));
-                    }}
-                  >
-                    {t('styleGuide.tabTwo')}
-                  </Button>,
-                ]}
-              >
-                <List.Item.Meta
-                  title={`${index + 1}. ${t(`wizard.sections.${SECTION_KEY_MAP[section.key]}`)}`}
-                  description={
-                    <Tag
-                      color={
-                        displayStatus(section) === 'complete' ? 'success'
-                          : displayStatus(section) === 'incomplete' ? 'warning'
-                            : displayStatus(section) === 'optional' ? 'processing' : 'default'
-                      }
-                    >
-                      {statusLabel[displayStatus(section)]}
-                    </Tag>
-                  }
-                />
-              </List.Item>
-            )}
-          />
+          <Flex align="center" gap={14} style={{ marginBottom: 16 }}>
+            <ProgressRing value={wizard.readiness.complete} total={wizard.readiness.required} />
+            <Text type="secondary" className="ka-tabular-nums">{t('wizard.readiness', wizard.readiness)}</Text>
+          </Flex>
+          <WizardRail phases={railPhases} onStep={openFromRail} />
           <Flex gap={12} style={{ marginTop: 16 }}>
             <Button onClick={() => void runPreFlight()}>{t('wizard.preFlight')}</Button>
             <Button
@@ -341,34 +339,11 @@ function SectionFields({
           onChange={(v) => set('attendance_threshold_pct', v)}
         />
       );
-    case 'marketing': {
-      // S-MARKETPLACE-A STEP 3 (text-first — no imagery). Each field is trilingual (EN/繁/简); a
-      // `complete` save with any language gap is rejected server-side (marketing.language_incomplete).
-      const tri = (field: string) => (draft[field] as Record<string, string> | undefined) ?? {};
-      const setLang = (field: string, lang: string, v: string) =>
-        onChange({ ...draft, [field]: { ...tri(field), [lang]: v } });
-      const fields: Array<[string, string]> = [
-        ['tagline', t('marketing.tagline')], ['category', t('marketing.category')],
-        ['age_range', t('marketing.ageRange')], ['duration', t('marketing.duration')],
-      ];
-      return (
-        <>
-          {fields.map(([f, label]) => (
-            <div key={f}>
-              <label className="ka-label">{label}</label>
-              <Input placeholder="EN" value={tri(f).en ?? ''} onChange={(e) => setLang(f, 'en', e.target.value)} />
-              <Input placeholder="繁體中文" value={tri(f).tc ?? ''} onChange={(e) => setLang(f, 'tc', e.target.value)} style={{ marginTop: 6 }} />
-              <Input placeholder="简体中文" value={tri(f).sc ?? ''} onChange={(e) => setLang(f, 'sc', e.target.value)} style={{ marginTop: 6 }} />
-            </div>
-          ))}
-          <div>
-            <label className="ka-label">{t('marketing.brandColor')}</label>
-            <Input type="color" value={(draft.brand_color as string) ?? '#7A3B57'} onChange={(e) => set('brand_color', e.target.value)} style={{ width: 96 }} />
-          </div>
-          <Text type="secondary" style={{ fontSize: 12 }}>{t('marketing.imageryDeferred')}</Text>
-        </>
-      );
-    }
+    case 'marketing':
+      // S-MARKETPLACE-A STEP 3 (text-first — no imagery). Trilingual entry via the DS2 FormLanguageSwitcher
+      // (form-level), which drives the IDENTICAL saveSection payload the old stacked inputs did (proven by
+      // scripts/marketing-payload.test.mjs) — so marketing.language_incomplete (OD-19) fires on the same data.
+      return <MarketingFields draft={draft} onChange={onChange} />;
     default:
       return (
         <Input.TextArea
@@ -378,4 +353,50 @@ function SectionFields({
         />
       );
   }
+}
+
+/** Marketing trilingual entry — ONE form-level language switcher + a single input per field (D1). The
+ *  edits go through the shared `setMarketingLang` reducer, so the saveSection payload is byte-identical to
+ *  the old stacked-inputs shape (proven by scripts/marketing-payload.test.mjs). */
+function MarketingFields({
+  draft, onChange,
+}: {
+  draft: Record<string, unknown>;
+  onChange: (d: Record<string, unknown>) => void;
+}) {
+  const { t } = useTranslation();
+  const [lang, setLang] = useState<Ds2Lang>('en');
+  const complete = marketingLangComplete(draft);
+  const labels: Record<Ds2Lang, string> = { en: t('locale.en'), tc: t('locale.zh-TC'), sc: t('locale.zh-SC') };
+  const FIELD_LABEL: Record<string, string> = {
+    tagline: t('marketing.tagline'), category: t('marketing.category'),
+    age_range: t('marketing.ageRange'), duration: t('marketing.duration'),
+  };
+  return (
+    <Flex vertical gap={14}>
+      <FormLanguageSwitcher
+        value={lang}
+        onChange={setLang}
+        complete={complete}
+        labels={labels}
+        editingLabel={t('marketing.editing')}
+        warning={!complete[lang] ? (
+          <span style={{ color: 'var(--ka-warning)', background: 'rgba(251,191,36,.12)', fontSize: 12, fontWeight: 600, padding: '2px 9px', borderRadius: 6 }}>
+            {t('marketing.langIncomplete', { lang: labels[lang] })}
+          </span>
+        ) : undefined}
+      />
+      {MARKETING_FIELDS.map((f) => (
+        <div key={f}>
+          <label className="ka-label">{FIELD_LABEL[f]}</label>
+          <Input value={triOf(draft, f)[lang] ?? ''} onChange={(e) => onChange(setMarketingLang(draft, f, lang, e.target.value))} />
+        </div>
+      ))}
+      <div>
+        <label className="ka-label">{t('marketing.brandColor')}</label>
+        <Input type="color" value={(draft.brand_color as string) ?? '#7A3B57'} onChange={(e) => onChange({ ...draft, brand_color: e.target.value })} style={{ width: 96 }} />
+      </div>
+      <Text type="secondary" style={{ fontSize: 12 }}>{t('marketing.imageryDeferred')}</Text>
+    </Flex>
+  );
 }

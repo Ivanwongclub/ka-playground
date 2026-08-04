@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run i18n:check && npm run ds2:check && tsc -b && vite build && node scripts/bundle-budget.mjs",
+    "build": "npm run i18n:check && npm run ds2:check && npm run test:marketing-payload && tsc -b && vite build && node scripts/bundle-budget.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
     "i18n:check": "node scripts/i18n-check.mjs",
-    "ds2:check": "node scripts/ds2-tokens-check.mjs && node scripts/ds2-import-guard.mjs"
+    "ds2:check": "node scripts/ds2-tokens-check.mjs && node scripts/ds2-import-guard.mjs",
+    "test:marketing-payload": "node scripts/marketing-payload.test.mjs"
   },
   "dependencies": {
     "@ant-design/charts": "^2.6.7",

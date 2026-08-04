@@ -108,7 +108,7 @@ export function ZebraTable<T extends object>({
 
 // ── WizardRail — grouped stepper ────────────────────────────────────────────────────────────────────
 export type StepState = 'done' | 'current' | 'wip' | 'blocked' | 'todo' | 'deferred' | 'optional';
-export interface RailStep { label: ReactNode; state: StepState; locked?: boolean; num?: number }
+export interface RailStep { label: ReactNode; state: StepState; locked?: boolean; num?: number; key?: string }
 export interface RailPhase { title: ReactNode; steps: RailStep[] }
 
 const RAIL_CHECK = (
@@ -132,8 +132,9 @@ function stepGlyph(s: RailStep): ReactNode {
 }
 
 /** State is a `state` ENUM per step (icon + colour) — there is no caption/description prop, so "Needs X" /
- *  "In progress" prose cannot be added. Per-phase `done/total` count is computed, not authored. */
-export function WizardRail({ phases }: { phases: RailPhase[] }) {
+ *  "In progress" prose cannot be added. Per-phase `done/total` count is computed, not authored. `onStep`
+ *  (optional) makes a step selectable — the step passes its own `key` back so the caller opens its editor. */
+export function WizardRail({ phases, onStep }: { phases: RailPhase[]; onStep?: (key: string) => void }) {
   return (
     <div className="ds2-rail">
       {phases.map((ph, i) => {
@@ -141,13 +142,23 @@ export function WizardRail({ phases }: { phases: RailPhase[] }) {
         return (
           <div key={i}>
             <div className="ds2-rail__phase">{ph.title}<span className="ds2-rail__ct">{done}/{ph.steps.length}</span></div>
-            {ph.steps.map((s, j) => (
-              <div key={j} className={`ds2-step ds2-step--${s.state}`}>
-                <span className="ds2-step__ic">{stepGlyph(s)}</span>
-                <span className="ds2-step__lbl">{s.label}</span>
-                {s.locked && RAIL_LOCK}
-              </div>
-            ))}
+            {ph.steps.map((s, j) => {
+              const clickable = onStep && s.key !== undefined;
+              return (
+                <div
+                  key={j}
+                  className={`ds2-step ds2-step--${s.state}${clickable ? ' ds2-step--clickable' : ''}`}
+                  role={clickable ? 'button' : undefined}
+                  tabIndex={clickable ? 0 : undefined}
+                  onClick={clickable ? () => onStep(s.key as string) : undefined}
+                  onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onStep(s.key as string); } } : undefined}
+                >
+                  <span className="ds2-step__ic">{stepGlyph(s)}</span>
+                  <span className="ds2-step__lbl">{s.label}</span>
+                  {s.locked && RAIL_LOCK}
+                </div>
+              );
+            })}
           </div>
         );
       })}

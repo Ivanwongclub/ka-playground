@@ -225,7 +225,12 @@
       "integration": "系统整合",
       "marketing": "市场推广（门面）"
     },
-    "statusOptional": "选填"
+    "statusOptional": "选填",
+    "phaseSetup": "设置",
+    "phaseMoney": "费用与同意",
+    "phaseTeams": "团队与角色",
+    "phaseLearning": "学习",
+    "phaseOptional": "选填"
   },
   "consent": {
     "listTitle": "同意书请求",
@@ -694,7 +699,9 @@
     "ageRange": "年龄范围",
     "duration": "时长",
     "brandColor": "品牌颜色",
-    "imageryDeferred": "图像为后续步骤 — 文字与品牌颜色即可在公开目录中展示课程。"
+    "imageryDeferred": "图像为后续步骤 — 文字与品牌颜色即可在公开目录中展示课程。",
+    "editing": "正在编辑",
+    "langIncomplete": "{{lang}} 未完成"
   },
   "studentTeam": {
     "title": "我的团队",

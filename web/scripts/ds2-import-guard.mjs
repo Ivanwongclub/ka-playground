@@ -18,6 +18,7 @@ const ALLOWED = [
   'src/pages/Ds2Gallery.tsx', // the DEV-only gallery (STEP 2) — dead-code-eliminated from production
   // ── restyle rollout: each surface is a deliberate adoption in its own gated card ──
   'src/pages/SelfService.tsx', // ANCHORS STEP 1 — My Children (MyPayments/MyStudents in-file are untouched)
+  'src/pages/AdminProgrammes.tsx', // ANCHORS STEP 2 — the wizard
 ];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {

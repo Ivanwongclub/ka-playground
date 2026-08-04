@@ -225,7 +225,12 @@
       "integration": "Integration",
       "marketing": "Marketing (storefront)"
     },
-    "statusOptional": "Optional"
+    "statusOptional": "Optional",
+    "phaseSetup": "Setup",
+    "phaseMoney": "Money & consent",
+    "phaseTeams": "Teams & roles",
+    "phaseLearning": "Learning",
+    "phaseOptional": "Optional"
   },
   "consent": {
     "listTitle": "Consent requests",
@@ -694,7 +699,9 @@
     "ageRange": "Age range",
     "duration": "Duration",
     "brandColor": "Brand colour",
-    "imageryDeferred": "Imagery is a later step — text + brand colour list the programme in the public catalogue."
+    "imageryDeferred": "Imagery is a later step — text + brand colour list the programme in the public catalogue.",
+    "editing": "Editing",
+    "langIncomplete": "{{lang}} incomplete"
   },
   "studentTeam": {
     "title": "My Team",

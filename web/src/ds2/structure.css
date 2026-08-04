@@ -25,6 +25,9 @@
 .ds2-rail__phase { display: flex; align-items: center; justify-content: space-between; font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: #5c566b; padding: 13px 10px 5px; }
 .ds2-rail__ct { font-family: var(--ka-font-mono); color: var(--ka-muted-fg); letter-spacing: 0; }
 .ds2-step { display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: var(--ka-r-md); color: var(--ka-muted-fg); }
+.ds2-step--clickable { cursor: pointer; }
+.ds2-step--clickable:hover { background: var(--ka-muted); }
+.ds2-step--clickable:focus-visible { outline: 2px solid var(--ka-gold); outline-offset: -2px; }
 .ds2-step--current { background: var(--ka-muted); color: var(--ka-fg); }
 .ds2-step__ic { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--ka-border-strong); display: grid; place-items: center; flex: 0 0 auto; font-size: 11px; font-variant-numeric: tabular-nums; }
 .ds2-step--done .ds2-step__ic { background: var(--ka-gold); border-color: var(--ka-gold); color: #241a12; }
