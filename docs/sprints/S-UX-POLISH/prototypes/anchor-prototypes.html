@@ -29,12 +29,9 @@ h1{font-size:28px;font-weight:700}h2{font-size:22px;font-weight:600}h3{font-size
 .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold)}
 .muted{color:var(--fg-muted)}
 .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
-.num{font-variant-numeric:tabular-nums}
-.sm{font-size:12px}
+.num{font-variant-numeric:tabular-nums}.sm{font-size:12px}
 a{color:var(--gold);text-decoration:none}
 svg.i{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
-
-/* the atoms: loud status headline + demoted supporting text (fix 1) */
 .atom{font-family:var(--font-display);font-weight:700;font-size:14px;color:var(--fg);line-height:1.25}
 .subatom{font-size:12px;color:var(--fg-muted);margin-top:2px;line-height:1.45}
 
@@ -48,24 +45,23 @@ svg.i{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stro
 .seg button[aria-pressed="true"]{background:var(--gold);color:#241a12;font-weight:600}
 .langseg button[aria-pressed="true"]{background:var(--card);color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold-line)}
 
-/* shell */
+/* shell — fix: roomier nav, no gold edge-line on active */
 .shell{display:grid;grid-template-columns:236px 1fr;min-height:calc(100vh - 49px)}
-.sider{background:var(--bg);border-right:1px solid var(--border);padding:14px 12px}
-.brand{display:flex;align-items:center;gap:10px;padding:6px 8px 16px}
+.sider{background:var(--bg);border-right:1px solid var(--border);padding:16px 12px}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 8px 20px}
 .brand .crest{width:30px;height:30px;border-radius:8px;background:var(--seal);display:grid;place-items:center;font-family:var(--font-display);font-weight:800;color:#241a12;font-size:15px}
 .brand b{font-family:var(--font-display);font-weight:700;font-size:15px}
-.navgroup{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#5c566b;padding:14px 8px 6px}
-.navitem{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:var(--r-md);color:var(--fg-muted);font-size:14px;cursor:pointer}
+.navgroup{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#5c566b;padding:18px 8px 8px}
+.navitem{display:flex;align-items:center;gap:11px;height:42px;padding:0 12px;margin-bottom:4px;border-radius:var(--r-md);color:var(--fg-muted);font-size:14px;cursor:pointer}
 .navitem:hover{background:var(--muted)}
-.navitem.active{background:var(--muted);color:var(--gold);box-shadow:inset 2px 0 0 var(--gold)}
+.navitem.active{background:var(--muted);color:var(--gold)}         /* fill only — no gold hairline */
 .navitem .i{width:16px;height:16px;opacity:.9}
 .main{min-width:0;display:flex;flex-direction:column}
 .topbar{height:54px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 var(--page-x)}
 .crumbs{font-size:13px;color:var(--fg-muted)}.crumbs b{color:var(--fg);font-weight:500}
-.page{padding:22px var(--page-x);max-width:1180px;width:100%}
-.page-head{margin-bottom:var(--stack)}.page-head h1{margin-bottom:6px}
+.page{padding:24px var(--page-x);max-width:1180px;width:100%}
+.page-head{margin-bottom:var(--stack)}.page-head h1{margin-bottom:0}
 .row{display:flex;align-items:center;gap:var(--gap)}.between{justify-content:space-between}.wrap{flex-wrap:wrap}.grow{flex:1;min-width:0}
-hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
 
 /* cards, tags, seal, buttons */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--pad)}
@@ -89,7 +85,7 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
 .btn:disabled{opacity:.42;cursor:not-allowed}
 .btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 
-/* fix 3 — non-text signal: stat chips, meta chips, avatar state badge, readiness ring */
+/* atoms: stat chips, meta chips, avatar state badge, progress ring */
 .stats{display:flex;gap:7px;flex-wrap:wrap}
 .statchip{display:inline-flex;align-items:baseline;gap:5px;background:var(--muted);border:1px solid var(--border);border-radius:var(--r-sm);padding:3px 9px;font-size:12px;color:var(--fg-muted)}
 .statchip b{font-family:var(--font-display);font-weight:700;font-size:14px;color:var(--fg);font-variant-numeric:tabular-nums}
@@ -107,78 +103,74 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
 .ring::before{content:'';position:absolute;inset:4px;border-radius:50%;background:var(--card)}
 .ring b{position:relative;font-family:var(--font-display);font-weight:700;font-size:12px;font-variant-numeric:tabular-nums;color:var(--gold)}
 
-/* attestation bar — loud headline atom + demoted detail (fixes 1+2) */
-.attest{display:flex;align-items:center;gap:11px;padding:10px 13px;border-radius:var(--r-md);background:var(--gold-tint);border:1px solid var(--gold-line)}
+/* attestation bar */
+.attest{display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:var(--r-md);background:var(--gold-tint);border:1px solid var(--gold-line)}
 .attest.warn{background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.32)}
 .attest .warnico{width:22px;height:22px;border-radius:50%;background:rgba(251,191,36,.16);display:grid;place-items:center;flex:0 0 auto}
 .attest .warnico svg{width:13px;height:13px;stroke:var(--warning);stroke-width:2.2;fill:none}
 
-/* form / trilingual (unchanged pattern, tightened) */
+/* form + the FORM-LEVEL language switcher (replaces per-field tri-tabs) */
 .field{margin-bottom:var(--stack)}
 .field>label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
 .field .optional{color:var(--fg-muted);font-weight:400}
 .input,.textarea,.select{width:100%;height:var(--row);background:var(--bg);border:1px solid var(--border-strong);border-radius:var(--r-md);color:var(--fg);padding:0 12px;font-family:var(--font-body);font-size:14px}
-.textarea{height:auto;min-height:70px;padding:10px 12px;resize:vertical;line-height:1.6}
+.textarea{height:auto;min-height:72px;padding:10px 12px;resize:vertical;line-height:1.6}
 .input:focus,.textarea:focus,.select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-tint)}
-.input::placeholder{color:#6b6478}
-.tri{border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden}
-.tri-tabs{display:flex;background:var(--muted)}
-.tri-tab{flex:1;height:36px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--fg-muted);background:transparent;border:none;border-right:1px solid var(--border);cursor:pointer}
-.tri-tab:last-child{border-right:none}
-.tri-tab[aria-selected="true"]{color:var(--gold);background:var(--card);box-shadow:inset 0 -2px 0 var(--gold)}
-.tri-tab .cdot{width:7px;height:7px;border-radius:50%;background:#4a4358;box-shadow:0 0 0 2px var(--card)}
-.tri-tab .cdot.filled{background:var(--success)}
-.tri-panel{padding:10px;display:none;background:var(--card)}
-.tri-panel.active{display:block}
+.input::placeholder,.textarea::placeholder{color:#6b6478}
+.langform{display:flex;align-items:center;gap:10px;margin-bottom:var(--stack)}
+.langform .ll{font-size:12px;color:var(--fg-muted)}
+.lsw{display:inline-flex;background:var(--muted);border:1px solid var(--border);border-radius:var(--r-sm);padding:2px}
+.lsw button{border:none;background:transparent;color:var(--fg-muted);font:inherit;font-size:12px;padding:4px 9px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.lsw button[aria-pressed="true"]{background:var(--card);color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold-line)}
+.lsw .cdot{width:6px;height:6px;border-radius:50%;background:#4a4358}
+.lsw .cdot.filled{background:var(--success)}
 
 /* kpi strip */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--gap)}
 .kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px}
 .kpi .k{font-size:12px;color:var(--fg-muted);display:flex;align-items:center;gap:7px}
 .kpi .v{font-family:var(--font-display);font-size:26px;font-weight:700;margin-top:5px;font-variant-numeric:tabular-nums;line-height:1}
-.kpi .v.gold{color:var(--gold)}.kpi .v.warn{color:var(--warning)}.kpi .sub{font-size:12px;color:#6b6478;margin-top:5px}
+.kpi .v.gold{color:var(--gold)}.kpi .v.warn{color:var(--warning)}.kpi .sub{font-size:12px;color:#6b6478;margin-top:5px;font-variant-numeric:tabular-nums}
 
-/* table — horizontal structure: zebra row-banding + alignment discipline + generous column gap, NO column rules */
+/* table — zebra + alignment, no column rules */
 .tbl{width:100%;border-collapse:collapse;font-size:14px}
-.tbl th,.tbl td{white-space:nowrap}                                             /* atoms don't wrap mid-cell */
+.tbl th,.tbl td{white-space:nowrap}
 .tbl thead th{text-align:left;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.04em;text-transform:uppercase;padding:9px 14px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0}
-.tbl tbody td{padding:0 14px;height:var(--row);vertical-align:middle}           /* generous, even column gap, no bottom rule */
-.tbl tbody tr:nth-child(even){background:rgba(255,255,255,.028)}                 /* zebra: the eye tracks the ROW across */
+.tbl tbody td{padding:0 14px;height:var(--row);vertical-align:middle}
+.tbl tbody tr:nth-child(even){background:rgba(255,255,255,.028)}
 .tbl tbody tr:hover{background:var(--muted)}
-.tbl .r{text-align:right}                                                       /* money column, clean vertical scan */
-.tbl th.zstatus,.tbl td.zstatus{min-width:150px}                                /* status = a defined zone */
-.tbl th.zact,.tbl td.zact{width:1%}                                             /* action zone hugs its buttons, right-aligned */
+.tbl .r{text-align:right}
+.tbl th.zstatus,.tbl td.zstatus{min-width:150px}
+.tbl th.zact,.tbl td.zact{width:1%}
 .amt{font-family:var(--font-display);font-weight:700;font-variant-numeric:tabular-nums;font-size:15px}
 
-/* wizard rail */
-.wizard{display:grid;grid-template-columns:288px 1fr;gap:20px;align-items:start}
+/* wizard rail — state by icon + colour, no prose */
+.wizard{display:grid;grid-template-columns:284px 1fr;gap:20px;align-items:start}
 .rail-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:8px;position:sticky;top:74px}
 .rail-phase{display:flex;align-items:center;justify-content:space-between;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#5c566b;padding:13px 10px 5px}
 .rail-phase .ct{font-family:var(--font-mono);color:var(--fg-muted);letter-spacing:0}
-.step{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:var(--r-md);cursor:pointer;color:var(--fg-muted)}
+.step{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:var(--r-md);cursor:pointer;color:var(--fg-muted)}
 .step:hover{background:var(--muted)}
-.step.current{background:var(--muted);color:var(--fg);box-shadow:inset 2px 0 0 var(--gold)}
+.step.current{background:var(--muted);color:var(--fg)}
 .step .ic{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border-strong);display:grid;place-items:center;flex:0 0 auto;font-size:11px;font-variant-numeric:tabular-nums}
 .step.done .ic{background:var(--gold);border-color:var(--gold);color:#241a12}
 .step.done,.step.current{color:var(--fg)}
+.step.wip .ic{border-color:var(--gold);border-width:2px;color:var(--gold)}
 .step.blocked .ic{border-color:var(--warning);color:var(--warning)}
 .step .lbl{flex:1;font-size:14px;font-weight:500}
-.step .sub{font-size:11px;color:#6b6478;font-weight:400;margin-top:1px}
 .lockico{width:13px;height:13px;stroke:var(--fg-muted);opacity:.75}
+.sec-head{padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:var(--stack)}
+.wfield{padding-bottom:var(--stack);border-bottom:1px solid var(--border);margin-bottom:var(--stack)}
+.wfield:last-of-type{border-bottom:none;padding-bottom:0;margin-bottom:0}
 
-/* product surface — child cards. VERTICAL structure: each section is a shade-banded sub-panel + gap, no boxes */
+/* product surface — child cards, D6 zones */
 .child{background:var(--card);border:1px solid var(--border);border-radius:var(--r-xl)}
 .child .hd{display:flex;align-items:center;gap:14px;padding:18px 22px 14px}
 .zones{display:flex;flex-direction:column;gap:10px;padding:0 22px 18px}
-.zone{background:rgba(255,255,255,.035);border-radius:var(--r-md);padding:12px 15px}   /* subtle shade-step = a legible zone, no border */
+.zone{background:rgba(255,255,255,.035);border-radius:var(--r-md);padding:12px 15px}
 .enrol{display:flex;align-items:center;gap:14px}
 .enrol .t{font-weight:600}
 .cat-bar{width:3px;align-self:stretch;min-height:34px;border-radius:3px}
-/* wizard section panel — VERTICAL: field-groups zoned by space + a subtle rule (the divider, not a box) */
-.wfield{padding-bottom:var(--stack);border-bottom:1px solid var(--border);margin-bottom:var(--stack)}
-.wfield:last-of-type{border-bottom:none;padding-bottom:0;margin-bottom:0}
-.sec-head{padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:var(--stack)}
-.foot-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500}
 @media(max-width:900px){.wizard{grid-template-columns:1fr}.rail-card{position:static}.shell{grid-template-columns:1fr}.sider{display:none}}
 </style>
 </head>
@@ -187,7 +179,7 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
 <div class="demobar">
   <div class="lead"><span class="crest">KA</span>
     <div><div style="font-family:var(--font-display);font-weight:700;font-size:14px">Design System v2 — Anchor Prototypes</div>
-    <small>Hierarchy · atoms · visual signal — honesty preserved · not production code</small></div></div>
+    <small>Visual-first, prose-last · not production code</small></div></div>
   <div class="row" style="gap:14px">
     <div class="seg" id="screenSeg"><button aria-pressed="true" data-s="wizard">Programme Wizard</button><button aria-pressed="false" data-s="payments">Payments</button><button aria-pressed="false" data-s="children">My Children</button></div>
     <div class="seg langseg" id="langSeg" title="Display language"><button aria-pressed="true" data-l="en">EN</button><button aria-pressed="false" data-l="tc">繁</button><button aria-pressed="false" data-l="sc">简</button></div>
@@ -209,16 +201,15 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
   <div class="main">
     <div class="topbar">
       <div class="crumbs">Programmes / <b>Robotics Innovators · Term 1</b></div>
-      <div class="row"><span class="tag neutral"><span class="dot"></span>Draft</span><span class="mono muted" style="font-size:12px"><svg class="i" style="width:12px;height:12px;stroke:#6b6478;display:inline;vertical-align:-2px" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Saved 14:32</span></div>
+      <div class="row"><span class="tag neutral"><span class="dot"></span>Draft</span><span class="mono muted" style="font-size:12px"><svg class="i" style="width:12px;height:12px;stroke:#6b6478;display:inline;vertical-align:-2px" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> 14:32</span></div>
     </div>
     <div class="page">
-      <!-- fix1/3: readiness as a ring + chips, not a sentence -->
-      <div class="page-head row between wrap" style="align-items:flex-start">
+      <!-- readiness = ring + chips, no prose -->
+      <div class="page-head row between wrap" style="align-items:center">
         <div><div class="eyebrow">Programme setup</div><h1 data-t="progName" style="margin-top:6px">Robotics Innovators · Term 1</h1></div>
         <div class="row" style="gap:12px">
           <div class="ring" style="--p:78"><b>7/9</b></div>
-          <div><div class="atom">Almost ready</div><div class="subatom">7 of 9 required · 2 blocked</div>
-            <div class="chips" style="margin-top:6px"><span class="chip"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Fees · Consent lock on publish</span></div></div>
+          <div class="chips"><span class="tag warn"><span class="dot"></span>2 blocked</span><span class="chip"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Fees · Consent lock on publish</span></div>
         </div>
       </div>
 
@@ -229,17 +220,17 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
           <div class="step done"><span class="ic"><svg style="width:12px;height:12px;stroke:#241a12;stroke-width:3;fill:none" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><div class="grow"><div class="lbl">Eligibility &amp; capacity</div></div></div>
           <div class="rail-phase">Money &amp; consent <span class="ct">1/2</span></div>
           <div class="step done"><span class="ic"><svg style="width:12px;height:12px;stroke:#241a12;stroke-width:3;fill:none" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><div class="grow"><div class="lbl">Fees</div></div><svg class="i lockico" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-          <div class="step current"><span class="ic">4</span><div class="grow"><div class="lbl">Consent</div><div class="sub">Locks when published</div></div><svg class="i lockico" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="step current"><span class="ic">4</span><div class="grow"><div class="lbl">Consent</div></div><svg class="i lockico" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
           <div class="rail-phase">Teams &amp; roles <span class="ct">1/3</span></div>
           <div class="step done"><span class="ic"><svg style="width:12px;height:12px;stroke:#241a12;stroke-width:3;fill:none" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><div class="grow"><div class="lbl">Team rules</div></div></div>
-          <div class="step"><span class="ic">6</span><div class="grow"><div class="lbl">Role library</div><div class="sub">In progress</div></div></div>
-          <div class="step blocked"><span class="ic">!</span><div class="grow"><div class="lbl">Tracker</div><div class="sub">Needs Role library</div></div></div>
+          <div class="step wip"><span class="ic">6</span><div class="grow"><div class="lbl">Role library</div></div></div>
+          <div class="step blocked"><span class="ic">!</span><div class="grow"><div class="lbl">Tracker</div></div></div>
           <div class="rail-phase">Learning <span class="ct">0/2</span></div>
           <div class="step"><span class="ic">8</span><div class="grow"><div class="lbl">Learning thresholds</div></div></div>
-          <div class="step blocked"><span class="ic">!</span><div class="grow"><div class="lbl">Certification</div><div class="sub">Needs Tracker + Learning</div></div></div>
+          <div class="step blocked"><span class="ic">!</span><div class="grow"><div class="lbl">Certification</div></div></div>
           <div class="rail-phase">Optional</div>
-          <div class="step"><span class="ic" style="border-style:dashed">–</span><div class="grow"><div class="lbl muted">Integration</div><div class="sub">Deferred · Phase 2</div></div></div>
-          <div class="step"><span class="ic">○</span><div class="grow"><div class="lbl">Marketing copy</div><div class="sub">Gates catalogue listing</div></div></div>
+          <div class="step"><span class="ic" style="border-style:dashed">–</span><div class="grow"><div class="lbl muted">Integration</div></div></div>
+          <div class="step"><span class="ic">○</span><div class="grow"><div class="lbl">Marketing copy</div></div></div>
         </div>
 
         <div>
@@ -249,38 +240,27 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
               <span class="tag ok"><span class="dot"></span>Complete</span>
             </div>
 
-            <div class="field wfield">
-              <label>Programme name</label>
-              <div class="tri" data-tri>
-                <div class="tri-tabs"><button class="tri-tab" aria-selected="true" data-tab="en">English <span class="cdot filled"></span></button><button class="tri-tab" aria-selected="false" data-tab="tc">繁體 <span class="cdot filled"></span></button><button class="tri-tab" aria-selected="false" data-tab="sc">简体 <span class="cdot"></span></button></div>
-                <div class="tri-panel active" data-panel="en"><input class="input" value="Robotics Innovators · Term 1"></div>
-                <div class="tri-panel" data-panel="tc"><input class="input zh" lang="zh-Hant" value="機械人創新者 · 第一學期"></div>
-                <div class="tri-panel" data-panel="sc"><input class="input zh" lang="zh-Hans" placeholder="输入简体中文名称"></div>
+            <!-- ONE form-level language switcher (compact, completeness dots) — not per-field tabs -->
+            <div class="langform">
+              <span class="ll">Editing</span>
+              <div class="lsw" id="lsw">
+                <button aria-pressed="true" data-fl="en">EN <span class="cdot filled"></span></button>
+                <button aria-pressed="false" data-fl="tc">繁 <span class="cdot filled"></span></button>
+                <button aria-pressed="false" data-fl="sc">简 <span class="cdot"></span></button>
               </div>
-              <!-- fix1/2: loud short status + demoted rationale -->
-              <div class="row" style="gap:8px;margin-top:7px"><span class="tag warn"><span class="dot"></span>简体 empty</span><span class="subatom" style="margin:0">Required before publish · OD-19</span></div>
+              <span class="tag warn" id="langWarn" hidden><span class="dot"></span>简 incomplete</span>
             </div>
 
-            <div class="field wfield">
-              <label>Short description <span class="optional">· family catalogue</span></label>
-              <div class="tri" data-tri>
-                <div class="tri-tabs"><button class="tri-tab" aria-selected="true" data-tab="en">English <span class="cdot filled"></span></button><button class="tri-tab" aria-selected="false" data-tab="tc">繁體 <span class="cdot filled"></span></button><button class="tri-tab" aria-selected="false" data-tab="sc">简体 <span class="cdot filled"></span></button></div>
-                <div class="tri-panel active" data-panel="en"><textarea class="textarea">Design, build and pitch an autonomous robot across a 10-week studio. Ages 10–14.</textarea></div>
-                <div class="tri-panel" data-panel="tc"><textarea class="textarea zh" lang="zh-Hant">在十週的工作坊中設計、製作並展示自主機械人。適合 10–14 歲。</textarea></div>
-                <div class="tri-panel" data-panel="sc"><textarea class="textarea zh" lang="zh-Hans">在十周的工作坊中设计、制作并展示自主机器人。适合 10–14 岁。</textarea></div>
-              </div>
-              <div class="row" style="margin-top:7px"><span class="tag ok"><span class="dot"></span>All three complete</span></div>
-            </div>
-
+            <div class="field wfield"><label>Programme name</label><input class="input" id="f-name" value="Robotics Innovators · Term 1"></div>
+            <div class="field wfield"><label>Short description <span class="optional">· family catalogue</span></label><textarea class="textarea" id="f-desc">Design, build and pitch an autonomous robot across a 10-week studio. Ages 10–14.</textarea></div>
             <div class="row wfield" style="gap:14px">
               <div class="field grow" style="margin:0"><label>Category</label><select class="select"><option>STEM</option><option>Language</option><option>Arts</option><option>Mathematics</option></select></div>
               <div class="field grow" style="margin:0"><label>Jurisdiction</label><select class="select"><option>Hong Kong</option><option>Mainland China</option></select></div>
             </div>
           </div>
 
-          <!-- pre-flight: loud blocker count + demoted list + action -->
           <div class="card row between wrap" style="gap:12px">
-            <div class="row"><span class="tag warn"><span class="dot"></span>2 blockers</span><span class="subatom" style="margin:0">简体 name · Role library incomplete</span></div>
+            <span class="tag warn"><span class="dot"></span>2 blockers before publish</span>
             <div class="row"><button class="btn ghost sm">Preview as family</button><button class="btn primary">Save &amp; continue</button></div>
           </div>
         </div>
@@ -301,14 +281,14 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
     <div class="navitem"><svg class="i" viewBox="0 0 24 24"><path d="M9 14l-4 4 4 4"/><path d="M5 18h11a4 4 0 0 0 4-4V6"/></svg>Refunds</div>
   </aside>
   <div class="main">
-    <div class="topbar"><div class="crumbs">Finance / <b>Payments</b></div><div class="chips"><span class="chip">School-settled</span><span class="chip">Manual recording</span></div></div>
+    <div class="topbar"><div class="crumbs">Finance / <b>Payments</b></div><div class="chips"><span class="chip">School-settled</span><span class="chip">Manual</span></div></div>
     <div class="page">
-      <div class="page-head row between wrap"><div><h1>Payments</h1><div class="subatom" style="margin-top:4px">Record in full · a second officer confirms · recorder ≠ confirmer (BI-9)</div></div></div>
+      <div class="page-head"><h1>Payments</h1></div>
 
       <div class="kpis" style="margin-bottom:var(--stack)">
-        <div class="kpi"><div class="k">Outstanding</div><div class="v">HK$48,250</div><div class="sub">14 orders awaiting payment</div></div>
-        <div class="kpi"><div class="k"><svg class="i" style="width:13px;height:13px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Awaiting confirmation</div><div class="v warn">HK$6,500</div><div class="sub">3 recorded · need a 2nd officer</div></div>
-        <div class="kpi"><div class="k"><span class="seal" style="width:15px;height:15px"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>Confirmed today</div><div class="v gold">HK$12,000</div><div class="sub">5 receipts sealed</div></div>
+        <div class="kpi"><div class="k">Outstanding</div><div class="v">HK$48,250</div><div class="sub">14 orders</div></div>
+        <div class="kpi"><div class="k"><svg class="i" style="width:13px;height:13px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Awaiting confirmation</div><div class="v warn">HK$6,500</div><div class="sub">3 recorded</div></div>
+        <div class="kpi"><div class="k"><span class="seal" style="width:15px;height:15px"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>Confirmed today</div><div class="v gold">HK$12,000</div><div class="sub">5 sealed</div></div>
       </div>
 
       <div class="card" style="padding:0;overflow:hidden">
@@ -316,14 +296,13 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
         <div style="overflow-x:auto"><table class="tbl">
           <thead><tr><th>Student</th><th>Programme</th><th class="r">Amount</th><th>Recorded by</th><th class="zstatus">Status</th><th>Receipt</th><th class="r zact">Action</th></tr></thead>
           <tbody>
-            <tr><td>Chan Sum-yu</td><td class="muted" data-t="pgm-robotics">Robotics Innovators</td><td class="r amt">HK$2,500.00</td><td class="muted">—</td><td><span class="tag neutral"><span class="dot"></span>Awaiting record</span></td><td class="muted">—</td><td class="r"><button class="btn sm primary">Record</button></td></tr>
-            <tr><td>Wong Ka-ho</td><td class="muted" data-t="pgm-debate">Debate Masters</td><td class="r amt">HK$2,000.00</td><td class="sm">A. Leung</td><td><span class="tag warn"><span class="dot"></span>Pending confirmation</span></td><td class="muted">—</td><td class="r"><div class="row" style="justify-content:flex-end;gap:6px"><button class="btn sm primary">Confirm</button><button class="btn sm danger">Reject</button></div></td></tr>
-            <tr title="Segregation of duty — BI-9"><td>Lam Zi-ching</td><td class="muted" data-t="pgm-robotics">Robotics Innovators</td><td class="r amt">HK$2,500.00</td><td><span class="tag warn" style="height:22px"><span class="dot"></span>You</span></td><td><span class="tag warn"><span class="dot"></span>Pending confirmation</span></td><td class="muted">—</td><td class="r"><button class="btn sm" disabled title="You recorded this — a second officer must confirm">Confirm</button></td></tr>
-            <tr><td>Ng Wai-lam</td><td class="muted" data-t="pgm-debate">Debate Masters</td><td class="r amt">HK$2,000.00</td><td class="sm">A. Leung</td><td><span class="tag ok"><span class="dot"></span>Confirmed</span></td><td><span class="row" style="gap:7px"><span class="seal"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span class="mono">RCPT-0041</span></span></td><td class="r"><a href="#">View</a></td></tr>
-            <tr><td>Tsang Ho-yin</td><td class="muted" data-t="pgm-robotics">Robotics Innovators</td><td class="r amt">HK$2,500.00</td><td class="sm">M. Chow</td><td><span class="tag ok"><span class="dot"></span>Confirmed</span></td><td><span class="row" style="gap:7px"><span class="seal"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span class="mono">RCPT-0040</span></span></td><td class="r"><a href="#">View</a></td></tr>
+            <tr><td>Chan Sum-yu</td><td class="muted" data-t="pgm-robotics">Robotics Innovators</td><td class="r amt">HK$2,500.00</td><td class="muted">—</td><td><span class="tag neutral"><span class="dot"></span>Awaiting record</span></td><td class="muted">—</td><td class="r zact"><button class="btn sm primary">Record</button></td></tr>
+            <tr><td>Wong Ka-ho</td><td class="muted" data-t="pgm-debate">Debate Masters</td><td class="r amt">HK$2,000.00</td><td class="sm">A. Leung</td><td><span class="tag warn"><span class="dot"></span>Pending confirmation</span></td><td class="muted">—</td><td class="r zact"><div class="row" style="justify-content:flex-end;gap:6px"><button class="btn sm primary">Confirm</button><button class="btn sm danger">Reject</button></div></td></tr>
+            <tr title="Segregation of duty — BI-9"><td>Lam Zi-ching</td><td class="muted" data-t="pgm-robotics">Robotics Innovators</td><td class="r amt">HK$2,500.00</td><td><span class="tag warn" style="height:22px"><span class="dot"></span>You</span></td><td><span class="tag warn"><span class="dot"></span>Pending confirmation</span></td><td class="muted">—</td><td class="r zact"><button class="btn sm" disabled title="You recorded this — a second officer must confirm">Confirm</button></td></tr>
+            <tr><td>Ng Wai-lam</td><td class="muted" data-t="pgm-debate">Debate Masters</td><td class="r amt">HK$2,000.00</td><td class="sm">A. Leung</td><td><span class="tag ok"><span class="dot"></span>Confirmed</span></td><td><span class="row" style="gap:7px"><span class="seal"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span class="mono">RCPT-0041</span></span></td><td class="r zact"><a href="#">View</a></td></tr>
+            <tr><td>Tsang Ho-yin</td><td class="muted" data-t="pgm-robotics">Robotics Innovators</td><td class="r amt">HK$2,500.00</td><td class="sm">M. Chow</td><td><span class="tag ok"><span class="dot"></span>Confirmed</span></td><td><span class="row" style="gap:7px"><span class="seal"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span class="mono">RCPT-0040</span></span></td><td class="r zact"><a href="#">View</a></td></tr>
           </tbody>
         </table></div>
-        <div class="row" style="padding:10px 16px;gap:8px"><span class="seal" style="width:14px;height:14px"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span class="subatom" style="margin:0">Sealed = attested, gapless receipt (BI-2) · recorded only when paid in full (OD-5)</span></div>
       </div>
     </div>
   </div>
@@ -346,18 +325,18 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
     <div class="page">
       <div class="page-head"><div class="eyebrow">Guardian</div><h1 style="margin-top:6px">My Children</h1></div>
 
-      <!-- CHILD 1 — consent complete. status = loud atoms; reassurance = small muted (kept, not deleted) -->
       <div class="child" style="margin-bottom:var(--gap)">
         <div class="hd">
           <div class="avwrap"><div class="avatar ring-ok">SY</div><span class="sbadge seal" title="Consent sealed"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span></div>
           <div class="grow"><h3 data-t="child1">Chan Sum-yu</h3>
             <div class="stats" style="margin-top:6px"><span class="statchip"><b>2</b> programmes</span><span class="statchip"><b>11</b> age</span></div></div>
-          <a class="foot-link" href="#">Sessions <svg class="i" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="foot-link row" href="#" style="font-size:13px;font-weight:500;gap:6px">Sessions <svg class="i" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </div>
         <div class="zones">
           <div class="attest">
             <span class="seal"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>
-            <div class="grow"><div class="atom">Consent complete</div><div class="subatom">Signed 28 Jul 2026 · sealed &amp; audited · both enrolments</div></div>
+            <div class="grow"><div class="atom">Consent complete</div></div>
+            <span class="chip"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Signed 28 Jul</span>
             <a href="#" class="sm">View record</a>
           </div>
           <div class="zone enrol"><div class="cat-bar" style="background:var(--cat-stem)"></div>
@@ -371,18 +350,17 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
         </div>
       </div>
 
-      <!-- CHILD 2 — signature needed. compact alert: loud label + prominent action + small rationale -->
       <div class="child">
         <div class="hd">
           <div class="avwrap"><div class="avatar ring-warn">MK</div><span class="sbadge warn" title="Action needed"><svg viewBox="0 0 24 24"><path d="M12 8v5M12 17h.01"/></svg></span></div>
           <div class="grow"><h3 data-t="child2">Chan Ming-kit</h3>
             <div class="stats" style="margin-top:6px"><span class="statchip"><b>1</b> programme</span><span class="statchip"><b>9</b> age</span></div></div>
-          <a class="foot-link" href="#">Sessions <svg class="i" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="foot-link row" href="#" style="font-size:13px;font-weight:500;gap:6px">Sessions <svg class="i" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </div>
         <div class="zones">
           <div class="attest warn">
             <span class="warnico"><svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
-            <div class="grow"><div class="atom">Signature needed</div><div class="subatom">Confirms the Coding Explorers seat before it starts</div></div>
+            <div class="grow"><div class="atom">Signature needed</div></div>
             <button class="btn primary sm">Review &amp; sign</button>
           </div>
           <div class="zone enrol"><div class="cat-bar" style="background:var(--cat-maths)"></div>
@@ -404,12 +382,20 @@ seg.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return
   document.querySelectorAll('[data-screen]').forEach(sec=>sec.hidden=sec.dataset.screen!==s);
   document.body.dataset.density=(s==='children')?'product':'admin';
 });
-document.querySelectorAll('[data-tri]').forEach(tri=>{
-  tri.addEventListener('click',e=>{const t=e.target.closest('.tri-tab');if(!t)return;
-    tri.querySelectorAll('.tri-tab').forEach(x=>x.setAttribute('aria-selected',x===t));
-    tri.querySelectorAll('.tri-panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===t.dataset.tab));
-  });
+// form-level language switcher (replaces per-field tabs): swap the whole form to a language
+const FLD={
+  name:{en:'Robotics Innovators · Term 1',tc:'機械人創新者 · 第一學期',sc:''},
+  desc:{en:'Design, build and pitch an autonomous robot across a 10-week studio. Ages 10–14.',tc:'在十週的工作坊中設計、製作並展示自主機械人。適合 10–14 歲。',sc:'在十周的工作坊中设计、制作并展示自主机器人。适合 10–14 岁。'},
+};
+const PH={name:{en:'Enter the programme name',tc:'輸入課程名稱',sc:'输入简体中文名称'},desc:{en:'Describe the programme',tc:'描述課程',sc:'描述课程'}};
+const lsw=document.getElementById('lsw'),fName=document.getElementById('f-name'),fDesc=document.getElementById('f-desc'),warn=document.getElementById('langWarn');
+lsw&&lsw.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const l=b.dataset.fl;
+  [...lsw.children].forEach(x=>x.setAttribute('aria-pressed',x===b));
+  fName.value=FLD.name[l];fName.placeholder=PH.name[l];fDesc.value=FLD.desc[l];fDesc.placeholder=PH.desc[l];
+  [fName,fDesc].forEach(el=>el.setAttribute('lang',l==='en'?'en':(l==='tc'?'zh-Hant':'zh-Hans')));
+  warn.hidden=!(l==='sc'&&!FLD.name.sc);   // completeness surfaced when editing the incomplete language
 });
+// display-language toggle (the read side)
 const STR={
   progName:{en:'Robotics Innovators · Term 1',tc:'機械人創新者 · 第一學期',sc:'机器人创新者 · 第一学期'},
   'pgm-robotics':{en:'Robotics Innovators',tc:'機械人創新者',sc:'机器人创新者'},

@@ -106,16 +106,17 @@ view, and the one aesthetic risk I'll defend, is:
 
 This **evolves v2.1, it does not replace it** — same palette, type, tokens. The new layer is four decisions:
 
-### D1 — Trilingual INPUT: segmented tri-tab with completeness dots *(the #1 gap)*
-Three languages become **one control**: a 3-tab segment (English / 繁體中文 / 简体中文), each tab carrying a
-**completeness dot** (green = has content, grey = empty). One field height, not three stacked inputs; and the
-**at-a-glance-empty data-integrity property is preserved and improved** — you see which languages are missing
-without reading, and a field-level summary states it in words ("1 language empty — 简体 required before
-publish, OD-19"). Rationale: collapses the "wall of inputs", keeps labels visible (not placeholder-only),
-and makes the OD-19 completeness rule *visible* rather than a submit-time surprise.
-*Considered and rejected:* side-by-side 3-columns (breaks on narrow admin drawers, triples vertical scan);
-primary+collapsible (hides the empty-state the governance rule needs visible).
-→ **Prototype A** (the wizard), live tri-tabs.
+### D1 — Trilingual INPUT: ONE form-level language switcher with completeness dots *(the #1 gap; revised in revision 3)*
+Three languages become **one form-level control**, not per-field tabs: a single **compact language switcher**
+at the top of the form (English / 繁體中文 / 简体中文), each carrying a **completeness dot** (green = content,
+grey = empty). You **switch the whole form to a language, then edit that language's fields** — one plain
+input per field, no triplets. The **at-a-glance-empty data-integrity property is preserved** on the switcher
+itself (a grey dot = that language has an incomplete field) and surfaced as a warning atom while editing the
+incomplete language ("简 incomplete"); the OD-19 rule stays *visible*, never a submit-time surprise.
+*Superseded (revision 3):* the earlier per-field **tri-tab** — Leo's ruling is that a 3-button switcher on
+*every* field is clutter; the form-level switcher is the standard. *Also rejected:* side-by-side 3-columns
+(triples vertical scan); primary+collapsible (hides the empty-state).
+→ **Prototype A** (the wizard), live form-level switcher.
 
 ### D2 — Multi-step FLOW: dependency-aware left rail + phase grouping + save-and-continue *(the #2 gap)*
 The 11 sections become a **left rail stepper**, grouped into phases (Setup · Money & consent · Teams & roles
@@ -193,13 +194,48 @@ the **row**, not the column, the tracked unit:
 Both are the same principle — **structure by shade, space and alignment** — and both are now house standard:
 every card with stacked sections bands them; every dense table zebra-bands and aligns by column-type.
 
+### D7 — Visual-first, prose-last (the design language — binding, everywhere) *(Leo, revision 3)*
+This is a **production enterprise platform, not a demo.** Explanatory / descriptive / caption prose is
+**clutter** — it kills spacing and tells a competent user nothing. The rule, applied to every surface:
+
+> **Where a meaning must be conveyed, use a VISUAL — icon, badge, colour, state indicator, atom — not a
+> sentence.** Show the value; drop the sentence around it.
+
+- **Remove**: page subtitles that narrate ("Your children's enrolments, consent and sessions — one place";
+  "Record in full · a second officer confirms — BI-9"); sub-captions that restate a visible state
+  ("Locks when published", "In progress", "Needs Role library", "Deferred · Phase 2", "Needs Tracker +
+  Learning"); legends that explain a glyph ("Sealed = attested, gapless receipt"); all helper / placeholder /
+  demo-flavoured copy.
+- **Show instead**: "Locks when published" → the **lock icon** alone. Section state → the **number badge +
+  colour** (done = gold check · in-progress = ringed number · blocked = amber ! · deferred = dashed ·
+  optional = ○). BI-9 → the **"You" pill + disabled Confirm**. "Sealed & audited" → the **seal** + the
+  receipt number.
+- **Data ≠ prose.** A fact that is *data* becomes an **atom**, not a sentence: a signed date → a small
+  **dated badge** ("Signed 28 Jul"); an amount → the **money atom**; a status → a **status pill**.
+
+**D7 refines D5 (honesty), does not break it.** Evidential *data* — the signed **date**, the money
+**figures**, the exact **state** — stays, as atoms, and the full audited record is one click away
+("View record"). What D7 removes is the *explanatory phrasing around* the data, never the data. A guardian
+still sees the seal (sealed), the date (when signed), and reaches the full record on demand.
+
+**Two structural fixes shipped with D7:**
+1. **Sidebar** — roomier vertical rhythm between nav items; the active/hover item keeps its **fill highlight
+   only** — the gold edge-hairline is **removed**.
+2. **Trilingual entry** — the per-field EN/繁/简 triplets are **gone**, replaced by the single form-level
+   language switcher (D1, revised).
+
+D7 is a **design-language rule for the whole platform**, not these three screens — every future build card
+inherits it.
+
 ### Design-system-v2 scope (what the eventual spec will add to v2.1)
-- New component specs: **TrilingualInput** (D1), **WizardRail** (D2), **StatisticStrip**, **Seal / attested
-  row** (D3), **density scopes** (D4), **ProgrammeCard realized** (imagery), **PaymentTrust panel** (/pay),
-  and the D5 atom kit — **StatusAtom** (loud headline + demoted `subatom`), **StatChip**, **MetaChip**,
-  **StateBadge** (avatar seal/warning + ring), **ProgressRing** — and the D6 structure primitives —
-  **SubPanel** (shade-banded zone), **ZoneStack** (banded sections + gap), **ZebraTable** (row-banding +
-  column-type alignment + defined Status/Action zones).
+- New component specs: **FormLanguageSwitcher** (D1, form-level + completeness dots — replaces the per-field
+  TrilingualInput), **WizardRail** (D2, state by icon+colour, no captions), **StatisticStrip**,
+  **Seal / attested row** (D3), **density scopes** (D4), **ProgrammeCard realized** (imagery),
+  **PaymentTrust panel** (/pay), and the D5 atom kit — **StatusAtom** (loud headline + demoted `subatom`),
+  **StatChip**, **MetaChip**, **StateBadge** (avatar seal/warning + ring), **ProgressRing**, **DatedBadge**
+  — and the D6 structure primitives — **SubPanel** (shade-banded zone), **ZoneStack** (banded sections +
+  gap), **ZebraTable** (row-banding + column-type alignment + defined Status/Action zones). **D7 is a
+  cross-cutting rule, not a component.**
 - Token additions: `--gold-tint`, `--gold-line`, the `--seal` gradient, the `--admin/--product` density scales.
 - No palette change, no type change, no light mode (client decision stands). **v2 is disciplined evolution.**
 
