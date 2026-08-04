@@ -138,12 +138,16 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
 .kpi .v{font-family:var(--font-display);font-size:26px;font-weight:700;margin-top:5px;font-variant-numeric:tabular-nums;line-height:1}
 .kpi .v.gold{color:var(--gold)}.kpi .v.warn{color:var(--warning)}.kpi .sub{font-size:12px;color:#6b6478;margin-top:5px}
 
-/* table */
+/* table — horizontal structure: zebra row-banding + alignment discipline + generous column gap, NO column rules */
 .tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th,.tbl td{white-space:nowrap}                                             /* atoms don't wrap mid-cell */
 .tbl thead th{text-align:left;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.04em;text-transform:uppercase;padding:9px 14px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0}
-.tbl tbody td{padding:0 14px;height:var(--row);border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tbody td{padding:0 14px;height:var(--row);vertical-align:middle}           /* generous, even column gap, no bottom rule */
+.tbl tbody tr:nth-child(even){background:rgba(255,255,255,.028)}                 /* zebra: the eye tracks the ROW across */
 .tbl tbody tr:hover{background:var(--muted)}
-.tbl .r{text-align:right}
+.tbl .r{text-align:right}                                                       /* money column, clean vertical scan */
+.tbl th.zstatus,.tbl td.zstatus{min-width:150px}                                /* status = a defined zone */
+.tbl th.zact,.tbl td.zact{width:1%}                                             /* action zone hugs its buttons, right-aligned */
 .amt{font-family:var(--font-display);font-weight:700;font-variant-numeric:tabular-nums;font-size:15px}
 
 /* wizard rail */
@@ -162,13 +166,18 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
 .step .sub{font-size:11px;color:#6b6478;font-weight:400;margin-top:1px}
 .lockico{width:13px;height:13px;stroke:var(--fg-muted);opacity:.75}
 
-/* product surface — child cards */
+/* product surface — child cards. VERTICAL structure: each section is a shade-banded sub-panel + gap, no boxes */
 .child{background:var(--card);border:1px solid var(--border);border-radius:var(--r-xl)}
-.child .hd{display:flex;align-items:center;gap:14px;padding:18px 22px 16px}
-.child .bd{padding:0 22px 16px}
-.enrol{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--border)}
+.child .hd{display:flex;align-items:center;gap:14px;padding:18px 22px 14px}
+.zones{display:flex;flex-direction:column;gap:10px;padding:0 22px 18px}
+.zone{background:rgba(255,255,255,.035);border-radius:var(--r-md);padding:12px 15px}   /* subtle shade-step = a legible zone, no border */
+.enrol{display:flex;align-items:center;gap:14px}
 .enrol .t{font-weight:600}
 .cat-bar{width:3px;align-self:stretch;min-height:34px;border-radius:3px}
+/* wizard section panel — VERTICAL: field-groups zoned by space + a subtle rule (the divider, not a box) */
+.wfield{padding-bottom:var(--stack);border-bottom:1px solid var(--border);margin-bottom:var(--stack)}
+.wfield:last-of-type{border-bottom:none;padding-bottom:0;margin-bottom:0}
+.sec-head{padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:var(--stack)}
 .foot-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500}
 @media(max-width:900px){.wizard{grid-template-columns:1fr}.rail-card{position:static}.shell{grid-template-columns:1fr}.sider{display:none}}
 </style>
@@ -235,12 +244,12 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
 
         <div>
           <div class="card">
-            <div class="row between" style="margin-bottom:14px">
+            <div class="row between sec-head">
               <div><div class="eyebrow">Section 1 · Basics</div><h3 style="margin-top:5px">Name &amp; description</h3></div>
               <span class="tag ok"><span class="dot"></span>Complete</span>
             </div>
 
-            <div class="field">
+            <div class="field wfield">
               <label>Programme name</label>
               <div class="tri" data-tri>
                 <div class="tri-tabs"><button class="tri-tab" aria-selected="true" data-tab="en">English <span class="cdot filled"></span></button><button class="tri-tab" aria-selected="false" data-tab="tc">繁體 <span class="cdot filled"></span></button><button class="tri-tab" aria-selected="false" data-tab="sc">简体 <span class="cdot"></span></button></div>
@@ -252,7 +261,7 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
               <div class="row" style="gap:8px;margin-top:7px"><span class="tag warn"><span class="dot"></span>简体 empty</span><span class="subatom" style="margin:0">Required before publish · OD-19</span></div>
             </div>
 
-            <div class="field">
+            <div class="field wfield">
               <label>Short description <span class="optional">· family catalogue</span></label>
               <div class="tri" data-tri>
                 <div class="tri-tabs"><button class="tri-tab" aria-selected="true" data-tab="en">English <span class="cdot filled"></span></button><button class="tri-tab" aria-selected="false" data-tab="tc">繁體 <span class="cdot filled"></span></button><button class="tri-tab" aria-selected="false" data-tab="sc">简体 <span class="cdot filled"></span></button></div>
@@ -263,7 +272,7 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
               <div class="row" style="margin-top:7px"><span class="tag ok"><span class="dot"></span>All three complete</span></div>
             </div>
 
-            <div class="row" style="gap:14px">
+            <div class="row wfield" style="gap:14px">
               <div class="field grow" style="margin:0"><label>Category</label><select class="select"><option>STEM</option><option>Language</option><option>Arts</option><option>Mathematics</option></select></div>
               <div class="field grow" style="margin:0"><label>Jurisdiction</label><select class="select"><option>Hong Kong</option><option>Mainland China</option></select></div>
             </div>
@@ -305,7 +314,7 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
       <div class="card" style="padding:0;overflow:hidden">
         <div class="row between" style="padding:12px 16px"><h3 style="font-size:15px">Queue</h3><div class="row" style="gap:6px"><span class="chip">All</span><span class="chip">Awaiting record</span><span class="tag info"><span class="dot"></span>Awaiting confirmation</span></div></div>
         <div style="overflow-x:auto"><table class="tbl">
-          <thead><tr><th>Student</th><th>Programme</th><th class="r">Amount</th><th>Recorded by</th><th>Status</th><th>Receipt</th><th class="r">Action</th></tr></thead>
+          <thead><tr><th>Student</th><th>Programme</th><th class="r">Amount</th><th>Recorded by</th><th class="zstatus">Status</th><th>Receipt</th><th class="r zact">Action</th></tr></thead>
           <tbody>
             <tr><td>Chan Sum-yu</td><td class="muted" data-t="pgm-robotics">Robotics Innovators</td><td class="r amt">HK$2,500.00</td><td class="muted">—</td><td><span class="tag neutral"><span class="dot"></span>Awaiting record</span></td><td class="muted">—</td><td class="r"><button class="btn sm primary">Record</button></td></tr>
             <tr><td>Wong Ka-ho</td><td class="muted" data-t="pgm-debate">Debate Masters</td><td class="r amt">HK$2,000.00</td><td class="sm">A. Leung</td><td><span class="tag warn"><span class="dot"></span>Pending confirmation</span></td><td class="muted">—</td><td class="r"><div class="row" style="justify-content:flex-end;gap:6px"><button class="btn sm primary">Confirm</button><button class="btn sm danger">Reject</button></div></td></tr>
@@ -345,17 +354,17 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
             <div class="stats" style="margin-top:6px"><span class="statchip"><b>2</b> programmes</span><span class="statchip"><b>11</b> age</span></div></div>
           <a class="foot-link" href="#">Sessions <svg class="i" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </div>
-        <div class="bd">
-          <div class="attest" style="margin-bottom:6px">
+        <div class="zones">
+          <div class="attest">
             <span class="seal"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>
             <div class="grow"><div class="atom">Consent complete</div><div class="subatom">Signed 28 Jul 2026 · sealed &amp; audited · both enrolments</div></div>
             <a href="#" class="sm">View record</a>
           </div>
-          <div class="enrol"><div class="cat-bar" style="background:var(--cat-stem)"></div>
+          <div class="zone enrol"><div class="cat-bar" style="background:var(--cat-stem)"></div>
             <div class="grow"><div class="t" data-t="pgm-robotics">Robotics Innovators · Term 1</div>
               <div class="chips" style="margin-top:5px"><span class="chip"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Mon 16:00</span><span class="chip"><svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>Kowloon studio</span></div></div>
             <span class="tag ok"><span class="dot"></span>Active</span></div>
-          <div class="enrol"><div class="cat-bar" style="background:var(--cat-language)"></div>
+          <div class="zone enrol"><div class="cat-bar" style="background:var(--cat-language)"></div>
             <div class="grow"><div class="t" data-t="pgm-debate">Debate Masters</div>
               <div class="chips" style="margin-top:5px"><span class="chip"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Thu 17:00</span><span class="chip"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/></svg>Online</span></div></div>
             <span class="tag info"><span class="dot"></span>Teamed</span></div>
@@ -370,13 +379,13 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
             <div class="stats" style="margin-top:6px"><span class="statchip"><b>1</b> programme</span><span class="statchip"><b>9</b> age</span></div></div>
           <a class="foot-link" href="#">Sessions <svg class="i" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </div>
-        <div class="bd">
-          <div class="attest warn" style="margin-bottom:6px">
+        <div class="zones">
+          <div class="attest warn">
             <span class="warnico"><svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
             <div class="grow"><div class="atom">Signature needed</div><div class="subatom">Confirms the Coding Explorers seat before it starts</div></div>
             <button class="btn primary sm">Review &amp; sign</button>
           </div>
-          <div class="enrol"><div class="cat-bar" style="background:var(--cat-maths)"></div>
+          <div class="zone enrol"><div class="cat-bar" style="background:var(--cat-maths)"></div>
             <div class="grow"><div class="t" data-t="pgm-coding">Coding Explorers</div>
               <div class="chips" style="margin-top:5px"><span class="chip"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Starts 2 Sep</span></div></div>
             <span class="tag warn"><span class="dot"></span>Pending consent</span></div>

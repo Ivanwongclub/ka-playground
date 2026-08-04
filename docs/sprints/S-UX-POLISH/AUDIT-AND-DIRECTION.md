@@ -168,11 +168,38 @@ de-emphasize; do not remove. A guardian must still be able to read "sealed and a
 competing with the headline. *This guardrail applies to every future build card: no restyle may drop an
 evidential detail to reduce text.*
 
+### D6 — Separation & structure: "zones, not cages" (both axes — part of the STANDARD) *(Leo, revision 2)*
+The density and atom work was right, but dense content **bled together** — stacked sections merged
+vertically, and the Payments columns ran together horizontally. The fix is the **minimum structure that
+makes zones unambiguous — shade + space + alignment, never heavy borders or boxes-in-boxes** (which would
+fight the clean direction). The treatment differs by axis:
+
+**Vertical — sections stacked within a card** (My Children, the wizard section panel):
+- Each section becomes a legible **sub-panel** via a **subtle background shade-step + generous internal
+  padding + a clear gap between sections** — extending the logic the consent alert already uses (its faint
+  tint) to every section. Neutral sections use a barely-there neutral shade (`rgba(255,255,255,.035)`);
+  semantic sections keep their tint (gold for attested, amber for action-needed).
+- The divider between sections is **space + the shade-step** (content-section stacks) or **space + a single
+  subtle rule** (form field-groups) — never a heavy line, never a nested box.
+
+**Horizontal — dense tables** (the Payments queue): the "columns run together" problem is solved by making
+the **row**, not the column, the tracked unit:
+- **Zebra row-banding** — alternating row background so the eye tracks *across* a row without losing the line.
+- **Alignment discipline** — text columns left; **money right-aligned** (amounts form one clean scannable
+  vertical column, tabular-nums); **Status and Action in defined-width zones** so the grid is stable row-to-row.
+- **Generous, even column gap; `nowrap` atoms; NO vertical column rules** (the dated spreadsheet look).
+- The money/status atoms and the BI-9 "You"-row disabled-confirm are unchanged.
+
+Both are the same principle — **structure by shade, space and alignment** — and both are now house standard:
+every card with stacked sections bands them; every dense table zebra-bands and aligns by column-type.
+
 ### Design-system-v2 scope (what the eventual spec will add to v2.1)
 - New component specs: **TrilingualInput** (D1), **WizardRail** (D2), **StatisticStrip**, **Seal / attested
   row** (D3), **density scopes** (D4), **ProgrammeCard realized** (imagery), **PaymentTrust panel** (/pay),
   and the D5 atom kit — **StatusAtom** (loud headline + demoted `subatom`), **StatChip**, **MetaChip**,
-  **StateBadge** (avatar seal/warning + ring), **ProgressRing**.
+  **StateBadge** (avatar seal/warning + ring), **ProgressRing** — and the D6 structure primitives —
+  **SubPanel** (shade-banded zone), **ZoneStack** (banded sections + gap), **ZebraTable** (row-banding +
+  column-type alignment + defined Status/Action zones).
 - Token additions: `--gold-tint`, `--gold-line`, the `--seal` gradient, the `--admin/--product` density scales.
 - No palette change, no type change, no light mode (client decision stands). **v2 is disciplined evolution.**
 
