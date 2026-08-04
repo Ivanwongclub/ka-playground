@@ -1,0 +1,195 @@
+// DS2 structure primitives (STEP 3). Each enforces its rule by API SHAPE:
+//   SubPanel / ZoneStack — D6 zones-not-cages: shade-banded panels + a gap; NO border/divider prop exists.
+//   Attest               — D5 THE honesty component (read hardest): takes the fact (status + dated) and a
+//                          record LINK (onViewRecord), never a reassurance-sentence prop. Its type makes an
+//                          attested state REQUIRE onViewRecord, so an evidential fact can be neither
+//                          narrated (no prose slot) nor buried (the record is always reachable).
+//   ZebraTable           — D6 horizontal: zebra row-banding + alignment BY COLUMN TYPE (money right, text
+//                          left, status/action defined zones); NO per-column border option.
+//   WizardRail           — grouped stepper: per-phase counts + state icons; steps take a `state` ENUM, not
+//                          a caption — prose captions are un-passable.
+//   FormLanguageSwitcher — the ONLY trilingual primitive: a form-level switch + per-language completeness
+//                          dots. There is no per-field trilingual component to import, so per-field EN/繁/简
+//                          triplets are un-buildable.
+// i18n-native: all text arrives as already-translated ReactNode. On the --ka-* tokens; wraps antd where it
+// has the primitive (Table, Segmented).
+import type { ReactNode } from 'react';
+import { Table, Segmented } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import { StatusAtom, DatedBadge } from './atoms';
+import './structure.css';
+
+export type Tone = 'neutral' | 'attested' | 'action';
+
+/** A shade-banded zone (D6). Tone selects the shade; there is no border/heavy-line prop. */
+export function SubPanel({ tone = 'neutral', children }: { tone?: Tone; children: ReactNode }) {
+  return <div className={`ds2-subpanel ds2-subpanel--${tone}`}>{children}</div>;
+}
+
+/** A vertical stack of sections (D6). Separation is the gap + the SubPanel shades — no divider prop. */
+export function ZoneStack({ children }: { children: ReactNode }) {
+  return <div className="ds2-zonestack">{children}</div>;
+}
+
+// ── Attest — the honesty core ───────────────────────────────────────────────────────────────────────
+type AttestCommon = {
+  status: ReactNode; // the loud status atom (short) — NOT a paragraph slot
+  icon?: ReactNode;
+  dated?: { label: ReactNode; date: string; locale: string }; // the evidential fact as a DATE, not a sentence
+  action?: ReactNode;
+};
+// An ATTESTED state MUST supply onViewRecord — the full audited record is always reachable (never buried).
+type AttestAttested = AttestCommon & { tone: 'attested'; onViewRecord: () => void; viewRecordLabel: ReactNode };
+// An ACTION state (pending) has no record yet, and cannot smuggle one.
+type AttestAction = AttestCommon & { tone: 'action'; onViewRecord?: never; viewRecordLabel?: never };
+
+/** D5: the fact as an atom, the record on demand. No prose/description prop anywhere. */
+export function Attest(props: AttestAttested | AttestAction) {
+  const { status, icon, dated, action, tone } = props;
+  return (
+    <SubPanel tone={tone}>
+      <div className="ds2-attest">
+        <StatusAtom icon={icon} status={status} tone={tone} />
+        <span className="ds2-attest__spacer" />
+        {dated && <DatedBadge label={dated.label} date={dated.date} locale={dated.locale} />}
+        {props.tone === 'attested' && (
+          <button type="button" className="ds2-attest__link" onClick={props.onViewRecord}>
+            {props.viewRecordLabel}
+          </button>
+        )}
+        {action}
+      </div>
+    </SubPanel>
+  );
+}
+
+// ── ZebraTable — D6 horizontal ──────────────────────────────────────────────────────────────────────
+export type Ds2ColType = 'text' | 'money' | 'status' | 'action';
+export interface Ds2Column<T> {
+  key: string;
+  title: ReactNode;
+  type: Ds2ColType;
+  render: (row: T) => ReactNode;
+  width?: number;
+}
+const ALIGN: Record<Ds2ColType, 'left' | 'right'> = { text: 'left', money: 'right', status: 'left', action: 'right' };
+const ZONE_MINW: Partial<Record<Ds2ColType, number>> = { status: 150 };
+
+/** Zebra row-banding + alignment discipline BY COLUMN TYPE. No per-column border option. Wraps antd Table
+ *  (keeps sort/pagination/sticky). Money is forced right + display-weight; you cannot misalign it. */
+export function ZebraTable<T extends object>({
+  columns,
+  data,
+  rowKey,
+}: {
+  columns: Ds2Column<T>[];
+  data: T[];
+  rowKey: (row: T) => string;
+}) {
+  const cols: ColumnsType<T> = columns.map((c) => ({
+    key: c.key,
+    title: c.title,
+    align: ALIGN[c.type],
+    width: c.width ?? ZONE_MINW[c.type],
+    render: (_: unknown, row: T) =>
+      c.type === 'money' ? <span className="ds2-money">{c.render(row)}</span> : c.render(row),
+  }));
+  return (
+    <Table<T>
+      className="ds2-zebra"
+      columns={cols}
+      dataSource={data}
+      rowKey={rowKey}
+      size="small"
+      pagination={false}
+    />
+  );
+}
+
+// ── WizardRail — grouped stepper ────────────────────────────────────────────────────────────────────
+export type StepState = 'done' | 'current' | 'wip' | 'blocked' | 'todo' | 'deferred' | 'optional';
+export interface RailStep { label: ReactNode; state: StepState; locked?: boolean; num?: number }
+export interface RailPhase { title: ReactNode; steps: RailStep[] }
+
+const RAIL_CHECK = (
+  <svg viewBox="0 0 24 24" style={{ width: 12, height: 12, stroke: '#241a12', strokeWidth: 3, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+    <path d="M20 6L9 17l-5-5" />
+  </svg>
+);
+const RAIL_LOCK = (
+  <svg viewBox="0 0 24 24" className="ds2-step__lock" aria-hidden>
+    <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+function stepGlyph(s: RailStep): ReactNode {
+  switch (s.state) {
+    case 'done': return RAIL_CHECK;
+    case 'blocked': return '!';
+    case 'deferred': return '–';
+    case 'optional': return '○';
+    default: return s.num ?? '•'; // current · wip · todo carry the step number
+  }
+}
+
+/** State is a `state` ENUM per step (icon + colour) — there is no caption/description prop, so "Needs X" /
+ *  "In progress" prose cannot be added. Per-phase `done/total` count is computed, not authored. */
+export function WizardRail({ phases }: { phases: RailPhase[] }) {
+  return (
+    <div className="ds2-rail">
+      {phases.map((ph, i) => {
+        const done = ph.steps.filter((s) => s.state === 'done').length;
+        return (
+          <div key={i}>
+            <div className="ds2-rail__phase">{ph.title}<span className="ds2-rail__ct">{done}/{ph.steps.length}</span></div>
+            {ph.steps.map((s, j) => (
+              <div key={j} className={`ds2-step ds2-step--${s.state}`}>
+                <span className="ds2-step__ic">{stepGlyph(s)}</span>
+                <span className="ds2-step__lbl">{s.label}</span>
+                {s.locked && RAIL_LOCK}
+              </div>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── FormLanguageSwitcher — the ONLY trilingual primitive ────────────────────────────────────────────
+export type Ds2Lang = 'en' | 'tc' | 'sc';
+
+/** Form-level language switch + per-language completeness dots (a grey dot = that language has an
+ *  incomplete field). The consuming form renders ONE plain input per field, bound to `value`. There is no
+ *  per-field trilingual component in DS2 — so per-field EN/繁/简 triplets are un-buildable. Wraps antd
+ *  Segmented; all text is caller-translated ReactNode. */
+export function FormLanguageSwitcher({
+  value,
+  onChange,
+  complete,
+  labels,
+  editingLabel,
+  warning,
+}: {
+  value: Ds2Lang;
+  onChange: (lang: Ds2Lang) => void;
+  complete: Record<Ds2Lang, boolean>;
+  labels: Record<Ds2Lang, ReactNode>;
+  editingLabel: ReactNode;
+  warning?: ReactNode;
+}) {
+  const opt = (l: Ds2Lang) => ({
+    value: l,
+    label: (
+      <span className="ds2-lsw-opt">
+        {labels[l]} <span className={`ds2-cdot${complete[l] ? ' ds2-cdot--filled' : ''}`} />
+      </span>
+    ),
+  });
+  return (
+    <div className="ds2-langform">
+      <span className="ds2-langform__label">{editingLabel}</span>
+      <Segmented size="small" value={value} onChange={(v) => onChange(v as Ds2Lang)} options={[opt('en'), opt('tc'), opt('sc')]} />
+      {warning}
+    </div>
+  );
+}

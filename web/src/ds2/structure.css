@@ -1,0 +1,43 @@
+/* DS2 structure primitives — styles on the --ka-* tokens. D6 (zones-not-cages) is realized by SHADE + SPACE
+ * + ALIGNMENT, never heavy borders or boxes-in-boxes; the components expose no border/divider prop. */
+
+/* SubPanel / ZoneStack — D6 vertical: shade-banded sub-panels + a gap. No border prop exists. */
+.ds2-zonestack { display: flex; flex-direction: column; gap: 10px; }
+.ds2-subpanel { border-radius: var(--ka-r-md); padding: 12px 15px; }
+.ds2-subpanel--neutral { background: rgba(255, 255, 255, 0.035); }
+.ds2-subpanel--attested { background: var(--ka-gold-tint); border: 1px solid var(--ka-gold-line); }
+.ds2-subpanel--action { background: rgba(251, 191, 36, 0.07); border: 1px solid rgba(251, 191, 36, 0.32); }
+
+/* Attest — the honesty component: loud status + the dated fact + the on-demand record link */
+.ds2-attest { display: flex; align-items: center; gap: 11px; }
+.ds2-attest__spacer { flex: 1; }
+.ds2-attest__link { background: none; border: none; color: var(--ka-gold); font: inherit; font-size: 12px; cursor: pointer; padding: 0; }
+.ds2-attest__link:hover { text-decoration: underline; }
+.ds2-attest__link:focus-visible { outline: 2px solid var(--ka-gold); outline-offset: 2px; border-radius: 3px; }
+
+/* ZebraTable — D6 horizontal: zebra row-banding (over antd Table), no per-column border */
+.ds2-zebra .ant-table-tbody > tr:nth-child(even) > td { background: rgba(255, 255, 255, 0.028); }
+.ds2-zebra .ant-table-cell { white-space: nowrap; }
+.ds2-money { font-family: var(--ka-font-display); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* WizardRail — grouped stepper; state by icon + colour, no captions */
+.ds2-rail { display: flex; flex-direction: column; gap: 2px; }
+.ds2-rail__phase { display: flex; align-items: center; justify-content: space-between; font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: #5c566b; padding: 13px 10px 5px; }
+.ds2-rail__ct { font-family: var(--ka-font-mono); color: var(--ka-muted-fg); letter-spacing: 0; }
+.ds2-step { display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: var(--ka-r-md); color: var(--ka-muted-fg); }
+.ds2-step--current { background: var(--ka-muted); color: var(--ka-fg); }
+.ds2-step__ic { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--ka-border-strong); display: grid; place-items: center; flex: 0 0 auto; font-size: 11px; font-variant-numeric: tabular-nums; }
+.ds2-step--done .ds2-step__ic { background: var(--ka-gold); border-color: var(--ka-gold); color: #241a12; }
+.ds2-step--done, .ds2-step--current { color: var(--ka-fg); }
+.ds2-step--wip .ds2-step__ic { border-color: var(--ka-gold); border-width: 2px; color: var(--ka-gold); }
+.ds2-step--blocked .ds2-step__ic { border-color: var(--ka-warning); color: var(--ka-warning); }
+.ds2-step--deferred .ds2-step__ic { border-style: dashed; }
+.ds2-step__lbl { flex: 1; font-size: 14px; font-weight: 500; }
+.ds2-step__lock { width: 13px; height: 13px; stroke: var(--ka-muted-fg); opacity: 0.75; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+/* FormLanguageSwitcher — the ONLY trilingual pattern: form-level switch + completeness dots */
+.ds2-langform { display: flex; align-items: center; gap: 10px; }
+.ds2-langform__label { font-size: 12px; color: var(--ka-muted-fg); }
+.ds2-lsw-opt { display: inline-flex; align-items: center; gap: 6px; }
+.ds2-cdot { width: 6px; height: 6px; border-radius: 50%; background: #4a4358; display: inline-block; }
+.ds2-cdot--filled { background: var(--ka-success); }

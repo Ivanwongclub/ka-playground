@@ -14,6 +14,11 @@ import './tokens.css';
 export { StatusAtom, StatChip, MetaChip, StateBadge, ProgressRing, DatedBadge, Seal } from './atoms';
 export type { BadgeState } from './atoms';
 
+// The structure primitives (STEP 3) — zones (SubPanel/ZoneStack), the honesty component (Attest), the dense
+// table (ZebraTable), the stepper (WizardRail) and the ONLY trilingual pattern (FormLanguageSwitcher).
+export { SubPanel, ZoneStack, Attest, ZebraTable, WizardRail, FormLanguageSwitcher } from './structure';
+export type { Tone, Ds2Column, Ds2ColType, StepState, RailStep, RailPhase, Ds2Lang } from './structure';
+
 // Status pills + money/date/name formatting — the existing display layer, re-exported (not reinvented).
 export { StatusTag, AuditCode, humanise } from '../display/status';
 export { formatMoney } from '../display/money';

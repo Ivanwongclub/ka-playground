@@ -2,8 +2,22 @@
 // Dead-code-eliminated from production (DEV-gated route in main.tsx, like the Style Guide). It is the ONE
 // deliberate adopter of @/ds2 in STEP 2 (allowlisted in scripts/ds2-import-guard.mjs). Its labels are
 // developer-facing (component + prop-state names), so it is excluded from the i18n hardcoded-string scan.
+import { useState } from 'react';
+import { Button } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { StatusAtom, StatChip, MetaChip, StateBadge, ProgressRing, DatedBadge, Seal, StatusTag } from '@/ds2';
+import {
+  StatusAtom, StatChip, MetaChip, StateBadge, ProgressRing, DatedBadge, Seal, StatusTag,
+  SubPanel, ZoneStack, Attest, ZebraTable, WizardRail, FormLanguageSwitcher,
+} from '@/ds2';
+import type { Ds2Lang } from '@/ds2';
+
+interface PayRow { id: string; student: string; amount: string; status: string }
+const PAY_ROWS: PayRow[] = [
+  { id: '1', student: 'Chan Sum-yu', amount: 'HK$2,500.00', status: 'pending_confirmation' },
+  { id: '2', student: 'Wong Ka-ho', amount: 'HK$2,000.00', status: 'confirmed' },
+  { id: '3', student: 'Lam Zi-ching', amount: 'HK$2,500.00', status: 'confirmed' },
+];
+const WARN: React.CSSProperties = { color: 'var(--ka-warning)', background: 'rgba(251,191,36,.12)', fontSize: 12, fontWeight: 600, padding: '2px 9px', borderRadius: 6 };
 
 const S: Record<string, React.CSSProperties> = {
   page: { background: 'var(--ka-bg)', color: 'var(--ka-fg)', minHeight: '100vh', padding: 32, fontFamily: 'var(--ka-font-body)' },
@@ -30,6 +44,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 export function Ds2Gallery() {
   const { i18n } = useTranslation();
   const locale = i18n.language;
+  const [lang, setLang] = useState<Ds2Lang>('en');
   return (
     <div style={S.page}>
       <div style={S.h1}>DS2 Atom Kit</div>
@@ -68,6 +83,75 @@ export function Ds2Gallery() {
         <StatusTag domain="paymentStatus" value="pending_confirmation" />
         <StatusTag domain="enrolmentStatus" value="active" />
         <StatusTag domain="sessionStatus" value="in_progress" />
+      </Section>
+
+      <div style={{ ...S.h1, fontSize: 20, marginTop: 12 }}>Structure primitives</div>
+
+      <Section label="SubPanel · ZoneStack — D6 zones (shade + gap, no borders)">
+        <div style={{ width: '100%', maxWidth: 560 }}>
+          <ZoneStack>
+            <SubPanel tone="attested"><span className="ds2-atom">Attested zone</span></SubPanel>
+            <SubPanel tone="neutral">Neutral zone — a shade-banded sub-panel</SubPanel>
+            <SubPanel tone="action"><span className="ds2-atom">Action zone</span></SubPanel>
+          </ZoneStack>
+        </div>
+      </Section>
+
+      <Section label="Attest — the honesty component (fact as atom + record on demand; attested REQUIRES onViewRecord)">
+        <div style={{ width: '100%', maxWidth: 560, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <Attest
+            tone="attested"
+            icon={<Seal size={20} />}
+            status="Consent complete"
+            dated={{ label: 'Signed', date: '2026-07-28T00:00:00Z', locale }}
+            onViewRecord={() => alert('open the audited record')}
+            viewRecordLabel="View record"
+          />
+          <Attest
+            tone="action"
+            icon={<StateBadge state="action" title="Action needed" />}
+            status="Signature needed"
+            action={<Button type="primary" size="small">Review &amp; sign</Button>}
+          />
+        </div>
+      </Section>
+
+      <Section label="ZebraTable — D6 horizontal (zebra + money-right, no column rules)">
+        <div style={{ width: '100%' }}>
+          <ZebraTable<PayRow>
+            rowKey={(r) => r.id}
+            data={PAY_ROWS}
+            columns={[
+              { key: 'student', title: 'Student', type: 'text', render: (r) => r.student },
+              { key: 'amount', title: 'Amount', type: 'money', render: (r) => r.amount },
+              { key: 'status', title: 'Status', type: 'status', render: (r) => <StatusTag domain="paymentStatus" value={r.status} /> },
+              { key: 'action', title: 'Action', type: 'action', render: () => <a href="#">View</a> },
+            ]}
+          />
+        </div>
+      </Section>
+
+      <Section label="WizardRail — grouped stepper (state icons + per-phase counts, no captions)">
+        <div style={{ width: 300 }}>
+          <WizardRail
+            phases={[
+              { title: 'Setup', steps: [{ label: 'Basics', state: 'done' }, { label: 'Eligibility', state: 'done' }] },
+              { title: 'Money & consent', steps: [{ label: 'Fees', state: 'done', locked: true }, { label: 'Consent', state: 'current', num: 4, locked: true }] },
+              { title: 'Teams & roles', steps: [{ label: 'Team rules', state: 'done' }, { label: 'Role library', state: 'wip', num: 6 }, { label: 'Tracker', state: 'blocked' }] },
+            ]}
+          />
+        </div>
+      </Section>
+
+      <Section label="FormLanguageSwitcher — the ONLY trilingual pattern (form-level + completeness dots)">
+        <FormLanguageSwitcher
+          value={lang}
+          onChange={setLang}
+          complete={{ en: true, tc: true, sc: false }}
+          labels={{ en: 'English', tc: '繁體', sc: '简体' }}
+          editingLabel="Editing"
+          warning={lang === 'sc' ? <span style={WARN}>简 incomplete</span> : undefined}
+        />
       </Section>
     </div>
   );
