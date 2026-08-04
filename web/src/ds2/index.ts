@@ -1,0 +1,25 @@
+// @/ds2 — the single design import root (Design System v2).
+//
+// STEP 1 (tokens/theme): importing this brings the --ka-* token layer and re-exports the shared display /
+// data helpers, so every future restyle imports design from ONE place. The atom kit arrives in STEP 2 and
+// the structure primitives in STEP 3 — added to this barrel then.
+//
+// RULING 2 (changes-nothing-yet): NOTHING outside web/src/ds2/ (and, from STEP 2, the dev-only gallery) may
+// import this barrel. scripts/ds2-import-guard.mjs FAILS the build otherwise. So no built surface has adopted
+// DS2 yet, and every existing money / consent / child-data page renders byte-identical after this lands.
+// Adopting DS2 is a DELIBERATE act — a rollout card adds its surface to the guard's allowlist in its slot.
+import './tokens.css';
+
+// Status pills + money/date/name formatting — the existing display layer, re-exported (not reinvented).
+export { StatusTag, AuditCode, humanise } from '../display/status';
+export { formatMoney } from '../display/money';
+export { formatHkt, formatHktDate } from '../display/date';
+export { personName, programmeName } from '../display/names';
+
+// Data plumbing the design surfaces use.
+export { useResource, DataBoundary } from '../api/useResource';
+export { mutate } from '../api/mutate';
+export type { MutateResult } from '../api/mutate';
+
+// Palette constants for the bespoke DS2 components (category accents, seal) — STEP 2/3 consume these.
+export { kaColors, kaCategoryAccents } from '../theme/theme';
