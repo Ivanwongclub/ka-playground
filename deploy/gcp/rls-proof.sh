@@ -39,10 +39,12 @@ q()  { psql -v ON_ERROR_STOP=1 -tA -c "$1"; }
 # qc SETS a guardian request-context, then runs the query IN THE SAME SESSION.
 # set_config(...,false) is session-scoped and persists across -c statements in
 # one psql invocation — this reproduces exactly how ScopeContext::set() gates.
+# The context is set inside a DO block (returns no rows); tail -n1 then guarantees
+# only the query's scalar result is captured, never the set statement's output.
 qc() { # $1=actor_id  $2=student_ids_csv  $3=query
   psql -v ON_ERROR_STOP=1 -tA \
-    -c "SELECT set_config('app.context','request',false), set_config('app.actor_role','guardian',false), set_config('app.actor_id','$1',false), set_config('app.student_ids','$2',false);" \
-    -c "$3"
+    -c "DO \$\$ BEGIN PERFORM set_config('app.context','request',false); PERFORM set_config('app.actor_role','guardian',false); PERFORM set_config('app.actor_id','$1',false); PERFORM set_config('app.student_ids','$2',false); END \$\$;" \
+    -c "$3" | tail -n1
 }
 
 echo "RLS-ENFORCEMENT PROOF against ${PGDATABASE}@${PGHOST} as ${PGUSER}"
@@ -79,20 +81,30 @@ ok "$(q "SELECT count(*) FROM pg_class WHERE relforcerowsecurity") tables carry 
   || die "guardian_links readable with NO context set — fail-closed ground state is broken"
 ok "no-context read of guardian_links returns 0 rows (fail-closed)"
 
+# Derive guardian A's OWN children EXACTLY as ScopeContext::set() does — read A's
+# guardian_links under A's own context (RLS returns only A's) and use those ids as
+# app.student_ids. A can never legitimately carry child B's id here, because A has
+# no link to child B — which is what makes the cross-child check below meaningful.
+A_KIDS="$(qc "$RLS_GUARDIAN_A" "" "SELECT COALESCE(string_agg(student_id::text, ','), '') FROM guardian_links WHERE status='active'")"
+
 # ── 4. POSITIVE CONTROL: guardian A sees their OWN family, and only that ──────
-A_TOTAL="$(qc "$RLS_GUARDIAN_A" "" "SELECT count(*) FROM guardian_links")"
-A_OWN="$(qc "$RLS_GUARDIAN_A" "" "SELECT count(*) FROM guardian_links WHERE guardian_id::text = '$RLS_GUARDIAN_A'")"
+A_TOTAL="$(qc "$RLS_GUARDIAN_A" "$A_KIDS" "SELECT count(*) FROM guardian_links")"
+A_OWN="$(qc "$RLS_GUARDIAN_A" "$A_KIDS" "SELECT count(*) FROM guardian_links WHERE guardian_id::text = '$RLS_GUARDIAN_A'")"
 [ "$A_TOTAL" -gt 0 ] || die "guardian A sees 0 of their own links — positive control failed (policy or seed wrong)"
 [ "$A_TOTAL" = "$A_OWN" ] || die "guardian A sees $A_TOTAL link rows but only $A_OWN are theirs — LEAK"
 ok "guardian A sees their own $A_OWN link row(s) and nothing else"
 
+A_ENR="$(qc "$RLS_GUARDIAN_A" "$A_KIDS" "SELECT count(*) FROM enrolments")"
+[ "$A_ENR" -gt 0 ] || die "guardian A sees 0 of their own children's enrolments — positive control failed"
+ok "guardian A sees their own children's $A_ENR enrolment(s)"
+
 # ── 5. NEGATIVE CONTROL: cross-family / cross-child reads are DENIED ───────────
-[ "$(qc "$RLS_GUARDIAN_A" "" "SELECT count(*) FROM guardian_links WHERE guardian_id::text = '$RLS_GUARDIAN_B'")" = "0" ] \
+[ "$(qc "$RLS_GUARDIAN_A" "$A_KIDS" "SELECT count(*) FROM guardian_links WHERE guardian_id::text = '$RLS_GUARDIAN_B'")" = "0" ] \
   || die "guardian A can read guardian B's family link rows — CROSS-FAMILY LEAK"
 ok "guardian A cannot read guardian B's link rows (cross-family denied)"
 
-# Child-data: A (with A's own student scope) must not see B's child's enrolments.
-[ "$(qc "$RLS_GUARDIAN_A" "" "SELECT count(*) FROM enrolments WHERE student_id::text = '$RLS_CHILD_B'")" = "0" ] \
+# Child-data: A, carrying A's OWN real student scope, must not see B's child's enrolments.
+[ "$(qc "$RLS_GUARDIAN_A" "$A_KIDS" "SELECT count(*) FROM enrolments WHERE student_id::text = '$RLS_CHILD_B'")" = "0" ] \
   || die "guardian A can read child B's enrolment rows — CROSS-CHILD DATA LEAK"
 ok "guardian A cannot read child B's enrolments (cross-child denied)"
 

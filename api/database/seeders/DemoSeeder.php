@@ -3,46 +3,51 @@
 namespace Database\Seeders;
 
 use App\Models\Programme;
+use App\Models\School;
 use App\Models\User;
 use App\Services\Consent\ConsentSigningService;
 use App\Services\Consent\ConsentTemplateService;
 use App\Services\Enrolments\EnrolmentService;
+use App\Services\Identity\BulkStudentCreationService;
+use App\Services\Identity\InvitationService;
 use App\Services\Money\ManualPaymentService;
 use App\Services\Money\OrderService;
+use App\Services\Teams\FormationService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
- * PUBLIC-DEMO dataset for the GCP deploy (docs/deploy/GCP-MIGRATION.md §6/§7).
+ * PUBLIC-DEMO dataset for the GCP client-review URL (docs/deploy/GCP-MIGRATION.md §6/§7).
+ * SYNTHETIC ONLY — this feeds a PUBLIC url, so every record is provably fake.
  *
- * DIFFERS from PreviewSeeder (which is local-only + password 'password' and must
- * stay that way) on three deliberate points:
- *   1. Runs under APP_ENV in {local, demo} — NEVER production. (Dry-run it under
- *      `local`; the CD's kap-seed job runs it under `demo`.)
- *   2. STRONG credentials from DEMO_SEED_PASSWORD (Secret Manager) — refuses a
- *      weak/absent password. No account ever ships with a guessable secret.
- *   3. SYNTHETIC-ONLY, enforced: every account email must be @demo.ka or the
- *      seeder throws. No real PII can enter a public, child-data-shaped app.
+ * Safety posture (the linchpin of the public demo):
+ *   • Runs under APP_ENV in {local, demo} — NEVER production.
+ *   • STRONG credentials from DEMO_SEED_PASSWORD (Secret Manager) — refuses weak/absent.
+ *   • Every email is @example.com (RFC-2606 reserved, cannot be a real address);
+ *     assertSynthetic() throws on anything else. Every name is "Demo …". No real
+ *     person, address, phone, or payment datum can enter the seed.
  *
- * It also seeds a SECOND, unrelated guardian family so the RLS-enforcement proof
- * (deploy/gcp/rls-proof.sh) has a genuine cross-family / cross-child boundary to
- * test, and emits the fixture ids on a machine-readable line the CD parses:
+ * Built from REAL service flows (not raw inserts) wherever a service exists, so the
+ * RLS proof runs against realistically-created data:
+ *   guardian families + enrolments ....... EnrolmentService / ConsentSigningService
+ *   payment mid-flow (BI-9) .............. ManualPaymentService::record (finance1 records; finance2 confirms)
+ *   member ............................... InvitationService::issue → accept (invite→accept)
+ *   teacher + teacher_links(active) ...... InvitationService::issue(role=teacher,schoolId) → accept
+ *   students on a roll + school_links .... BulkStudentCreationService::create
+ *   teams (/my/team) ..................... FormationService::create + ::join
+ *
+ * TWO fixtures have NO service anywhere in app/ (production code only READS them);
+ * they are raw-inserted, matching the codebase's own tests/seeders, and FLAGGED here:
+ *   (F1) school_admin_links ACTIVE — no service inserts it (SchoolAdminController etc.
+ *        only read it). NOT scanned by links.no_active_without_approval, so reconcile-safe.
+ *   (F2) team_categories (lobby) — ProgrammeConfigController itself raw-inserts it.
+ * Neither is on the RLS-proof path (that path is guardian_links + enrolments, all real-service).
+ *
+ * RLS-proof fixtures (two SEPARATE families, so cross-family/cross-child denial has
+ * real rows) are emitted on a machine-readable line the CD parses:
  *      RLS-PROOF-FIXTURES=<guardianA>,<guardianB>,<childB>
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * REVIEWER / LEO — BEFORE FIRST DEPLOY, TWO THINGS:
- *   (a) DRY-RUN LOCALLY and read the output:
- *         APP_ENV=local DEMO_SEED_PASSWORD='<≥16 chars>' \
- *           php artisan migrate:fresh --seed --seeder=DemoSeeder
- *       then `php artisan reconcile:run` must be 58/58 on the seeded DB.
- *   (b) The four GAP surfaces below (member invite→accept, teams 成團, teacher,
- *       school_admin) are NOT yet authored — they print a COVERAGE-GAP warning
- *       and are listed in the report. Author them (they need their real service
- *       flows, out of what this scaffold verified) before the demo is "complete".
- *       They do NOT block the RLS proof or the money/consent/guardian demo.
- * ─────────────────────────────────────────────────────────────────────────────
  */
 class DemoSeeder extends Seeder
 {
@@ -50,82 +55,97 @@ class DemoSeeder extends Seeder
 
     public function run(): void
     {
-        // ── Guard 1: never production. ──
         if (app()->environment('production')) {
             throw new \RuntimeException('DemoSeeder must never run in production.');
         }
         if (! app()->environment(['local', 'demo'])) {
             throw new \RuntimeException("DemoSeeder runs only under APP_ENV local|demo (got '".app()->environment()."').");
         }
-        // ── Guard 2: strong credentials only. ──
         $pw = (string) env('DEMO_SEED_PASSWORD', '');
         if (strlen($pw) < 16 || $pw === 'password') {
-            throw new \RuntimeException('DEMO_SEED_PASSWORD must be set to a strong value (≥16 chars) — a public demo ships no guessable passwords.');
+            throw new \RuntimeException('DEMO_SEED_PASSWORD must be a strong value (≥16 chars) — a public demo ships no guessable passwords.');
         }
         $this->password = $pw;
 
-        // ── Family A (Wendy): the primary demo family + the money/BI-9/consent flow. ──
-        $ops = $this->admin('ops@demo.ka', 'Otis Ops (demo)', ['configuration', 'operations']);
-        $fin1 = $this->admin('finance1@demo.ka', 'Fiona Finance (demo)', ['finance']);
-        $this->admin('finance2@demo.ka', 'Frank Finance (demo)', ['finance']); // BI-9 needs a 2nd finance
-        $this->admin('super@demo.ka', 'Ada Super (demo)', ['super_admin']);
-        $this->admin('audit@demo.ka', 'Aria Audit (demo)', ['audit_read']);
+        // ── Academy staff ──
+        $ops = $this->admin('ops@example.com', 'Demo Ops Admin', ['configuration', 'operations']);
+        $fin1 = $this->admin('finance1@example.com', 'Demo Finance One', ['finance']);
+        $this->admin('finance2@example.com', 'Demo Finance Two', ['finance']); // BI-9 needs a 2nd finance officer
+        $this->admin('super@example.com', 'Demo Super Admin', ['super_admin']);
+        $this->admin('audit@example.com', 'Demo Audit Reader', ['audit_read']);
 
-        $guardianA = $this->account('wendy@demo.ka', 'Wendy Chan (demo)', 'guardian');
-        $sam = $this->account('sam@demo.ka', 'Sam Chan (demo)', 'student');
-        $quinn = $this->account('quinn@demo.ka', 'Quinn Chan (demo)', 'student');
-        $this->activeGuardianLink($guardianA, $sam);
-        $this->activeGuardianLink($guardianA, $quinn);
-
-        // ── Family B (Priya): a SEPARATE family — the cross-family RLS boundary. ──
-        $guardianB = $this->account('priya@demo.ka', 'Priya Rao (demo)', 'guardian');
-        $bella = $this->account('bella@demo.ka', 'Bella Rao (demo)', 'student');
-        $this->activeGuardianLink($guardianB, $bella);
-
-        // ── Published programme + trilingual consent template + fee (real services). ──
+        // ── Published, marketing-complete, trilingual programme (catalogue not empty) ──
         $programme = $this->publishProgramme($ops);
-
         $enrolments = app(EnrolmentService::class);
         $signing = app(ConsentSigningService::class);
         $orders = app(OrderService::class);
 
-        // Sam — enrolled, awaiting consent (the consent-gate demo).
-        $this->enrol($enrolments, $programme, $guardianA, $sam);
+        // ── Family A — one guardian, five children in VARIED states ──
+        $guardianA = $this->account('guardianA@example.com', 'Demo Guardian A', 'guardian');
+        $a = [];
+        foreach (['a1', 'a2', 'a3', 'a4', 'a5'] as $k) {
+            $a[$k] = $this->account("student.{$k}@example.com", 'Demo Student '.strtoupper($k), 'student');
+            $this->activeGuardianLink($guardianA, $a[$k]);
+        }
+        // A1 — pending-consent (enrolled, not signed)
+        $this->enrol($enrolments, $programme, $guardianA, $a['a1']);
+        // A2 — in-pool (enrolled + signed, awaiting a team)
+        $this->enrol($enrolments, $programme, $guardianA, $a['a2']);
+        $this->sign($signing, $enrolments, $programme, $guardianA, $a['a2']);
+        // A3 — active + a payment MID-FLOW recorded by finance1 (the live BI-9 moment)
+        $this->enrol($enrolments, $programme, $guardianA, $a['a3']);
+        $this->sign($signing, $enrolments, $programme, $guardianA, $a['a3']);
+        $a3Order = $this->confirmOrder($enrolments, $orders, $ops, $a['a3']);
+        $this->recordManualPayment($a3Order, $fin1);
+        // A4 + A5 — in-pool, then placed into a REAL team (→ teamed)
+        foreach (['a4', 'a5'] as $k) {
+            $this->enrol($enrolments, $programme, $guardianA, $a[$k]);
+            $this->sign($signing, $enrolments, $programme, $guardianA, $a[$k]);
+        }
 
-        // Quinn — enrolled → consented → confirmed → order → a manual payment RECORDED
-        // by finance1 (pending_confirmation): the live BI-9 second-officer moment.
-        $this->enrol($enrolments, $programme, $guardianA, $quinn);
-        $this->sign($signing, $enrolments, $programme, $guardianA, $quinn);
-        $quinnOrder = $this->confirmOrder($enrolments, $orders, $ops, $quinn);
-        $this->recordManualPayment($quinnOrder, $fin1);
+        // ── Family B — a SEPARATE guardian + child (the cross-family RLS boundary) ──
+        $guardianB = $this->account('guardianB@example.com', 'Demo Guardian B', 'guardian');
+        $childB = $this->account('student.b1@example.com', 'Demo Student B1', 'student');
+        $this->activeGuardianLink($guardianB, $childB);
+        $this->enrol($enrolments, $programme, $guardianB, $childB);
+        $this->sign($signing, $enrolments, $programme, $guardianB, $childB);
 
-        // Bella (family B) — enrolled + consented so she owns an enrolment row that
-        // guardian A must be PROVABLY unable to read (the cross-child RLS assertion).
-        $this->enrol($enrolments, $programme, $guardianB, $bella);
-        $this->sign($signing, $enrolments, $programme, $guardianB, $bella);
+        // ── A REAL team for /my/team + formation surfaces (FormationService, not raw) ──
+        $this->formTeam($programme, $a['a4'], $a['a5']);
 
         // R3 activation for the started programme (as the scheduled job does).
         app(\App\Services\Enrolments\EnrolmentActivationService::class)->run();
 
-        // ── NOT-YET-AUTHORED coverage (flagged, not faked). ──
-        $gaps = $this->reportGaps();
+        // ── Member via the REAL invite→accept flow (InvitationService) ──
+        $this->inviteAndAccept($ops, 'member@example.com', 'member', null);
+
+        // ── School: school_admin (invite→accept), teacher (school-vouched invite→accept),
+        //    two students on the roll (bulk service). F1: the school_admin_links active
+        //    binding is raw-inserted (no service exists) — flagged above. ──
+        $this->provisionSchool($ops);
 
         // ── Machine-readable fixtures for deploy/gcp/rls-proof.sh ──
         $this->command->info('');
-        $this->command->info('════ DEMO SEED READY (synthetic; strong creds) ════');
-        $this->command->line("RLS-PROOF-FIXTURES={$guardianA->id},{$guardianB->id},{$bella->id}");
-        $this->command->info("Family A guardian: wendy@demo.ka · Family B guardian: priya@demo.ka");
-        if ($gaps) {
-            $this->command->warn('COVERAGE GAPS (author before the demo is complete): '.implode(', ', $gaps));
+        $this->command->info('════ DEMO SEED READY (synthetic; @example.com; strong creds) ════');
+        $this->command->line("RLS-PROOF-FIXTURES={$guardianA->id},{$guardianB->id},{$childB->id}");
+        $this->command->info('Family A: guardianA@example.com (5 children — pending-consent / in-pool / active+payment / 2 teamed)');
+        $this->command->info('Family B: guardianB@example.com (1 child, in-pool) — the cross-family boundary');
+    }
+
+    // ── helpers ──────────────────────────────────────────────────────────────
+
+    /** Every seeded email must be provably fake (@example.com, RFC-2606 reserved). */
+    private function assertSynthetic(string $email): void
+    {
+        if (! str_ends_with($email, '@example.com')) {
+            throw new \RuntimeException("DemoSeeder is synthetic-only: '{$email}' is not an @example.com address.");
         }
     }
 
-    /** Create a synthetic account with an audited origin (provenance). */
+    /** A loginable synthetic account with an audited origin (account.provenance). */
     private function account(string $email, string $name, string $role): User
     {
-        if (! str_ends_with($email, '@demo.ka')) {
-            throw new \RuntimeException("DemoSeeder is synthetic-only: '{$email}' is not a @demo.ka address.");
-        }
+        $this->assertSynthetic($email);
         $u = User::query()->firstOrCreate(
             ['email' => $email],
             ['name' => $name, 'role' => $role, 'password' => Hash::make($this->password), 'email_verified_at' => now()],
@@ -177,16 +197,16 @@ class DemoSeeder extends Seeder
         $templates = app(ConsentTemplateService::class);
         $programme = Programme::query()->firstOrCreate(
             ['code' => 'DEMO-STEM'],
-            ['name_en' => 'Summer STEM 2026', 'name_tc' => '2026 夏季 STEM', 'name_sc' => '2026 夏季 STEM', 'jurisdiction' => 'HK', 'status' => 'draft'],
+            ['name_en' => 'Summer STEM 2026 (demo)', 'name_tc' => '2026 夏季 STEM（示範）', 'name_sc' => '2026 夏季 STEM（示范）', 'jurisdiction' => 'HK', 'status' => 'draft'],
         );
         if ($programme->status === 'published') {
             return $programme;
         }
-        $templateId = $templates->createTemplate(['name_en' => 'STEM Consent', 'name_tc' => 'STEM 同意書', 'name_sc' => 'STEM 同意书'], $ops);
+        $templateId = $templates->createTemplate(['name_en' => 'STEM Consent (demo)', 'name_tc' => 'STEM 同意書（示範）', 'name_sc' => 'STEM 同意书（示范）'], $ops);
         foreach ([
-            'en' => '<p>I consent to {{student_name}} joining {{programme_name}} (fee {{fee_total}}). {{signature}} {{signature_date}}</p>',
-            'zh-TC' => '<p>本人同意 {{student_name}} 參加 {{programme_name}}(費用 {{fee_total}})。{{signature}} {{signature_date}}</p>',
-            'zh-SC' => '<p>本人同意 {{student_name}} 参加 {{programme_name}}(费用 {{fee_total}})。{{signature}} {{signature_date}}</p>',
+            'en' => '<p>[DEMO — placeholder, non-binding] I consent to {{student_name}} joining {{programme_name}} (fee {{fee_total}}). {{signature}} {{signature_date}}</p>',
+            'zh-TC' => '<p>[示範 — 佔位文字，不具約束力] 本人同意 {{student_name}} 參加 {{programme_name}}(費用 {{fee_total}})。{{signature}} {{signature_date}}</p>',
+            'zh-SC' => '<p>[示范 — 占位文字，不具约束力] 本人同意 {{student_name}} 参加 {{programme_name}}(费用 {{fee_total}})。{{signature}} {{signature_date}}</p>',
         ] as $lang => $body) {
             $vid = $templates->draftVersion($templateId, $lang, $body, $ops);
             $templates->publishVersion($vid, $ops);
@@ -242,7 +262,7 @@ class DemoSeeder extends Seeder
     private function confirmOrder(EnrolmentService $enrolments, OrderService $orders, User $ops, User $student): object
     {
         $id = DB::table('enrolments')->where('student_id', $student->id)->orderByDesc('created_at')->value('id');
-        foreach (['teamed', 'confirmed'] as $to) { // fixture 成團 (the real formation transaction is S05)
+        foreach (['teamed', 'confirmed'] as $to) { // fixture 成團 (the real formation transaction is exercised separately by formTeam)
             if (in_array(DB::table('enrolments')->where('id', $id)->value('status'), ['in_pool', 'teamed'], true)) {
                 $enrolments->transition($id, $to, $ops, 'demo fixture 成團');
             }
@@ -256,27 +276,89 @@ class DemoSeeder extends Seeder
         if ($order->status !== 'issued' || DB::table('payments')->where('order_id', $order->id)->exists()) {
             return;
         }
-        // A real clean image → the real ClamAV scan pipeline (BI-10); a genuine photo scans clean.
-        $src = base_path('../web/public/assets/auth/featured-sc5.jpg');
+        // A synthetic-but-valid JPEG (a solid colour square, generated in-container via
+        // GD) → the real ClamAV scan pipeline (BI-10). Provably fake, and scans clean.
         $tmp = tempnam(sys_get_temp_dir(), 'ev').'.jpg';
-        copy($src, $tmp);
+        $img = imagecreatetruecolor(64, 64);
+        imagefill($img, 0, 0, imagecolorallocate($img, 42, 16, 58));
+        imagejpeg($img, $tmp);
+        imagedestroy($img);
         $evidence = new \Illuminate\Http\UploadedFile($tmp, 'evidence.jpg', 'image/jpeg', null, true);
         app(ManualPaymentService::class)->record($order->id, (int) $order->total_amount_minor, $order->currency, [$evidence], 'Bank transfer received (demo)', $fin1);
     }
 
-    /**
-     * The surfaces this scaffold does NOT yet seed. Each needs its real service
-     * flow authored + a local dry-run. Flagged loudly rather than faked.
-     *
-     * @return string[]
-     */
-    private function reportGaps(): array
+    /** A forming team via the REAL FormationService — renders on /my/team (member_count ≥ 1). */
+    private function formTeam(Programme $programme, User $creator, User $joiner): void
     {
-        return [
-            'member(invite→accept)',   // §7: Community/directory surfaces empty until seeded
-            'teams(成團)',              // real formation transaction (S05) — the fixture above only confirms enrolments
-            'teacher(attendance/My Students)',
-            'school_admin',
-        ];
+        if (DB::table('team_members')->where('student_id', $creator->id)->where('status', 'active')->exists()) {
+            return;
+        }
+        // (F2) lobby: no service exists — ProgrammeConfigController raw-inserts team_categories too.
+        $categoryId = (string) Str::uuid7();
+        DB::table('team_categories')->insert([
+            'id' => $categoryId, 'programme_id' => $programme->id,
+            'name_en' => 'Demo Lobby', 'name_tc' => '示範大廳', 'name_sc' => '示范大厅',
+            'school_id' => null, 'assignment_rule' => 'open', 'is_default' => true,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $formation = app(FormationService::class);
+        $team = $formation->create($programme->id, $categoryId, 'Demo Team Alpha', $creator); // creator: in_pool → teamed
+        $formation->join($team->id, $joiner);                                                 // joiner:  in_pool → teamed
+    }
+
+    /** Member/staff account through the real invitation flow; returns the accepted User. */
+    private function inviteAndAccept(User $actor, string $email, string $role, ?int $schoolId): User
+    {
+        $this->assertSynthetic($email);
+        $existing = User::query()->where('email', $email)->first();
+        if ($existing) {
+            return $existing;
+        }
+        $inv = app(InvitationService::class);
+        $result = $inv->issue($actor, $email, $role, $schoolId);
+        $user = $inv->accept($result['plain_token'], $this->password); // mints the account (provenance: invitation_accepted)
+        $user->forceFill(['email_verified_at' => now()])->save();       // demo accounts can log in
+        if (! $user->password || $user->wasRecentlyCreated) {
+            $user->forceFill(['password' => Hash::make($this->password)])->save();
+        }
+
+        return $user;
+    }
+
+    private function provisionSchool(User $ops): void
+    {
+        if (School::query()->where('name_en', 'Demo Academy')->exists()) {
+            return;
+        }
+        // School — no service; Eloquent create, as SchoolController::store does.
+        $school = School::query()->create(['name_en' => 'Demo Academy', 'name_tc' => '示範學院', 'name_sc' => '示范学院']);
+
+        // School admin account via invite→accept…
+        $schoolAdmin = $this->inviteAndAccept($ops, 'schooladmin@example.com', 'school_admin', null);
+        // …then (F1) the ACTIVE school_admin_links binding — NO SERVICE EXISTS (production
+        // code only reads it); raw insert matches every test/seeder in the codebase.
+        $linkId = (string) Str::uuid7();
+        DB::table('school_admin_links')->insert([
+            'id' => $linkId, 'school_admin_id' => $schoolAdmin->id, 'school_id' => $school->id,
+            'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('audit_events')->insert([ // provenance parity (not scanned, but honest)
+            'event_id' => (string) Str::uuid7(), 'occurred_at' => now(),
+            'entity_type' => 'school_admin_link', 'entity_id' => $linkId,
+            'action' => 'school_admin_link.created', 'to_state' => 'active',
+            'actor_role' => 'system', 'request_id' => (string) Str::uuid7(),
+        ]);
+
+        // Teacher — school-vouched invite→accept writes teacher_links(active) inside accept().
+        $this->inviteAndAccept($schoolAdmin, 'teacher@example.com', 'teacher', $school->id);
+
+        // Two students on the roll — BulkStudentCreationService writes school_links(active).
+        foreach (['roll1@example.com', 'roll2@example.com'] as $e) {
+            $this->assertSynthetic($e);
+        }
+        app(BulkStudentCreationService::class)->create($schoolAdmin, [
+            ['name' => 'Demo Roll Student 1', 'email' => 'roll1@example.com', 'school_id' => $school->id],
+            ['name' => 'Demo Roll Student 2', 'email' => 'roll2@example.com', 'school_id' => $school->id],
+        ]);
     }
 }
