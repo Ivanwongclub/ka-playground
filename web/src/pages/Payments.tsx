@@ -1,9 +1,10 @@
-// S-UX3-2 — money mutations: record a manual payment (evidence upload, full amount, OD-5), then a
-// SECOND finance person confirms/rejects it (BI-9). The confirm/reject controls are shown to EVERY
-// finance.confirm holder — the UI never checks "did I record this?" to hide them; the server refuses a
-// same-person confirm (403) and this UI surfaces it. Amounts via formatMoney. Refresh after mutate.
+// S-UX3-2 / anchors STEP 3 — money mutations: record a manual payment (evidence upload, full amount, OD-5),
+// then a SECOND finance person confirms/rejects it (BI-9). BI-9 is SERVER-enforced: the server refuses a
+// same-person confirm OR reject (403), and this UI ALSO renders the recorder's own Confirm/Reject as
+// DISABLED with the reason (shown-not-hidden — the controls are shown, not hidden). Amounts via formatMoney.
+// DS2 restyle: markup only — the mutate calls, endpoints and server authority are UNTOUCHED.
 import { useState } from 'react';
-import { App, Button, Card, Input, Modal, Space, Table, Typography, Upload } from 'antd';
+import { App, Button, Card, Input, Modal, Space, Typography, Upload } from 'antd';
 import type { UploadFile } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
@@ -13,8 +14,27 @@ import { ReasonModal } from '../components/ReasonModal';
 import { formatMoney } from '../display/money';
 import { StatusTag } from '../display/status';
 import { programmeName, personName } from '../display/names';
+import { useIdentity } from '../auth/identity';
+import { ZebraTable, StatChip, Seal } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
+
+// A summary money KPI card — composed from --ka-* tokens (candidate future DS2 StatCard).
+function StatCard({ label, count, unit, value, tone, seal }: {
+  label: string; count: number; unit: string; value: string;
+  tone?: 'default' | 'warn' | 'gold'; seal?: boolean;
+}) {
+  const color = tone === 'warn' ? 'var(--ka-warning)' : tone === 'gold' ? 'var(--ka-gold)' : 'var(--ka-fg)';
+  return (
+    <div style={{ background: 'var(--ka-card)', border: '1px solid var(--ka-border)', borderRadius: 'var(--ka-r-lg)', padding: '14px 16px' }}>
+      <div style={{ fontSize: 12, color: 'var(--ka-muted-fg)', display: 'flex', alignItems: 'center', gap: 7 }}>
+        {seal && <Seal size={15} />}{label}
+      </div>
+      <div style={{ fontFamily: 'var(--ka-font-display)', fontWeight: 700, fontSize: 26, marginTop: 5, fontVariantNumeric: 'tabular-nums', lineHeight: 1, color }}>{value}</div>
+      <div style={{ marginTop: 7 }}><StatChip value={count} label={unit} /></div>
+    </div>
+  );
+}
 
 interface OrderRow {
   id: string;
@@ -44,6 +64,8 @@ export function Payments() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language as KaLocale;
   const { modal, message } = App.useApp();
+  const { identity } = useIdentity();
+  const meId = identity?.id; // BI-9 cue: the current finance officer's id (the server is the authority)
   const orders = useResource<{ data: OrderRow[] }>('/api/orders');
   const payments = useResource<{ data: PaymentRow[] }>('/api/payments');
   const [recordFor, setRecordFor] = useState<OrderRow | null>(null);
@@ -72,6 +94,15 @@ export function Payments() {
   const settledOrders = new Set(allPayments.filter((p) => p.status !== 'rejected').map((p) => p.order_id));
   const awaiting = (orders.data?.data ?? []).filter((o) => o.status === 'issued' && !settledOrders.has(o.id));
   const pending = allPayments.filter((p) => p.status === 'pending_confirmation');
+  const confirmed = allPayments.filter((p) => p.status === 'confirmed');
+  // Summary stat-cards — ALL frontend-computed from the reads already fetched (/orders + /payments); NO new
+  // aggregate. ("Confirmed" is all-time — the read has no reliable confirm-date for a "today" filter.)
+  const currency = awaiting[0]?.currency ?? pending[0]?.currency ?? confirmed[0]?.currency ?? 'HKD';
+  const sum = (arr: Array<{ amount_minor?: number; total_amount_minor?: number }>, key: 'amount_minor' | 'total_amount_minor') =>
+    arr.reduce((acc, x) => acc + (x[key] ?? 0), 0);
+  const outstandingMinor = sum(awaiting, 'total_amount_minor');
+  const awaitingMinor = sum(pending, 'amount_minor');
+  const confirmedMinor = sum(confirmed, 'amount_minor');
 
   const submitRecord = async () => {
     if (!recordFor || files.length === 0) return;
@@ -101,57 +132,60 @@ export function Payments() {
     });
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%' }}>
-      <div>
+    <div data-density="admin">
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <Title level={3} style={{ marginBottom: 0 }}>{t('payments.title')}</Title>
-        <Paragraph type="secondary">{t('payments.subtitle')}</Paragraph>
-      </div>
 
-      <DataBoundary loading={orders.loading} error={orders.error}>
-        <Card title={t('payments.ordersAwaiting')}>
-          <Table<OrderRow>
-            rowKey="id"
-            size="small"
-            dataSource={awaiting}
-            pagination={false}
-            locale={{ emptyText: t('payments.noOrders') }}
-            columns={[
-              { title: t('payments.student'), render: (_, o) => personName(o.student_name) },
-              { title: t('payments.programme'), render: (_, o) => programmeName(o, locale) },
-              { title: t('payments.amount'), render: (_, o) => <Text strong>{formatMoney(o.total_amount_minor, o.currency, locale)}</Text> },
-              { title: '', key: 'act', render: (_, o) => <Button size="small" type="primary" onClick={() => setRecordFor(o)}>{t('payments.record')}</Button> },
-            ]}
-          />
-        </Card>
-      </DataBoundary>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 'var(--ka-gap)' }}>
+          <StatCard label={t('payments.outstanding')} value={formatMoney(outstandingMinor, currency, locale)} count={awaiting.length} unit={t('payments.unitOrders')} />
+          <StatCard label={t('payments.awaiting')} value={formatMoney(awaitingMinor, currency, locale)} count={pending.length} unit={t('payments.unitToConfirm')} tone="warn" />
+          <StatCard label={t('payments.confirmedLabel')} value={formatMoney(confirmedMinor, currency, locale)} count={confirmed.length} unit={t('payments.unitConfirmed')} tone="gold" seal />
+        </div>
 
-      <DataBoundary loading={payments.loading} error={payments.error}>
-        <Card title={t('payments.pendingConfirmation')}>
-          <Table<PaymentRow>
-            rowKey="id"
-            size="small"
-            dataSource={pending}
-            pagination={false}
-            locale={{ emptyText: t('payments.noPending') }}
-            columns={[
-              { title: t('payments.student'), render: (_, p) => personName(p.student_name) },
-              { title: t('payments.amount'), render: (_, p) => <Text strong>{formatMoney(p.amount_minor, p.currency, locale)}</Text> },
-              // BI-9: the confirmer SEES who recorded it — so they know if it is (or isn't) themselves.
-              { title: t('payments.recordedBy'), render: (_, p) => personName(p.recorded_by_name) },
-              { title: '', dataIndex: 'status', render: (s: string) => <StatusTag domain="paymentStatus" value={s} /> },
-              {
-                title: '', key: 'act',
-                render: (_, p) => (
-                  <Space>
-                    <Button size="small" type="primary" onClick={() => confirmPayment(p)}>{t('payments.confirm')}</Button>
-                    <Button size="small" danger onClick={() => setRejectId(p.id)}>{t('payments.reject')}</Button>
-                  </Space>
-                ),
-              },
-            ]}
-          />
-        </Card>
-      </DataBoundary>
+        <DataBoundary loading={orders.loading} error={orders.error} empty={awaiting.length === 0}>
+          <Card title={t('payments.ordersAwaiting')}>
+            <ZebraTable<OrderRow>
+              rowKey={(o) => o.id}
+              data={awaiting}
+              columns={[
+                { key: 'student', title: t('payments.student'), type: 'text', render: (o) => personName(o.student_name) },
+                { key: 'programme', title: t('payments.programme'), type: 'text', render: (o) => programmeName(o, locale) },
+                { key: 'amount', title: t('payments.amount'), type: 'money', render: (o) => formatMoney(o.total_amount_minor, o.currency, locale) },
+                { key: 'act', title: '', type: 'action', render: (o) => <Button size="small" type="primary" onClick={() => setRecordFor(o)}>{t('payments.record')}</Button> },
+              ]}
+            />
+          </Card>
+        </DataBoundary>
+
+        <DataBoundary loading={payments.loading} error={payments.error} empty={pending.length === 0}>
+          <Card title={t('payments.pendingConfirmation')}>
+            <ZebraTable<PaymentRow>
+              rowKey={(p) => p.id}
+              data={pending}
+              columns={[
+                { key: 'student', title: t('payments.student'), type: 'text', render: (p) => personName(p.student_name) },
+                { key: 'amount', title: t('payments.amount'), type: 'money', render: (p) => formatMoney(p.amount_minor, p.currency, locale) },
+                // BI-9: the confirmer SEES who recorded it; when it is themselves the row shows "You".
+                { key: 'recordedBy', title: t('payments.recordedBy'), type: 'text',
+                  render: (p) => p.recorded_by === meId
+                    ? <span style={{ color: 'var(--ka-warning)', background: 'rgba(251,191,36,.12)', fontSize: 12, fontWeight: 600, padding: '2px 9px', borderRadius: 6 }}>{t('payments.you')}</span>
+                    : personName(p.recorded_by_name) },
+                { key: 'status', title: '', type: 'status', render: (p) => <StatusTag domain="paymentStatus" value={p.status} /> },
+                // BI-9 shown-not-hidden: the recorder's own Confirm/Reject are SHOWN but DISABLED with the
+                // reason. The SERVER remains the authority (403 on a same-person confirm OR reject).
+                { key: 'act', title: '', type: 'action', render: (p) => {
+                    const mine = p.recorded_by === meId;
+                    return (
+                      <Space>
+                        <Button size="small" type="primary" disabled={mine} title={mine ? t('payments.biNineYou') : undefined} onClick={() => confirmPayment(p)}>{t('payments.confirm')}</Button>
+                        <Button size="small" danger disabled={mine} title={mine ? t('payments.biNineYou') : undefined} onClick={() => setRejectId(p.id)}>{t('payments.reject')}</Button>
+                      </Space>
+                    );
+                  } },
+              ]}
+            />
+          </Card>
+        </DataBoundary>
 
       {/* Record-payment modal — full amount (read-only, OD-5), evidence upload (BI-10), optional note. */}
       <Modal
@@ -198,6 +232,7 @@ export function Payments() {
         }}
         onCancel={() => setRejectId(null)}
       />
-    </Space>
+      </Space>
+    </div>
   );
 }

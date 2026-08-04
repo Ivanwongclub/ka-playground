@@ -611,7 +611,15 @@
     "noPending": "沒有待確認付款",
     "student": "學生",
     "programme": "課程",
-    "amount": "金額"
+    "amount": "金額",
+    "outstanding": "未付",
+    "awaiting": "待確認",
+    "confirmedLabel": "已確認",
+    "unitOrders": "張訂單",
+    "unitToConfirm": "待確認",
+    "unitConfirmed": "已確認",
+    "you": "你",
+    "biNineYou": "你記錄了此筆付款 — 須由第二位財務人員確認"
   },
   "teams": {
     "title": "團隊",

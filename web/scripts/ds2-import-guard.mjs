@@ -19,6 +19,7 @@ const ALLOWED = [
   // ── restyle rollout: each surface is a deliberate adoption in its own gated card ──
   'src/pages/SelfService.tsx', // ANCHORS STEP 1 — My Children (MyPayments/MyStudents in-file are untouched)
   'src/pages/AdminProgrammes.tsx', // ANCHORS STEP 2 — the wizard
+  'src/pages/Payments.tsx', // ANCHORS STEP 3 — the money surface
 ];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {

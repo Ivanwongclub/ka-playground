@@ -611,7 +611,15 @@
     "noPending": "没有待确认付款",
     "student": "学生",
     "programme": "课程",
-    "amount": "金额"
+    "amount": "金额",
+    "outstanding": "未付",
+    "awaiting": "待确认",
+    "confirmedLabel": "已确认",
+    "unitOrders": "张订单",
+    "unitToConfirm": "待确认",
+    "unitConfirmed": "已确认",
+    "you": "你",
+    "biNineYou": "你记录了此笔付款 — 须由第二位财务人员确认"
   },
   "teams": {
     "title": "团队",

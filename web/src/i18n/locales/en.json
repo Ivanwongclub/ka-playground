@@ -611,7 +611,15 @@
     "noPending": "No payments pending confirmation",
     "student": "Student",
     "programme": "Programme",
-    "amount": "Amount"
+    "amount": "Amount",
+    "outstanding": "Outstanding",
+    "awaiting": "Awaiting confirmation",
+    "confirmedLabel": "Confirmed",
+    "unitOrders": "orders",
+    "unitToConfirm": "to confirm",
+    "unitConfirmed": "confirmed",
+    "you": "You",
+    "biNineYou": "You recorded this — a second officer must confirm"
   },
   "teams": {
     "title": "Teams",
