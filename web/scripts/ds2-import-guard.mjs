@@ -16,6 +16,8 @@ const srcDir = join(root, 'src');
 const ALLOWED = [
   'src/ds2/', // the library itself
   'src/pages/Ds2Gallery.tsx', // the DEV-only gallery (STEP 2) — dead-code-eliminated from production
+  // ── restyle rollout: each surface is a deliberate adoption in its own gated card ──
+  'src/pages/SelfService.tsx', // ANCHORS STEP 1 — My Children (MyPayments/MyStudents in-file are untouched)
 ];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {

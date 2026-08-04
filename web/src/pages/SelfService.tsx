@@ -2,8 +2,8 @@
 // built/existing-RLS endpoints; the one write surfaced is the existing mint-payment-link (guardian's own
 // audited act — "get the payment link", NEVER "pay"; actual payment leaves via the /pay page). Refusals
 // shown-not-hidden. The teacher roster is the STEP-1 gated read /api/my/students (allowlist {id,name}).
-import { App, Button, Card, Empty, List, Space, Tag, Typography } from 'antd';
-import { Link } from 'react-router-dom';
+import { App, Button, Card, Empty, List, Space, Typography } from 'antd';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
@@ -12,6 +12,9 @@ import { personName } from '../display/names';
 import { formatMoney } from '../display/money';
 import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
+// DS2 (restyle rollout — anchors STEP 1). SelfService.tsx is an ALLOWED adopter (import-guard); only
+// MyChildren below adopts DS2 — MyPayments/MyStudents are untouched.
+import { SubPanel, ZoneStack, Attest, StatChip, StateBadge, Seal } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -25,19 +28,66 @@ function progName(r: { programme_name_en: string; programme_name_tc: string; pro
   return (locale === 'zh-TC' ? r.programme_name_tc : locale === 'zh-SC' ? r.programme_name_sc : r.programme_name_en) || r.programme_name_en;
 }
 
-// ── Guardian: per-child consent chip (REUSES the existing derivedStatus elevation — not a new one) ──
-function ConsentChip({ studentId, programmeId }: { studentId: number; programmeId: number }) {
-  const { t } = useTranslation();
-  const res = useResource<ConsentStatus>(`/api/my/students/${studentId}/consent-status?programme_id=${programmeId}`);
-  if (res.loading || res.error || !res.data) return null;
-  if (res.data.your_signature_needed) return <Tag color="warning">{t('selfService.consentNeeded')}</Tag>;
-  return <Tag color={res.data.consent_met ? 'success' : 'default'}>{t(res.data.consent_met ? 'selfService.consentMet' : 'selfService.consentPending')}</Tag>;
+function childInitials(name: string | null): string {
+  const n = personName(name);
+  const parts = n.split(/\s+/).filter(Boolean);
+  return (parts.length >= 2 ? parts[0][0] + parts[1][0] : n.slice(0, 2)).toUpperCase();
 }
 
-// ── Guardian: My Children (enrolments + consent + sessions link, per child) ─────────────────────────
-export function MyChildren() {
+// ── Guardian: one enrolment's zone. Consent is per-PROGRAMME in the live data (derivedStatus per
+// student+programme — the authoritative read, UNCHANGED). The consent advisory renders via Attest
+// (attested → onViewRecord the record; action → Review & sign); pending/loading → a neutral zone. ──
+function EnrolmentZone({ e }: { e: Enrolment }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language as KaLocale;
+  const navigate = useNavigate();
+  const res = useResource<ConsentStatus>(`/api/my/students/${e.student_id}/consent-status?programme_id=${e.programme_id}`);
+  const c = res.data;
+  const prog = progName(e, locale);
+  const enrolTag = <StatusTag domain="enrolmentStatus" value={e.status} />;
+
+  if (c?.your_signature_needed) {
+    return (
+      <Attest
+        tone="action"
+        icon={<StateBadge state="action" title={t('selfService.consentNeeded')} />}
+        status={prog}
+        action={
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            {enrolTag}
+            <Link to="/consents"><Button type="primary" size="small" className="ka-cta">{t('selfService.reviewSign')}</Button></Link>
+          </span>
+        }
+      />
+    );
+  }
+  if (c?.consent_met) {
+    return (
+      <Attest
+        tone="attested"
+        icon={<Seal size={20} />}
+        status={prog}
+        onViewRecord={() => navigate('/consents')}
+        viewRecordLabel={t('selfService.viewRecord')}
+        action={enrolTag}
+      />
+    );
+  }
+  return (
+    <SubPanel tone="neutral">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span className="ds2-atom">{prog}</span>
+        <span style={{ flex: 1 }} />
+        {enrolTag}
+      </div>
+    </SubPanel>
+  );
+}
+
+// ── Guardian: My Children (DS2 restyle — markup only; reads UNCHANGED: /api/enrolments grouped by child
+// + per-enrolment consent-status). Product density. ──
+export function MyChildren() {
+  const { t } = useTranslation();
   const res = useResource<{ data: Enrolment[] }>('/api/enrolments');
 
   // group the guardian's children's enrolments by child (RLS already scopes to own children)
@@ -50,32 +100,32 @@ export function MyChildren() {
   const children = Array.from(byChild.entries());
 
   return (
-    <Space direction="vertical" size="large" style={{ width: '100%' }}>
-      <div>
+    <div data-density="product">
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <Title level={3} style={{ marginBottom: 0 }}>{t('selfService.childrenTitle')}</Title>
-        <Paragraph type="secondary">{t('selfService.childrenSubtitle')}</Paragraph>
-      </div>
-      <DataBoundary loading={res.loading} error={res.error} empty={children.length === 0}>
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-          {children.map(([studentId, { name, enrolments }]) => (
-            <Card key={studentId} size="small" title={personName(name)}
-              extra={<Link to="/family/sessions">{t('selfService.viewSessions')}</Link>}>
-              <List<Enrolment>
-                dataSource={enrolments}
-                renderItem={(e) => (
-                  <List.Item key={e.id} actions={[
-                    <StatusTag key="st" domain="enrolmentStatus" value={e.status} />,
-                    <ConsentChip key="cc" studentId={e.student_id} programmeId={e.programme_id} />,
-                  ]}>
-                    <List.Item.Meta title={progName(e, locale)} />
-                  </List.Item>
-                )}
-              />
-            </Card>
-          ))}
-        </Space>
-      </DataBoundary>
-    </Space>
+        <DataBoundary loading={res.loading} error={res.error} empty={children.length === 0}>
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            {children.map(([studentId, { name, enrolments }]) => (
+              <Card key={studentId}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#2c2338,#3a2f4a)', display: 'grid', placeItems: 'center', fontFamily: 'var(--ka-font-display)', fontWeight: 700, color: 'var(--ka-gold)', border: '1px solid var(--ka-border)', flex: '0 0 auto' }}>
+                    {childInitials(name)}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Title level={5} style={{ margin: 0 }}>{personName(name)}</Title>
+                    <div style={{ marginTop: 6 }}><StatChip value={enrolments.length} label={t('selfService.programmes')} /></div>
+                  </div>
+                  <Link to="/family/sessions">{t('selfService.viewSessions')}</Link>
+                </div>
+                <ZoneStack>
+                  {enrolments.map((e) => <EnrolmentZone key={e.id} e={e} />)}
+                </ZoneStack>
+              </Card>
+            ))}
+          </Space>
+        </DataBoundary>
+      </Space>
+    </div>
   );
 }
 

@@ -786,6 +786,9 @@
     "linkReady": "付款連結 — 轉發給付款人",
     "studentsTitle": "我的學生",
     "studentsSubtitle": "你校名冊上的學生。",
-    "noStudents": "名冊上暫無學生。"
+    "noStudents": "名冊上暫無學生。",
+    "programmes": "課程",
+    "reviewSign": "檢閱並簽署",
+    "viewRecord": "查看紀錄"
   }
 }

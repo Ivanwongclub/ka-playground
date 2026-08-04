@@ -786,6 +786,9 @@
     "linkReady": "Payment link — forward this to whoever pays",
     "studentsTitle": "My Students",
     "studentsSubtitle": "Students on your school's roll.",
-    "noStudents": "No students on your roll yet."
+    "noStudents": "No students on your roll yet.",
+    "programmes": "programmes",
+    "reviewSign": "Review & sign",
+    "viewRecord": "View record"
   }
 }
