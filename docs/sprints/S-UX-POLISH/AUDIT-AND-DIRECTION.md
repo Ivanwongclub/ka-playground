@@ -144,9 +144,35 @@ surfaces; keep operator surfaces text-dense. Rationale: density must match task 
 two rhythms, zero token forks.
 → **Prototype C** (My Children) vs **B** (Payments) — the contrast is the point.
 
+### D5 — Hierarchy · atoms · visual signal (the corrected ratio — now the STANDARD) *(Leo, revision 1)*
+The blessed direction read **too text-heavy** — status, detail and reassurance sat at similar weight, so
+screens scanned as prose. The corrected ratio is now the house style, applied to **every** surface (admin,
+operator, product):
+- **Stronger hierarchy.** The **status is the loud atom** (a short bold line or a pill); **detail and
+  reassurance are demoted** to small muted supporting text beneath it. Example: "Consent complete for both
+  enrolments. You signed on 28 Jul 2026 — sealed and audited" → a bold **"Consent complete"** headline atom
+  with **"Signed 28 Jul 2026 · sealed & audited"** as small muted text under it.
+- **Atoms over sentences.** Explanatory prose becomes **label + action + (smaller) rationale**. "Your
+  signature is needed. Coding Explorers requires consent before the seat is confirmed" → a compact alert:
+  bold **"Signature needed"**, a prominent **Review & sign** button, and the rationale as small secondary text.
+- **More non-text signal.** State renders as **visual atoms** — the consent seal becomes an avatar **badge +
+  ring**; counts (programmes, age) become **stat chips**; session timing becomes **meta chips**; wizard
+  readiness becomes a **progress ring + per-phase counts**; the money amount becomes a **display-weight
+  figure**; the BI-9 recorder becomes a **warning pill**. Text carries only what a visual cannot.
+
+**The honesty guardrail (binding, overrides the density instinct).** This is a child-safety / financial-
+integrity product where **specificity is the trust**. The consent reassurance ("signed 28 Jul · sealed &
+audited"), the money/status precision, the exact-state language **must remain present and readable** — the
+fix makes them **smaller and secondary (muted, beneath the headline atom), never deletes them**. Compress and
+de-emphasize; do not remove. A guardian must still be able to read "sealed and audited" — just not have it
+competing with the headline. *This guardrail applies to every future build card: no restyle may drop an
+evidential detail to reduce text.*
+
 ### Design-system-v2 scope (what the eventual spec will add to v2.1)
 - New component specs: **TrilingualInput** (D1), **WizardRail** (D2), **StatisticStrip**, **Seal / attested
-  row** (D3), **density scopes** (D4), **ProgrammeCard realized** (imagery), **PaymentTrust panel** (/pay).
+  row** (D3), **density scopes** (D4), **ProgrammeCard realized** (imagery), **PaymentTrust panel** (/pay),
+  and the D5 atom kit — **StatusAtom** (loud headline + demoted `subatom`), **StatChip**, **MetaChip**,
+  **StateBadge** (avatar seal/warning + ring), **ProgressRing**.
 - Token additions: `--gold-tint`, `--gold-line`, the `--seal` gradient, the `--admin/--product` density scales.
 - No palette change, no type change, no light mode (client decision stands). **v2 is disciplined evolution.**
 

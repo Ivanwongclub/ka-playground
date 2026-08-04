@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KA Playground — Design System v2 · Anchor Prototypes</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&family=Noto+Sans+HK:wght@400;500&family=Noto+Sans+SC:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=Noto+Sans+HK:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
 :root{
   --bg:#0F0B15;--card:#1A1326;--muted:#1E1729;--fg:#F4F4F5;--fg-muted:#A1A1AA;
   --gold:#C9A962;--gold-hover:#D4B876;--border:#2A2235;--border-strong:#726889;
@@ -20,30 +20,35 @@
   --shadow-md:0 4px 12px rgba(0,0,0,.4);--shadow-gold:0 6px 20px rgba(201,169,98,.28);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-[data-density="admin"]{--pad:16px;--gap:12px;--row:40px;--page-x:28px;--stack:18px}
-[data-density="product"]{--pad:24px;--gap:20px;--row:48px;--page-x:40px;--stack:30px}
+[data-density="admin"]{--pad:16px;--gap:12px;--row:40px;--page-x:28px;--stack:16px}
+[data-density="product"]{--pad:22px;--gap:16px;--row:46px;--page-x:40px;--stack:22px}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
-:lang(zh),.zh{line-height:1.8}
+:lang(zh),.zh{line-height:1.7}
 h1,h2,h3{font-family:var(--font-display);letter-spacing:-.01em}
-h1{font-size:30px;font-weight:700}h2{font-size:22px;font-weight:600}h3{font-size:17px;font-weight:600}
+h1{font-size:28px;font-weight:700}h2{font-size:22px;font-weight:600}h3{font-size:17px;font-weight:700}
 .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold)}
 .muted{color:var(--fg-muted)}
 .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
 .num{font-variant-numeric:tabular-nums}
+.sm{font-size:12px}
 a{color:var(--gold);text-decoration:none}
+svg.i{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
 
-/* ── demo chrome (not part of the DS — the harness that lets you switch screens) ── */
-.demobar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:10px 20px;background:#120d1b;border-bottom:1px solid var(--border)}
+/* the atoms: loud status headline + demoted supporting text (fix 1) */
+.atom{font-family:var(--font-display);font-weight:700;font-size:14px;color:var(--fg);line-height:1.25}
+.subatom{font-size:12px;color:var(--fg-muted);margin-top:2px;line-height:1.45}
+
+/* demo chrome */
+.demobar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 20px;background:#120d1b;border-bottom:1px solid var(--border)}
 .demobar .lead{display:flex;align-items:center;gap:12px}
-.demobar .lead .crest{width:26px;height:26px;border-radius:7px;background:var(--seal);display:grid;place-items:center;font-family:var(--font-display);font-weight:800;color:#241a12;font-size:13px}
+.demobar .crest{width:26px;height:26px;border-radius:7px;background:var(--seal);display:grid;place-items:center;font-family:var(--font-display);font-weight:800;color:#241a12;font-size:13px}
 .demobar small{color:#6b6478;font-size:12px}
 .seg{display:inline-flex;background:var(--muted);border:1px solid var(--border);border-radius:var(--r-md);padding:3px;gap:2px}
 .seg button{border:none;background:transparent;color:var(--fg-muted);font:inherit;font-size:13px;padding:6px 12px;border-radius:6px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--gold);color:#241a12;font-weight:600}
 .langseg button[aria-pressed="true"]{background:var(--card);color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold-line)}
 
-/* ── shell ── */
+/* shell */
 .shell{display:grid;grid-template-columns:236px 1fr;min-height:calc(100vh - 49px)}
 .sider{background:var(--bg);border-right:1px solid var(--border);padding:14px 12px}
 .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 16px}
@@ -53,44 +58,67 @@ a{color:var(--gold);text-decoration:none}
 .navitem{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:var(--r-md);color:var(--fg-muted);font-size:14px;cursor:pointer}
 .navitem:hover{background:var(--muted)}
 .navitem.active{background:var(--muted);color:var(--gold);box-shadow:inset 2px 0 0 var(--gold)}
-.navitem .gi{width:16px;height:16px;opacity:.9}
+.navitem .i{width:16px;height:16px;opacity:.9}
 .main{min-width:0;display:flex;flex-direction:column}
 .topbar{height:54px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 var(--page-x)}
 .crumbs{font-size:13px;color:var(--fg-muted)}.crumbs b{color:var(--fg);font-weight:500}
-.page{padding:24px var(--page-x);max-width:1180px;width:100%}
+.page{padding:22px var(--page-x);max-width:1180px;width:100%}
 .page-head{margin-bottom:var(--stack)}.page-head h1{margin-bottom:6px}
+.row{display:flex;align-items:center;gap:var(--gap)}.between{justify-content:space-between}.wrap{flex-wrap:wrap}.grow{flex:1;min-width:0}
+hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
 
-/* ── cards, tags, seal, buttons ── */
+/* cards, tags, seal, buttons */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:var(--pad)}
 .card+.card{margin-top:var(--gap)}
 .seal{width:20px;height:20px;border-radius:50%;background:var(--seal);box-shadow:0 0 0 3px var(--gold-tint);display:inline-grid;place-items:center;flex:0 0 auto}
 .seal svg{width:11px;height:11px;stroke:#241a12;stroke-width:3.2;fill:none}
-.tag{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:var(--r-sm);font-size:12px;font-weight:500;white-space:nowrap}
+.tag{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:var(--r-sm);font-size:12px;font-weight:600;white-space:nowrap}
 .tag .dot{width:6px;height:6px;border-radius:50%}
-.tag.ok{color:var(--success);background:rgba(34,197,94,.10)}.tag.ok .dot{background:var(--success)}
-.tag.warn{color:var(--warning);background:rgba(251,191,36,.10)}.tag.warn .dot{background:var(--warning)}
-.tag.danger{color:var(--danger);background:rgba(239,68,68,.10)}.tag.danger .dot{background:var(--danger)}
+.tag.ok{color:var(--success);background:rgba(34,197,94,.12)}.tag.ok .dot{background:var(--success)}
+.tag.warn{color:var(--warning);background:rgba(251,191,36,.12)}.tag.warn .dot{background:var(--warning)}
+.tag.danger{color:var(--danger);background:rgba(239,68,68,.12)}.tag.danger .dot{background:var(--danger)}
 .tag.info{color:var(--gold);background:var(--gold-tint)}.tag.info .dot{background:var(--gold)}
 .tag.neutral{color:var(--fg-muted);background:var(--muted)}.tag.neutral .dot{background:var(--fg-muted)}
-.btn{height:var(--row);min-height:34px;padding:0 14px;border-radius:var(--r-md);border:1px solid var(--border-strong);background:transparent;color:var(--fg);font-family:var(--font-body);font-size:14px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .15s}
+.btn{height:var(--row);min-height:34px;padding:0 14px;border-radius:var(--r-md);border:1px solid var(--border-strong);background:transparent;color:var(--fg);font-family:var(--font-body);font-size:14px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .15s;white-space:nowrap}
 .btn:hover{background:var(--muted);border-color:var(--gold-line)}
 .btn.primary{background:var(--gold);color:#241a12;border-color:var(--gold);font-weight:600}
 .btn.primary:hover{background:var(--gold-hover);box-shadow:var(--shadow-gold);transform:translateY(-1px)}
 .btn.ghost{border-color:transparent}
 .btn.sm{height:30px;padding:0 10px;font-size:13px;min-height:0}
 .btn.danger{border-color:rgba(239,68,68,.4);color:#fca5a5}
-.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:disabled{opacity:.42;cursor:not-allowed}
 .btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-.row{display:flex;align-items:center;gap:var(--gap)}.between{justify-content:space-between}.wrap{flex-wrap:wrap}.grow{flex:1;min-width:0}
-hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
 
-/* ── trilingual input (the v2 decision) ── */
+/* fix 3 — non-text signal: stat chips, meta chips, avatar state badge, readiness ring */
+.stats{display:flex;gap:7px;flex-wrap:wrap}
+.statchip{display:inline-flex;align-items:baseline;gap:5px;background:var(--muted);border:1px solid var(--border);border-radius:var(--r-sm);padding:3px 9px;font-size:12px;color:var(--fg-muted)}
+.statchip b{font-family:var(--font-display);font-weight:700;font-size:14px;color:var(--fg);font-variant-numeric:tabular-nums}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:var(--r-sm);background:var(--muted);border:1px solid var(--border);font-size:12px;color:var(--fg-muted);white-space:nowrap}
+.chip svg{width:12px;height:12px;stroke:var(--fg-muted);stroke-width:1.8;fill:none;opacity:.9}
+.avwrap{position:relative;flex:0 0 auto}
+.avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#2c2338,#3a2f4a);display:grid;place-items:center;font-family:var(--font-display);font-weight:700;color:var(--gold);font-size:17px;border:1px solid var(--border)}
+.avatar.ring-ok{box-shadow:0 0 0 2px var(--gold)}
+.avatar.ring-warn{box-shadow:0 0 0 2px var(--warning)}
+.sbadge{position:absolute;right:-3px;bottom:-3px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--card)}
+.sbadge.seal{background:var(--seal)}.sbadge.seal svg{width:10px;height:10px;stroke:#241a12;stroke-width:3.4;fill:none}
+.sbadge.warn{background:var(--warning)}.sbadge.warn svg{width:11px;height:11px;stroke:#241a12;stroke-width:2.8;fill:none}
+.ring{position:relative;width:46px;height:46px;border-radius:50%;background:conic-gradient(var(--gold) calc(var(--p,0)*1%),var(--border) 0);display:grid;place-items:center;flex:0 0 auto}
+.ring::before{content:'';position:absolute;inset:4px;border-radius:50%;background:var(--card)}
+.ring b{position:relative;font-family:var(--font-display);font-weight:700;font-size:12px;font-variant-numeric:tabular-nums;color:var(--gold)}
+
+/* attestation bar — loud headline atom + demoted detail (fixes 1+2) */
+.attest{display:flex;align-items:center;gap:11px;padding:10px 13px;border-radius:var(--r-md);background:var(--gold-tint);border:1px solid var(--gold-line)}
+.attest.warn{background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.32)}
+.attest .warnico{width:22px;height:22px;border-radius:50%;background:rgba(251,191,36,.16);display:grid;place-items:center;flex:0 0 auto}
+.attest .warnico svg{width:13px;height:13px;stroke:var(--warning);stroke-width:2.2;fill:none}
+
+/* form / trilingual (unchanged pattern, tightened) */
 .field{margin-bottom:var(--stack)}
-.field>label{display:block;font-size:13px;font-weight:500;margin-bottom:6px}
+.field>label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
 .field .optional{color:var(--fg-muted);font-weight:400}
-.field .help{font-size:12px;color:var(--fg-muted);margin-top:6px}
 .input,.textarea,.select{width:100%;height:var(--row);background:var(--bg);border:1px solid var(--border-strong);border-radius:var(--r-md);color:var(--fg);padding:0 12px;font-family:var(--font-body);font-size:14px}
-.textarea{height:auto;min-height:76px;padding:10px 12px;resize:vertical;line-height:1.7}
+.textarea{height:auto;min-height:70px;padding:10px 12px;resize:vertical;line-height:1.6}
 .input:focus,.textarea:focus,.select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-tint)}
 .input::placeholder{color:#6b6478}
 .tri{border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden}
@@ -102,179 +130,149 @@ hr.hair{border:none;border-top:1px solid var(--border);margin:var(--stack) 0}
 .tri-tab .cdot.filled{background:var(--success)}
 .tri-panel{padding:10px;display:none;background:var(--card)}
 .tri-panel.active{display:block}
-.tri-foot{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg-muted);margin-top:7px}
 
-/* ── kpi / statistic strip ── */
+/* kpi strip */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--gap)}
-.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px}
 .kpi .k{font-size:12px;color:var(--fg-muted);display:flex;align-items:center;gap:7px}
-.kpi .v{font-family:var(--font-display);font-size:26px;font-weight:700;margin-top:6px;font-variant-numeric:tabular-nums}
-.kpi .v.gold{color:var(--gold)} .kpi .v.warn{color:var(--warning)} .kpi .sub{font-size:12px;color:#6b6478;margin-top:2px}
+.kpi .v{font-family:var(--font-display);font-size:26px;font-weight:700;margin-top:5px;font-variant-numeric:tabular-nums;line-height:1}
+.kpi .v.gold{color:var(--gold)}.kpi .v.warn{color:var(--warning)}.kpi .sub{font-size:12px;color:#6b6478;margin-top:5px}
 
-/* ── table ── */
+/* table */
 .tbl{width:100%;border-collapse:collapse;font-size:14px}
-.tbl thead th{text-align:left;font-size:12px;font-weight:600;color:var(--gold);padding:10px 14px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0}
+.tbl thead th{text-align:left;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.04em;text-transform:uppercase;padding:9px 14px;border-bottom:1px solid var(--border);background:var(--card);position:sticky;top:0}
 .tbl tbody td{padding:0 14px;height:var(--row);border-bottom:1px solid var(--border);vertical-align:middle}
 .tbl tbody tr:hover{background:var(--muted)}
 .tbl .r{text-align:right}
+.amt{font-family:var(--font-display);font-weight:700;font-variant-numeric:tabular-nums;font-size:15px}
 
-/* ── wizard rail ── */
-.wizard{display:grid;grid-template-columns:300px 1fr;gap:22px;align-items:start}
-.rail-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:10px;position:sticky;top:74px}
-.rail-phase{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#5c566b;padding:14px 10px 6px}
-.step{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:var(--r-md);cursor:pointer;color:var(--fg-muted)}
+/* wizard rail */
+.wizard{display:grid;grid-template-columns:288px 1fr;gap:20px;align-items:start}
+.rail-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:8px;position:sticky;top:74px}
+.rail-phase{display:flex;align-items:center;justify-content:space-between;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#5c566b;padding:13px 10px 5px}
+.rail-phase .ct{font-family:var(--font-mono);color:var(--fg-muted);letter-spacing:0}
+.step{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:var(--r-md);cursor:pointer;color:var(--fg-muted)}
 .step:hover{background:var(--muted)}
 .step.current{background:var(--muted);color:var(--fg);box-shadow:inset 2px 0 0 var(--gold)}
 .step .ic{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border-strong);display:grid;place-items:center;flex:0 0 auto;font-size:11px;font-variant-numeric:tabular-nums}
 .step.done .ic{background:var(--gold);border-color:var(--gold);color:#241a12}
-.step.done,.step.locked-done{color:var(--fg)}
+.step.done,.step.current{color:var(--fg)}
 .step.blocked .ic{border-color:var(--warning);color:var(--warning)}
-.step .lbl{flex:1;font-size:14px}
-.step .rt{display:flex;align-items:center;gap:6px}
-.lockico{width:13px;height:13px;opacity:.7}
-.step .sub{font-size:11px;color:#6b6478;margin-top:1px}
-svg.i{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.step .lbl{flex:1;font-size:14px;font-weight:500}
+.step .sub{font-size:11px;color:#6b6478;font-weight:400;margin-top:1px}
+.lockico{width:13px;height:13px;stroke:var(--fg-muted);opacity:.75}
 
-/* ── my-children product cards ── */
-.child{background:var(--card);border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden}
-.child .hd{display:flex;align-items:center;gap:14px;padding:20px 24px;border-bottom:1px solid var(--border)}
-.avatar{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#2c2338,#3a2f4a);display:grid;place-items:center;font-family:var(--font-display);font-weight:700;color:var(--gold);font-size:17px;border:1px solid var(--border)}
-.child .bd{padding:8px 24px 18px}
-.enrol{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
-.enrol:last-child{border-bottom:none}
-.enrol .t{font-weight:500}
-.cat-bar{width:3px;align-self:stretch;border-radius:3px}
-.foot-link{display:inline-flex;align-items:center;gap:6px;font-size:13px}
-.callout{display:flex;gap:12px;padding:14px 16px;border-radius:var(--r-md);border:1px solid var(--gold-line);background:var(--gold-tint)}
-.callout.warn{border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.07)}
-.hero-strip{height:3px;background:linear-gradient(90deg,var(--cat-stem),transparent 60%);border-radius:3px;margin:-4px 0 0}
+/* product surface — child cards */
+.child{background:var(--card);border:1px solid var(--border);border-radius:var(--r-xl)}
+.child .hd{display:flex;align-items:center;gap:14px;padding:18px 22px 16px}
+.child .bd{padding:0 22px 16px}
+.enrol{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--border)}
+.enrol .t{font-weight:600}
+.cat-bar{width:3px;align-self:stretch;min-height:34px;border-radius:3px}
+.foot-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500}
 @media(max-width:900px){.wizard{grid-template-columns:1fr}.rail-card{position:static}.shell{grid-template-columns:1fr}.sider{display:none}}
 </style>
 </head>
 <body data-density="admin">
 
-<!-- DEMO HARNESS (not part of the product) -->
 <div class="demobar">
-  <div class="lead">
-    <span class="crest">KA</span>
+  <div class="lead"><span class="crest">KA</span>
     <div><div style="font-family:var(--font-display);font-weight:700;font-size:14px">Design System v2 — Anchor Prototypes</div>
-    <small>Evolves v2.1 · aubergine/gold · dark-only · trilingual · not production code</small></div>
-  </div>
+    <small>Hierarchy · atoms · visual signal — honesty preserved · not production code</small></div></div>
   <div class="row" style="gap:14px">
-    <div class="seg" role="tablist" id="screenSeg">
-      <button aria-pressed="true" data-s="wizard">Programme Wizard</button>
-      <button aria-pressed="false" data-s="payments">Payments</button>
-      <button aria-pressed="false" data-s="children">My Children</button>
-    </div>
-    <div class="seg langseg" id="langSeg" title="Display language">
-      <button aria-pressed="true" data-l="en">EN</button>
-      <button aria-pressed="false" data-l="tc">繁</button>
-      <button aria-pressed="false" data-l="sc">简</button>
-    </div>
+    <div class="seg" id="screenSeg"><button aria-pressed="true" data-s="wizard">Programme Wizard</button><button aria-pressed="false" data-s="payments">Payments</button><button aria-pressed="false" data-s="children">My Children</button></div>
+    <div class="seg langseg" id="langSeg" title="Display language"><button aria-pressed="true" data-l="en">EN</button><button aria-pressed="false" data-l="tc">繁</button><button aria-pressed="false" data-l="sc">简</button></div>
   </div>
 </div>
 
-<!-- ══════════════════════ SCREEN A — PROGRAMME WIZARD ══════════════════════ -->
+<!-- ═══ A · PROGRAMME WIZARD ═══ -->
 <section data-screen="wizard">
 <div class="shell">
   <aside class="sider">
     <div class="brand"><span class="crest">KA</span><b>KA Playground</b></div>
     <div class="navgroup">Configure</div>
-    <div class="navitem active"><svg class="i gi" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Programmes</div>
-    <div class="navitem"><svg class="i gi" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Consent templates</div>
+    <div class="navitem active"><svg class="i" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Programmes</div>
+    <div class="navitem"><svg class="i" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Consent templates</div>
     <div class="navgroup">Operate</div>
-    <div class="navitem"><svg class="i gi" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Approvals</div>
-    <div class="navitem"><svg class="i gi" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Team 成團</div>
+    <div class="navitem"><svg class="i" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Approvals</div>
+    <div class="navitem"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Team 成團</div>
   </aside>
   <div class="main">
     <div class="topbar">
       <div class="crumbs">Programmes / <b>Robotics Innovators · Term 1</b></div>
-      <div class="row"><span class="tag neutral"><span class="dot"></span>Draft</span><span class="muted mono" style="font-size:12px">Saved · 14:32</span></div>
+      <div class="row"><span class="tag neutral"><span class="dot"></span>Draft</span><span class="mono muted" style="font-size:12px"><svg class="i" style="width:12px;height:12px;stroke:#6b6478;display:inline;vertical-align:-2px" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Saved 14:32</span></div>
     </div>
     <div class="page">
-      <div class="page-head">
-        <div class="eyebrow">Programme setup</div>
-        <h1 data-t="progName">Robotics Innovators · Term 1</h1>
-        <div class="row muted" style="font-size:13px;margin-top:4px">
-          <span><b style="color:var(--fg)">7</b> of 9 required sections complete</span><span>·</span>
-          <span>2 sections blocked by dependencies</span><span>·</span>
-          <span class="tag info"><span class="dot"></span>Fees &amp; Consent lock on publish</span>
+      <!-- fix1/3: readiness as a ring + chips, not a sentence -->
+      <div class="page-head row between wrap" style="align-items:flex-start">
+        <div><div class="eyebrow">Programme setup</div><h1 data-t="progName" style="margin-top:6px">Robotics Innovators · Term 1</h1></div>
+        <div class="row" style="gap:12px">
+          <div class="ring" style="--p:78"><b>7/9</b></div>
+          <div><div class="atom">Almost ready</div><div class="subatom">7 of 9 required · 2 blocked</div>
+            <div class="chips" style="margin-top:6px"><span class="chip"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Fees · Consent lock on publish</span></div></div>
         </div>
       </div>
 
       <div class="wizard">
-        <!-- dependency-aware stepper rail -->
         <div class="rail-card">
-          <div class="rail-phase">Setup</div>
-          <div class="step done"><span class="ic">✓</span><div class="grow"><div class="lbl">Basics</div></div></div>
-          <div class="step done"><span class="ic">✓</span><div class="grow"><div class="lbl">Eligibility &amp; capacity</div></div></div>
-          <div class="rail-phase">Money &amp; consent</div>
-          <div class="step done"><span class="ic">✓</span><div class="grow"><div class="lbl">Fees</div></div><div class="rt"><svg class="i lockico" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div></div>
-          <div class="step current"><span class="ic">4</span><div class="grow"><div class="lbl">Consent</div><div class="sub">Locks when published</div></div><div class="rt"><svg class="i lockico" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div></div>
-          <div class="rail-phase">Teams &amp; roles</div>
-          <div class="step done"><span class="ic">✓</span><div class="grow"><div class="lbl">Team rules</div></div></div>
+          <div class="rail-phase">Setup <span class="ct">2/2</span></div>
+          <div class="step done"><span class="ic"><svg style="width:12px;height:12px;stroke:#241a12;stroke-width:3;fill:none" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><div class="grow"><div class="lbl">Basics</div></div></div>
+          <div class="step done"><span class="ic"><svg style="width:12px;height:12px;stroke:#241a12;stroke-width:3;fill:none" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><div class="grow"><div class="lbl">Eligibility &amp; capacity</div></div></div>
+          <div class="rail-phase">Money &amp; consent <span class="ct">1/2</span></div>
+          <div class="step done"><span class="ic"><svg style="width:12px;height:12px;stroke:#241a12;stroke-width:3;fill:none" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><div class="grow"><div class="lbl">Fees</div></div><svg class="i lockico" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="step current"><span class="ic">4</span><div class="grow"><div class="lbl">Consent</div><div class="sub">Locks when published</div></div><svg class="i lockico" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="rail-phase">Teams &amp; roles <span class="ct">1/3</span></div>
+          <div class="step done"><span class="ic"><svg style="width:12px;height:12px;stroke:#241a12;stroke-width:3;fill:none" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><div class="grow"><div class="lbl">Team rules</div></div></div>
           <div class="step"><span class="ic">6</span><div class="grow"><div class="lbl">Role library</div><div class="sub">In progress</div></div></div>
-          <div class="step blocked"><span class="ic">!</span><div class="grow"><div class="lbl">Tracker</div><div class="sub">Needs Role library first</div></div></div>
-          <div class="rail-phase">Learning</div>
+          <div class="step blocked"><span class="ic">!</span><div class="grow"><div class="lbl">Tracker</div><div class="sub">Needs Role library</div></div></div>
+          <div class="rail-phase">Learning <span class="ct">0/2</span></div>
           <div class="step"><span class="ic">8</span><div class="grow"><div class="lbl">Learning thresholds</div></div></div>
           <div class="step blocked"><span class="ic">!</span><div class="grow"><div class="lbl">Certification</div><div class="sub">Needs Tracker + Learning</div></div></div>
           <div class="rail-phase">Optional</div>
-          <div class="step locked-done"><span class="ic" style="border-style:dashed">–</span><div class="grow"><div class="lbl muted">Integration</div><div class="sub">Deferred · Phase 2</div></div></div>
-          <div class="step"><span class="ic">○</span><div class="grow"><div class="lbl">Marketing copy</div><div class="sub">Optional · gates catalogue listing</div></div></div>
+          <div class="step"><span class="ic" style="border-style:dashed">–</span><div class="grow"><div class="lbl muted">Integration</div><div class="sub">Deferred · Phase 2</div></div></div>
+          <div class="step"><span class="ic">○</span><div class="grow"><div class="lbl">Marketing copy</div><div class="sub">Gates catalogue listing</div></div></div>
         </div>
 
-        <!-- section editor: BASICS shown to carry the trilingual pattern -->
         <div>
           <div class="card">
-            <div class="row between" style="margin-bottom:6px">
-              <div><div class="eyebrow">Section 1 · Basics</div><h3 style="margin-top:4px">Name &amp; description</h3></div>
+            <div class="row between" style="margin-bottom:14px">
+              <div><div class="eyebrow">Section 1 · Basics</div><h3 style="margin-top:5px">Name &amp; description</h3></div>
               <span class="tag ok"><span class="dot"></span>Complete</span>
             </div>
-            <p class="muted" style="font-size:13px;margin-bottom:18px">Every family-facing string is stored in all three languages. A missing translation shows an empty dot on its tab — you can see at a glance what's left.</p>
 
-            <!-- THE TRILINGUAL INPUT -->
             <div class="field">
               <label>Programme name</label>
               <div class="tri" data-tri>
-                <div class="tri-tabs" role="tablist">
-                  <button class="tri-tab" role="tab" aria-selected="true"  data-tab="en">English <span class="cdot filled"></span></button>
-                  <button class="tri-tab" role="tab" aria-selected="false" data-tab="tc">繁體中文 <span class="cdot filled"></span></button>
-                  <button class="tri-tab" role="tab" aria-selected="false" data-tab="sc">简体中文 <span class="cdot"></span></button>
-                </div>
+                <div class="tri-tabs"><button class="tri-tab" aria-selected="true" data-tab="en">English <span class="cdot filled"></span></button><button class="tri-tab" aria-selected="false" data-tab="tc">繁體 <span class="cdot filled"></span></button><button class="tri-tab" aria-selected="false" data-tab="sc">简体 <span class="cdot"></span></button></div>
                 <div class="tri-panel active" data-panel="en"><input class="input" value="Robotics Innovators · Term 1"></div>
                 <div class="tri-panel" data-panel="tc"><input class="input zh" lang="zh-Hant" value="機械人創新者 · 第一學期"></div>
                 <div class="tri-panel" data-panel="sc"><input class="input zh" lang="zh-Hans" placeholder="输入简体中文名称"></div>
               </div>
-              <div class="tri-foot"><span class="tag warn" style="height:20px"><span class="dot"></span>1 language empty</span><span>简体中文 not yet entered — required before publish (OD-19).</span></div>
+              <!-- fix1/2: loud short status + demoted rationale -->
+              <div class="row" style="gap:8px;margin-top:7px"><span class="tag warn"><span class="dot"></span>简体 empty</span><span class="subatom" style="margin:0">Required before publish · OD-19</span></div>
             </div>
 
             <div class="field">
-              <label>Short description <span class="optional">· shown on the family catalogue</span></label>
+              <label>Short description <span class="optional">· family catalogue</span></label>
               <div class="tri" data-tri>
-                <div class="tri-tabs" role="tablist">
-                  <button class="tri-tab" role="tab" aria-selected="true"  data-tab="en">English <span class="cdot filled"></span></button>
-                  <button class="tri-tab" role="tab" aria-selected="false" data-tab="tc">繁體中文 <span class="cdot filled"></span></button>
-                  <button class="tri-tab" role="tab" aria-selected="false" data-tab="sc">简体中文 <span class="cdot filled"></span></button>
-                </div>
+                <div class="tri-tabs"><button class="tri-tab" aria-selected="true" data-tab="en">English <span class="cdot filled"></span></button><button class="tri-tab" aria-selected="false" data-tab="tc">繁體 <span class="cdot filled"></span></button><button class="tri-tab" aria-selected="false" data-tab="sc">简体 <span class="cdot filled"></span></button></div>
                 <div class="tri-panel active" data-panel="en"><textarea class="textarea">Design, build and pitch an autonomous robot across a 10-week studio. Ages 10–14.</textarea></div>
                 <div class="tri-panel" data-panel="tc"><textarea class="textarea zh" lang="zh-Hant">在十週的工作坊中設計、製作並展示自主機械人。適合 10–14 歲。</textarea></div>
                 <div class="tri-panel" data-panel="sc"><textarea class="textarea zh" lang="zh-Hans">在十周的工作坊中设计、制作并展示自主机器人。适合 10–14 岁。</textarea></div>
               </div>
-              <div class="tri-foot"><span class="tag ok" style="height:20px"><span class="dot"></span>All three complete</span></div>
+              <div class="row" style="margin-top:7px"><span class="tag ok"><span class="dot"></span>All three complete</span></div>
             </div>
 
-            <div class="row" style="gap:16px">
-              <div class="field grow" style="margin:0"><label>Category</label>
-                <select class="select"><option>STEM</option><option>Language</option><option>Arts</option><option>Mathematics</option></select></div>
-              <div class="field grow" style="margin:0"><label>Jurisdiction</label>
-                <select class="select"><option>Hong Kong</option><option>Mainland China</option></select></div>
+            <div class="row" style="gap:14px">
+              <div class="field grow" style="margin:0"><label>Category</label><select class="select"><option>STEM</option><option>Language</option><option>Arts</option><option>Mathematics</option></select></div>
+              <div class="field grow" style="margin:0"><label>Jurisdiction</label><select class="select"><option>Hong Kong</option><option>Mainland China</option></select></div>
             </div>
           </div>
 
-          <div class="card" style="display:flex;gap:12px;align-items:center;justify-content:space-between">
-            <div class="row"><span class="tag warn"><span class="dot"></span>2 blockers before publish</span>
-              <span class="muted" style="font-size:13px">简体 name · Role library incomplete</span></div>
-            <div class="row"><button class="btn ghost">Preview as family</button><button class="btn primary">Save &amp; continue</button></div>
+          <!-- pre-flight: loud blocker count + demoted list + action -->
+          <div class="card row between wrap" style="gap:12px">
+            <div class="row"><span class="tag warn"><span class="dot"></span>2 blockers</span><span class="subatom" style="margin:0">简体 name · Role library incomplete</span></div>
+            <div class="row"><button class="btn ghost sm">Preview as family</button><button class="btn primary">Save &amp; continue</button></div>
           </div>
         </div>
       </div>
@@ -283,97 +281,104 @@ svg.i{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stro
 </div>
 </section>
 
-<!-- ══════════════════════ SCREEN B — PAYMENTS (dense admin) ══════════════════════ -->
+<!-- ═══ B · PAYMENTS ═══ -->
 <section data-screen="payments" hidden>
 <div class="shell">
   <aside class="sider">
     <div class="brand"><span class="crest">KA</span><b>KA Playground</b></div>
     <div class="navgroup">Finance</div>
-    <div class="navitem active"><svg class="i gi" viewBox="0 0 24 24"><path d="M2 8h20v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/><path d="M2 8l2-4h16l2 4"/><path d="M2 12h20"/></svg>Payments</div>
-    <div class="navitem"><svg class="i gi" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/></svg>Financial integrity</div>
-    <div class="navitem"><svg class="i gi" viewBox="0 0 24 24"><path d="M9 14l-4 4 4 4"/><path d="M5 18h11a4 4 0 0 0 4-4V6"/></svg>Refunds</div>
+    <div class="navitem active"><svg class="i" viewBox="0 0 24 24"><path d="M2 8h20v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/><path d="M2 8l2-4h16l2 4"/><path d="M2 12h20"/></svg>Payments</div>
+    <div class="navitem"><svg class="i" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/></svg>Financial integrity</div>
+    <div class="navitem"><svg class="i" viewBox="0 0 24 24"><path d="M9 14l-4 4 4 4"/><path d="M5 18h11a4 4 0 0 0 4-4V6"/></svg>Refunds</div>
   </aside>
   <div class="main">
-    <div class="topbar">
-      <div class="crumbs">Finance / <b>Payments</b></div>
-      <div class="row"><span class="tag info"><span class="dot"></span>School-settled · manual recording</span></div>
-    </div>
+    <div class="topbar"><div class="crumbs">Finance / <b>Payments</b></div><div class="chips"><span class="chip">School-settled</span><span class="chip">Manual recording</span></div></div>
     <div class="page">
-      <div class="page-head"><h1>Payments</h1><div class="muted" style="font-size:13px;margin-top:4px">Record payments received in full, then a second officer confirms. Recorder ≠ confirmer (BI-9).</div></div>
+      <div class="page-head row between wrap"><div><h1>Payments</h1><div class="subatom" style="margin-top:4px">Record in full · a second officer confirms · recorder ≠ confirmer (BI-9)</div></div></div>
 
-      <!-- one readiness language: a Statistic strip, not prose -->
       <div class="kpis" style="margin-bottom:var(--stack)">
         <div class="kpi"><div class="k">Outstanding</div><div class="v">HK$48,250</div><div class="sub">14 orders awaiting payment</div></div>
         <div class="kpi"><div class="k"><svg class="i" style="width:13px;height:13px" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Awaiting confirmation</div><div class="v warn">HK$6,500</div><div class="sub">3 recorded · need a 2nd officer</div></div>
-        <div class="kpi"><div class="k"><span class="seal"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>Confirmed today</div><div class="v gold">HK$12,000</div><div class="sub">5 receipts issued</div></div>
+        <div class="kpi"><div class="k"><span class="seal" style="width:15px;height:15px"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>Confirmed today</div><div class="v gold">HK$12,000</div><div class="sub">5 receipts sealed</div></div>
       </div>
 
       <div class="card" style="padding:0;overflow:hidden">
-        <div class="row between" style="padding:14px 16px"><h3>Queue</h3>
-          <div class="row"><span class="tag neutral">All</span><span class="tag neutral">Awaiting record</span><span class="tag info"><span class="dot"></span>Awaiting confirmation</span></div></div>
-        <div style="overflow-x:auto">
-        <table class="tbl">
+        <div class="row between" style="padding:12px 16px"><h3 style="font-size:15px">Queue</h3><div class="row" style="gap:6px"><span class="chip">All</span><span class="chip">Awaiting record</span><span class="tag info"><span class="dot"></span>Awaiting confirmation</span></div></div>
+        <div style="overflow-x:auto"><table class="tbl">
           <thead><tr><th>Student</th><th>Programme</th><th class="r">Amount</th><th>Recorded by</th><th>Status</th><th>Receipt</th><th class="r">Action</th></tr></thead>
           <tbody>
-            <tr><td>Chan Sum-yu</td><td data-t="pgm-robotics">Robotics Innovators</td><td class="r num">HK$2,500.00</td><td class="muted">—</td><td><span class="tag neutral"><span class="dot"></span>Awaiting record</span></td><td class="muted">—</td><td class="r"><button class="btn sm primary">Record</button></td></tr>
-            <tr><td>Wong Ka-ho</td><td data-t="pgm-debate">Debate Masters</td><td class="r num">HK$2,000.00</td><td>A. Leung</td><td><span class="tag warn"><span class="dot"></span>Pending confirmation</span></td><td class="muted">—</td><td class="r"><div class="row" style="justify-content:flex-end"><button class="btn sm primary">Confirm</button><button class="btn sm danger">Reject</button></div></td></tr>
-            <tr title="Segregation of duty (BI-9)"><td>Lam Zi-ching</td><td data-t="pgm-robotics">Robotics Innovators</td><td class="r num">HK$2,500.00</td><td><span style="color:var(--warning)">You</span></td><td><span class="tag warn"><span class="dot"></span>Pending confirmation</span></td><td class="muted">—</td><td class="r"><button class="btn sm" disabled title="You recorded this — a second officer must confirm">Confirm</button></td></tr>
-            <tr class="attested"><td>Ng Wai-lam</td><td data-t="pgm-debate">Debate Masters</td><td class="r num">HK$2,000.00</td><td>A. Leung</td><td><span class="tag ok"><span class="dot"></span>Confirmed</span></td><td><span class="row" style="gap:7px"><span class="seal"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span class="mono">RCPT-0041</span></span></td><td class="r"><a href="#">View</a></td></tr>
-            <tr class="attested"><td>Tsang Ho-yin</td><td data-t="pgm-robotics">Robotics Innovators</td><td class="r num">HK$2,500.00</td><td>M. Chow</td><td><span class="tag ok"><span class="dot"></span>Confirmed</span></td><td><span class="row" style="gap:7px"><span class="seal"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span class="mono">RCPT-0040</span></span></td><td class="r"><a href="#">View</a></td></tr>
+            <tr><td>Chan Sum-yu</td><td class="muted" data-t="pgm-robotics">Robotics Innovators</td><td class="r amt">HK$2,500.00</td><td class="muted">—</td><td><span class="tag neutral"><span class="dot"></span>Awaiting record</span></td><td class="muted">—</td><td class="r"><button class="btn sm primary">Record</button></td></tr>
+            <tr><td>Wong Ka-ho</td><td class="muted" data-t="pgm-debate">Debate Masters</td><td class="r amt">HK$2,000.00</td><td class="sm">A. Leung</td><td><span class="tag warn"><span class="dot"></span>Pending confirmation</span></td><td class="muted">—</td><td class="r"><div class="row" style="justify-content:flex-end;gap:6px"><button class="btn sm primary">Confirm</button><button class="btn sm danger">Reject</button></div></td></tr>
+            <tr title="Segregation of duty — BI-9"><td>Lam Zi-ching</td><td class="muted" data-t="pgm-robotics">Robotics Innovators</td><td class="r amt">HK$2,500.00</td><td><span class="tag warn" style="height:22px"><span class="dot"></span>You</span></td><td><span class="tag warn"><span class="dot"></span>Pending confirmation</span></td><td class="muted">—</td><td class="r"><button class="btn sm" disabled title="You recorded this — a second officer must confirm">Confirm</button></td></tr>
+            <tr><td>Ng Wai-lam</td><td class="muted" data-t="pgm-debate">Debate Masters</td><td class="r amt">HK$2,000.00</td><td class="sm">A. Leung</td><td><span class="tag ok"><span class="dot"></span>Confirmed</span></td><td><span class="row" style="gap:7px"><span class="seal"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span class="mono">RCPT-0041</span></span></td><td class="r"><a href="#">View</a></td></tr>
+            <tr><td>Tsang Ho-yin</td><td class="muted" data-t="pgm-robotics">Robotics Innovators</td><td class="r amt">HK$2,500.00</td><td class="sm">M. Chow</td><td><span class="tag ok"><span class="dot"></span>Confirmed</span></td><td><span class="row" style="gap:7px"><span class="seal"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span class="mono">RCPT-0040</span></span></td><td class="r"><a href="#">View</a></td></tr>
           </tbody>
-        </table>
-        </div>
-        <div class="row" style="padding:12px 16px;color:var(--fg-muted);font-size:12px"><span>Amounts recorded only when received in full (OD-5). The gold seal marks an attested, gapless receipt (BI-2).</span></div>
+        </table></div>
+        <div class="row" style="padding:10px 16px;gap:8px"><span class="seal" style="width:14px;height:14px"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span class="subatom" style="margin:0">Sealed = attested, gapless receipt (BI-2) · recorded only when paid in full (OD-5)</span></div>
       </div>
     </div>
   </div>
 </div>
 </section>
 
-<!-- ══════════════════════ SCREEN C — MY CHILDREN (airy product) ══════════════════════ -->
+<!-- ═══ C · MY CHILDREN ═══ -->
 <section data-screen="children" hidden>
 <div class="shell">
   <aside class="sider">
     <div class="brand"><span class="crest">KA</span><b>KA Playground</b></div>
     <div class="navgroup">My programme</div>
-    <div class="navitem"><svg class="i gi" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>Enrolments</div>
-    <div class="navitem"><svg class="i gi" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Consent</div>
-    <div class="navitem active"><svg class="i gi" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v2"/></svg>My Children</div>
-    <div class="navitem"><svg class="i gi" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>My Payments</div>
+    <div class="navitem"><svg class="i" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>Enrolments</div>
+    <div class="navitem"><svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Consent</div>
+    <div class="navitem active"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v2"/></svg>My Children</div>
+    <div class="navitem"><svg class="i" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>My Payments</div>
   </aside>
   <div class="main">
-    <div class="topbar"><div class="crumbs"><b>My Children</b></div><div class="row muted" style="font-size:13px">Armour Academy</div></div>
+    <div class="topbar"><div class="crumbs"><b>My Children</b></div><div class="row muted sm">Armour Academy</div></div>
     <div class="page">
-      <div class="page-head"><div class="eyebrow">Guardian</div><h1>My Children</h1><div class="muted" style="margin-top:6px">Your children's enrolments, consent and sessions — one place.</div></div>
+      <div class="page-head"><div class="eyebrow">Guardian</div><h1 style="margin-top:6px">My Children</h1></div>
 
+      <!-- CHILD 1 — consent complete. status = loud atoms; reassurance = small muted (kept, not deleted) -->
       <div class="child" style="margin-bottom:var(--gap)">
-        <div class="hd"><span class="avatar">SY</span>
-          <div class="grow"><h3 data-t="child1">Chan Sum-yu</h3><div class="muted" style="font-size:13px">2 programmes · age 11</div></div>
-          <a class="foot-link" href="#">View sessions <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <div class="hd">
+          <div class="avwrap"><div class="avatar ring-ok">SY</div><span class="sbadge seal" title="Consent sealed"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span></div>
+          <div class="grow"><h3 data-t="child1">Chan Sum-yu</h3>
+            <div class="stats" style="margin-top:6px"><span class="statchip"><b>2</b> programmes</span><span class="statchip"><b>11</b> age</span></div></div>
+          <a class="foot-link" href="#">Sessions <svg class="i" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </div>
         <div class="bd">
-          <div class="callout" style="margin:12px 0 6px"><span class="seal" style="margin-top:1px"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>
-            <div><b>Consent complete</b> for both enrolments. <span class="muted">You signed on 28 Jul 2026 — the signed record is sealed and audited.</span></div></div>
+          <div class="attest" style="margin-bottom:6px">
+            <span class="seal"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>
+            <div class="grow"><div class="atom">Consent complete</div><div class="subatom">Signed 28 Jul 2026 · sealed &amp; audited · both enrolments</div></div>
+            <a href="#" class="sm">View record</a>
+          </div>
           <div class="enrol"><div class="cat-bar" style="background:var(--cat-stem)"></div>
-            <div class="grow"><div class="t" data-t="pgm-robotics">Robotics Innovators · Term 1</div><div class="muted" style="font-size:12px">Mondays 16:00 · Kowloon studio</div></div>
+            <div class="grow"><div class="t" data-t="pgm-robotics">Robotics Innovators · Term 1</div>
+              <div class="chips" style="margin-top:5px"><span class="chip"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Mon 16:00</span><span class="chip"><svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>Kowloon studio</span></div></div>
             <span class="tag ok"><span class="dot"></span>Active</span></div>
           <div class="enrol"><div class="cat-bar" style="background:var(--cat-language)"></div>
-            <div class="grow"><div class="t" data-t="pgm-debate">Debate Masters</div><div class="muted" style="font-size:12px">Thursdays 17:00 · Online</div></div>
+            <div class="grow"><div class="t" data-t="pgm-debate">Debate Masters</div>
+              <div class="chips" style="margin-top:5px"><span class="chip"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Thu 17:00</span><span class="chip"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/></svg>Online</span></div></div>
             <span class="tag info"><span class="dot"></span>Teamed</span></div>
         </div>
       </div>
 
+      <!-- CHILD 2 — signature needed. compact alert: loud label + prominent action + small rationale -->
       <div class="child">
-        <div class="hd"><span class="avatar">MK</span>
-          <div class="grow"><h3 data-t="child2">Chan Ming-kit</h3><div class="muted" style="font-size:13px">1 programme · age 9</div></div>
-          <a class="foot-link" href="#">View sessions <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <div class="hd">
+          <div class="avwrap"><div class="avatar ring-warn">MK</div><span class="sbadge warn" title="Action needed"><svg viewBox="0 0 24 24"><path d="M12 8v5M12 17h.01"/></svg></span></div>
+          <div class="grow"><h3 data-t="child2">Chan Ming-kit</h3>
+            <div class="stats" style="margin-top:6px"><span class="statchip"><b>1</b> programme</span><span class="statchip"><b>9</b> age</span></div></div>
+          <a class="foot-link" href="#">Sessions <svg class="i" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </div>
         <div class="bd">
-          <div class="callout warn" style="margin:12px 0 6px"><svg class="i" style="color:var(--warning);margin-top:2px" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
-            <div><b>Your signature is needed.</b> <span class="muted">Coding Explorers requires consent before the seat is confirmed.</span>
-            <div style="margin-top:8px"><button class="btn sm primary">Review &amp; sign</button></div></div></div>
+          <div class="attest warn" style="margin-bottom:6px">
+            <span class="warnico"><svg viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+            <div class="grow"><div class="atom">Signature needed</div><div class="subatom">Confirms the Coding Explorers seat before it starts</div></div>
+            <button class="btn primary sm">Review &amp; sign</button>
+          </div>
           <div class="enrol"><div class="cat-bar" style="background:var(--cat-maths)"></div>
-            <div class="grow"><div class="t" data-t="pgm-coding">Coding Explorers</div><div class="muted" style="font-size:12px">Awaiting consent · starts 2 Sep</div></div>
+            <div class="grow"><div class="t" data-t="pgm-coding">Coding Explorers</div>
+              <div class="chips" style="margin-top:5px"><span class="chip"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Starts 2 Sep</span></div></div>
             <span class="tag warn"><span class="dot"></span>Pending consent</span></div>
         </div>
       </div>
@@ -383,7 +388,6 @@ svg.i{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stro
 </section>
 
 <script>
-// screen switch
 const seg=document.getElementById('screenSeg');
 seg.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   [...seg.children].forEach(x=>x.setAttribute('aria-pressed',x===b));
@@ -391,21 +395,18 @@ seg.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return
   document.querySelectorAll('[data-screen]').forEach(sec=>sec.hidden=sec.dataset.screen!==s);
   document.body.dataset.density=(s==='children')?'product':'admin';
 });
-// trilingual field tabs
 document.querySelectorAll('[data-tri]').forEach(tri=>{
   tri.addEventListener('click',e=>{const t=e.target.closest('.tri-tab');if(!t)return;
     tri.querySelectorAll('.tri-tab').forEach(x=>x.setAttribute('aria-selected',x===t));
     tri.querySelectorAll('.tri-panel').forEach(p=>p.classList.toggle('active',p.dataset.panel===t.dataset.tab));
   });
 });
-// display-language toggle (flips the _en/_tc/_sc display strings)
 const STR={
   progName:{en:'Robotics Innovators · Term 1',tc:'機械人創新者 · 第一學期',sc:'机器人创新者 · 第一学期'},
   'pgm-robotics':{en:'Robotics Innovators',tc:'機械人創新者',sc:'机器人创新者'},
   'pgm-debate':{en:'Debate Masters',tc:'辯論大師',sc:'辩论大师'},
   'pgm-coding':{en:'Coding Explorers',tc:'編程探索者',sc:'编程探索者'},
-  child1:{en:'Chan Sum-yu',tc:'陳心悠',sc:'陈心悠'},
-  child2:{en:'Chan Ming-kit',tc:'陳明傑',sc:'陈明杰'},
+  child1:{en:'Chan Sum-yu',tc:'陳心悠',sc:'陈心悠'},child2:{en:'Chan Ming-kit',tc:'陳明傑',sc:'陈明杰'},
 };
 const langSeg=document.getElementById('langSeg');
 langSeg.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
