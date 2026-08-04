@@ -1,0 +1,63 @@
+# KAP · Cloud Run WEB service — public ingress. Multi-container: nginx (ingress,
+# 8080) + php-fpm sidecar. IMAGE_WEB / IMAGE_API are stamped with the commit SHA
+# by cd.yml before `gcloud run services replace`.
+#
+# Storage: the evidence bucket is mounted via GCS-FUSE at storage/app so evidence
+# WRITTEN here is READ by the worker (which runs the ScanUpload job) — the two
+# services share ONE bucket. This sidesteps a Flysystem-GCS composer dependency
+# (a CLAUDE.md STOP condition): FILESYSTEM_DISK stays 'local', the local path is
+# GCS-backed. (Native gcs disk = a flagged composer add, deferred — see §4 GCS.)
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: kap-web
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cloudsql-instances: CLOUDSQL_INSTANCE
+        run.googleapis.com/execution-environment: gen2   # required for GCS-FUSE
+        autoscaling.knative.dev/minScale: '1'             # warm for the demo
+        autoscaling.knative.dev/maxScale: '4'
+    spec:
+      containers:
+        # ── ingress: nginx serving the SPA + proxying /api to the sidecar ──
+        - name: web
+          image: IMAGE_WEB
+          ports:
+            - containerPort: 8080
+          resources:
+            limits: { cpu: '1', memory: 512Mi }
+        # ── sidecar: the Laravel API (php-fpm on 127.0.0.1:9000) ──
+        - name: api
+          image: IMAGE_API
+          env:
+            - { name: APP_ENV, value: demo }
+            - { name: APP_DEBUG, value: 'false' }
+            - { name: APP_URL, value: PUBLIC_URL }
+            - { name: APP_PUBLIC_URL, value: PUBLIC_URL }   # the forwardable /pay link — never localhost
+            - { name: MAIL_MAILER, value: log }             # a public demo emails no one
+            - { name: DB_CONNECTION, value: pgsql }
+            - { name: DB_HOST, value: /cloudsql/CLOUDSQL_INSTANCE }
+            - { name: DB_DATABASE, value: kap }
+            - { name: DB_USERNAME, value: kap_app }         # RLS-SUBJECT runtime role — never kap_migrate
+            - { name: REDIS_HOST, value: MEMORYSTORE_IP }
+            - { name: REDIS_CLIENT, value: phpredis }
+            - { name: QUEUE_CONNECTION, value: redis }
+            - { name: CACHE_STORE, value: redis }
+            - { name: FILESYSTEM_DISK, value: local }       # local path is GCS-FUSE backed
+            - name: APP_KEY
+              valueFrom: { secretKeyRef: { name: kap-app-key, key: latest } }
+            - name: DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: kap-app-password, key: latest } }  # the kap_app secret
+          volumeMounts:
+            - { name: evidence, mountPath: /var/www/api/storage/app }
+          resources:
+            limits: { cpu: '1', memory: 1Gi }
+      volumes:
+        - name: evidence
+          csi:
+            driver: gcsfuse.run.googleapis.com
+            volumeAttributes: { bucketName: kap-demo-evidence }

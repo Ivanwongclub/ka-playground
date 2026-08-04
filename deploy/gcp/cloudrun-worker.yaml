@@ -1,0 +1,73 @@
+# KAP · Cloud Run WORKER service — Horizon queue worker + clamd sidecar.
+# Internal (no public ingress). minScale 1 = ALWAYS ON, because the async jobs
+# are load-bearing (readiness §4c): FinalizeManualPayment, ScanUpload,
+# GenerateConsentDocument, IssueConsentRequests, EvaluateConsentGate,
+# ApplyWithdrawal, ConsumePaymentObligations. If this is not running, the demo's
+# money-finalize / consent-PDF / evidence-scan flows HANG.
+#
+# ClamAV (readiness §4b, BI-10): clamd runs as a SIDECAR here — this is the only
+# clamd consumer (ScanUpload is queued, so it runs in the worker). clamd needs
+# ~1.5Gi RAM + a freshclam DB + ~180s warmup, hence the memory + startup probe.
+# Uploads stay invisible until the scan passes (BI-10, fail-safe): if clamd is
+# down, evidence never surfaces — degraded, not leaking. Web reaches clamd via
+# CLAMAV_HOST only if it ever scans synchronously; today it does not (verify
+# before assuming — if a synchronous scan path exists, the web tier needs clamd too).
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: kap-worker
+  annotations:
+    run.googleapis.com/ingress: internal
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/cloudsql-instances: CLOUDSQL_INSTANCE
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/cpu-throttling: 'false'        # a worker needs CPU between requests
+        autoscaling.knative.dev/minScale: '1'
+        autoscaling.knative.dev/maxScale: '2'
+    spec:
+      containers:
+        - name: horizon
+          image: IMAGE_API
+          command: ['php']
+          args: ['artisan', 'horizon']
+          env:
+            - { name: APP_ENV, value: demo }
+            - { name: APP_DEBUG, value: 'false' }
+            - { name: APP_URL, value: PUBLIC_URL }
+            - { name: APP_PUBLIC_URL, value: PUBLIC_URL }
+            - { name: MAIL_MAILER, value: log }
+            - { name: DB_CONNECTION, value: pgsql }
+            - { name: DB_HOST, value: /cloudsql/CLOUDSQL_INSTANCE }
+            - { name: DB_DATABASE, value: kap }
+            - { name: DB_USERNAME, value: kap_app }         # RLS-subject — the worker sets 'system' context per job
+            - { name: REDIS_HOST, value: MEMORYSTORE_IP }
+            - { name: REDIS_CLIENT, value: phpredis }
+            - { name: QUEUE_CONNECTION, value: redis }
+            - { name: CACHE_STORE, value: redis }
+            - { name: FILESYSTEM_DISK, value: local }
+            - { name: CLAMAV_HOST, value: 127.0.0.1 }       # the clamd sidecar
+            - { name: CLAMAV_PORT, value: '3310' }
+            - name: APP_KEY
+              valueFrom: { secretKeyRef: { name: kap-app-key, key: latest } }
+            - name: DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: kap-app-password, key: latest } }
+          volumeMounts:
+            - { name: evidence, mountPath: /var/www/api/storage/app }
+          resources:
+            limits: { cpu: '1', memory: 1Gi }
+        - name: clamd
+          image: clamav/clamav-debian:latest
+          startupProbe:                                     # clamd is not ready until the DB loads (~180s)
+            tcpSocket: { port: 3310 }
+            periodSeconds: 10
+            failureThreshold: 30
+          resources:
+            limits: { cpu: '1', memory: 2Gi }               # freshclam DB is memory-hungry
+      volumes:
+        - name: evidence
+          csi:
+            driver: gcsfuse.run.googleapis.com
+            volumeAttributes: { bucketName: kap-demo-evidence }

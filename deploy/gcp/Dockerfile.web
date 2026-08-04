@@ -1,0 +1,20 @@
+# KAP · PRODUCTION web image. Multi-stage: build the Vite SPA, then serve it
+# with nginx that also proxies /api to the php-fpm sidecar. Build context = repo
+# root: `docker build -f deploy/gcp/Dockerfile.web .`
+#
+# The SPA calls relative /api, so there is NO build-time API host to inject —
+# per-environment wiring is the SERVER's APP_URL/APP_PUBLIC_URL, not a VITE_ var.
+FROM node:24-alpine AS build
+WORKDIR /web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ ./
+# `npm run build` also runs the frontend gates (i18n:check, ds2:tokens,
+# ds2:import-guard, marketing-payload, bundle-budget) — but those are already a
+# BLOCKING CI gate (cd.yml `frontend`); here they are belt-and-braces.
+RUN npm run build
+
+FROM nginx:1.27-alpine
+COPY --from=build /web/dist /usr/share/nginx/html
+COPY deploy/gcp/nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 8080

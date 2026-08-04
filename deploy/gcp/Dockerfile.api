@@ -1,0 +1,35 @@
+# KAP · PRODUCTION API image (php-fpm). Self-contained — code is COPIED and
+# dependencies are baked in (the repo's api/Dockerfile is dev-only: it volume-
+# mounts the code and installs nothing, so it CANNOT be deployed). Build context
+# is the repo root: `docker build -f deploy/gcp/Dockerfile.api .`
+FROM php:8.4-fpm-alpine
+
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+RUN install-php-extensions pdo_pgsql pcntl redis opcache gd exif zip
+# psql client — the migrate/grant/seed one-off Cloud Run Jobs shell out to it.
+RUN apk add --no-cache postgresql-client
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/api
+
+# Install PHP deps first (layer cache), production only.
+COPY api/composer.json api/composer.lock ./
+RUN composer install --no-dev --no-interaction --no-scripts --prefer-dist --optimize-autoloader
+
+# App code + the deploy scripts the one-off Jobs run (role SQL, etc.).
+COPY api/ ./
+COPY deploy/ /var/www/deploy/
+RUN composer dump-autoload --optimize --no-dev \
+    && chown -R www-data:www-data storage bootstrap/cache
+
+# Production opcache: validate_timestamps off (immutable image).
+RUN { \
+      echo 'opcache.enable=1'; \
+      echo 'opcache.validate_timestamps=0'; \
+      echo 'opcache.max_accelerated_files=20000'; \
+      echo 'opcache.memory_consumption=192'; \
+    } > /usr/local/etc/php/conf.d/opcache-prod.ini
+
+# php-fpm listens on 9000; the nginx sidecar reaches it at 127.0.0.1:9000.
+EXPOSE 9000
+CMD ["php-fpm", "--nodaemonize"]

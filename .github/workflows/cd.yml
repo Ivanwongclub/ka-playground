@@ -1,0 +1,291 @@
+# ============================================================================
+# KAP · Continuous Deployment — push-to-main auto-deploys, BEHIND HARD GATES
+# ============================================================================
+# This is a CHILD-SAFETY / FINANCIAL app. Auto-deploy is only acceptable because
+# the automated safety net below BLOCKS a bad build from reaching the public URL.
+#
+# THE GATE DAG (a failure at any stage ABORTS; the current live revision stays up):
+#
+#   backend ─┐
+#   reconcile┼─> build_images ─> deploy_candidate ─> rls_proof ─> promote
+#   frontend ┘        (no public traffic yet)     (HARD GATE)   (live URL)
+#
+# HOW THE BLOCK IS ENFORCED (what the reviewer verifies):
+#   • Every deploy job has `needs:` on the stage before it. A GitHub Actions job
+#     whose `needs` dependency FAILS is SKIPPED — it does not run.
+#   • NO job uses `continue-on-error` and NO step uses `if: always()`. So a red
+#     test / reconcile / frontend gate / RLS proof cannot be stepped over.
+#   • `promote` (the only job that moves public traffic) `needs: rls_proof`,
+#     which `needs: deploy_candidate`, which `needs: [backend,reconcile,frontend]`.
+#     There is NO path to `promote` that skips the RLS proof or the test suite.
+#   • The candidate revision is deployed with `--no-traffic` — it exists but is
+#     NOT public until `promote` routes traffic to it. Abort = it never goes live.
+#
+# RESIDUAL RISK (documented, Leo-accepted — see docs/deploy/GCP-MIGRATION.md §9):
+#   Full CI/CD has NO human review gate. The gates catch REGRESSIONS in KNOWN
+#   invariants (BI-9 SoD, RLS enforcement, the reconcile battery, immutability,
+#   the frontend contracts). A NOVEL bug that no existing test anticipates can
+#   still reach live. Leo accepts this trade for auto-deploy velocity.
+
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+# One deploy at a time; a newer push supersedes an in-flight one (but never
+# cancels a promote mid-flight).
+concurrency:
+  group: cd-main
+  cancel-in-progress: false
+
+env:
+  GCP_PROJECT: ${{ vars.GCP_PROJECT }}
+  GCP_REGION: ${{ vars.GCP_REGION }}
+  AR_REPO: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/kap
+  WEB_SERVICE: kap-web
+  WORKER_SERVICE: kap-worker
+
+permissions:
+  contents: read
+  id-token: write   # Workload Identity Federation — no long-lived JSON keys
+
+jobs:
+  # ── GATE 1 · backend suite: money / consent / child-data / RLS (~450+) ──────
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: { POSTGRES_USER: kap, POSTGRES_PASSWORD: kap_local_only, POSTGRES_DB: kap }
+        ports: ['54329:5432']
+        options: >-
+          --health-cmd "pg_isready -U kap -d kap" --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.4', extensions: 'pdo_pgsql, pgsql, gd, exif, redis', coverage: none }
+      - name: Install API deps
+        working-directory: api
+        run: |
+          composer install --no-interaction --prefer-dist
+          cp .env.example .env && php artisan key:generate --force
+      - name: DB roles + test database
+        run: |
+          PGPASSWORD=kap_local_only psql -h 127.0.0.1 -p 54329 -U kap -d kap -f deploy/postgres/grant-app-role.sql
+          PGPASSWORD=kap_local_only psql -h 127.0.0.1 -p 54329 -U kap -d kap -c 'CREATE DATABASE kap_test OWNER kap_app;'
+      - name: Start ClamAV (the four real-clamd tests MUST execute, not skip)
+        run: |
+          mkdir -p clamav-db && cp deploy/clamav/kap-test.ndb clamav-db/kap-test.ndb
+          sudo chown -R 100:101 clamav-db || true
+          docker run -d --name clamav -p 3310:3310 -v "$PWD/clamav-db:/var/lib/clamav" clamav/clamav-debian:latest
+          for i in $(seq 1 60); do docker exec clamav clamdscan --ping 1 2>/dev/null && break; sleep 5; done
+          docker exec clamav clamdscan --ping 1 || { docker logs clamav | tail -20; exit 1; }
+      - name: Migrate (owner) then re-grant
+        working-directory: api
+        run: |
+          php artisan migrate --force
+          php artisan migrate --pretend
+          PGPASSWORD=kap_local_only psql -h 127.0.0.1 -p 54329 -U kap -d kap -f ../deploy/postgres/grant-app-role.sql
+      - name: Full backend suite (BI-9 / consent / RLS / attendance / …)
+        working-directory: api
+        env: { CLAMAV_HOST: 127.0.0.1, CLAMAV_PORT: 3310 }
+        run: |
+          php artisan test
+          php artisan test --filter=ClamAvIntegrationTest 2>&1 | tee clamd.log
+          grep -qi 'skipped' clamd.log && { echo 'FAIL: real-clamd tests skipped'; exit 1; } || true
+
+  # ── GATE 2 · the reconciliation battery (58 assertions), as the RLS app role ─
+  reconcile:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: { POSTGRES_USER: kap, POSTGRES_PASSWORD: kap_local_only, POSTGRES_DB: kap }
+        ports: ['54329:5432']
+        options: >-
+          --health-cmd "pg_isready -U kap -d kap" --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.4', extensions: 'pdo_pgsql, pgsql, gd, exif, redis', coverage: none }
+      - name: Install + migrate + grant
+        working-directory: api
+        run: |
+          composer install --no-interaction --prefer-dist
+          cp .env.example .env && php artisan key:generate --force
+          PGPASSWORD=kap_local_only psql -h 127.0.0.1 -p 54329 -U kap -d kap -f ../deploy/postgres/grant-app-role.sql
+          php artisan migrate --force
+          PGPASSWORD=kap_local_only psql -h 127.0.0.1 -p 54329 -U kap -d kap -f ../deploy/postgres/grant-app-role.sql
+      - name: reconcile:run (must exit 0 — a red assertion is a STOP)
+        working-directory: api
+        env: { DB_USERNAME: kap_app, DB_PASSWORD: app_local_only }
+        run: php artisan reconcile:run
+
+  # ── GATE 3 · frontend contracts: tsc + build (i18n / ds2 / import-guard / budget) ─
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24', cache: npm, cache-dependency-path: web/package-lock.json }
+      - name: Install + typecheck + build (gates embedded in `npm run build`)
+        working-directory: web
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npm run build   # runs i18n:check, ds2:tokens, ds2:import-guard, marketing-payload, bundle-budget
+
+  # ── BUILD · only if all three gates are green ───────────────────────────────
+  build_images:
+    needs: [backend, reconcile, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+      - name: Build + push api and web images (tagged with the commit SHA)
+        run: |
+          SHA=${{ github.sha }}
+          docker build -f deploy/gcp/Dockerfile.api -t $AR_REPO/kap-api:$SHA .
+          docker build -f deploy/gcp/Dockerfile.web -t $AR_REPO/kap-web:$SHA .
+          docker push $AR_REPO/kap-api:$SHA
+          docker push $AR_REPO/kap-web:$SHA
+
+  # ── DEPLOY CANDIDATE · new revision, NO public traffic yet ──────────────────
+  deploy_candidate:
+    needs: build_images
+    runs-on: ubuntu-latest
+    outputs:
+      web_rev:    ${{ steps.deploy.outputs.web_rev }}
+      guardian_a: ${{ steps.seed.outputs.guardian_a }}
+      guardian_b: ${{ steps.seed.outputs.guardian_b }}
+      child_b:    ${{ steps.seed.outputs.child_b }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Migrate the demo DB as the OWNER role (kap_migrate), then re-grant
+        # Runs a one-off Cloud Run Job on the kap-api image. Expand-contract only:
+        # migrations must keep the CURRENTLY-LIVE revision working, because if a
+        # later gate aborts we do NOT promote and the old revision keeps serving.
+        run: |
+          SHA=${{ github.sha }}
+          gcloud run jobs deploy kap-migrate \
+            --image=$AR_REPO/kap-api:$SHA --region=$GCP_REGION \
+            --set-cloudsql-instances=${{ vars.CLOUDSQL_INSTANCE }} \
+            --set-secrets=DB_PASSWORD=kap-migrate-password:latest \
+            --set-env-vars=APP_ENV=demo,DB_USERNAME=kap_migrate,DB_HOST=/cloudsql/${{ vars.CLOUDSQL_INSTANCE }},DB_DATABASE=kap \
+            --command=php --args=artisan,migrate,--force --quiet
+          gcloud run jobs execute kap-migrate --region=$GCP_REGION --wait
+          # Idempotent role/grant refresh (new tables inherit runtime grants)
+          gcloud run jobs deploy kap-grant \
+            --image=$AR_REPO/kap-api:$SHA --region=$GCP_REGION \
+            --set-cloudsql-instances=${{ vars.CLOUDSQL_INSTANCE }} \
+            --set-secrets=PGPASSWORD=kap-migrate-password:latest \
+            --set-env-vars=PGUSER=kap_migrate,PGHOST=/cloudsql/${{ vars.CLOUDSQL_INSTANCE }},PGDATABASE=kap \
+            --command=psql --args=-v,ON_ERROR_STOP=1,-f,/var/www/api/../deploy/gcp/sql/01-roles-and-grants.sql --quiet || true
+          gcloud run jobs execute kap-grant --region=$GCP_REGION --wait
+      - id: seed
+        name: Reseed the demo DB (synthetic) and capture RLS-proof fixtures
+        # migrate:fresh + DemoSeeder → a known synthetic state. DemoSeeder prints
+        # RLS-PROOF-FIXTURES=<guardianA>,<guardianB>,<childB> for the proof.
+        run: |
+          SHA=${{ github.sha }}
+          gcloud run jobs deploy kap-seed \
+            --image=$AR_REPO/kap-api:$SHA --region=$GCP_REGION \
+            --set-cloudsql-instances=${{ vars.CLOUDSQL_INSTANCE }} \
+            --set-secrets=DB_PASSWORD=kap-migrate-password:latest,DEMO_SEED_PASSWORD=demo-seed-password:latest \
+            --set-env-vars=APP_ENV=demo,DB_USERNAME=kap_migrate,DB_HOST=/cloudsql/${{ vars.CLOUDSQL_INSTANCE }},DB_DATABASE=kap \
+            --command=php --args=artisan,migrate:fresh,--seed,--seeder=DemoSeeder,--force --quiet
+          OUT=$(gcloud run jobs execute kap-seed --region=$GCP_REGION --wait --format='value(status.latestCreatedExecution.name)')
+          FIX=$(gcloud logging read "resource.type=cloud_run_job AND textPayload:RLS-PROOF-FIXTURES" \
+                  --limit=1 --format='value(textPayload)' | grep -o 'RLS-PROOF-FIXTURES=.*' | cut -d= -f2)
+          echo "guardian_a=$(echo $FIX | cut -d, -f1)" >> "$GITHUB_OUTPUT"
+          echo "guardian_b=$(echo $FIX | cut -d, -f2)" >> "$GITHUB_OUTPUT"
+          echo "child_b=$(echo $FIX | cut -d, -f3)"    >> "$GITHUB_OUTPUT"
+      - id: deploy
+        name: Deploy the candidate web + worker revisions (web = NO TRAFFIC)
+        run: |
+          SHA=${{ github.sha }}
+          # Stamp the SHA image + environment placeholders into the service specs.
+          stamp() {
+            sed -e "s|IMAGE_WEB|$AR_REPO/kap-web:$SHA|g" \
+                -e "s|IMAGE_API|$AR_REPO/kap-api:$SHA|g" \
+                -e "s|CLOUDSQL_INSTANCE|${{ vars.CLOUDSQL_INSTANCE }}|g" \
+                -e "s|MEMORYSTORE_IP|${{ vars.MEMORYSTORE_IP }}|g" \
+                -e "s|PUBLIC_URL|${{ vars.PUBLIC_URL }}|g" "$1"
+          }
+          stamp deploy/gcp/cloudrun-worker.yaml > /tmp/worker.yaml
+          stamp deploy/gcp/cloudrun-web.yaml    > /tmp/web.yaml
+          # Worker (Horizon + clamd sidecar + GCS-FUSE) — replace latest.
+          gcloud run services replace /tmp/worker.yaml --region=$GCP_REGION
+          # Web candidate: deployed, tagged, but 0% public traffic until promote.
+          gcloud run services replace /tmp/web.yaml --region=$GCP_REGION --no-traffic
+          REV=$(gcloud run services describe $WEB_SERVICE --region=$GCP_REGION --format='value(status.latestCreatedRevisionName)')
+          gcloud run services update-traffic $WEB_SERVICE --region=$GCP_REGION --set-tags=cand=$REV
+          echo "web_rev=$REV" >> "$GITHUB_OUTPUT"
+
+  # ── HARD GATE · RLS enforcement PROVEN on the live Cloud SQL DB ──────────────
+  rls_proof:
+    needs: deploy_candidate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Cloud SQL Auth Proxy
+        run: |
+          curl -so cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.0/cloud-sql-proxy.linux.amd64
+          chmod +x cloud-sql-proxy
+          ./cloud-sql-proxy --port 5432 ${{ vars.CLOUDSQL_INSTANCE }} &
+          for i in $(seq 1 30); do (echo > /dev/tcp/127.0.0.1/5432) 2>/dev/null && break; sleep 1; done
+      - name: Fetch the APP's OWN runtime credential (kap_app) from Secret Manager
+        # Deliberately the app's secret, NOT kap_migrate — the proof must run as
+        # exactly what the app connects with, or it proves nothing.
+        run: echo "PGPASSWORD=$(gcloud secrets versions access latest --secret=kap-app-password)" >> "$GITHUB_ENV"
+      - name: RUN THE PROOF (child/family cross-reads must be denied)
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGUSER: kap_app
+          PGDATABASE: kap
+          EXPECT_APP_ROLE: kap_app
+          RLS_GUARDIAN_A: ${{ needs.deploy_candidate.outputs.guardian_a }}
+          RLS_GUARDIAN_B: ${{ needs.deploy_candidate.outputs.guardian_b }}
+          RLS_CHILD_B: ${{ needs.deploy_candidate.outputs.child_b }}
+        run: bash deploy/gcp/rls-proof.sh   # non-zero exit here ABORTS the deploy
+
+  # ── PROMOTE · route public traffic to the proven candidate (the LIVE URL) ────
+  promote:
+    needs: rls_proof
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Send 100% traffic to the RLS-proven revision
+        run: |
+          gcloud run services update-traffic $WEB_SERVICE --region=$GCP_REGION --to-latest
+          echo "PROMOTED ${{ github.sha }} to the public URL — RLS proven, all gates green."
