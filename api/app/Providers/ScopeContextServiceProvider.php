@@ -31,9 +31,21 @@ class ScopeContextServiceProvider extends ServiceProvider
         Queue::after(fn () => $this->app->make(ScopeContext::class)->endJob());
         Queue::failing(fn () => $this->app->make(ScopeContext::class)->endJob());
 
-        // Console + scheduler (incl. reconcile:run): system context.
-        Event::listen(CommandStarting::class, function (): void {
+        // Console + scheduler (incl. reconcile:run): system context — but ONLY
+        // when a database is actually reachable. Build-time console commands
+        // (composer's package:discover, the deploy image's config caching) run
+        // before the DB/credentials exist and touch no application data; they must
+        // NOT require a connection just to start (KAP-GCP-3: this was aborting the
+        // CD backend job at package discovery, before the runtime role was created).
+        // Skipping is fail-closed — a command with no system context sees nothing.
+        Event::listen(CommandStarting::class, function (CommandStarting $event): void {
+            if ($event->command === 'package:discover') {
+                return; // pure build-time discovery — never touches the database
+            }
             $ctx = $this->app->make(ScopeContext::class);
+            if (! $ctx->databaseAvailable()) {
+                return;
+            }
             $ctx->reset();
             $ctx->setSystem();
         });

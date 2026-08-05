@@ -218,6 +218,33 @@ class ScopeContext
         DB::statement("SELECT set_config('app.context', '', false), set_config('app.actor_id', '', false), set_config('app.actor_role', '', false), set_config('app.capabilities', '', false), set_config('app.school_ids', '', false), set_config('app.student_ids', '', false)");
     }
 
+    /**
+     * Is a usable pgsql connection available right now?
+     *
+     * Gates the CONSOLE scope lifecycle (ScopeContextServiceProvider): build-time
+     * commands — composer's `package:discover`, the deploy image's config caching —
+     * run before the database/credentials exist and touch no application data, so
+     * they must NOT require a connection just to start. Returns false on ANY
+     * connection/auth failure (e.g. the runtime role not created yet), so such a
+     * command runs WITHOUT system context — which is fail-CLOSED (absent context
+     * makes every RLS policy match nothing), never a leak. A command that truly
+     * needs the DB surfaces its own connection error on its first real query.
+     */
+    public function databaseAvailable(): bool
+    {
+        try {
+            $connection = DB::connection();
+            if ($connection->getDriverName() !== 'pgsql') {
+                return false;
+            }
+            $connection->getPdo(); // forces a connect; throws if unreachable/unauthenticated
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     /** @param array<string, string> $vars */
     private function apply(array $vars): void
     {
