@@ -212,7 +212,14 @@ class ScopeContext
     /** Scrub everything — the fail-closed ground state. */
     public function reset(): void
     {
-        if (DB::connection()->getDriverName() !== 'pgsql') {
+        // Self-guarding: reset() must NEVER require a database. It is called at
+        // request boundaries AND by the console scope lifecycle, which fires during
+        // build-time commands (composer's package:discover, key:generate, the deploy
+        // image's config:cache) that run before the DB/runtime role exists. If no
+        // usable pgsql connection is available, do nothing — fail-closed (absent
+        // context matches nothing under RLS), never a crash. This makes the
+        // guarantee hold at the call site itself, independent of any listener guard.
+        if (! $this->databaseAvailable()) {
             return;
         }
         DB::statement("SELECT set_config('app.context', '', false), set_config('app.actor_id', '', false), set_config('app.actor_role', '', false), set_config('app.capabilities', '', false), set_config('app.school_ids', '', false), set_config('app.student_ids', '', false)");
