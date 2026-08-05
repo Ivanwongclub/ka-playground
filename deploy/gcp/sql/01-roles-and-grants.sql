@@ -46,8 +46,6 @@ DO $$ BEGIN
 END $$;
 
 -- Belt-and-braces: even if the roles pre-existed, force the safe attributes.
-ALTER ROLE kap_app    NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
-ALTER ROLE kap_migrate NOSUPERUSER NOBYPASSRLS;
 
 -- 3) Ownership of the schema goes to kap_migrate; the app only USEs it.
 ALTER SCHEMA public OWNER TO kap_migrate;
