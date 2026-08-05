@@ -88,8 +88,12 @@ jobs:
       - name: Migrate (owner) then re-grant
         working-directory: api
         run: |
-          php artisan migrate --force
-          php artisan migrate --pretend
+          # migrate as the OWNER role (kap) — DDL. On postgres:15+ the caged kap_app
+          # (non-owner) has no CREATE on schema public, so migrating as it fails 42501.
+          # Tables stay owned by kap (BI-1: kap_app must not own them); the re-grant
+          # below re-cages kap_app to DML. Mirrors the GCP job (migrate as kap_migrate).
+          DB_USERNAME=kap DB_PASSWORD=kap_local_only php artisan migrate --force
+          DB_USERNAME=kap DB_PASSWORD=kap_local_only php artisan migrate --pretend
           PGPASSWORD=kap_local_only psql -h 127.0.0.1 -p 54329 -U kap -d kap -f ../deploy/postgres/grant-app-role.sql
       - name: Full backend suite (BI-9 / consent / RLS / attendance / …)
         working-directory: api
@@ -123,7 +127,7 @@ jobs:
           composer install --no-interaction --prefer-dist
           cp .env.example .env && php artisan key:generate --force
           PGPASSWORD=kap_local_only psql -h 127.0.0.1 -p 54329 -U kap -d kap -f ../deploy/postgres/grant-app-role.sql
-          php artisan migrate --force
+          DB_USERNAME=kap DB_PASSWORD=kap_local_only php artisan migrate --force  # OWNER role — kap_app (caged) has no CREATE on public (pg15+)
           PGPASSWORD=kap_local_only psql -h 127.0.0.1 -p 54329 -U kap -d kap -f ../deploy/postgres/grant-app-role.sql
       - name: reconcile:run (must exit 0 — a red assertion is a STOP)
         working-directory: api

@@ -84,8 +84,10 @@ jobs:
       - name: Migration gate (2.15) — as the owner role, then re-grant
         working-directory: api
         run: |
-          php artisan migrate --force
-          php artisan migrate --pretend
+          # migrate as the OWNER role (kap) — DDL. On postgres:15+ the caged kap_app
+          # (non-owner) has no CREATE on schema public, so migrating as it fails 42501.
+          DB_USERNAME=kap DB_PASSWORD=kap_local_only php artisan migrate --force
+          DB_USERNAME=kap DB_PASSWORD=kap_local_only php artisan migrate --pretend
           PGPASSWORD=kap_local_only psql -h 127.0.0.1 -p 54329 -U kap -d kap -f ../deploy/postgres/grant-app-role.sql
 
       - name: API tests (incl. the four real-clamd tests — must EXECUTE, not skip)
