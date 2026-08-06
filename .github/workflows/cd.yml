@@ -198,13 +198,18 @@ jobs:
             --set-env-vars=APP_ENV=demo,DB_CONNECTION=pgsql,DB_USERNAME=kap_migrate,DB_HOST=/cloudsql/${{ vars.CLOUDSQL_INSTANCE }},DB_DATABASE=kap \
             --command=php --args=artisan,migrate,--force --quiet
           gcloud run jobs execute kap-migrate --region=$GCP_REGION --wait
-          # Idempotent role/grant refresh (new tables inherit runtime grants)
+          # Per-deploy re-grant: idempotent GRANTs + immutability REVOKEs (BI-1/2/5/6)
+          # over the tables migrate just created. Uses 02-grants-and-revokes.sql —
+          # NO CREATE ROLE, NO passwords (roles are provisioned once by 01-… via
+          # setup.sh), so psql needs no -v password vars. FAIL-LOUD, not `|| true`:
+          # if the append-only revokes can't apply, the deploy fails and does NOT
+          # promote — these are a go-live precondition, never silently skipped.
           gcloud run jobs deploy kap-grant \
             --image=$AR_REPO/kap-api:$SHA --region=$GCP_REGION \
             --set-cloudsql-instances=${{ vars.CLOUDSQL_INSTANCE }} \
             --set-secrets=PGPASSWORD=kap-migrate-password:latest \
             --set-env-vars=PGUSER=kap_migrate,PGHOST=/cloudsql/${{ vars.CLOUDSQL_INSTANCE }},PGDATABASE=kap \
-            --command=psql --args=-v,ON_ERROR_STOP=1,-f,/var/www/api/../deploy/gcp/sql/01-roles-and-grants.sql --quiet || true
+            --command=psql --args=-v,ON_ERROR_STOP=1,-f,/var/www/deploy/gcp/sql/02-grants-and-revokes.sql --quiet
           gcloud run jobs execute kap-grant --region=$GCP_REGION --wait
       - id: seed
         name: Reseed the demo DB (synthetic) and capture RLS-proof fixtures

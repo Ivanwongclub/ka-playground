@@ -25,7 +25,8 @@ the current live revision up.
 
 | File | What it is |
 |---|---|
-| `deploy/gcp/sql/01-roles-and-grants.sql` | **§2** reproducible role setup: `kap_migrate` (owner, DDL) + `kap_app` (runtime, NOSUPERUSER NOBYPASSRLS) + grants + immutability revokes |
+| `deploy/gcp/sql/01-roles-and-grants.sql` | **§2** ONE-TIME provisioning (setup.sh): creates `kap_migrate` (owner, DDL) + `kap_app` (runtime, NOSUPERUSER NOBYPASSRLS) with passwords, then grants + immutability revokes |
+| `deploy/gcp/sql/02-grants-and-revokes.sql` | **§2** PER-DEPLOY re-grant (cd.yml `kap-grant`): idempotent GRANTs + immutability REVOKEs only — no `CREATE ROLE`, no passwords (roles already exist), runs after every migrate; fail-loud |
 | `deploy/gcp/rls-proof.sh` | **§3** THE HARD GATE — proves RLS enforces on the live DB as the app's own credential |
 | `deploy/gcp/Dockerfile.api` | production php-fpm image (the repo's `api/Dockerfile` is dev-only, can't deploy) |
 | `deploy/gcp/Dockerfile.web` | production image: build the SPA → nginx serving it + proxying `/api` |
@@ -54,9 +55,11 @@ hardcodes `ALTER DEFAULT PRIVILEGES FOR ROLE kap`; GCP standardises the owner as
 `kap_migrate` (matching `deploy/RUNBOOK.md`). **Follow-up (flagged):** parameterise
 the local script's owner name so a single source feeds both and they cannot drift.
 
-Bring-up order (load-bearing — RLS lives in the migrations, not a data dump):
+One-time provisioning (setup.sh, by hand): run `sql/01-roles-and-grants.sql` → creates `kap_migrate` + `kap_app` (with passwords) and applies grants/revokes.
+
+Per-deploy bring-up order (cd.yml `deploy_candidate`, load-bearing — RLS lives in the migrations, not a data dump):
 1. `migrate` as **`kap_migrate`** → tables + policies + `FORCE RLS` + immutability triggers.
-2. run `sql/01-roles-and-grants.sql` → creates `kap_app`, grants DML, applies revokes.
+2. run `sql/02-grants-and-revokes.sql` (as `kap_migrate`) → re-applies DML grants + immutability REVOKEs over the tables migrate just created. **No `CREATE ROLE`, no passwords** — the roles already exist from provisioning, so this needs no `-v` password vars. Fail-loud: if the append-only revokes can't apply, the deploy aborts and does not promote.
 3. seed (`DemoSeeder`, §6).
 4. the app connects as **`kap_app`** (set in both Cloud Run service specs; `DB_USERNAME: kap_app`, password from the `kap-app-password` secret — never the owner secret).
 
