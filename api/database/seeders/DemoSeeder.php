@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Programme;
 use App\Models\School;
 use App\Models\User;
+use App\Services\Authz\ScopeContext;
 use App\Services\Consent\ConsentSigningService;
 use App\Services\Consent\ConsentTemplateService;
 use App\Services\Enrolments\EnrolmentService;
@@ -66,6 +67,18 @@ class DemoSeeder extends Seeder
             throw new \RuntimeException('DEMO_SEED_PASSWORD must be a strong value (≥16 chars) — a public demo ships no guessable passwords.');
         }
         $this->password = $pw;
+
+        // Establish the platform (system) RLS context for this seed run. On Cloud SQL
+        // the seed connects as kap_migrate — NOSUPERUSER, so FORCE RLS applies and the
+        // system-bootstrap inserts (admin_capabilities, guardian_links, team lobbies,
+        // school_admin_links) are gated by each table's *_insert policy, whose system
+        // branch is current_setting('app.context') = 'system'. The console lifecycle
+        // sets this at command start, but `migrate:fresh` re-establishes the connection
+        // before the seeder runs, dropping it — so set it explicitly here, on the
+        // seed-time connection. This does NOT weaken RLS: 'system' is the sanctioned
+        // console/seed context the policies already trust; HTTP requests never get it,
+        // and the rls_proof gate still verifies cross-family/child enforcement holds.
+        app(ScopeContext::class)->setSystem();
 
         // ── Academy staff ──
         $ops = $this->admin('ops@example.com', 'Demo Ops Admin', ['configuration', 'operations']);
