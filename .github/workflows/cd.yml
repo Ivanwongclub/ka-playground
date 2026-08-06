@@ -245,10 +245,24 @@ jobs:
           stamp deploy/gcp/cloudrun-web.yaml    > /tmp/web.yaml
           # Worker (Horizon + clamd sidecar + GCS-FUSE) — replace latest.
           gcloud run services replace /tmp/worker.yaml --region=$GCP_REGION
-          # Web candidate: deployed, tagged, but 0% public traffic until promote.
-          gcloud run services replace /tmp/web.yaml --region=$GCP_REGION --no-traffic
+
+          # Web candidate at 0% traffic until promote. `services replace` has NO
+          # --no-traffic flag, so we WRITE the traffic split into the spec: pin 100%
+          # to the currently-serving revision and give the new (latest) revision 0%,
+          # tagged `cand`. replace applies both atomically, so the candidate NEVER
+          # serves public traffic before rls_proof (no race). promote later flips
+          # latest→100%. setup.sh pre-creates kap-web with a parking revision so a
+          # CURRENT always exists; the first-deploy fallback below is a safety net.
+          CURRENT=$(gcloud run services describe $WEB_SERVICE --region=$GCP_REGION --format=json 2>/dev/null \
+            | jq -r '.status.traffic[]? | select(.percent==100) | .revisionName' | head -1 || true)
+          if [ -n "$CURRENT" ]; then
+            printf '  traffic:\n  - revisionName: %s\n    percent: 100\n  - latestRevision: true\n    percent: 0\n    tag: cand\n' "$CURRENT" >> /tmp/web.yaml
+          else
+            echo "WARNING: no current kap-web revision found — first deploy will serve the candidate at 100% BEFORE rls_proof. Pre-create kap-web via setup.sh to keep the no-traffic guarantee on the first deploy."
+            printf '  traffic:\n  - latestRevision: true\n    percent: 100\n    tag: cand\n' >> /tmp/web.yaml
+          fi
+          gcloud run services replace /tmp/web.yaml --region=$GCP_REGION
           REV=$(gcloud run services describe $WEB_SERVICE --region=$GCP_REGION --format='value(status.latestCreatedRevisionName)')
-          gcloud run services update-traffic $WEB_SERVICE --region=$GCP_REGION --set-tags=cand=$REV
           echo "web_rev=$REV" >> "$GITHUB_OUTPUT"
 
   # ── HARD GATE · RLS enforcement PROVEN on the live Cloud SQL DB ──────────────

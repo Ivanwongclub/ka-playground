@@ -61,3 +61,9 @@ spec:
           csi:
             driver: gcsfuse.run.googleapis.com
             volumeAttributes: { bucketName: kap-demo-evidence }
+  # NOTE: no `spec.traffic` here on purpose. cd.yml's deploy_candidate APPENDS a
+  # spec.traffic block at deploy time — pinning 100% to the currently-serving
+  # revision and giving this new (candidate) revision 0% (tagged `cand`) — so the
+  # candidate never serves public traffic until the rls_proof gate passes and the
+  # promote job flips traffic to it. A manual `gcloud run services replace` of this
+  # file WITHOUT that appended block would default the new revision to 100% traffic.

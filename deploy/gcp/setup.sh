@@ -95,6 +95,14 @@ echo "      -v migrate_pw=\"\$(gcloud secrets versions access latest --secret=ka
 echo "      -f deploy/gcp/sql/01-roles-and-grants.sql"
 echo "  (After the first migrate the CD's kap-grant job keeps grants current.)"
 
+echo "== 8b. Pre-create kap-web with a PARKING revision (no-traffic-until-proof, first deploy) =="
+# So the pipeline's deploy_candidate always finds a currently-serving revision to
+# pin 100% to, keeping the real candidate at 0% until rls_proof passes — even on the
+# very first deploy. The parking image (Google's hello) is superseded on first promote.
+gcloud run deploy kap-web --image=us-docker.pkg.dev/cloudrun/container/hello \
+  --region="$REGION" --port=8080 --no-allow-unauthenticated 2>/dev/null \
+  || echo "  (kap-web already exists — leaving its current revision in place)"
+
 echo "== 9. Cloud Scheduler → schedule:run every minute (readiness §4d) =="
 echo "  Create ONE Cloud Run Job 'kap-schedule' (php artisan schedule:run), then:"
 echo "    gcloud scheduler jobs create http kap-schedule --location=$REGION \\"
