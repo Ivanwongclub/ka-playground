@@ -29,10 +29,20 @@ spec:
         autoscaling.knative.dev/maxScale: '2'
     spec:
       containers:
+        # The SINGLE ingress container. Cloud Run multi-container rule: exactly one
+        # container declares a port, and it must LISTEN on $PORT or the startup probe
+        # (TCP) fails. Horizon serves no HTTP, so run a tiny PHP listener on $PORT
+        # purely to satisfy that contract, then exec Horizon as PID 1 so the
+        # container's health tracks the worker (a crash restarts the instance). The
+        # clamd sidecar below declares NO port — inter-container comms use localhost.
+        # (A dedicated Cloud Run worker-pool — no HTTP required — is the cleaner
+        # long-term shape; this keeps the existing `gcloud run services replace` path.)
         - name: horizon
           image: IMAGE_API
-          command: ['php']
-          args: ['artisan', 'horizon']
+          ports:
+            - containerPort: 8080
+          command: ['sh', '-c']
+          args: ['php -S 0.0.0.0:${PORT:-8080} -t public >/dev/null 2>&1 & exec php artisan horizon']
           env:
             - { name: APP_ENV, value: demo }
             - { name: APP_DEBUG, value: 'false' }
