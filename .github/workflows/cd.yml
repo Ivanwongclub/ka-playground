@@ -195,7 +195,7 @@ jobs:
             --image=$AR_REPO/kap-api:$SHA --region=$GCP_REGION \
             --set-cloudsql-instances=${{ vars.CLOUDSQL_INSTANCE }} \
             --set-secrets=DB_PASSWORD=kap-migrate-password:latest \
-            --set-env-vars=APP_ENV=demo,DB_USERNAME=kap_migrate,DB_HOST=/cloudsql/${{ vars.CLOUDSQL_INSTANCE }},DB_DATABASE=kap \
+            --set-env-vars=APP_ENV=demo,DB_CONNECTION=pgsql,DB_USERNAME=kap_migrate,DB_HOST=/cloudsql/${{ vars.CLOUDSQL_INSTANCE }},DB_DATABASE=kap \
             --command=php --args=artisan,migrate,--force --quiet
           gcloud run jobs execute kap-migrate --region=$GCP_REGION --wait
           # Idempotent role/grant refresh (new tables inherit runtime grants)
@@ -216,7 +216,7 @@ jobs:
             --image=$AR_REPO/kap-api:$SHA --region=$GCP_REGION \
             --set-cloudsql-instances=${{ vars.CLOUDSQL_INSTANCE }} \
             --set-secrets=DB_PASSWORD=kap-migrate-password:latest,DEMO_SEED_PASSWORD=demo-seed-password:latest \
-            --set-env-vars=APP_ENV=demo,DB_USERNAME=kap_migrate,DB_HOST=/cloudsql/${{ vars.CLOUDSQL_INSTANCE }},DB_DATABASE=kap \
+            --set-env-vars=APP_ENV=demo,DB_CONNECTION=pgsql,DB_USERNAME=kap_migrate,DB_HOST=/cloudsql/${{ vars.CLOUDSQL_INSTANCE }},DB_DATABASE=kap \
             --command=php --args=artisan,migrate:fresh,--seed,--seeder=DemoSeeder,--force --quiet
           OUT=$(gcloud run jobs execute kap-seed --region=$GCP_REGION --wait --format='value(status.latestCreatedExecution.name)')
           FIX=$(gcloud logging read "resource.type=cloud_run_job AND textPayload:RLS-PROOF-FIXTURES" \
