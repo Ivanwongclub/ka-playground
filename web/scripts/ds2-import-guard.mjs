@@ -23,6 +23,11 @@ const ALLOWED = [
   // ── rollout D1 (Dashboards & lists, display tier) ──
   'src/pages/Dashboard.tsx', // D1 — role-scoped KPI grid (SubPanel/MetaChip; reads unchanged)
   'src/pages/Enrolments.tsx', // D1 — enrolment list (SubPanel/StateBadge; read-only, no mutation)
+  // ── rollout D2 (Audit report views, display tier) — all read-only ──
+  'src/pages/EnrolmentPool.tsx', // D2 — pool/timelines/withdrawals report (SubPanel/StateBadge)
+  'src/pages/AccessIdentity.tsx', // D2 — access & identity report (SubPanel/MetaChip stat tiles)
+  'src/pages/AdminAudit.tsx', // D2 — append-only audit log (SubPanel; filters are GET, no mutation)
+  'src/pages/ConsentEvidence.tsx', // D2 — consent evidence report (SubPanel/MetaChip; download is a GET export)
 ];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {

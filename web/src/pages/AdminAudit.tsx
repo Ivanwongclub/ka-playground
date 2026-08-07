@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { authFetch } from '../auth/session';
 import { formatHkt } from '../display/date';
 import { AuditCode, humanise } from '../display/status';
+import { SubPanel } from '@/ds2'; // DS2 rollout D2 — markup-only restyle (read-only audit log; filters are GET, no mutation)
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -116,6 +117,7 @@ export function AdminAudit() {
 
       {error && <Alert type="error" showIcon message={t('audit.loadError')} style={{ marginBottom: 16 }} />}
 
+      <SubPanel tone="neutral">
       <Table<AuditRow>
         rowKey="event_id"
         loading={loading}
@@ -164,6 +166,7 @@ export function AdminAudit() {
           },
         ]}
       />
+      </SubPanel>
     </div>
   );
 }

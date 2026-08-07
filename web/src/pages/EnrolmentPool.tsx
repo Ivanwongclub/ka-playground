@@ -1,10 +1,11 @@
 // S04A audit element: Enrolment & Pool Report (audit_read).
 import { useEffect, useState } from 'react';
-import { Alert, Card, Space, Table, Tag, Typography } from 'antd';
+import { Alert, Space, Table, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '../auth/session';
 import { formatHktDate } from '../display/date';
 import { StatusTag } from '../display/status';
+import { SubPanel, StateBadge } from '@/ds2'; // DS2 rollout D2 — markup-only restyle (read-only audit report)
 
 const { Title } = Typography;
 
@@ -60,7 +61,8 @@ export function EnrolmentPool() {
       {report && (report.issuance_gaps.length > 0
         ? <Alert type="error" showIcon message={`${t('enrol.pool.issuanceGaps')}: ${report.issuance_gaps.length}`} />
         : <Alert type="success" showIcon message={t('enrol.pool.issuanceHealthy')} />)}
-      <Card title={t('enrol.pool.byProgramme')}>
+      <SubPanel tone="neutral">
+        <Title level={5} style={{ marginTop: 0 }}>{t('enrol.pool.byProgramme')}</Title>
         <Table<PoolRow>
           rowKey="programme_id"
           size="small"
@@ -75,8 +77,9 @@ export function EnrolmentPool() {
             { title: t('enrol.pool.deadline'), dataIndex: 'formation_deadline_on', render: (v: string | null) => formatHktDate(v, i18n.language) },
           ]}
         />
-      </Card>
-      <Card title={t('enrol.pool.timelines')}>
+      </SubPanel>
+      <SubPanel tone="neutral">
+        <Title level={5} style={{ marginTop: 0 }}>{t('enrol.pool.timelines')}</Title>
         <Table<TimelineRow>
           rowKey="id"
           size="small"
@@ -90,11 +93,12 @@ export function EnrolmentPool() {
             // ruling if the programme should be shown here (needs a programme join in the report).
             { title: t('enrol.student'), dataIndex: 'student_name' },
             { title: t('enrol.actingGuardian'), dataIndex: 'acting_guardian' },
-            { title: '', dataIndex: 'status', render: (s: string) => <Tag>{t(`enrol.status.${s}`)}</Tag> },
+            { title: '', dataIndex: 'status', render: (s: string) => <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><StateBadge state={s === 'completed' ? 'ok' : ['withdrawn', 'released'].includes(s) ? 'warn' : 'action'} title={t(`enrol.status.${s}`)} />{t(`enrol.status.${s}`)}</span> },
           ]}
         />
-      </Card>
-      <Card title={t('enrol.pool.withdrawals')}>
+      </SubPanel>
+      <SubPanel tone="neutral">
+        <Title level={5} style={{ marginTop: 0 }}>{t('enrol.pool.withdrawals')}</Title>
         <Table<WithdrawalRow>
           rowKey="id"
           size="small"
@@ -106,7 +110,7 @@ export function EnrolmentPool() {
             { title: t('enrol.pool.decidedBy'), dataIndex: 'decided_by_name' },
           ]}
         />
-      </Card>
+      </SubPanel>
     </Space>
   );
 }
