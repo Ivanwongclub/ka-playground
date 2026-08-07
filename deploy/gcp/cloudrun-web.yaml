@@ -43,10 +43,13 @@ spec:
             - { name: DB_HOST, value: /cloudsql/CLOUDSQL_INSTANCE }
             - { name: DB_DATABASE, value: kap }
             - { name: DB_USERNAME, value: kap_app }         # RLS-SUBJECT runtime role — never kap_migrate
-            - { name: REDIS_HOST, value: MEMORYSTORE_IP }
-            - { name: REDIS_CLIENT, value: phpredis }
-            - { name: QUEUE_CONNECTION, value: redis }
-            - { name: CACHE_STORE, value: redis }
+            # DEMO: no VPC connector / Memorystore, so Redis (a private IP) is UNREACHABLE
+            # and any Redis op hangs until the 60s 504. Use Cloud SQL-backed drivers — the
+            # DB is reachable and the cache/jobs/sessions tables already migrated. (Prod-
+            # hardening: enable VPC Access + a connector + Memorystore, then restore Redis.)
+            - { name: QUEUE_CONNECTION, value: database }
+            - { name: CACHE_STORE, value: database }
+            - { name: SESSION_DRIVER, value: database }
             - { name: FILESYSTEM_DISK, value: local }       # local path is GCS-FUSE backed
             - { name: DEMO_MODE, value: 'true' }             # this IS the demo service → banner + gate on
             - name: APP_KEY
