@@ -76,19 +76,23 @@ Cards pick from these; a genuinely-missing reusable primitive (e.g. a `StatCard`
 ## 4. TIER 1 — Display (frontend-scan, batched)
 
 Predominantly read/list/dashboard. Any incidental low-stakes mutation (RSVP, profile edit, enrol-intent)
-keeps its mutate call **byte-identical** and does **not** promote the surface to a sensitive tier.
+keeps its mutate call **byte-identical** and does **not** promote the surface to a sensitive tier — **but the
+card MUST include a "payload-unchanged proof"**: a diff excerpt showing the mutation handler (onClick/submit)
+and its request payload are byte-identical, proving the restyle is markup-only. (This is the anchors'
+risk-shot discipline applied to Display-tier mutations — it applies to **D1 Enrolments** and **D3 Member
+Events / Member Profile**.)
 
 | Card | Surface (route) | Role | File | Notes |
 |---|---|---|---|---|
 | **D1** Dashboards & lists | Dashboard `/` | all | `Dashboard.tsx` | KPI read; StatChip/StatCard/SubPanel |
-| | Enrolments `/enrolments` | guardian / enrolment.view | `Enrolments.tsx` | list/read; **verify any enrol-create / withdraw-initiate mutate call is untouched** |
+| | Enrolments `/enrolments` | guardian / enrolment.view | `Enrolments.tsx` | list/read; **payload-unchanged proof** for any enrol-intent / withdraw-initiate mutate call (handler + payload byte-identical) |
 | **D2** Audit report views | Enrolment Pool `/admin/enrolment-pool` | audit.read | `EnrolmentPool.tsx` | read-only report |
 | | Access & Identity `/admin/access-identity` | audit.read | `AccessIdentity.tsx` | read-only report |
 | | Audit `/admin/audit` | audit.read | `AdminAudit.tsx` | read-only audit stream; ZebraTable |
 | | Consent Evidence `/admin/consent-evidence` | audit.read | `ConsentEvidence.tsx` | read-only; renders consent metadata — **no new field, no signing** |
-| **D3** Member surfaces | Member Events `/events` | member | `Community.tsx` | RSVP mutate byte-identical |
+| **D3** Member surfaces | Member Events `/events` | member | `Community.tsx` | RSVP mutate — **payload-unchanged proof** |
 | | Member Directory `/directory` | member | `Community.tsx` | **PII — no new directory field surfaced (fidelity)** |
-| | Member Profile `/profile` | member | `Community.tsx` | profile `PUT /my/profile` mutate byte-identical |
+| | Member Profile `/profile` | member | `Community.tsx` | profile `PUT /my/profile` — **payload-unchanged proof** |
 
 **3 cards.** Batched frontend-scan. D3 is one card (whole `Community.tsx`).
 
@@ -151,6 +155,11 @@ Two routes render `<Placeholder>` — there is **no real UI to restyle** until t
 
 **Rule:** these are **build-first**, and when built they should be authored in DS2 directly (a functionality
 card that lands DS2-native, not a stub restyle). They are **out of this restyle rollout's card count.**
+
+**Owned by exactly one doc — the functionality plan.** Tracker and Learn are scheduled and owned in
+`docs/deliverables/KAP-REMAINING-BUILD-PLAN.md` (Tracker = micro item #11; Learn = the Learn-gate remainder of
+item #6, since S-UX3-4 shipped sessions/attendance but not the Learn view). This restyle rollout only
+cross-references them; it does not schedule them.
 
 ---
 

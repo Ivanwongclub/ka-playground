@@ -9,6 +9,18 @@
 **Status anchor:** S-UX3-3a STEP 1–3 are built + reviewed (`c57d2e4`, `263b941`, `f293cd1`). STEP 4
 (below-min / resolution) is the **next actual build step**, after this plan is reviewed.
 
+> **Built SINCE this plan was written (2026-08-03) — no longer pending:**
+> - **#5 Member surfaces → ✅ DONE** (S-UX3-8: events · RSVP · directory · profile).
+> - **#6 sessions / attendance → ✅ DONE** (S-UX3-4). *Its **Learn-gate view remains TO BUILD** — it owns the
+>   `/learn` stub (see below).*
+> - **gap-C guardian/teacher self-service → ✅ DONE** (S-UX3-9: My Children · My Payments · My Students).
+>   *(This plan folded gap-C into S-UX4; it shipped separately as S-UX3-9.)*
+>
+> **Build-first stubs (owned here; cross-referenced from `DS2-RESTYLE-ROLLOUT.md`):** the DS2 restyle rollout
+> does NOT restyle placeholder routes — it defers them to this plan, to be built **DS2-native**:
+> - **`/tracker`** → **micro item #11** (Activity Tracker UI).
+> - **`/learn`** → the **Learn-gate remainder of #6** (sessions/attendance shipped; the Learn view did not).
+
 ---
 
 ## 1. The sequence at a glance
@@ -19,8 +31,8 @@
 | **2 — close the funnel** | 2 | **S-MARKETPLACE-A** | anonymous published-only programmes read **+ new `marketing` wizard section** (part of publish-completeness) | **Y — focused sub-pass** (marketing section) | **ANON READ + child-safety-adjacent** |
 | | 3 | **S-MARKETPLACE-B** | public landing (catalogue) + programme-detail UI + enrol CTA into Model B | **N** (covered by PROPOSED-MARKETPLACE) | **ANON surface** |
 | | 4 | **S-UX3-3b** | student formation UI (create/join lobby, my-team, submit-for-成團) | **Y** (no PROPOSED yet) | student-facing; own-team RLS |
-| **3 — doorless surfaces + admin (by severity)** | 5 | **Member surfaces** (gaps A+D) | events · RSVP · directory · profile — the whole S06 member surface, currently doorless | **Y** (no card/PROPOSED) | PII (directory); invitation-only |
-| | 6 | **S-UX3-4** | sessions · attendance · Learn gate | **Y** | **child-safety** (minor attendance) |
+| **3 — doorless surfaces + admin (by severity)** | 5 | **Member surfaces** (gaps A+D) — ✅ **DONE (S-UX3-8)** | events · RSVP · directory · profile | — | PII (directory); invitation-only |
+| | 6 | **S-UX3-4** — ✅ **DONE** (sessions · attendance); **Learn gate TO BUILD** (owns `/learn`) | sessions · attendance · Learn gate | Learn: **Y** | **child-safety** (minor attendance) |
 | | 7 | **S-UX3-5** (**HELD**) | team-project finance UI (budgets · transactions · fundraising) | **Y — heavy standalone** | **MONEY + child-safety RLS** (users_read co-member widening) |
 | | 8 | **S-UX3-6** | school portal — lobby 成團 (gap B widening) + bulk intake (S04E door) + invoicing (S04F door) | **Y** | **MONEY** (invoicing); authority-widening |
 | | 9 | **S-UX3-7** | capabilities admin (grant / revoke) | **Y — light** | **SECURITY/AUTHORITY** (grants power) |
