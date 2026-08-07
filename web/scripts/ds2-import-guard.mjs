@@ -20,6 +20,9 @@ const ALLOWED = [
   'src/pages/SelfService.tsx', // ANCHORS STEP 1 — My Children (MyPayments/MyStudents in-file are untouched)
   'src/pages/AdminProgrammes.tsx', // ANCHORS STEP 2 — the wizard
   'src/pages/Payments.tsx', // ANCHORS STEP 3 — the money surface
+  // ── rollout D1 (Dashboards & lists, display tier) ──
+  'src/pages/Dashboard.tsx', // D1 — role-scoped KPI grid (SubPanel/MetaChip; reads unchanged)
+  'src/pages/Enrolments.tsx', // D1 — enrolment list (SubPanel/StateBadge; read-only, no mutation)
 ];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {

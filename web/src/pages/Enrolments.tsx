@@ -1,11 +1,12 @@
 // S04A step 6: E5 timeline reshaped for team-based capacity — the pool is a
 // state; each enrolment renders its journey with the current stage highlighted.
 // S-UX2a: names (S-UX2b fields) instead of raw FK ids; shared fetch convention.
-import { Card, Space, Steps, Table, Tag, Typography } from 'antd';
+import { Space, Steps, Table, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
 import { programmeName, personName } from '../display/names';
+import { SubPanel, StateBadge } from '@/ds2'; // DS2 rollout D1 — markup-only restyle (read-only surface, no mutation)
 
 const { Title, Paragraph } = Typography;
 
@@ -34,7 +35,7 @@ export function Enrolments() {
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
-      <Card>
+      <SubPanel tone="neutral">
         <Title level={3}>{t('enrol.listTitle')}</Title>
         <Paragraph type="secondary">{t('enrol.listCaption')}</Paragraph>
         <DataBoundary loading={loading} error={error} empty={rows.length === 0}>
@@ -47,16 +48,24 @@ export function Enrolments() {
               { title: t('enrol.student'), render: (_, row) => personName(row.student_name) },
               {
                 title: '', dataIndex: 'status',
+                // DS2: state as a VISUAL (StateBadge) + the SAME localized label (enrol.status.*) — same
+                // three states as the old Tag colours (bad→warn · completed→ok · in-progress→action).
                 render: (s: string) => (
-                  <Tag color={TERMINAL_BAD.includes(s) ? 'red' : s === 'completed' ? 'green' : 'gold'}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <StateBadge state={TERMINAL_BAD.includes(s) ? 'warn' : s === 'completed' ? 'ok' : 'action'} title={t(`enrol.status.${s}`)} />
                     {t(`enrol.status.${s}`)}
-                  </Tag>
+                  </span>
                 ),
               },
             ]}
             expandable={{
               expandedRowRender: (row) => TERMINAL_BAD.includes(row.status)
-                ? <Tag color="red">{t(`enrol.status.${row.status}`)}</Tag>
+                ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <StateBadge state="warn" title={t(`enrol.status.${row.status}`)} />
+                    {t(`enrol.status.${row.status}`)}
+                  </span>
+                )
                 : (
                   <Steps
                     size="small"
@@ -67,7 +76,7 @@ export function Enrolments() {
             }}
           />
         </DataBoundary>
-      </Card>
+      </SubPanel>
     </Space>
   );
 }

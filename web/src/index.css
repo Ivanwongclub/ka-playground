@@ -450,3 +450,27 @@ h3 {
   font-size: 11px;
   color: var(--ka-muted-fg);
 }
+
+/* ── DS2 rollout D1 — Dashboard KPI card (SubPanel zone made clickable) ─────── */
+.ka-dash-kpi {
+  cursor: pointer;
+  border-radius: var(--ka-r-lg);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.ka-dash-kpi:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+.ka-dash-kpi:focus-visible {
+  outline: 2px solid var(--ka-gold);
+  outline-offset: 2px;
+}
+.ka-dash-kpi__value {
+  margin-top: 10px;
+  font-family: var(--ka-font-display);
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ka-fg);
+}

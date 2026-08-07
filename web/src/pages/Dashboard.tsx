@@ -3,13 +3,14 @@
 // same permission as its underlying screen, so the dashboard never shows a number the
 // caller could not open. Counts only — money formatting is S-UX2a's shared kit, not here.
 import { useEffect, useState } from 'react';
-import { Card, Col, Row, Spin, Statistic, Typography } from 'antd';
+import { Col, Row, Spin, Typography } from 'antd';
 import { CircleAlert, FileSignature, GraduationCap, Link2, Scale, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { authFetch } from '../auth/session';
 import { useIdentity } from '../auth/identity';
 import { kaColors } from '../theme/theme';
+import { SubPanel, MetaChip } from '@/ds2'; // DS2 rollout D1 — markup-only restyle (reads unchanged)
 
 interface Metric {
   key: string;
@@ -112,18 +113,27 @@ export function Dashboard() {
         <Row gutter={[16, 16]}>
           {metrics.map((m) => (
             <Col key={m.key} xs={24} sm={12} md={8}>
-              <Card hoverable onClick={() => void navigate(m.to)} styles={{ body: { padding: 20 } }}>
-                <Statistic
-                  title={
-                    <span style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
-                      {m.icon}
-                      {t(m.labelKey)}
-                    </span>
+              {/* DS2: a shade-banded SubPanel zone + MetaChip header; the KPI number is token-styled
+                  (display font, tabular-nums) — same value, same click-to-open, same alert tint. */}
+              <div
+                className="ka-dash-kpi"
+                role="button"
+                tabIndex={0}
+                onClick={() => void navigate(m.to)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    void navigate(m.to);
                   }
-                  value={m.value}
-                  valueStyle={m.alert ? { color: kaColors.danger } : undefined}
-                />
-              </Card>
+                }}
+              >
+                <SubPanel tone={m.alert ? 'action' : 'neutral'}>
+                  <MetaChip icon={m.icon}>{t(m.labelKey)}</MetaChip>
+                  <div className="ka-dash-kpi__value" style={m.alert ? { color: kaColors.danger } : undefined}>
+                    {m.value}
+                  </div>
+                </SubPanel>
+              </div>
             </Col>
           ))}
         </Row>
