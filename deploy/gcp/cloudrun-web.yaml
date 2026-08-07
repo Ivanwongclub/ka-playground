@@ -48,10 +48,13 @@ spec:
             - { name: QUEUE_CONNECTION, value: redis }
             - { name: CACHE_STORE, value: redis }
             - { name: FILESYSTEM_DISK, value: local }       # local path is GCS-FUSE backed
+            - { name: DEMO_MODE, value: 'true' }             # this IS the demo service → banner + gate on
             - name: APP_KEY
               valueFrom: { secretKeyRef: { name: kap-app-key, key: latest } }
             - name: DB_PASSWORD
               valueFrom: { secretKeyRef: { name: kap-app-password, key: latest } }  # the kap_app secret
+            - name: DEMO_ACCESS_CODE                          # shared front-door code — a SECRET, never hardcoded / never in the SPA bundle; rotatable without a rebuild
+              valueFrom: { secretKeyRef: { name: kap-demo-access-code, key: latest } }
           volumeMounts:
             - { name: evidence, mountPath: /var/www/api/storage/app }
           resources:

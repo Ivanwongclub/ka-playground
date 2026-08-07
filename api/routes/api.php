@@ -292,6 +292,14 @@ Route::get('/pay/{token}', [\App\Http\Controllers\PaymentLinkController::class, 
 Route::post('/pay/{token}/confirm', [\App\Http\Controllers\PaymentLinkController::class, 'confirm'])
     ->middleware('throttle:payment-link');
 
+// PUBLIC DEMO front-door (not real auth; layered on top — no Sanctum/session/RLS
+// impact). status: is demo mode on + is this visitor through the gate. enter:
+// exchange the shared code (DEMO_ACCESS_CODE secret) for a gate cookie. Both are
+// inert unless DEMO_MODE is on. enter is throttled (5/min/IP) against code-guessing.
+Route::get('/demo/gate', [\App\Http\Controllers\DemoGateController::class, 'status']);
+Route::post('/demo/gate', [\App\Http\Controllers\DemoGateController::class, 'enter'])
+    ->middleware('throttle:auth');
+
 // S-MARKETPLACE-A STEP 2 — the public programme catalogue (anonymous READ, the S04C-analogue). The
 // filter (published + non-template + marketing-complete) is the SOLE storefront safety gate under
 // Option B; constant-shape not-found; no PII; throttled per-IP.

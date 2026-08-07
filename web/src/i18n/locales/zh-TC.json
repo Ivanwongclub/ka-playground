@@ -1,4 +1,15 @@
 {
+  "demo": {
+    "banner": "示範環境 — 僅為合成資料，請勿作實際用途。",
+    "gate": {
+      "title": "示範存取",
+      "subtitle": "輸入共用存取碼以檢視示範。",
+      "placeholder": "存取碼",
+      "codeLabel": "示範存取碼",
+      "enter": "進入",
+      "error": "存取碼不正確，請再試一次。"
+    }
+  },
   "app": {
     "title": "KA Playground",
     "academy": "Armour Academy 皇甲學院"

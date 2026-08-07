@@ -21,6 +21,7 @@ import { antdLocaleFor, htmlLangFor, storedLocale } from './i18n';
 import type { KaLocale } from './i18n';
 import { kaTheme } from './theme/theme';
 import { AppShell } from './AppShell';
+import { DemoGate } from './components/DemoGate';
 import { Navigate, useLocation } from 'react-router-dom';
 import { getToken } from './auth/session';
 import { Placeholder } from './pages/Placeholder';
@@ -93,6 +94,7 @@ function Root() {
     <ConfigProvider theme={kaTheme} locale={antdLocaleFor[locale]}>
       {/* §2 — App wrapper so message/notification/Modal inherit the theme */}
       <AntApp>
+        <DemoGate>
         <BrowserRouter>
           <Suspense fallback={<div className="ka-route-loading" aria-hidden />}>
           <Routes>
@@ -147,6 +149,7 @@ function Root() {
           </Routes>
           </Suspense>
         </BrowserRouter>
+        </DemoGate>
       </AntApp>
     </ConfigProvider>
   );

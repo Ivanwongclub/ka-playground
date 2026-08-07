@@ -41,10 +41,13 @@ mksecret() { # name value
   gcloud secrets describe "$1" >/dev/null 2>&1 \
     || printf '%s' "$2" | gcloud secrets create "$1" --data-file=- ; }
 rand() { openssl rand -base64 24 | tr -d '/+=' ; }
-APP_PW=$(rand); MIGRATE_PW=$(rand); SEED_PW=$(rand)
+APP_PW=$(rand); MIGRATE_PW=$(rand); SEED_PW=$(rand); GATE_CODE=$(rand)
 mksecret kap-app-password    "$APP_PW"       # kap_app  (runtime, RLS-subject)
 mksecret kap-migrate-password "$MIGRATE_PW"  # kap_migrate (owner, DDL only)
 mksecret demo-seed-password  "$SEED_PW"      # strong demo login password (NOT 'password')
+mksecret kap-demo-access-code "$GATE_CODE"   # shared front-door code (DemoGate). Rotate to a
+# client-friendly value with: printf 'YourCode' | gcloud secrets versions add kap-demo-access-code --data-file=-
+# The web service reads it as DEMO_ACCESS_CODE (secretKeyRef) — never hardcoded, never in the SPA bundle.
 # APP_KEY: generate a Laravel key locally and store it.
 if ! gcloud secrets describe kap-app-key >/dev/null 2>&1; then
   KEY=$(docker run --rm "$REGION-docker.pkg.dev/$PROJECT/kap/kap-api:bootstrap" \

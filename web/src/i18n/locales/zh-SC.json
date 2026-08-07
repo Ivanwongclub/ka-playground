@@ -1,4 +1,15 @@
 {
+  "demo": {
+    "banner": "演示环境 — 仅为合成数据，请勿用于实际用途。",
+    "gate": {
+      "title": "演示访问",
+      "subtitle": "输入共享访问码以查看演示。",
+      "placeholder": "访问码",
+      "codeLabel": "演示访问码",
+      "enter": "进入",
+      "error": "访问码不正确，请重试。"
+    }
+  },
   "app": {
     "title": "KA Playground",
     "academy": "Armour Academy 皇甲学院"

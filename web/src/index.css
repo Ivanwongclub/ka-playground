@@ -366,3 +366,87 @@ h3 {
 @keyframes ka-shimmer {
   to { background-position: -200% 0; }
 }
+
+/* ── Public-demo marking + gating (DemoBanner / DemoGate) ─────────────── */
+.ka-demo-banner {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 26px;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #1b1020;
+  background: var(--ka-gold);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.28);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ka-demo-banner__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1b1020;
+  flex: none;
+}
+/* When the banner is present, push the app — and ProLayout's fixed sider — below it. */
+.ka-demo-banner-on {
+  --ka-demo-banner-h: 26px;
+}
+.ka-demo-banner-on #root {
+  padding-top: var(--ka-demo-banner-h);
+  box-sizing: border-box;
+}
+.ka-demo-banner-on .ant-pro-layout {
+  min-height: calc(100dvh - var(--ka-demo-banner-h)) !important;
+}
+.ka-demo-banner-on aside.ant-layout-sider {
+  top: var(--ka-demo-banner-h) !important;
+  height: calc(100dvh - var(--ka-demo-banner-h)) !important;
+}
+
+/* Front-door access gate */
+.ka-demo-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(120% 120% at 50% 0%, #2a1533 0%, var(--ka-bg) 70%);
+}
+.ka-demo-gate__card {
+  width: 100%;
+  max-width: 380px;
+  padding: 32px 28px;
+  background: var(--ka-card);
+  border: 1px solid var(--ka-border);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+.ka-demo-gate__brand {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ka-gold);
+}
+.ka-demo-gate__error {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #ff7875;
+  text-align: left;
+}
+.ka-demo-gate__note {
+  margin-top: 18px;
+  font-size: 11px;
+  color: var(--ka-muted-fg);
+}

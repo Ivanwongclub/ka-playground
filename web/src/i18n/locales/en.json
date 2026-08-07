@@ -1,4 +1,15 @@
 {
+  "demo": {
+    "banner": "Demo environment — synthetic data only. Not for real use.",
+    "gate": {
+      "title": "Demo access",
+      "subtitle": "Enter the shared access code to view the demo.",
+      "placeholder": "Access code",
+      "codeLabel": "Demo access code",
+      "enter": "Enter",
+      "error": "That code isn’t right. Try again."
+    }
+  },
   "app": {
     "title": "KA Playground",
     "academy": "Armour Academy"
