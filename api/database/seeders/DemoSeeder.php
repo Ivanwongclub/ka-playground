@@ -130,19 +130,27 @@ class DemoSeeder extends Seeder
         app(\App\Services\Enrolments\EnrolmentActivationService::class)->run();
 
         // ── Member via the REAL invite→accept flow (InvitationService) ──
-        $this->inviteAndAccept($ops, 'member@example.com', 'member', null);
+        $member = $this->inviteAndAccept($ops, 'member@example.com', 'member', null);
 
         // ── School: school_admin (invite→accept), teacher (school-vouched invite→accept),
         //    two students on the roll (bulk service). F1: the school_admin_links active
         //    binding is raw-inserted (no service exists) — flagged above. ──
         $this->provisionSchool($ops);
+        $teacher = User::query()->where('email', 'teacher@example.com')->first();
+
+        // ── Populate the surfaces that would otherwise render EMPTY (demo-quality). All via
+        //    REAL service flows; @example.com synthetic; the RLS fixtures (B1) stay untouched. ──
+        $this->seedSessions($programme, $ops, $teacher, $enrolments, $signing, $guardianB); // attendance surfaces + RosterMark
+        $this->seedMemberCommunity($ops, $member);                                           // Events / Directory / Profile / RSVP
+        $this->seedAdminQueues($guardianA, $a['a2']);                                         // Withdrawals + onboarding/Approvals queue
+        app(\App\Services\Enrolments\EnrolmentActivationService::class)->run();               // activate the session cohort (confirmed → active)
 
         // ── Machine-readable fixtures for deploy/gcp/rls-proof.sh ──
         $this->command->info('');
         $this->command->info('════ DEMO SEED READY (synthetic; @example.com; strong creds) ════');
         $this->command->line("RLS-PROOF-FIXTURES={$guardianA->id},{$guardianB->id},{$childB->id}");
-        $this->command->info('Family A: guardianA@example.com (5 children — pending-consent / in-pool / active+payment / 2 teamed)');
-        $this->command->info('Family B: guardianB@example.com (1 child, in-pool) — the cross-family boundary');
+        $this->command->info('Family A: guardianA (5 children, varied states) · Family B: guardianB (B1 in-pool = RLS fixture + 3 session-cohort kids)');
+        $this->command->info('Populated: sessions/attendance (2 sessions + marked roster) · member (2 events, 3 directory profiles, RSVPs) · withdrawals + approvals queue');
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
@@ -373,5 +381,125 @@ class DemoSeeder extends Seeder
             ['name' => 'Demo Roll Student 1', 'email' => 'roll1@example.com', 'school_id' => $school->id],
             ['name' => 'Demo Roll Student 2', 'email' => 'roll2@example.com', 'school_id' => $school->id],
         ]);
+    }
+
+    // ── Demo-data enrichment (populate otherwise-empty surfaces; all REAL service flows) ──
+
+    /** Take an enrolment in_pool → teamed → confirmed (bookable) WITHOUT issuing an order. */
+    private function toConfirmed(EnrolmentService $enrolments, User $ops, User $student): void
+    {
+        $id = DB::table('enrolments')->where('student_id', $student->id)->orderByDesc('created_at')->value('id');
+        foreach (['teamed', 'confirmed'] as $to) {
+            if (in_array(DB::table('enrolments')->where('id', $id)->value('status'), ['in_pool', 'teamed'], true)) {
+                $enrolments->transition($id, $to, $ops, 'demo — confirmed for session booking');
+            }
+        }
+    }
+
+    /**
+     * Sessions & attendance — populates MentorAttendance / OpsAttendance / MySessions / ChildSessions
+     * AND the RosterMark marking UI, via the S06 services (SessionService/BookingService/Attendance
+     * Service). A 3-child cohort under guardian B (leaving B1, the RLS fixture, in-pool) is taken to
+     * 'confirmed', booked into a COMPLETED session (mixed marks) + an UPCOMING session.
+     */
+    private function seedSessions(Programme $programme, User $ops, ?User $teacher, EnrolmentService $enrolments, ConsentSigningService $signing, User $guardianB): void
+    {
+        if ($teacher === null || DB::table('programme_sessions')->where('programme_id', $programme->id)->exists()) {
+            return; // needs a mentor; idempotent
+        }
+        $sessions = app(\App\Services\Sessions\SessionService::class);
+        $booking = app(\App\Services\Sessions\BookingService::class);
+        $attendance = app(\App\Services\Sessions\AttendanceService::class);
+
+        $cohort = [];
+        foreach (['b2', 'b3', 'b4'] as $k) {
+            $s = $this->account("student.{$k}@example.com", 'Demo Student '.strtoupper($k), 'student');
+            $this->activeGuardianLink($guardianB, $s);
+            $this->enrol($enrolments, $programme, $guardianB, $s);
+            $this->sign($signing, $enrolments, $programme, $guardianB, $s);
+            $this->toConfirmed($enrolments, $ops, $s);
+            $cohort[] = $s;
+        }
+
+        // COMPLETED session (past) with a marked roster — the RosterMark demo.
+        $s1 = $sessions->create($programme->id, [
+            'title' => 'STEM Workshop 1', 'capacity' => 12, 'mentor_id' => $teacher->id,
+            'starts_at' => now()->subDays(3)->toIso8601String(), 'ends_at' => now()->subDays(3)->addHours(2)->toIso8601String(),
+        ], $ops);
+        $sessions->transition($s1, 'published', $ops);
+        foreach ($cohort as $s) {
+            $booking->book($s1, $s); // book while published
+        }
+        $sessions->transition($s1, 'in_progress', $ops);              // open the attendance window
+        $attendance->mark($s1, $cohort[0]->id, 'attended', $teacher); // mixed marks; the 3rd is left unmarked (booked)
+        $attendance->mark($s1, $cohort[1]->id, 'no_show', $teacher);
+        $sessions->transition($s1, 'completed', $ops);
+
+        // UPCOMING session (bookable) — shows in My Sessions / My Child's Sessions.
+        $s2 = $sessions->create($programme->id, [
+            'title' => 'STEM Workshop 2', 'capacity' => 12, 'mentor_id' => $teacher->id,
+            'starts_at' => now()->addDays(5)->toIso8601String(), 'ends_at' => now()->addDays(5)->addHours(2)->toIso8601String(),
+        ], $ops);
+        $sessions->transition($s2, 'published', $ops);
+        foreach ($cohort as $s) {
+            $booking->book($s2, $s);
+        }
+    }
+
+    /**
+     * Member community — populates Events / Directory / Profile / RSVP via EventService +
+     * MemberSurfaceService. Two published events, three members with VISIBLE directory profiles
+     * (the existing member + two invited), and RSVPs.
+     */
+    private function seedMemberCommunity(User $ops, ?User $member): void
+    {
+        if (DB::table('events')->exists()) {
+            return; // idempotent
+        }
+        $events = app(\App\Services\Members\EventService::class);
+        $surface = app(\App\Services\Members\MemberSurfaceService::class);
+
+        // PUBLISHED events (draft→published so members can read them — RLS exposes only published).
+        $e1 = $events->create(['title_en' => 'Network Mixer', 'title_tc' => '網絡交流會', 'title_sc' => '网络交流会', 'starts_at' => now()->addWeeks(2)->toIso8601String(), 'location' => 'Central Hub (demo)'], $ops);
+        $events->transition($e1, 'published', $ops);
+        $e2 = $events->create(['title_en' => 'Founders Talk', 'title_tc' => '創辦人分享', 'title_sc' => '创办人分享', 'starts_at' => now()->addWeeks(4)->toIso8601String(), 'location' => null], $ops);
+        $events->transition($e2, 'published', $ops);
+
+        // The existing member → a VISIBLE profile + an RSVP.
+        if ($member !== null) {
+            $surface->upsertProfile(['display_name' => 'Demo Member One', 'headline' => 'Kings Network — Cohort 1 (demo)', 'visible' => true], $member);
+            $surface->rsvp($e1, 'going', $member);
+        }
+        // Two MORE members (invite→accept) with visible profiles + RSVPs → the directory populates.
+        foreach ([['member2@example.com', 'Demo Member Two', 'going', $e1], ['member3@example.com', 'Demo Member Three', 'maybe', $e2]] as [$email, $name, $rsvp, $ev]) {
+            $m = $this->inviteAndAccept($ops, $email, 'member', null);
+            $surface->upsertProfile(['display_name' => $name, 'headline' => 'Kings Network — Cohort 1 (demo)', 'visible' => true], $m);
+            $surface->rsvp($ev, $rsvp, $m);
+        }
+    }
+
+    /**
+     * Secondary admin queues — a pending WITHDRAWAL (real WithdrawalService) on guardian A's in-pool
+     * child, and a pending REGISTRATION for the onboarding/Approvals queue (raw insert —
+     * registration_requests has no seed service; matches PreviewSeeder's flagged pattern, fresh so it
+     * stays under the escalation threshold and trips no provenance/aging assertion).
+     */
+    private function seedAdminQueues(User $guardianA, User $inPoolChild): void
+    {
+        $enrolmentId = DB::table('enrolments')->where('student_id', $inPoolChild->id)->orderByDesc('created_at')->value('id');
+        if ($enrolmentId !== null && DB::table('withdrawal_requests')->where('enrolment_id', $enrolmentId)->doesntExist()) {
+            app(\App\Services\Enrolments\WithdrawalService::class)->request($enrolmentId, 'Family relocating overseas (demo)', $guardianA);
+        }
+
+        if (DB::table('registration_requests')->where('applicant_email', 'nina.pending@example.com')->doesntExist()) {
+            $this->assertSynthetic('nina.pending@example.com');
+            DB::table('registration_requests')->insert([
+                'id' => (string) Str::uuid7(), 'kind' => 'student', 'applicant_name' => 'Demo Nina (pending)',
+                'applicant_email' => 'nina.pending@example.com', 'preferred_language' => 'en', 'routing' => 'academy',
+                'school_id' => null, 'counterpart_email' => 'guardianA@example.com', 'counterpart_name' => 'Demo Guardian A',
+                'status' => 'submitted', 'reference' => 'DEMO-'.Str::upper(Str::random(8)),
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
     }
 }
