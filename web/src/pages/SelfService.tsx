@@ -12,8 +12,8 @@ import { personName } from '../display/names';
 import { formatMoney } from '../display/money';
 import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
-// DS2 (restyle rollout — anchors STEP 1). SelfService.tsx is an ALLOWED adopter (import-guard); only
-// MyChildren below adopts DS2 — MyPayments/MyStudents are untouched.
+// DS2 (restyle rollout — anchor STEP 1 MyChildren; C3 MyPayments/MyStudents). ALLOWED adopter already
+// (import-guard, no change). C3 is container-framing only (List/Card→SubPanel); MyChildren is untouched.
 import { SubPanel, ZoneStack, Attest, StatChip, StateBadge, Seal } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
@@ -160,39 +160,43 @@ export function MyPayments() {
         <Paragraph type="secondary">{t('selfService.paymentsSubtitle')}</Paragraph>
       </div>
       <DataBoundary loading={orders.loading} error={orders.error} empty={payable.length === 0}>
-        <List<Order>
-          dataSource={payable}
-          renderItem={(o) => (
-            <List.Item key={o.id} actions={[
-              <StatusTag key="st" domain="orderStatus" value={o.status} />,
-              o.status === 'issued'
-                ? <Button key="lnk" size="small" type="primary" className="ka-cta" onClick={() => void getLink(o)}>{t('selfService.getLink')}</Button>
-                : <span key="lnk" />,
-            ]}>
-              <List.Item.Meta
-                title={progName(o, locale)}
-                description={<Text type="secondary">{formatMoney(o.total_amount_minor, o.currency, locale)}{o.payment_due_at ? ` · ${t('selfService.due')} ${formatHkt(o.payment_due_at, locale)}` : ''}</Text>}
-              />
-            </List.Item>
-          )}
-        />
+        <SubPanel tone="neutral">
+          <List<Order>
+            dataSource={payable}
+            renderItem={(o) => (
+              <List.Item key={o.id} actions={[
+                <StatusTag key="st" domain="orderStatus" value={o.status} />,
+                o.status === 'issued'
+                  ? <Button key="lnk" size="small" type="primary" className="ka-cta" onClick={() => void getLink(o)}>{t('selfService.getLink')}</Button>
+                  : <span key="lnk" />,
+              ]}>
+                <List.Item.Meta
+                  title={progName(o, locale)}
+                  description={<Text type="secondary">{formatMoney(o.total_amount_minor, o.currency, locale)}{o.payment_due_at ? ` · ${t('selfService.due')} ${formatHkt(o.payment_due_at, locale)}` : ''}</Text>}
+                />
+              </List.Item>
+            )}
+          />
+        </SubPanel>
       </DataBoundary>
 
       <div>
         <Title level={4} style={{ marginBottom: 0 }}>{t('selfService.receiptsTitle')}</Title>
       </div>
       <DataBoundary loading={receipts.loading} error={receipts.error} empty={(receipts.data?.data.length ?? 0) === 0}>
-        <List<Receipt>
-          dataSource={receipts.data?.data ?? []}
-          renderItem={(r) => (
-            <List.Item key={r.id} actions={[<Text key="a" strong>{formatMoney(r.amount_minor, r.currency, locale)}</Text>]}>
-              <List.Item.Meta
-                title={`${t('selfService.receipt')} #${r.receipt_number}`}
-                description={<Text type="secondary">{formatHkt(r.issued_at, locale)}</Text>}
-              />
-            </List.Item>
-          )}
-        />
+        <SubPanel tone="neutral">
+          <List<Receipt>
+            dataSource={receipts.data?.data ?? []}
+            renderItem={(r) => (
+              <List.Item key={r.id} actions={[<Text key="a" strong>{formatMoney(r.amount_minor, r.currency, locale)}</Text>]}>
+                <List.Item.Meta
+                  title={`${t('selfService.receipt')} #${r.receipt_number}`}
+                  description={<Text type="secondary">{formatHkt(r.issued_at, locale)}</Text>}
+                />
+              </List.Item>
+            )}
+          />
+        </SubPanel>
       </DataBoundary>
     </Space>
   );
@@ -215,7 +219,7 @@ export function MyStudents() {
           dataSource={res.data?.data ?? []}
           renderItem={(s) => (
             <List.Item key={s.student_id}>
-              <Card size="small"><Text strong>{personName(s.student_name)}</Text></Card>
+              <SubPanel tone="neutral"><Text strong>{personName(s.student_name)}</Text></SubPanel>
             </List.Item>
           )}
           locale={{ emptyText: <Empty description={t('selfService.noStudents')} /> }}
