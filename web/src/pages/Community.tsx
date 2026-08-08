@@ -1,13 +1,16 @@
 // S-UX3-8 STEP 2 — the Member surfaces (events · directory · profile), over the built S06 reads/writes.
 // Reads + clean self-writes only; no elevation, no refusal to surface. Gated member_directory.view.
+// DS2 rollout D3 — markup-only restyle (Card→SubPanel, meta→MetaChip). The RSVP (setRsvp) and profile
+// (save) mutation handlers are kept BYTE-IDENTICAL (see the payload-unchanged proofs in the diff).
 import { useEffect, useState } from 'react';
-import { Alert, App, Button, Card, Empty, Input, List, Segmented, Space, Switch, Typography } from 'antd';
+import { Alert, App, Button, Empty, Input, List, Segmented, Space, Switch, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
 import { mutate } from '../api/mutate';
 import { personName } from '../display/names';
 import { formatHkt } from '../display/date';
+import { SubPanel, MetaChip } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -43,36 +46,39 @@ export function MemberEvents() {
         <Paragraph type="secondary">{t('community.eventsSubtitle')}</Paragraph>
       </div>
       <DataBoundary loading={events.loading || rsvps.loading} error={events.error} empty={(events.data?.events.length ?? 0) === 0}>
-        <List<EventRow>
-          dataSource={events.data?.events ?? []}
-          renderItem={(e) => (
-            <List.Item
-              key={e.id}
-              actions={[
-                <Segmented
-                  key="rsvp"
-                  size="small"
-                  value={mine.get(e.id) ?? ''}
-                  onChange={(v) => void setRsvp(e.id, String(v))}
-                  options={[
-                    { value: 'going', label: t('community.rsvpGoing') },
-                    { value: 'maybe', label: t('community.rsvpMaybe') },
-                    { value: 'not_going', label: t('community.rsvpNotGoing') },
-                  ]}
-                />,
-              ]}
-            >
-              <List.Item.Meta
-                title={eventTitle(e, locale)}
-                description={
-                  <Text type="secondary">
-                    {formatHkt(e.starts_at, locale)}{e.location ? ` · ${e.location}` : ''}
-                  </Text>
-                }
-              />
-            </List.Item>
-          )}
-        />
+        <SubPanel tone="neutral">
+          <List<EventRow>
+            dataSource={events.data?.events ?? []}
+            renderItem={(e) => (
+              <List.Item
+                key={e.id}
+                actions={[
+                  <Segmented
+                    key="rsvp"
+                    size="small"
+                    value={mine.get(e.id) ?? ''}
+                    onChange={(v) => void setRsvp(e.id, String(v))}
+                    options={[
+                      { value: 'going', label: t('community.rsvpGoing') },
+                      { value: 'maybe', label: t('community.rsvpMaybe') },
+                      { value: 'not_going', label: t('community.rsvpNotGoing') },
+                    ]}
+                  />,
+                ]}
+              >
+                <List.Item.Meta
+                  title={eventTitle(e, locale)}
+                  description={
+                    <span style={{ display: 'inline-flex', gap: 6, flexWrap: 'wrap' }}>
+                      <MetaChip>{formatHkt(e.starts_at, locale)}</MetaChip>
+                      {e.location && <MetaChip>{e.location}</MetaChip>}
+                    </span>
+                  }
+                />
+              </List.Item>
+            )}
+          />
+        </SubPanel>
       </DataBoundary>
     </Space>
   );
@@ -95,10 +101,10 @@ export function MemberDirectory() {
           dataSource={dir.data?.directory ?? []}
           renderItem={(m) => (
             <List.Item key={m.user_id}>
-              <Card size="small">
+              <SubPanel tone="neutral">
                 <Text strong>{personName(m.display_name)}</Text>
                 {m.headline && <Paragraph type="secondary" style={{ marginBottom: 0 }}>{m.headline}</Paragraph>}
-              </Card>
+              </SubPanel>
             </List.Item>
           )}
         />
@@ -145,26 +151,28 @@ export function MemberProfile() {
         <Paragraph type="secondary">{t('community.profileSubtitle')}</Paragraph>
       </div>
       <DataBoundary loading={profile.loading} error={profile.error && profile.error.includes('403') ? null : profile.error}>
-        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-          <div>
-            <label className="ka-label">{t('community.displayName')}</label>
-            <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={80} />
-          </div>
-          <div>
-            <label className="ka-label">{t('community.headline')}</label>
-            <Input value={headline} onChange={(e) => setHeadline(e.target.value)} maxLength={140} />
-          </div>
-          <Space>
-            <Switch checked={visible} onChange={setVisible} />
-            <span>{t('community.visible')}</span>
+        <SubPanel tone="neutral">
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            <div>
+              <label className="ka-label">{t('community.displayName')}</label>
+              <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} maxLength={80} />
+            </div>
+            <div>
+              <label className="ka-label">{t('community.headline')}</label>
+              <Input value={headline} onChange={(e) => setHeadline(e.target.value)} maxLength={140} />
+            </div>
+            <Space>
+              <Switch checked={visible} onChange={setVisible} />
+              <span>{t('community.visible')}</span>
+            </Space>
+            <Alert type="info" showIcon message={t('community.visibleHint')} />
+            <div>
+              <Button type="primary" className="ka-cta" disabled={!displayName.trim()} onClick={() => void save()}>
+                {t('community.save')}
+              </Button>
+            </div>
           </Space>
-          <Alert type="info" showIcon message={t('community.visibleHint')} />
-          <div>
-            <Button type="primary" className="ka-cta" disabled={!displayName.trim()} onClick={() => void save()}>
-              {t('community.save')}
-            </Button>
-          </div>
-        </Space>
+        </SubPanel>
       </DataBoundary>
     </Space>
   );

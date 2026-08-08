@@ -28,6 +28,8 @@ const ALLOWED = [
   'src/pages/AccessIdentity.tsx', // D2 — access & identity report (SubPanel/MetaChip stat tiles)
   'src/pages/AdminAudit.tsx', // D2 — append-only audit log (SubPanel; filters are GET, no mutation)
   'src/pages/ConsentEvidence.tsx', // D2 — consent evidence report (SubPanel/MetaChip; download is a GET export)
+  // ── rollout D3 (Member surfaces, display tier) — Community.tsx (Events/Directory/Profile) ──
+  'src/pages/Community.tsx', // D3 — member events/directory/profile (SubPanel/MetaChip; RSVP + profile mutations byte-identical)
 ];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {
