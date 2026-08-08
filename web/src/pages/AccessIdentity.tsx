@@ -4,23 +4,11 @@ import { useEffect, useState } from 'react';
 import { Alert, Col, Row, Table, Tag, Tooltip, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '../auth/session';
-import { kaColors } from '../theme/theme';
 import { formatHkt } from '../display/date';
 import { humanise } from '../display/status';
-import { SubPanel, MetaChip } from '@/ds2'; // DS2 rollout D2 — markup-only restyle (read-only audit report)
+import { StatCard } from '@/ds2'; // DS2 — migrated to the shared StatCard primitive (was a local StatTile)
 
 const { Title, Paragraph } = Typography;
-
-/** DS2 stat tile (D2) — a shaded zone + label chip + token-styled number (matches the D1 dashboard KPI). */
-function StatTile({ label, value, color = 'gold', alert = false }: { label: string; value: number; color?: 'gold' | 'default'; alert?: boolean }) {
-  const c = alert ? kaColors.danger : color === 'gold' ? kaColors.gold : 'var(--ka-fg)';
-  return (
-    <SubPanel tone={alert ? 'action' : 'neutral'}>
-      <MetaChip>{label}</MetaChip>
-      <div className="ka-dash-kpi__value" style={{ color: c }}>{value}</div>
-    </SubPanel>
-  );
-}
 
 interface Report {
   funnel: { issued: number; accepted: number; verified: number };
@@ -66,7 +54,7 @@ export function AccessIdentity() {
       <Row gutter={16}>
         {(['issued', 'accepted', 'verified'] as const).map((stage) => (
           <Col key={stage} xs={24} sm={8}>
-            <StatTile label={t(`accessReport.${stage}`)} value={report.funnel[stage]} />
+            <StatCard label={t(`accessReport.${stage}`)} value={report.funnel[stage]} accent="gold" />
           </Col>
         ))}
       </Row>
@@ -76,17 +64,17 @@ export function AccessIdentity() {
       <Row gutter={16}>
         {(['submitted', 'approved', 'verified'] as const).map((stage) => (
           <Col key={stage} xs={12} sm={6}>
-            <StatTile label={t(`accessReport.onb_${stage}`)} value={report.onboarding.funnel[stage]} />
+            <StatCard label={t(`accessReport.onb_${stage}`)} value={report.onboarding.funnel[stage]} accent="gold" />
           </Col>
         ))}
         <Col xs={12} sm={6}>
-          <StatTile label={t('accessReport.onb_escalations')} value={report.onboarding.queue.open_escalations} alert={report.onboarding.queue.open_escalations > 0} />
+          <StatCard label={t('accessReport.onb_escalations')} value={report.onboarding.queue.open_escalations} accent="gold" alert={report.onboarding.queue.open_escalations > 0} />
         </Col>
       </Row>
       <Row gutter={16} style={{ marginTop: 16 }}>
         {([['pendingAccounts', report.onboarding.queue.pending_accounts], ['pendingLinks', report.onboarding.queue.pending_links], ['heldClaims', report.onboarding.queue.held], ['oldestPending', report.onboarding.queue.oldest_pending_days]] as const).map(([key, val]) => (
           <Col key={key} xs={12} sm={6}>
-            <StatTile label={t(`accessReport.${key}`)} value={val as number} color="default" />
+            <StatCard label={t(`accessReport.${key}`)} value={val as number} />
           </Col>
         ))}
       </Row>

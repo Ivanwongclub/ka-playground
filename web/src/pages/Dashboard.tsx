@@ -9,8 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { authFetch } from '../auth/session';
 import { useIdentity } from '../auth/identity';
-import { kaColors } from '../theme/theme';
-import { SubPanel, MetaChip } from '@/ds2'; // DS2 rollout D1 — markup-only restyle (reads unchanged)
+import { StatCard } from '@/ds2'; // DS2 — migrated to the shared StatCard primitive (was a local tile)
 
 interface Metric {
   key: string;
@@ -127,12 +126,7 @@ export function Dashboard() {
                   }
                 }}
               >
-                <SubPanel tone={m.alert ? 'action' : 'neutral'}>
-                  <MetaChip icon={m.icon}>{t(m.labelKey)}</MetaChip>
-                  <div className="ka-dash-kpi__value" style={m.alert ? { color: kaColors.danger } : undefined}>
-                    {m.value}
-                  </div>
-                </SubPanel>
+                <StatCard label={t(m.labelKey)} value={m.value} icon={m.icon} alert={m.alert} />
               </div>
             </Col>
           ))}

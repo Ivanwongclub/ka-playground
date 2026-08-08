@@ -12,7 +12,7 @@ import { useResource, DataBoundary } from '../api/useResource';
 import { programmeName, personName } from '../display/names';
 import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
-import { SubPanel, MetaChip } from '@/ds2';
+import { SubPanel, StatCard } from '@/ds2'; // StatCard: the shared KPI primitive (was a local MetaChip+number tile)
 
 const { Title } = Typography;
 
@@ -151,10 +151,7 @@ export function ConsentEvidence() {
             {report && statusTable(report.superseded, t('consent.evidence.superseded'))}
             {report && statusTable(report.voided, t('consent.evidence.voided'))}
           </Space>
-          <SubPanel tone="neutral">
-            <MetaChip>{t('consent.evidence.signatures')}</MetaChip>
-            <div className="ka-dash-kpi__value">{signatures.length}</div>
-          </SubPanel>
+          <StatCard label={t('consent.evidence.signatures')} value={signatures.length} />
         </Space>
       </DataBoundary>
     </Space>

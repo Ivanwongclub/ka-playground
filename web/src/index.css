@@ -465,12 +465,4 @@ h3 {
   outline: 2px solid var(--ka-gold);
   outline-offset: 2px;
 }
-.ka-dash-kpi__value {
-  margin-top: 10px;
-  font-family: var(--ka-font-display);
-  font-weight: 700;
-  font-size: 30px;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  color: var(--ka-fg);
-}
+/* .ka-dash-kpi__value moved into DS2 as .ds2-statcard__value (StatCard primitive). */

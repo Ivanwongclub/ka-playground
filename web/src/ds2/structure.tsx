@@ -16,7 +16,7 @@
 import type { ReactNode } from 'react';
 import { Table, Segmented } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { StatusAtom, DatedBadge } from './atoms';
+import { StatusAtom, DatedBadge, MetaChip, Seal } from './atoms';
 import './structure.css';
 
 export type Tone = 'neutral' | 'attested' | 'action';
@@ -29,6 +29,42 @@ export function SubPanel({ tone = 'neutral', children }: { tone?: Tone; children
 /** A vertical stack of sections (D6). Separation is the gap + the SubPanel shades — no divider prop. */
 export function ZoneStack({ children }: { children: ReactNode }) {
   return <div className="ds2-zonestack">{children}</div>;
+}
+
+/**
+ * StatCard — the KPI tile extracted from D1/D2 (Dashboard, Access & Identity, Consent
+ * Evidence hand-rolled it 3×; rule of three). A SubPanel zone + a MetaChip header
+ * (optional icon + label) + a token KPI number (display font, tabular-nums). `alert`
+ * flips the zone to the `action` tone with a danger number; `accent` colours the
+ * number when not alert. Forward-compat for the money tier (M1–M4): optional `seal`
+ * (a Seal in the header, the "confirmed" motif) and `sub` (a sub-line, e.g. a StatChip
+ * count), plus accent `'warn'` for money "awaiting". `value` is a ReactNode, so a
+ * formatMoney string drops in. Clickability is a CONSUMER concern — wrap it yourself
+ * (as the Dashboard does) so the card stays a pure display primitive.
+ */
+export function StatCard({ label, value, icon, accent = 'default', alert = false, seal = false, sub }: {
+  label: ReactNode;
+  value: ReactNode;
+  icon?: ReactNode;
+  accent?: 'default' | 'gold' | 'warn';
+  alert?: boolean;
+  seal?: boolean;
+  sub?: ReactNode;
+}) {
+  const numClass = alert
+    ? ' ds2-statcard__value--danger'
+    : accent === 'gold'
+      ? ' ds2-statcard__value--gold'
+      : accent === 'warn'
+        ? ' ds2-statcard__value--warn'
+        : '';
+  return (
+    <SubPanel tone={alert ? 'action' : 'neutral'}>
+      <MetaChip icon={icon}>{seal ? <><Seal size={15} /> {label}</> : label}</MetaChip>
+      <div className={`ds2-statcard__value${numClass}`}>{value}</div>
+      {sub != null && <div className="ds2-statcard__sub">{sub}</div>}
+    </SubPanel>
+  );
 }
 
 // ── Attest — the honesty core ───────────────────────────────────────────────────────────────────────

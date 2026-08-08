@@ -44,3 +44,19 @@
 .ds2-lsw-opt { display: inline-flex; align-items: center; gap: 6px; }
 .ds2-cdot { width: 6px; height: 6px; border-radius: 50%; background: #4a4358; display: inline-block; }
 .ds2-cdot--filled { background: var(--ka-success); }
+
+/* StatCard — the KPI tile (extracted from D1/D2). The number matches the values the
+   three hand-rolled tiles used exactly (Montserrat 700 · 30px · tabular-nums). */
+.ds2-statcard__value {
+  margin-top: 10px;
+  font-family: var(--ka-font-display);
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ka-fg);
+}
+.ds2-statcard__value--gold { color: var(--ka-gold); }
+.ds2-statcard__value--danger { color: var(--ka-danger); }
+.ds2-statcard__value--warn { color: var(--ka-warning); }
+.ds2-statcard__sub { margin-top: 7px; } /* money-tier sub-line (e.g. a StatChip count) */
