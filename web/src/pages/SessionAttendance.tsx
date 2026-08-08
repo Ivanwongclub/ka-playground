@@ -3,7 +3,7 @@
 // (403 not-your-session · 409 session-state · 404 no-booked-seat) are SHOWN-NOT-HIDDEN: the controls
 // stay visible and the server's refusal is rendered, never pre-hidden by the client.
 import { useEffect, useState } from 'react';
-import { App, Button, Card, Empty, List, Segmented, Select, Space, Typography } from 'antd';
+import { App, Button, Empty, List, Segmented, Select, Space, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
@@ -11,6 +11,8 @@ import { mutate } from '../api/mutate';
 import { personName } from '../display/names';
 import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
+import { SubPanel } from '@/ds2'; // DS2 rollout C2 — container framing (List/Card→SubPanel). The attendance
+// MARK handler (mark) and the book/cancel handler (act) + their payloads are BYTE-IDENTICAL (see the proofs).
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -61,6 +63,7 @@ export function MySessions() {
         <Paragraph type="secondary">{t('attendance.mySubtitle')}</Paragraph>
       </div>
       <DataBoundary loading={res.loading} error={res.error} empty={(res.data?.sessions.length ?? 0) === 0}>
+        <SubPanel tone="neutral">
         <List<SessionRow>
           dataSource={res.data?.sessions ?? []}
           renderItem={(s) => (
@@ -79,6 +82,7 @@ export function MySessions() {
             </List.Item>
           )}
         />
+        </SubPanel>
       </DataBoundary>
     </Space>
   );
@@ -117,6 +121,7 @@ export function ChildSessions() {
           aria-label={t('attendance.childPick')}
         />
         <DataBoundary loading={sessions.loading} error={sessions.error} empty={(sessions.data?.sessions.length ?? 0) === 0}>
+          <SubPanel tone="neutral">
           <List<SessionRow>
             dataSource={sessions.data?.sessions ?? []}
             renderItem={(s) => (
@@ -125,6 +130,7 @@ export function ChildSessions() {
               </List.Item>
             )}
           />
+          </SubPanel>
         </DataBoundary>
       </DataBoundary>
     </Space>
@@ -200,6 +206,7 @@ export function MentorAttendance() {
         <Paragraph type="secondary">{t('attendance.mentorSubtitle')}</Paragraph>
       </div>
       <DataBoundary loading={res.loading} error={res.error} empty={(res.data?.sessions.length ?? 0) === 0}>
+        <SubPanel tone="neutral">
         <List<MentorSessionRow>
           dataSource={res.data?.sessions ?? []}
           renderItem={(s) => (
@@ -216,7 +223,8 @@ export function MentorAttendance() {
             </List.Item>
           )}
         />
-        {sessionId && <Card size="small"><RosterMark sessionId={sessionId} /></Card>}
+        </SubPanel>
+        {sessionId && <SubPanel tone="neutral"><RosterMark sessionId={sessionId} /></SubPanel>}
       </DataBoundary>
     </Space>
   );
@@ -254,6 +262,7 @@ export function OpsAttendance() {
         />
         {programmeId != null && (
           <DataBoundary loading={report.loading} error={report.error} empty={(report.data?.sessions.length ?? 0) === 0}>
+            <SubPanel tone="neutral">
             <List<MentorSessionRow & { waitlisted: number }>
               dataSource={report.data?.sessions ?? []}
               renderItem={(s) => (
@@ -270,7 +279,8 @@ export function OpsAttendance() {
                 </List.Item>
               )}
             />
-            {sessionId && <Card size="small"><RosterMark sessionId={sessionId} /></Card>}
+            </SubPanel>
+            {sessionId && <SubPanel tone="neutral"><RosterMark sessionId={sessionId} /></SubPanel>}
           </DataBoundary>
         )}
       </DataBoundary>

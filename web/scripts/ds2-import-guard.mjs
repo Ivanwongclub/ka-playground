@@ -32,6 +32,8 @@ const ALLOWED = [
   'src/pages/Community.tsx', // D3 — member events/directory/profile (SubPanel/MetaChip; RSVP + profile mutations byte-identical)
   // ── rollout C1 (Consents, child-data tier) — Consents.tsx (ConsentList + ConsentSign) ──
   'src/pages/Consents.tsx', // C1 — Card→SubPanel framing ONLY; BI-6 signing flow (scroll-gate/affirm/sign/hashes) byte-identical
+  // ── rollout C2 (Sessions & Attendance, child-data tier) — SessionAttendance.tsx (4 surfaces) ──
+  'src/pages/SessionAttendance.tsx', // C2 — List/Card→SubPanel framing; attendance MARK + book/cancel handlers byte-identical
 ];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {
