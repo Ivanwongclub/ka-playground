@@ -4,7 +4,7 @@
 // Every unmet gate shows an explicit locked state; the button is never the gate.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Alert, App as AntApp, Button, Card, Checkbox, Descriptions, Input, Modal,
+  Alert, App as AntApp, Button, Checkbox, Descriptions, Input, Modal,
   Segmented, Space, Table, Tag, Typography,
 } from 'antd';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,8 @@ import { useResource, DataBoundary } from '../api/useResource';
 import { programmeName, personName } from '../display/names';
 import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
+import { SubPanel } from '@/ds2'; // DS2 rollout C1 — markup-only framing (Card→SubPanel). The BI-6 signing
+// flow (scroll-gate, affirmation, SignaturePad, sign()/decline() handlers, hashes) is BYTE-IDENTICAL.
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -63,7 +65,7 @@ export function ConsentList() {
   const rows = data?.data ?? [];
 
   return (
-    <Card>
+    <SubPanel tone="neutral">
       <Title level={3}>{t('consent.listTitle')}</Title>
       <Paragraph type="secondary">{t('consent.listCaption')}</Paragraph>
       <DataBoundary loading={loading} error={error} empty={rows.length === 0}>
@@ -88,7 +90,7 @@ export function ConsentList() {
           ]}
         />
       </DataBoundary>
-    </Card>
+    </SubPanel>
   );
 }
 
@@ -221,7 +223,7 @@ export function ConsentSign() {
   }
   if (signed) {
     return (
-      <Card>
+      <SubPanel tone="neutral">
         <Title level={3}>{t('consent.signedTitle')}</Title>
         <Descriptions column={1} bordered size="small">
           <Descriptions.Item label={t('consent.signedLanguage')}><StatusTag domain="language" value={signed.language} /></Descriptions.Item>
@@ -229,13 +231,13 @@ export function ConsentSign() {
           <Descriptions.Item label={t('consent.renderedHash')}><Text code>{signed.rendered_sha256}</Text></Descriptions.Item>
           <Descriptions.Item label={t('consent.signedAt')}>{formatHkt(signed.signed_at, i18n.language)}</Descriptions.Item>
         </Descriptions>
-      </Card>
+      </SubPanel>
     );
   }
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
-      <Card>
+      <SubPanel tone="neutral">
         <Title level={3}>{t('consent.title')}</Title>
         {doc?.is_placeholder && (
           <Alert type="warning" showIcon style={{ marginBottom: 16 }} message={t('consent.placeholderBanner')} />
@@ -264,15 +266,15 @@ export function ConsentSign() {
         <Button danger style={{ marginTop: 12 }} onClick={() => setDeclineOpen(true)}>
           {t('consent.declineButton')}
         </Button>
-      </Card>
+      </SubPanel>
 
       {/* GATE 1 — locked until the server has recorded scroll-to-end */}
       {!scrolled ? (
-        <Card>
+        <SubPanel tone="neutral">
           <Alert type="error" showIcon message={t('consent.gate1Locked')} />
-        </Card>
+        </SubPanel>
       ) : (
-        <Card>
+        <SubPanel tone="neutral">
           {/* GATE 2 — affirmation */}
           <Checkbox checked={affirmed} onChange={(e) => setAffirmed(e.target.checked)}>
             {t('consent.affirmLabel')}
@@ -301,7 +303,7 @@ export function ConsentSign() {
               {t('consent.signButton')}
             </Button>
           </Space>
-        </Card>
+        </SubPanel>
       )}
 
       <Modal

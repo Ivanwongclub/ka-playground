@@ -30,6 +30,8 @@ const ALLOWED = [
   'src/pages/ConsentEvidence.tsx', // D2 — consent evidence report (SubPanel/MetaChip; download is a GET export)
   // ── rollout D3 (Member surfaces, display tier) — Community.tsx (Events/Directory/Profile) ──
   'src/pages/Community.tsx', // D3 — member events/directory/profile (SubPanel/MetaChip; RSVP + profile mutations byte-identical)
+  // ── rollout C1 (Consents, child-data tier) — Consents.tsx (ConsentList + ConsentSign) ──
+  'src/pages/Consents.tsx', // C1 — Card→SubPanel framing ONLY; BI-6 signing flow (scroll-gate/affirm/sign/hashes) byte-identical
 ];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {
