@@ -7,7 +7,7 @@ import { Button } from 'antd';
 import { useTranslation } from 'react-i18next';
 import {
   StatusAtom, StatChip, MetaChip, StateBadge, ProgressRing, DatedBadge, Seal, StatusTag,
-  SubPanel, ZoneStack, Attest, ZebraTable, WizardRail, FormLanguageSwitcher,
+  SubPanel, ZoneStack, StatCard, Attest, ZebraTable, WizardRail, FormLanguageSwitcher,
 } from '@/ds2';
 import type { Ds2Lang } from '@/ds2';
 
@@ -95,6 +95,13 @@ export function Ds2Gallery() {
             <SubPanel tone="action"><span className="ds2-atom">Action zone</span></SubPanel>
           </ZoneStack>
         </div>
+      </Section>
+
+      <Section label="StatCard — KPI tile (default · gold accent · alert · money-tier: seal + sub + warn + formatMoney value)">
+        <div style={{ width: 200 }}><StatCard label="Enrolments" value={6} /></div>
+        <div style={{ width: 200 }}><StatCard label="Confirmed" value={12} accent="gold" /></div>
+        <div style={{ width: 200 }}><StatCard label="Issuance gaps" value={3} alert /></div>
+        <div style={{ width: 230 }}><StatCard label="Awaiting confirmation" value="HK$2,500.00" accent="warn" seal sub={<StatChip value={1} label="to confirm" />} /></div>
       </Section>
 
       <Section label="Attest — the honesty component (fact as atom + record on demand; attested REQUIRES onViewRecord)">
