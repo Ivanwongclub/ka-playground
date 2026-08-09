@@ -4,11 +4,14 @@
 // consequence-stating copy; server errors are surfaced; the queue refreshes after a mutate.
 // The server re-checks authority on every call — this UI adds none.
 import { useState } from 'react';
-import { App, Button, Card, Space, Table, Tag, Typography } from 'antd';
+import { App, Button, Space, Table, Tag, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useResource, DataBoundary } from '../api/useResource';
 import { mutate, type MutateResult } from '../api/mutate';
 import { ReasonModal } from '../components/ReasonModal';
+// DS2 (restyle rollout C5 — child-data tier: child-linked approval authority). ALLOWED adopter
+// (import-guard). Container-framing only (Card→SubPanel); approve/decline/reject decision logic byte-identical.
+import { SubPanel } from '@/ds2';
 
 const { Title, Paragraph } = Typography;
 
@@ -59,7 +62,9 @@ export function Approvals() {
       </div>
 
       <DataBoundary loading={loading} error={error}>
-        <Card title={t('approvals.pendingRegistrations')}>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <SubPanel tone="neutral">
+          <Title level={5} style={{ marginTop: 0 }}>{t('approvals.pendingRegistrations')}</Title>
           <Table<Account>
             rowKey="id"
             size="small"
@@ -92,9 +97,10 @@ export function Approvals() {
               },
             ]}
           />
-        </Card>
+        </SubPanel>
 
-        <Card title={t('approvals.pendingLinks')} style={{ marginTop: 16 }}>
+        <SubPanel tone="neutral">
+          <Title level={5} style={{ marginTop: 0 }}>{t('approvals.pendingLinks')}</Title>
           <Paragraph type="secondary" style={{ marginTop: -8 }}>{t('approvals.linksNote')}</Paragraph>
           <Table<Link>
             rowKey="id"
@@ -131,7 +137,8 @@ export function Approvals() {
               },
             ]}
           />
-        </Card>
+        </SubPanel>
+        </Space>
       </DataBoundary>
 
       <ReasonModal

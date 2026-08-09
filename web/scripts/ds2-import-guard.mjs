@@ -36,6 +36,8 @@ const ALLOWED = [
   'src/pages/SessionAttendance.tsx', // C2 — List/Card→SubPanel framing; attendance MARK + book/cancel handlers byte-identical
   // ── rollout C4 (Student team formation, child-data tier) — StudentTeam.tsx (My Team) ──
   'src/pages/StudentTeam.tsx', // C4 — Card→SubPanel framing; formation join/create/submit handlers byte-identical
+  // ── rollout C5 (Approvals, child-data tier: child-linked authority) — Approvals.tsx ──
+  'src/pages/Approvals.tsx', // C5 — Card→SubPanel framing; approve/decline/reject decision logic byte-identical
 ];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {
