@@ -2,10 +2,13 @@
 // placeholder banner (§12.3) whenever live versions carry placeholder text.
 // S-UX2a: shared fetch convention; StatusTag for version status + language.
 import { useEffect, useState } from 'react';
-import { Alert, Card, Select, Space, Table, Tag, Typography } from 'antd';
+import { Alert, Select, Space, Table, Tag, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useResource, DataBoundary } from '../api/useResource';
 import { StatusTag } from '../display/status';
+// DS2 (restyle rollout C6 — child-data tier, BI-6 dimension). ALLOWED adopter (import-guard).
+// Read-only view — container-framing only (Card→SubPanel); BI-6 version/status/SHA-256 displays unchanged.
+import { SubPanel } from '@/ds2';
 
 const { Title, Text } = Typography;
 
@@ -57,7 +60,9 @@ export function AdminConsentTemplates() {
         {hasPlaceholder && (
           <Alert type="warning" showIcon message={t('consent.templates.placeholderAdminBanner')} style={{ margin: '16px 0' }} />
         )}
-        <Card title={t('consent.templates.versions')} style={{ marginTop: 16 }}>
+        <div style={{ marginTop: 16 }}>
+        <SubPanel tone="neutral">
+          <Title level={5} style={{ marginTop: 0 }}>{t('consent.templates.versions')}</Title>
           <DataBoundary loading={vLoading} error={vError} empty={versions.length === 0}>
             <Table<Version>
               rowKey="id"
@@ -76,7 +81,8 @@ export function AdminConsentTemplates() {
               ]}
             />
           </DataBoundary>
-        </Card>
+        </SubPanel>
+        </div>
       </DataBoundary>
     </Space>
   );

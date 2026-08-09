@@ -38,6 +38,8 @@ const ALLOWED = [
   'src/pages/StudentTeam.tsx', // C4 — Card→SubPanel framing; formation join/create/submit handlers byte-identical
   // ── rollout C5 (Approvals, child-data tier: child-linked authority) — Approvals.tsx ──
   'src/pages/Approvals.tsx', // C5 — Card→SubPanel framing; approve/decline/reject decision logic byte-identical
+  // ── rollout C6 (Consent Templates, child-data tier, BI-6 dimension) — AdminConsentTemplates.tsx ──
+  'src/pages/AdminConsentTemplates.tsx', // C6 — read-only view; Card→SubPanel framing; BI-6 version/SHA-256 displays byte-identical
 ];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {
