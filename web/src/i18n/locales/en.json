@@ -634,7 +634,7 @@
   },
   "teams": {
     "title": "Teams",
-    "subtitle": "Confirm formation (Team Formation), claim seats and issue each member's payment obligation.",
+    "subtitle": "Confirm formation, claim seats and issue each member's payment obligation.",
     "queueTitle": "Awaiting Team Formation",
     "name": "Team",
     "programme": "Programme",
@@ -724,12 +724,12 @@
   },
   "studentTeam": {
     "title": "My Team",
-    "subtitle": "Form or join a team, then submit it for confirmation (Team Formation).",
+    "subtitle": "Form or join a team, then submit it for confirmation.",
     "noPool": "You need a consented, unteamed enrolment to form or join a team.",
     "roster": "Team members",
     "consentSatisfied": "✓ Your consent is satisfied — your team can be confirmed.",
     "consentNotSatisfiedTitle": "Your consent is not yet satisfied",
-    "consentNotSatisfied": "Your team CANNOT be confirmed (Team Formation) until your consent is satisfied. Ask your guardian to complete consent — the academy will not confirm the team otherwise.",
+    "consentNotSatisfied": "Your team CANNOT be confirmed until your consent is satisfied. Ask your guardian to complete consent — the academy will not confirm the team otherwise.",
     "submit": "Submit for Team Formation",
     "submitTitle": "Submit \"{{team}}\" for Team Formation?",
     "submitBody": "This sends your team to the academy for confirmation. You cannot add members after submitting.",
