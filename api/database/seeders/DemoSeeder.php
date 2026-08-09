@@ -140,7 +140,7 @@ class DemoSeeder extends Seeder
 
         // ── Populate the surfaces that would otherwise render EMPTY (demo-quality). All via
         //    REAL service flows; @example.com synthetic; the RLS fixtures (B1) stay untouched. ──
-        $this->seedSessions($programme, $ops, $teacher, $enrolments, $signing, $guardianB); // attendance surfaces + RosterMark
+        $this->seedSessions($programme, $ops, $teacher, $enrolments, $orders, $signing, $guardianB); // attendance surfaces + RosterMark
         $this->seedMemberCommunity($ops, $member);                                           // Events / Directory / Profile / RSVP
         $this->seedAdminQueues($guardianA, $a['a2']);                                         // Withdrawals + onboarding/Approvals queue
         app(\App\Services\Enrolments\EnrolmentActivationService::class)->run();               // activate the session cohort (confirmed → active)
@@ -385,24 +385,13 @@ class DemoSeeder extends Seeder
 
     // ── Demo-data enrichment (populate otherwise-empty surfaces; all REAL service flows) ──
 
-    /** Take an enrolment in_pool → teamed → confirmed (bookable) WITHOUT issuing an order. */
-    private function toConfirmed(EnrolmentService $enrolments, User $ops, User $student): void
-    {
-        $id = DB::table('enrolments')->where('student_id', $student->id)->orderByDesc('created_at')->value('id');
-        foreach (['teamed', 'confirmed'] as $to) {
-            if (in_array(DB::table('enrolments')->where('id', $id)->value('status'), ['in_pool', 'teamed'], true)) {
-                $enrolments->transition($id, $to, $ops, 'demo — confirmed for session booking');
-            }
-        }
-    }
-
     /**
      * Sessions & attendance — populates MentorAttendance / OpsAttendance / MySessions / ChildSessions
      * AND the RosterMark marking UI, via the S06 services (SessionService/BookingService/Attendance
      * Service). A 3-child cohort under guardian B (leaving B1, the RLS fixture, in-pool) is taken to
      * 'confirmed', booked into a COMPLETED session (mixed marks) + an UPCOMING session.
      */
-    private function seedSessions(Programme $programme, User $ops, ?User $teacher, EnrolmentService $enrolments, ConsentSigningService $signing, User $guardianB): void
+    private function seedSessions(Programme $programme, User $ops, ?User $teacher, EnrolmentService $enrolments, OrderService $orders, ConsentSigningService $signing, User $guardianB): void
     {
         if ($teacher === null || DB::table('programme_sessions')->where('programme_id', $programme->id)->exists()) {
             return; // needs a mentor; idempotent
@@ -417,7 +406,7 @@ class DemoSeeder extends Seeder
             $this->activeGuardianLink($guardianB, $s);
             $this->enrol($enrolments, $programme, $guardianB, $s);
             $this->sign($signing, $enrolments, $programme, $guardianB, $s);
-            $this->toConfirmed($enrolments, $ops, $s);
+            $this->confirmOrder($enrolments, $orders, $ops, $s); // confirmed WITH its order issued — OD-43 (a live enrolment must carry its money artifact); bookable
             $cohort[] = $s;
         }
 
