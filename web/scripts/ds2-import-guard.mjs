@@ -40,6 +40,8 @@ const ALLOWED = [
   'src/pages/Approvals.tsx', // C5 — Card→SubPanel framing; approve/decline/reject decision logic byte-identical
   // ── rollout C6 (Consent Templates, child-data tier, BI-6 dimension) — AdminConsentTemplates.tsx ──
   'src/pages/AdminConsentTemplates.tsx', // C6 — read-only view; Card→SubPanel framing; BI-6 version/SHA-256 displays byte-identical
+  // ── rollout M1 (Refunds, money tier) — Refunds.tsx ──
+  'src/pages/Refunds.tsx', // M1 — Card→SubPanel framing; BI-9 approve/confirm/reject handlers + amounts byte-identical
 ];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {

@@ -2,7 +2,7 @@
 // the DB rf_update WITH CHECK) or reject. Confirm shown to every finance.confirm holder; the same-person
 // refusal (403) is surfaced, never pre-hidden. Amounts via formatMoney. Refresh after mutate.
 import { useState } from 'react';
-import { App, Button, Card, Space, Table, Typography } from 'antd';
+import { App, Button, Space, Table, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
@@ -11,6 +11,9 @@ import { ReasonModal } from '../components/ReasonModal';
 import { formatMoney } from '../display/money';
 import { StatusTag } from '../display/status';
 import { personName } from '../display/names';
+// DS2 (restyle rollout M1 — money tier). ALLOWED adopter (import-guard). Appearance only:
+// Card→SubPanel framing; the table, BI-9 buttons, amounts and status pills are byte-identical.
+import { SubPanel } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -67,7 +70,7 @@ export function Refunds() {
       </div>
 
       <DataBoundary loading={loading} error={error} empty={rows.length === 0}>
-        <Card>
+        <SubPanel tone="neutral">
           <Table<RefundRow>
             rowKey="id"
             size="small"
@@ -97,7 +100,7 @@ export function Refunds() {
               },
             ]}
           />
-        </Card>
+        </SubPanel>
       </DataBoundary>
 
       <ReasonModal
