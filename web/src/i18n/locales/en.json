@@ -492,7 +492,7 @@
     },
     "team": {
       "forming": "Forming",
-      "submitted": "Awaiting 成團",
+      "submitted": "Awaiting Team Formation",
       "confirmed": "Confirmed",
       "disbanded": "Disbanded"
     },
@@ -634,8 +634,8 @@
   },
   "teams": {
     "title": "Teams",
-    "subtitle": "Confirm formation (成團), claim seats and issue each member's payment obligation.",
-    "queueTitle": "Awaiting 成團",
+    "subtitle": "Confirm formation (Team Formation), claim seats and issue each member's payment obligation.",
+    "queueTitle": "Awaiting Team Formation",
     "name": "Team",
     "programme": "Programme",
     "category": "Lobby",
@@ -662,7 +662,7 @@
     },
     "confirmTitle": "Confirm formation of \"{{team}}\"?",
     "confirmBody": "This claims {{n}} seats against the programme's capacity and issues a payment obligation for each of the {{n}} members. It cannot be undone here.",
-    "confirmAdvisory": "⚠️ {{m}} members' consent is not yet satisfied — 成團 will be refused until resolved.",
+    "confirmAdvisory": "⚠️ {{m}} members' consent is not yet satisfied — Team Formation will be refused until resolved.",
     "confirmCta": "Confirm formation",
     "confirmed": "Team formed — seats claimed and obligations issued.",
     "tabConsent": "Consent status",
@@ -724,17 +724,17 @@
   },
   "studentTeam": {
     "title": "My Team",
-    "subtitle": "Form or join a team, then submit it for confirmation (成團).",
+    "subtitle": "Form or join a team, then submit it for confirmation (Team Formation).",
     "noPool": "You need a consented, unteamed enrolment to form or join a team.",
     "roster": "Team members",
     "consentSatisfied": "✓ Your consent is satisfied — your team can be confirmed.",
     "consentNotSatisfiedTitle": "Your consent is not yet satisfied",
-    "consentNotSatisfied": "Your team CANNOT be confirmed (成團) until your consent is satisfied. Ask your guardian to complete consent — the academy will not confirm the team otherwise.",
-    "submit": "Submit for 成團",
-    "submitTitle": "Submit \"{{team}}\" for 成團?",
+    "consentNotSatisfied": "Your team CANNOT be confirmed (Team Formation) until your consent is satisfied. Ask your guardian to complete consent — the academy will not confirm the team otherwise.",
+    "submit": "Submit for Team Formation",
+    "submitTitle": "Submit \"{{team}}\" for Team Formation?",
     "submitBody": "This sends your team to the academy for confirmation. You cannot add members after submitting.",
     "submitted": "Submitted — awaiting the academy's confirmation.",
-    "leaveDisabled": "You cannot leave a team once you have joined — only 成團 or an academy decision changes it.",
+    "leaveDisabled": "You cannot leave a team once you have joined — only Team Formation or an academy decision changes it.",
     "formOrJoin": "Form or join a team — {{programme}}",
     "joinTitle": "Join an existing team",
     "join": "Join",
@@ -746,7 +746,7 @@
     "createCta": "Create team",
     "createdOk": "Team created.",
     "state": {
-      "submitted": "Awaiting 成團",
+      "submitted": "Awaiting Team Formation",
       "confirmed": "Confirmed — proceed to payment.",
       "disbanded": "Disbanded."
     }

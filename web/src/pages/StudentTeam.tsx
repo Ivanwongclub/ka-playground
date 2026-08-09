@@ -8,13 +8,16 @@
 // reads 0. This rides on the tm_read co-member wall (same dependency as the B2 names/count split) — if
 // tm_read is ever widened, revisit this split.
 import { useState } from 'react';
-import { Alert, App, Button, Card, Empty, Input, List, Select, Space, Tag, Typography } from 'antd';
+import { Alert, App, Button, Empty, Input, List, Select, Space, Tag, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
 import { mutate, type MutateResult } from '../api/mutate';
 import { StatusTag } from '../display/status';
 import { programmeName, personName } from '../display/names';
+// DS2 (restyle rollout C4 — child-data tier). StudentTeam.tsx joins the ALLOWED @/ds2 adopters
+// (import-guard). Container-framing only (Card→SubPanel); formation/join/submit handlers byte-identical.
+import { SubPanel } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -104,10 +107,13 @@ function MyTeamCard({ team, onChange }: { team: TeamRow; onChange: () => void })
   const satisfied = consent.data?.satisfied;
 
   return (
-    <Card
-      title={<Space><span>{team.name}</span><StatusTag domain="teamStatus" value={team.status} /></Space>}
-      extra={<Text type="secondary">{programmeName(team, locale)}</Text>}
-    >
+    <SubPanel tone="neutral">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <Title level={5} style={{ margin: 0 }}>{team.name}</Title>
+        <StatusTag domain="teamStatus" value={team.status} />
+        <span style={{ flex: 1 }} />
+        <Text type="secondary">{programmeName(team, locale)}</Text>
+      </div>
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         {/* UNMISSABLE consent advisory — prevents the student-side dead-loop at 成團. */}
         <DataBoundary loading={consent.loading} error={consent.error}>
@@ -155,7 +161,7 @@ function MyTeamCard({ team, onChange }: { team: TeamRow; onChange: () => void })
           <Text type="secondary">{t(`studentTeam.state.${team.status}`)}</Text>
         )}
       </Space>
-    </Card>
+    </SubPanel>
   );
 }
 
@@ -184,7 +190,8 @@ function FormOrJoin({ enrolment, joinable, onChange }: { enrolment: EnrolRow; jo
   const eligibleLobbies = (lobbies.data?.data ?? []).filter((l) => l.eligible);
 
   return (
-    <Card title={t('studentTeam.formOrJoin', { programme: programmeName(enrolment, locale) })}>
+    <SubPanel tone="neutral">
+      <Title level={5} style={{ marginTop: 0 }}>{t('studentTeam.formOrJoin', { programme: programmeName(enrolment, locale) })}</Title>
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         {joinable.length > 0 && (
           <div>
@@ -226,7 +233,7 @@ function FormOrJoin({ enrolment, joinable, onChange }: { enrolment: EnrolRow; jo
           </DataBoundary>
         </div>
       </Space>
-    </Card>
+    </SubPanel>
   );
 }
 

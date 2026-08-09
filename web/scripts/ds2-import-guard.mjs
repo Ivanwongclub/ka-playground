@@ -34,6 +34,8 @@ const ALLOWED = [
   'src/pages/Consents.tsx', // C1 — Card→SubPanel framing ONLY; BI-6 signing flow (scroll-gate/affirm/sign/hashes) byte-identical
   // ── rollout C2 (Sessions & Attendance, child-data tier) — SessionAttendance.tsx (4 surfaces) ──
   'src/pages/SessionAttendance.tsx', // C2 — List/Card→SubPanel framing; attendance MARK + book/cancel handlers byte-identical
+  // ── rollout C4 (Student team formation, child-data tier) — StudentTeam.tsx (My Team) ──
+  'src/pages/StudentTeam.tsx', // C4 — Card→SubPanel framing; formation join/create/submit handlers byte-identical
 ];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {
