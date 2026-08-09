@@ -8,6 +8,9 @@ import type { KaLocale } from '../i18n';
 import { formatMoney } from '../display/money';
 import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
+// DS2 (restyle rollout M2 — money tier). ALLOWED adopter (import-guard). Appearance only: the titled
+// section cards → SubPanel framing; every figure, the recon comparison and StatusTag pills are byte-identical.
+import { SubPanel } from '@/ds2';
 
 const { Title, Text } = Typography;
 
@@ -71,16 +74,26 @@ export function FinancialIntegrity() {
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <Title level={3}>{t('fin.title')}</Title>
       {report && <Alert type="success" showIcon message={`${t('fin.live')} · ${formatHkt(report.generated_at, locale)}`} />}
-      <Card title={t('fin.orders')}>{report && amountTable(report.orders, 'status', t('fin.status'), 'orderStatus')}</Card>
-      <Card title={t('fin.payments')}>{report && amountTable(report.payments_by_origin, 'origin', t('fin.origin'), 'paymentOrigin')}</Card>
+      <SubPanel tone="neutral">
+        <Title level={5} style={{ marginTop: 0 }}>{t('fin.orders')}</Title>
+        {report && amountTable(report.orders, 'status', t('fin.status'), 'orderStatus')}
+      </SubPanel>
+      <SubPanel tone="neutral">
+        <Title level={5} style={{ marginTop: 0 }}>{t('fin.payments')}</Title>
+        {report && amountTable(report.payments_by_origin, 'origin', t('fin.origin'), 'paymentOrigin')}
+      </SubPanel>
       <Space wrap style={{ width: '100%', alignItems: 'stretch' }}>
         <Card size="small" style={{ minWidth: 200 }}><Statistic title={t('fin.receipts')} value={report?.receipts.count ?? 0} /></Card>
         <Card size="small" style={{ minWidth: 200 }}><Statistic title={t('fin.creditNotes')} value={hkd(report?.credit_notes.minor ?? 0)} /></Card>
         <Card size="small" style={{ minWidth: 200 }}><Statistic title={`${t('fin.obligations')} · ${t('fin.pending')}`} value={report?.obligations.pending ?? 0} /></Card>
         <Card size="small" style={{ minWidth: 200 }}><Statistic title={`${t('fin.obligations')} · ${t('fin.consumed')}`} value={report?.obligations.consumed ?? 0} /></Card>
       </Space>
-      <Card title={t('fin.refunds')}>{report && amountTable(report.refunds, 'status', t('fin.status'), 'refundStatus')}</Card>
-      <Card title={t('fin.invoices')}>
+      <SubPanel tone="neutral">
+        <Title level={5} style={{ marginTop: 0 }}>{t('fin.refunds')}</Title>
+        {report && amountTable(report.refunds, 'status', t('fin.status'), 'refundStatus')}
+      </SubPanel>
+      <SubPanel tone="neutral">
+        <Title level={5} style={{ marginTop: 0 }}>{t('fin.invoices')}</Title>
         {report && (
           <Space size="large">
             <Statistic title={t('fin.count')} value={report.consolidated_invoices.n} />
@@ -88,8 +101,9 @@ export function FinancialIntegrity() {
             <Statistic title={t('fin.balance')} value={hkd(report.consolidated_invoices.balance_minor)} />
           </Space>
         )}
-      </Card>
-      <Card title={t('fin.reconciliation')}>
+      </SubPanel>
+      <SubPanel tone="neutral">
+        <Title level={5} style={{ marginTop: 0 }}>{t('fin.reconciliation')}</Title>
         {recon && (
           <Space direction="vertical">
             <Text>{t('fin.creditedViaNotes')}: {hkd(recon.credited_via_notes_minor)}</Text>
@@ -97,7 +111,7 @@ export function FinancialIntegrity() {
             <Tag color={reconOk ? 'green' : 'red'}>{reconOk ? t('fin.reconciled') : t('fin.notReconciled')}</Tag>
           </Space>
         )}
-      </Card>
+      </SubPanel>
     </Space>
   );
 }

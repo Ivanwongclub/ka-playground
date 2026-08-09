@@ -42,6 +42,8 @@ const ALLOWED = [
   'src/pages/AdminConsentTemplates.tsx', // C6 — read-only view; Card→SubPanel framing; BI-6 version/SHA-256 displays byte-identical
   // ── rollout M1 (Refunds, money tier) — Refunds.tsx ──
   'src/pages/Refunds.tsx', // M1 — Card→SubPanel framing; BI-9 approve/confirm/reject handlers + amounts byte-identical
+  // ── rollout M2 (Financial Integrity, money tier) — FinancialIntegrity.tsx ──
+  'src/pages/FinancialIntegrity.tsx', // M2 — section Card→SubPanel framing; every figure + recon comparison byte-identical
 ];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {
