@@ -2,7 +2,7 @@
 // BI-7 terminal: the confirm copy STATES that. Reject is reasoned. Server errors surfaced;
 // queue refreshes after a decide. The server owns the withdrawal workflow — this UI drives it.
 import { useState } from 'react';
-import { App, Button, Card, Space, Table, Typography } from 'antd';
+import { App, Button, Space, Table, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
@@ -10,6 +10,9 @@ import { mutate, type MutateResult } from '../api/mutate';
 import { ReasonModal } from '../components/ReasonModal';
 import { StatusTag } from '../display/status';
 import { formatHkt } from '../display/date';
+// DS2 (restyle rollout M3 — money tier). ALLOWED adopter (import-guard). Appearance only:
+// Card→SubPanel framing; the table, BI-7 decision buttons and status pill are byte-identical.
+import { SubPanel } from '@/ds2';
 
 const { Title, Paragraph } = Typography;
 
@@ -61,7 +64,7 @@ export function Withdrawals() {
       </div>
 
       <DataBoundary loading={loading} error={error}>
-        <Card>
+        <SubPanel tone="neutral">
           <Table<Row>
             rowKey="id"
             size="small"
@@ -88,7 +91,7 @@ export function Withdrawals() {
               },
             ]}
           />
-        </Card>
+        </SubPanel>
       </DataBoundary>
 
       <ReasonModal
