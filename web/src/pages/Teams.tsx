@@ -9,7 +9,7 @@
 // 成團 confirm and assignRole are both SHOWN + ENABLED; the server is the authority and every refusal
 // is rendered (S-UX3-1 error surface).
 import { useState } from 'react';
-import { Alert, App, Button, Card, Drawer, List, Modal, Select, Space, Table, Tabs, Tag, Typography } from 'antd';
+import { Alert, App, Button, Drawer, List, Modal, Select, Space, Table, Tabs, Tag, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
@@ -18,6 +18,9 @@ import { StatusTag, humanise } from '../display/status';
 import { programmeName, personName } from '../display/names';
 import { formatHkt } from '../display/date';
 import { ReasonModal } from '../components/ReasonModal';
+// DS2 (restyle rollout M4 — money tier; last card). ALLOWED adopter (import-guard). Appearance only:
+// the two titled section cards → SubPanel framing; 成團 confirm/assign/resolution logic is byte-identical.
+import { SubPanel } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -256,7 +259,8 @@ export function Teams() {
       </div>
 
       <DataBoundary loading={loading} error={error} empty={queue.length === 0}>
-        <Card title={t('teams.queueTitle')}>
+        <SubPanel tone="neutral">
+          <Title level={5} style={{ marginTop: 0 }}>{t('teams.queueTitle')}</Title>
           <Table<TeamRow>
             rowKey="id"
             size="small"
@@ -275,7 +279,7 @@ export function Teams() {
               },
             ]}
           />
-        </Card>
+        </SubPanel>
       </DataBoundary>
 
       {/* S-UX3-3a STEP 4 — below-min / matching + resolution (programme-scoped, academy-operations). */}
@@ -418,7 +422,8 @@ function ResolutionConsole({ programmes, teams }: { programmes: { value: number;
   const confirmed = teams.filter((x) => x.programme_id === pid && x.status === 'confirmed');
 
   return (
-    <Card title={t('teams.resTitle')}>
+    <SubPanel tone="neutral">
+      <Title level={5} style={{ marginTop: 0 }}>{t('teams.resTitle')}</Title>
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Select
           style={{ maxWidth: 380 }}
@@ -566,6 +571,6 @@ function ResolutionConsole({ programmes, teams }: { programmes: { value: number;
           />
         )}
       </Modal>
-    </Card>
+    </SubPanel>
   );
 }

@@ -46,6 +46,8 @@ const ALLOWED = [
   'src/pages/FinancialIntegrity.tsx', // M2 — section Card→SubPanel framing; every figure + recon comparison byte-identical
   // ── rollout M3 (Withdrawals, money tier) — Withdrawals.tsx ──
   'src/pages/Withdrawals.tsx', // M3 — Card→SubPanel framing; BI-7 approve/reject decision handlers byte-identical
+  // ── rollout M4 (ops Teams / 成團, money tier) — Teams.tsx ──
+  'src/pages/Teams.tsx', // M4 — two section Cards→SubPanel framing; 成團 confirm/assign/resolution logic byte-identical
 ];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {
