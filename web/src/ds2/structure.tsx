@@ -16,7 +16,8 @@
 import type { ReactNode } from 'react';
 import { Table, Segmented } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { StatusAtom, DatedBadge, MetaChip, Seal } from './atoms';
+import { Link } from 'react-router-dom';
+import { StatusAtom, DatedBadge, MetaChip, Seal, StatChip } from './atoms';
 import './structure.css';
 
 export type Tone = 'neutral' | 'attested' | 'action';
@@ -39,10 +40,17 @@ export function ZoneStack({ children }: { children: ReactNode }) {
  * number when not alert. Forward-compat for the money tier (M1–M4): optional `seal`
  * (a Seal in the header, the "confirmed" motif) and `sub` (a sub-line, e.g. a StatChip
  * count), plus accent `'warn'` for money "awaiting". `value` is a ReactNode, so a
- * formatMoney string drops in. Clickability is a CONSUMER concern — wrap it yourself
- * (as the Dashboard does) so the card stays a pure display primitive.
+ * formatMoney string drops in.
+ *
+ * DS2 v2 (R0-B1 · DS2-V2-SPEC §2.5/A2) — ADDITIVE, all optional, default path byte-identical:
+ *   · count + unit → render the StatChip sub-line internally (absorbs Payments' local variant);
+ *     they take precedence over `sub` when both are given.
+ *   · to XOR onClick → drill-down is BUILT IN (absorbs the .ka-dash-kpi wrapper): `to` renders a
+ *     react-router Link (semantic <a>, native keyboard/focus); `onClick` renders a role=button with
+ *     Enter/Space activation and a focus-visible outline. With NEITHER, the card is a plain (non-
+ *     interactive) figure and renders exactly as v1.
  */
-export function StatCard({ label, value, icon, accent = 'default', alert = false, seal = false, sub }: {
+export function StatCard({ label, value, icon, accent = 'default', alert = false, seal = false, sub, count, unit, to, onClick }: {
   label: ReactNode;
   value: ReactNode;
   icon?: ReactNode;
@@ -50,6 +58,10 @@ export function StatCard({ label, value, icon, accent = 'default', alert = false
   alert?: boolean;
   seal?: boolean;
   sub?: ReactNode;
+  count?: number;
+  unit?: ReactNode;
+  to?: string;
+  onClick?: () => void;
 }) {
   const numClass = alert
     ? ' ds2-statcard__value--danger'
@@ -58,12 +70,28 @@ export function StatCard({ label, value, icon, accent = 'default', alert = false
       : accent === 'warn'
         ? ' ds2-statcard__value--warn'
         : '';
-  return (
+  // count+unit render the StatChip sub-line; they win over `sub` when both are present (spec §2.5).
+  const subline = count != null && unit != null ? <StatChip value={count} label={unit} /> : sub;
+  const body = (
     <SubPanel tone={alert ? 'action' : 'neutral'}>
       <MetaChip icon={icon}>{seal ? <><Seal size={15} /> {label}</> : label}</MetaChip>
       <div className={`ds2-statcard__value${numClass}`}>{value}</div>
-      {sub != null && <div className="ds2-statcard__sub">{sub}</div>}
+      {subline != null && <div className="ds2-statcard__sub">{subline}</div>}
     </SubPanel>
+  );
+  // Default path — no to/onClick → byte-identical to v1 (the body, unwrapped).
+  if (to === undefined && onClick === undefined) return body;
+  if (to !== undefined) return <Link className="ds2-statcard-link" to={to}>{body}</Link>;
+  return (
+    <div
+      className="ds2-statcard-btn"
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(); } }}
+    >
+      {body}
+    </div>
   );
 }
 

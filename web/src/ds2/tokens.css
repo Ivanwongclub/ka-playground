@@ -56,6 +56,34 @@
   --ka-row: 40px;
   --ka-page-x: 28px;
   --ka-stack: 16px;
+
+  /* ════════ DS2 v2 additions (R0-B1) — DS2-owned, NOT drift-checked ════════
+   * Every colour value below is an rgba()/gradient DERIVATIVE of an existing token — no new hue
+   * (DS2-V2-SPEC §0/§7). ds2-tokens-check only mirrors the 17 theme.ts colours; these are additive. */
+
+  /* urgency (§3) — rgba() of existing semantic colours */
+  --ka-warning-tint: rgba(251, 191, 36, 0.10);   /* derivative of --ka-warning */
+  --ka-warning-line: rgba(251, 191, 36, 0.32);   /* formalises the literal already in .ds2-subpanel--action */
+  --ka-danger-tint:  rgba(239, 68, 68, 0.10);    /* derivative of --ka-danger */
+  --ka-danger-line:  rgba(239, 68, 68, 0.30);
+  /* (--ka-gold-tint / --ka-gold-line already exist above and are reused for the 'soon' level) */
+
+  /* HeroBanner scrims (§2.2) — gradient derivatives of --ka-card */
+  --ka-scrim-duotone: linear-gradient(160deg, rgba(26, 19, 38, 0.82) 0%, rgba(26, 19, 38, 0.55) 100%);
+  --ka-scrim-bottom:  linear-gradient(0deg, rgba(26, 19, 38, 0.90) 0%, rgba(26, 19, 38, 0.00) 60%);
+  --ka-scrim-flat:    linear-gradient(160deg, var(--ka-card), var(--ka-muted));   /* image-fail fallback */
+  --ka-hero-band: 180px;
+  --ka-hero-tall: 320px;
+
+  /* PageCard widths (§2.1) — non-colour */
+  --ka-w-auth: min(380px, 100%);
+  --ka-w-form: min(460px, 100%);
+  --ka-w-wide: min(560px, 100%);
+
+  /* mobile (§4) — formalising existing literals, non-colour */
+  --ka-drawer-w: min(560px, 100vw);
+  --ka-tabbar-h: 56px;
+  --ka-sheet-radius: 16px;
 }
 
 [data-density="admin"] {

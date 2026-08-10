@@ -60,3 +60,25 @@
 .ds2-statcard__value--danger { color: var(--ka-danger); }
 .ds2-statcard__value--warn { color: var(--ka-warning); }
 .ds2-statcard__sub { margin-top: 7px; } /* money-tier sub-line (e.g. a StatChip count) */
+
+/* Interactive StatCard (R0-B1 · A2) — the drill-down wrapper, absorbing .ka-dash-kpi. A `to` renders a
+ * Link (<a>); an `onClick` renders a role=button. Motion is killed by the global reduced-motion rule. */
+.ds2-statcard-link,
+.ds2-statcard-btn {
+  display: block;
+  border-radius: var(--ka-r-md);
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.ds2-statcard-link:hover,
+.ds2-statcard-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--ka-shadow-md);
+}
+.ds2-statcard-link:focus-visible,
+.ds2-statcard-btn:focus-visible {
+  outline: 2px solid var(--ka-gold);
+  outline-offset: 2px;
+}

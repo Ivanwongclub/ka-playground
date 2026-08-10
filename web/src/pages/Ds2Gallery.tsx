@@ -4,12 +4,15 @@
 // developer-facing (component + prop-state names), so it is excluded from the i18n hardcoded-string scan.
 import { useState } from 'react';
 import { Button } from 'antd';
+import { CalendarClock, FileSignature } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   StatusAtom, StatChip, MetaChip, StateBadge, ProgressRing, DatedBadge, Seal, StatusTag,
   SubPanel, ZoneStack, StatCard, Attest, ZebraTable, WizardRail, FormLanguageSwitcher,
+  PageCard, AuthCard, HeroBanner, TaskCard, EmptyState, UrgencyChip,
 } from '@/ds2';
 import type { Ds2Lang } from '@/ds2';
+import { asset } from '../assets';
 
 interface PayRow { id: string; student: string; amount: string; status: string }
 const PAY_ROWS: PayRow[] = [
@@ -159,6 +162,67 @@ export function Ds2Gallery() {
           editingLabel="Editing"
           warning={lang === 'sc' ? <span style={WARN}>简 incomplete</span> : undefined}
         />
+      </Section>
+
+      <div style={{ ...S.h1, fontSize: 20, marginTop: 12 }}>DS2 v2 primitives (R0-B1)</div>
+
+      <Section label="StatCard v2 — count/unit sub-line + built-in drill-down (to / onClick)">
+        <div style={{ width: 220 }}><StatCard label="Outstanding" value="HK$4,500.00" accent="warn" count={2} unit="orders" /></div>
+        <div style={{ width: 220 }}><StatCard label="Enrolments" value={6} to="/ds2-gallery" /></div>
+        <div style={{ width: 220 }}><StatCard label="Issuance gaps" value={3} alert onClick={() => alert('drill into the gaps')} /></div>
+      </Section>
+
+      <Section label="PageCard (§2.1) — standalone SOLID card (not a SubPanel zone); center=false for this preview">
+        <PageCard width={340} center={false}>
+          <div style={{ fontFamily: 'var(--ka-font-display)', fontWeight: 700, fontSize: 18, marginBottom: 6 }}>A page-level card</div>
+          <div style={{ color: 'var(--ka-muted-fg)', fontSize: 13 }}>Solid var(--ka-card) surface, width-constrained, elevated — the container SubPanel is not.</div>
+        </PageCard>
+      </Section>
+
+      <Section label="AuthCard (§2.1 preset) — logo + LocaleSwitcher header (full-height centred; clipped preview)">
+        <div style={{ position: 'relative', height: 360, width: '100%', overflow: 'hidden', border: '1px dashed var(--ka-border)', borderRadius: 8 }}>
+          <AuthCard logoAlt="Armour Academy" width="form">
+            <div style={{ fontFamily: 'var(--ka-font-display)', fontWeight: 700, fontSize: 20, textAlign: 'center' }}>Sign in</div>
+            <div style={{ color: 'var(--ka-muted-fg)', fontSize: 13, textAlign: 'center', marginTop: 4 }}>Email + password fields go here (interactive AntD, unconverted).</div>
+          </AuthCard>
+        </div>
+      </Section>
+
+      <Section label="HeroBanner (§2.2) — imagery + duotone scrim · and the image-error fallback">
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <HeroBanner image={{ src: asset('auth/featured-sc5.jpg'), alt: 'Students at work' }} height="band">
+            <div style={{ fontFamily: 'var(--ka-font-display)', fontWeight: 700, fontSize: 22 }}>Welcome back</div>
+            <div style={{ fontSize: 13 }}>Foreground contrast comes from the scrim, not the image.</div>
+          </HeroBanner>
+          <HeroBanner image={{ src: '/deliberately-missing.jpg', alt: '' }} height="band" fallback={<div />}>
+            <div style={{ fontFamily: 'var(--ka-font-display)', fontWeight: 700, fontSize: 22 }}>Image failed → flat gradient</div>
+            <div style={{ fontSize: 13 }}>Text stays legible on the fallback.</div>
+          </HeroBanner>
+        </div>
+      </Section>
+
+      <Section label="TaskCard (§2.3) — action-first home unit (icon · title · context · urgency · ONE cta)">
+        <div style={{ width: 300 }}>
+          <TaskCard icon={<FileSignature size={18} />} title="Sign STEM consent" context="Summer STEM · Chan Sum-yu" urgency="due" urgencyLabel="Due in 2 days" cta={{ label: 'Review & sign', to: '/ds2-gallery' }} />
+        </div>
+        <div style={{ width: 300 }}>
+          <TaskCard icon={<CalendarClock size={18} />} title="3 sessions this week" context="You are the mentor" urgency="soon" urgencyLabel="Starts Mon" cta={{ label: 'Take attendance', onClick: () => alert('open attendance') }} />
+        </div>
+        <div style={{ width: 300 }}>
+          <TaskCard icon={<FileSignature size={18} />} title="Consent complete" context="Nothing to do" seal cta={{ label: 'View record', to: '/ds2-gallery' }} />
+        </div>
+      </Section>
+
+      <Section label="UrgencyChip (§3) — one treatment; level from urgencyLevel(deadline, thresholds)">
+        <UrgencyChip level="soon" label="In 5 days" />
+        <UrgencyChip level="due" label="Due tomorrow" />
+        <UrgencyChip level="overdue" label="Overdue by 3 days" />
+        <span style={{ color: 'var(--ka-muted-fg)', fontSize: 12 }}>none → renders nothing</span>
+      </Section>
+
+      <Section label="EmptyState (§2.4) — the designed zero surface (inline · page · with cta)">
+        <div style={{ width: 260 }}><SubPanel tone="neutral"><EmptyState message="No pending links" size="inline" /></SubPanel></div>
+        <div style={{ width: 320 }}><SubPanel tone="neutral"><EmptyState message="Your dashboard is empty" detail="It fills in as you take part." cta={{ label: 'Browse programmes', to: '/ds2-gallery' }} size="page" /></SubPanel></div>
       </Section>
     </div>
   );

@@ -1,0 +1,98 @@
+/* DS2 v2 surface primitives (R0-B1). Every colour is a --ka-* token (no literals). Loaded only when a
+ * surface imports @/ds2. Motion is killed by the global prefers-reduced-motion rule in index.css. */
+
+/* ── PageCard / AuthCard (§2.1) ── */
+.ds2-pagecard-center {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100dvh;
+  padding: 48px 16px;
+  background: var(--ka-bg);
+}
+.ds2-pagecard {
+  background: var(--ka-card);           /* SOLID — the difference from a SubPanel zone */
+  border: 1px solid var(--ka-border);
+  border-radius: var(--ka-r-xl);
+  padding: var(--ka-pad);               /* scaled by [data-density] */
+}
+.ds2-pagecard--elevated { box-shadow: var(--ka-shadow-md); }
+
+.ds2-authcard__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.ds2-authcard__switch { align-self: flex-end; }
+.ds2-authcard__logo { height: 40px; }
+
+/* ── HeroBanner (§2.2) ── */
+.ds2-hero {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--ka-r-xl);
+  background: var(--ka-muted);          /* base while the image resolves — reserves colour, no flash */
+  display: flex;
+  align-items: flex-end;
+}
+.ds2-hero--band { min-height: var(--ka-hero-band); }
+.ds2-hero--tall { min-height: var(--ka-hero-tall); }
+/* while loading: the shimmer treatment (spec §2.2 step 2) */
+.ds2-hero--loading {
+  background: linear-gradient(90deg, var(--ka-muted) 25%, var(--ka-card) 50%, var(--ka-muted) 75%);
+  background-size: 200% 100%;
+  animation: ds2-shimmer 1.2s infinite linear;
+}
+/* on image error with no fallback: a flat gradient, foreground still legible (spec §2.2 step 3) */
+.ds2-hero--error { background: var(--ka-scrim-flat); }
+.ds2-hero__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ds2-hero__fallback { position: absolute; inset: 0; }
+.ds2-hero__scrim { position: absolute; inset: 0; }
+.ds2-hero__scrim--duotone { background: var(--ka-scrim-duotone); }
+.ds2-hero__scrim--bottom { background: var(--ka-scrim-bottom); }
+.ds2-hero__content { position: relative; width: 100%; padding: var(--ka-pad); color: var(--ka-fg); }
+@keyframes ds2-shimmer { to { background-position: -200% 0; } }
+
+/* ── UrgencyChip + row emphasis (§3) ── */
+.ds2-uchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--ka-r-sm);
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ds2-uchip__i { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ds2-uchip--soon    { color: var(--ka-gold);    background: var(--ka-gold-tint);    border-color: var(--ka-gold-line); }
+.ds2-uchip--due     { color: var(--ka-warning); background: var(--ka-warning-tint); border-color: var(--ka-warning-line); }
+.ds2-uchip--overdue { color: var(--ka-danger);  background: var(--ka-danger-tint);  border-color: var(--ka-danger-line); }
+/* row emphasis — only 'overdue' tints the whole row (spec R-U3) */
+.ds2-urgent--soon    { box-shadow: inset 3px 0 0 var(--ka-gold-line); }
+.ds2-urgent--due     { box-shadow: inset 3px 0 0 var(--ka-warning-line); }
+.ds2-urgent--overdue { box-shadow: inset 3px 0 0 var(--ka-danger-line); background: var(--ka-danger-tint); }
+
+/* ── TaskCard (§2.3) ── */
+.ds2-taskcard { display: flex; flex-direction: column; gap: 10px; }
+.ds2-taskcard__head { display: flex; align-items: center; gap: 10px; }
+.ds2-taskcard__icon { color: var(--ka-gold); display: inline-flex; }
+.ds2-taskcard__icon svg { width: 18px; height: 18px; }
+.ds2-taskcard__title { flex: 1; font-family: var(--ka-font-display); font-weight: 600; font-size: 15px; }
+.ds2-taskcard__ctx { color: var(--ka-muted-fg); font-size: 13px; }
+.ds2-taskcard__cta { margin-top: 2px; }
+
+/* ── EmptyState (§2.4) ── */
+.ds2-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.ds2-empty--inline { padding: 24px 16px; }
+.ds2-empty--page { padding: 64px 16px; }
+.ds2-empty__icon { color: var(--ka-muted-fg); }
+.ds2-empty__glyph { width: 32px; height: 32px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.ds2-empty__msg { font-family: var(--ka-font-display); font-weight: 600; font-size: 18px; color: var(--ka-fg); }
+.ds2-empty__detail { color: var(--ka-muted-fg); font-size: 13px; }
+.ds2-empty__cta { margin-top: 8px; }

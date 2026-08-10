@@ -19,6 +19,15 @@ export type { BadgeState } from './atoms';
 export { SubPanel, ZoneStack, StatCard, Attest, ZebraTable, WizardRail, FormLanguageSwitcher } from './structure';
 export type { Tone, Ds2Column, Ds2ColType, StepState, RailStep, RailPhase, Ds2Lang } from './structure';
 
+// DS2 v2 surface primitives (R0-B1) — standalone card (PageCard/AuthCard), imagery (HeroBanner), the
+// action-first home unit (TaskCard), the designed zero-state (EmptyState) and the urgency chip (§2/§3).
+export { PageCard, AuthCard, HeroBanner, TaskCard, EmptyState, UrgencyChip } from './surfaces';
+export type { PageCardWidth, Ds2Cta } from './surfaces';
+
+// The pure urgency helper + per-domain thresholds (§3) — a level from a deadline; treatment is DS2-owned.
+export { urgencyLevel, approvalThresholds, URGENCY } from '../display/urgency';
+export type { UrgencyLevel, UrgencyThresholds } from '../display/urgency';
+
 // Status pills + money/date/name formatting — the existing display layer, re-exported (not reinvented).
 export { StatusTag, AuditCode, humanise } from '../display/status';
 export { formatMoney } from '../display/money';
