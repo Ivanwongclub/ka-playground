@@ -3,7 +3,7 @@
 // (403 not-your-session · 409 session-state · 404 no-booked-seat) are SHOWN-NOT-HIDDEN: the controls
 // stay visible and the server's refusal is rendered, never pre-hidden by the client.
 import { useEffect, useState } from 'react';
-import { App, Button, Empty, List, Segmented, Select, Space, Typography } from 'antd';
+import { App, Button, List, Segmented, Select, Space, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
@@ -11,7 +11,7 @@ import { mutate } from '../api/mutate';
 import { personName } from '../display/names';
 import { formatHkt, formatHktTime } from '../display/date';
 import { StatusTag } from '../display/status';
-import { SubPanel } from '@/ds2'; // DS2 rollout C2 — container framing (List/Card→SubPanel). The attendance
+import { SubPanel, EmptyState } from '@/ds2'; // DS2 rollout C2 — container framing (List/Card→SubPanel). The attendance
 // MARK handler (mark) and the book/cancel handler (act) + their payloads are BYTE-IDENTICAL (see the proofs).
 
 const { Title, Paragraph, Text } = Typography;
@@ -165,7 +165,7 @@ function RosterMark({ sessionId }: { sessionId: string }) {
           </Text>
           <List<RosterEntry>
             dataSource={res.data.roster}
-            locale={{ emptyText: <Empty description={t('attendance.rosterEmpty')} /> }}
+            locale={{ emptyText: <EmptyState size="inline" message={t('attendance.rosterEmpty')} /> }}
             renderItem={(m) => (
               <List.Item
                 key={m.student_id}

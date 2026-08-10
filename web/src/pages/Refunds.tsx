@@ -80,11 +80,11 @@ export function Refunds() {
               { title: t('refund.student'), render: (_, r) => personName(r.student_name) },
               { title: t('refund.amount'), render: (_, r) => <Text strong>{formatMoney(r.amount_minor, r.currency, locale)}</Text> },
               { title: t('refund.destination'), dataIndex: 'destination_party', render: (v: string) => <StatusTag domain="refundDestination" value={v} /> },
-              { title: '', dataIndex: 'status', render: (s: string) => <StatusTag domain="refundStatus" value={s} /> },
+              { title: t('common.status'), dataIndex: 'status', render: (s: string) => <StatusTag domain="refundStatus" value={s} /> },
               // BI-9: the confirmer SEES who approved it.
               { title: t('refund.approvedBy'), render: (_, r) => personName(r.approved_by_name) },
               {
-                title: '', key: 'act',
+                title: t('common.actions'), key: 'act',
                 render: (_, r) =>
                   r.status === 'requested' ? (
                     <Space>

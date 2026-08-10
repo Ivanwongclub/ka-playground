@@ -3,7 +3,7 @@
 // same permission as its underlying screen, so the dashboard never shows a number the
 // caller could not open. Counts only — money formatting is S-UX2a's shared kit, not here.
 import { useEffect, useState } from 'react';
-import { Col, Row, Spin, Typography } from 'antd';
+import { Col, Row, Skeleton, Typography } from 'antd';
 import { CalendarCheck, CircleAlert, FileSignature, GraduationCap, Link2, Scale, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '../auth/session';
@@ -122,9 +122,14 @@ export function Dashboard() {
       <Typography.Paragraph type="secondary">{t('dashboard.subtitle')}</Typography.Paragraph>
 
       {metrics === null ? (
-        <div style={{ padding: 48, textAlign: 'center' }}>
-          <Spin />
-        </div>
+        // R4: skeleton placeholders holding the KPI grid layout (composed multi-read) — not a top-level Spin.
+        <Row gutter={[16, 16]}>
+          {[0, 1, 2].map((i) => (
+            <Col key={i} xs={24} sm={12} md={8}>
+              <Skeleton active paragraph={{ rows: 1 }} title={{ width: '55%' }} />
+            </Col>
+          ))}
+        </Row>
       ) : metrics.length === 0 ? (
         <Typography.Paragraph type="secondary">{t('dashboard.empty')}</Typography.Paragraph>
       ) : (

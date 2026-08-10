@@ -8,7 +8,7 @@
 // reads 0. This rides on the tm_read co-member wall (same dependency as the B2 names/count split) — if
 // tm_read is ever widened, revisit this split.
 import { useState } from 'react';
-import { Alert, App, Button, Empty, Input, List, Select, Space, Tag, Tooltip, Typography } from 'antd';
+import { Alert, App, Button, Input, List, Select, Space, Tag, Tooltip, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
@@ -17,7 +17,7 @@ import { StatusTag } from '../display/status';
 import { programmeName, personName } from '../display/names';
 // DS2 (restyle rollout C4 — child-data tier). StudentTeam.tsx joins the ALLOWED @/ds2 adopters
 // (import-guard). Container-framing only (Card→SubPanel); formation/join/submit handlers byte-identical.
-import { SubPanel } from '@/ds2';
+import { SubPanel, EmptyState } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -66,7 +66,7 @@ export function StudentTeam() {
 
         {/* Form-or-join is offered for each pooled (consented, unteamed) enrolment. */}
         {pooled.length === 0 && myTeams.length === 0 && (
-          <Empty description={t('studentTeam.noPool')} />
+          <EmptyState size="page" message={t('studentTeam.noPool')} />
         )}
         {pooled.map((enr) => (
           <FormOrJoin

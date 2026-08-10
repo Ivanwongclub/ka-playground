@@ -93,7 +93,7 @@ export function EnrolmentPool() {
             // ruling if the programme should be shown here (needs a programme join in the report).
             { title: t('enrol.student'), dataIndex: 'student_name' },
             { title: t('enrol.actingGuardian'), dataIndex: 'acting_guardian' },
-            { title: '', dataIndex: 'status', render: (s: string) => <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><StateBadge state={s === 'completed' ? 'ok' : ['withdrawn', 'released'].includes(s) ? 'warn' : 'action'} title={t(`enrol.status.${s}`)} />{t(`enrol.status.${s}`)}</span> },
+            { title: t('common.status'), dataIndex: 'status', render: (s: string) => <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><StateBadge state={s === 'completed' ? 'ok' : ['withdrawn', 'released'].includes(s) ? 'warn' : 'action'} title={t(`enrol.status.${s}`)} />{t(`enrol.status.${s}`)}</span> },
           ]}
         />
       </SubPanel>
@@ -106,7 +106,7 @@ export function EnrolmentPool() {
           pagination={false}
           columns={[
             { title: t('enrol.pool.reason'), dataIndex: 'reason' },
-            { title: '', dataIndex: 'status', render: (s: string) => <StatusTag domain="withdrawalStatus" value={s} /> },
+            { title: t('common.status'), dataIndex: 'status', render: (s: string) => <StatusTag domain="withdrawalStatus" value={s} /> },
             { title: t('enrol.pool.decidedBy'), dataIndex: 'decided_by_name' },
           ]}
         />

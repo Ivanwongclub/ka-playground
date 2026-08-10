@@ -136,7 +136,7 @@ export function Payments() {
                 { key: 'student', title: t('payments.student'), type: 'text', render: (o) => personName(o.student_name) },
                 { key: 'programme', title: t('payments.programme'), type: 'text', render: (o) => programmeName(o, locale) },
                 { key: 'amount', title: t('payments.amount'), type: 'money', render: (o) => formatMoney(o.total_amount_minor, o.currency, locale) },
-                { key: 'act', title: '', type: 'action', render: (o) => <Button size="small" type="primary" onClick={() => setRecordFor(o)}>{t('payments.record')}</Button> },
+                { key: 'act', title: t('common.actions'), type: 'action', render: (o) => <Button size="small" type="primary" onClick={() => setRecordFor(o)}>{t('payments.record')}</Button> },
               ]}
             />
           </Card>
@@ -155,10 +155,10 @@ export function Payments() {
                   render: (p) => p.recorded_by === meId
                     ? <span style={{ color: 'var(--ka-warning)', background: 'rgba(251,191,36,.12)', fontSize: 12, fontWeight: 600, padding: '2px 9px', borderRadius: 6 }}>{t('payments.you')}</span>
                     : personName(p.recorded_by_name) },
-                { key: 'status', title: '', type: 'status', render: (p) => <StatusTag domain="paymentStatus" value={p.status} /> },
+                { key: 'status', title: t('common.status'), type: 'status', render: (p) => <StatusTag domain="paymentStatus" value={p.status} /> },
                 // BI-9 shown-not-hidden: the recorder's own Confirm/Reject are SHOWN but DISABLED with the
                 // reason. The SERVER remains the authority (403 on a same-person confirm OR reject).
-                { key: 'act', title: '', type: 'action', render: (p) => {
+                { key: 'act', title: t('common.actions'), type: 'action', render: (p) => {
                     const mine = p.recorded_by === meId;
                     return (
                       <Space>

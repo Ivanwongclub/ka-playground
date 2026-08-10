@@ -541,6 +541,9 @@
   },
   "common": {
     "reasonLabel": "Reason",
+    "actions": "Actions",
+    "status": "Status",
+    "when": "When",
     "cancel": "Cancel",
     "confirm": "Confirm"
   },

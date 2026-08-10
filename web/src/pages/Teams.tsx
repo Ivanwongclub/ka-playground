@@ -20,7 +20,7 @@ import { formatHkt } from '../display/date';
 import { ReasonModal } from '../components/ReasonModal';
 // DS2 (restyle rollout M4 — money tier; last card). ALLOWED adopter (import-guard). Appearance only:
 // the two titled section cards → SubPanel framing; 成團 confirm/assign/resolution logic is byte-identical.
-import { SubPanel } from '@/ds2';
+import { SubPanel, EmptyState } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -191,7 +191,7 @@ export function Teams() {
               render: (_, m) => <Text>{t('teams.signedOf', { signed: m.signed_count, total: m.guardian_count })}</Text>,
             },
             {
-              title: '', key: 'consent',
+              title: t('common.status'), key: 'consent',
               render: (_, m) =>
                 m.satisfied ? (
                   <Tag color="success">{t('teams.satisfied')}</Tag>
@@ -272,9 +272,9 @@ export function Teams() {
               { title: t('teams.category'), key: 'category', render: (_, r) => triName(r.category_name_en, r.category_name_tc, r.category_name_sc, locale) },
               { title: t('teams.createdBy'), dataIndex: 'created_by_name', render: (v: string | null) => personName(v) },
               { title: t('teams.members'), dataIndex: 'member_count', align: 'right' as const },
-              { title: '', dataIndex: 'status', render: (s: string) => <StatusTag domain="teamStatus" value={s} /> },
+              { title: t('common.status'), dataIndex: 'status', render: (s: string) => <StatusTag domain="teamStatus" value={s} /> },
               {
-                title: '', key: 'act',
+                title: t('common.actions'), key: 'act',
                 render: (_, r) => <Button size="small" onClick={() => setOpen(r)}>{t('teams.review')}</Button>,
               },
             ]}
@@ -439,7 +439,7 @@ function ResolutionConsole({ programmes, teams }: { programmes: { value: number;
                 <Text strong>{t('teams.resUnderStrength')}</Text>
                 <Table<MatchTeam>
                   rowKey="team_id" size="small" pagination={false} dataSource={m?.under_strength_teams ?? []}
-                  locale={{ emptyText: t('teams.resNone') }}
+                  locale={{ emptyText: <EmptyState size="inline" message={t('teams.resNone')} /> }}
                   columns={[
                     { title: t('teams.name'), dataIndex: 'name' },
                     { title: t('teams.resMemberCount'), key: 'mc', render: (_, r) => `${r.member_count}${min !== null ? ` / ${t('teams.resMin')} ${min}` : ''}` },
@@ -451,7 +451,7 @@ function ResolutionConsole({ programmes, teams }: { programmes: { value: number;
                 <Text strong>{t('teams.resUnplaced')}</Text>
                 <Table<UnplacedRow>
                   rowKey="id" size="small" pagination={false} dataSource={m?.unplaced_students ?? []}
-                  locale={{ emptyText: t('teams.resNone') }}
+                  locale={{ emptyText: <EmptyState size="inline" message={t('teams.resNone')} /> }}
                   columns={[{ title: t('teams.member'), dataIndex: 'student_name', render: (v: string | null) => personName(v) }]}
                 />
               </div>
@@ -460,7 +460,7 @@ function ResolutionConsole({ programmes, teams }: { programmes: { value: number;
                 <Text strong>{t('teams.resParked')}</Text>
                 <Table<ParkedRow>
                   rowKey="id" size="small" pagination={false} dataSource={m?.parked ?? []}
-                  locale={{ emptyText: t('teams.resNone') }}
+                  locale={{ emptyText: <EmptyState size="inline" message={t('teams.resNone')} /> }}
                   columns={[
                     { title: t('teams.member'), dataIndex: 'student_name', render: (v: string | null) => personName(v) },
                     {
@@ -479,12 +479,12 @@ function ResolutionConsole({ programmes, teams }: { programmes: { value: number;
                 <Text strong>{t('teams.resConfirmedTeams')}</Text>
                 <Table<TeamRow>
                   rowKey="id" size="small" pagination={false} dataSource={confirmed}
-                  locale={{ emptyText: t('teams.resNone') }}
+                  locale={{ emptyText: <EmptyState size="inline" message={t('teams.resNone')} /> }}
                   columns={[
                     { title: t('teams.name'), dataIndex: 'name' },
                     { title: t('teams.resMemberCount'), key: 'mc', render: (_, r) => `${r.member_count}${min !== null ? ` / ${t('teams.resMin')} ${min}` : ''}` },
                     {
-                      title: '', key: 'act',
+                      title: t('common.actions'), key: 'act',
                       render: (_, r) => (
                         <Space>
                           <Button size="small" onClick={() => { setAssignTeam(r.id); setAssignPick(undefined); }}>{t('teams.resAssign')}</Button>
@@ -501,14 +501,14 @@ function ResolutionConsole({ programmes, teams }: { programmes: { value: number;
                 <Text strong>{t('teams.resExceptions')}</Text>
                 <Table<ExceptionRow>
                   rowKey="id" size="small" pagination={false} dataSource={rep?.exception_ledger ?? []}
-                  locale={{ emptyText: t('teams.resNone') }}
+                  locale={{ emptyText: <EmptyState size="inline" message={t('teams.resNone')} /> }}
                   columns={[
                     { title: t('teams.resType'), dataIndex: 'type', render: (v: string) => humanise(v) },
                     { title: t('teams.resStatus'), dataIndex: 'status', render: (v: string) => humanise(v) },
                     { title: t('teams.member'), dataIndex: 'student_name', render: (v: string | null) => personName(v) },
                     { title: t('teams.resBackstop'), dataIndex: 'days_to_backstop', render: (v: number | null) => (v === null ? '—' : t('teams.resDays', { n: v })) },
                     {
-                      title: '', key: 'act',
+                      title: t('common.actions'), key: 'act',
                       render: (_, r) =>
                         r.enrolment_id ? (
                           <Space>
@@ -525,12 +525,12 @@ function ResolutionConsole({ programmes, teams }: { programmes: { value: number;
                 <Text strong>{t('teams.resWaivers')}</Text>
                 <Table<WaiverRow>
                   rowKey="team_id" size="small" pagination={false} dataSource={rep?.waiver_register ?? []}
-                  locale={{ emptyText: t('teams.resNone') }}
+                  locale={{ emptyText: <EmptyState size="inline" message={t('teams.resNone')} /> }}
                   columns={[
                     { title: t('teams.name'), key: 'nm', render: (_, r) => teamName(r.team_id) },
                     { title: t('teams.resReason'), dataIndex: 'waiver_reason' },
                     { title: t('teams.resApprover'), dataIndex: 'waived_by_name', render: (v: string | null) => personName(v) },
-                    { title: '', key: 'when', render: (_, r) => (r.waived_at ? formatHkt(r.waived_at, locale) : '—') },
+                    { title: t('common.when'), key: 'when', render: (_, r) => (r.waived_at ? formatHkt(r.waived_at, locale) : '—') },
                   ]}
                 />
               </div>

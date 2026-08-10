@@ -74,13 +74,13 @@ export function Withdrawals() {
               { title: t('withdrawals.student'), dataIndex: 'student_name', render: (v: string | null) => v ?? '—' },
               { title: t('withdrawals.requestedBy'), dataIndex: 'requested_by_name', render: (v: string | null) => v ?? '—' },
               { title: t('withdrawals.reason'), dataIndex: 'reason' },
-              { title: '', dataIndex: 'status', render: (s: string) => <StatusTag domain="withdrawalStatus" value={s} /> },
+              { title: t('common.status'), dataIndex: 'status', render: (s: string) => <StatusTag domain="withdrawalStatus" value={s} /> },
               {
                 title: t('withdrawals.decided'), key: 'decided',
                 render: (_, r) => (r.decided_by_name ? `${r.decided_by_name} · ${formatHkt(r.decided_at, locale)}` : '—'),
               },
               {
-                title: '', key: 'act',
+                title: t('common.actions'), key: 'act',
                 render: (_, r) =>
                   r.status === 'pending' ? (
                     <Space>

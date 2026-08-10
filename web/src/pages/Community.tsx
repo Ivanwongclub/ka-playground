@@ -3,14 +3,14 @@
 // DS2 rollout D3 — markup-only restyle (Card→SubPanel, meta→MetaChip). The RSVP (setRsvp) and profile
 // (save) mutation handlers are kept BYTE-IDENTICAL (see the payload-unchanged proofs in the diff).
 import { useEffect, useState } from 'react';
-import { Alert, App, Button, Empty, Input, List, Segmented, Space, Switch, Typography } from 'antd';
+import { Alert, App, Button, Input, List, Segmented, Space, Switch, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
 import { mutate } from '../api/mutate';
 import { personName } from '../display/names';
 import { formatHkt } from '../display/date';
-import { SubPanel, MetaChip } from '@/ds2';
+import { SubPanel, MetaChip, EmptyState } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -134,7 +134,7 @@ export function MemberProfile() {
   // Academy-admin overlap: the nav reveals Profile on member_directory.view, but /my/profile is
   // role:member → a non-member gets 403. Handle GRACEFULLY (neutral state, not an error boundary).
   if (profile.error && profile.error.includes('403')) {
-    return <Empty description={t('community.notAMember')} style={{ padding: 48 }} />;
+    return <EmptyState size="page" message={t('community.notAMember')} />;
   }
 
   const save = async () => {

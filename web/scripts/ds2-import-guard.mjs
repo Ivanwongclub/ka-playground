@@ -16,6 +16,8 @@ const srcDir = join(root, 'src');
 const ALLOWED = [
   'src/ds2/', // the library itself
   'src/pages/Ds2Gallery.tsx', // the DEV-only gallery (STEP 2) — dead-code-eliminated from production
+  // ── rollout R0-B3 (EmptyState adoption) — the shared data-fetch convention ──
+  'src/api/useResource.tsx', // R0-B3 — DataBoundary's empty branch renders the DS2 EmptyState (one central adoption)
   // ── restyle rollout: each surface is a deliberate adoption in its own gated card ──
   'src/pages/SelfService.tsx', // ANCHORS STEP 1 — My Children (MyPayments/MyStudents in-file are untouched)
   'src/pages/AdminProgrammes.tsx', // ANCHORS STEP 2 — the wizard

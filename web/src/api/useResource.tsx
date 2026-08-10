@@ -3,9 +3,12 @@
 // <DataBoundary> renders the loading / error / empty states consistently, so no page silently
 // blanks on failure again. Fixes the Consents-list crash and the four silent-blank pages.
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Alert, Empty, Spin } from 'antd';
+import { Alert, Spin } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '../auth/session';
+// R0-B3: the empty branch adopts the DS2 EmptyState (DS2-V2-SPEC §2.4). Imported from ../ds2/surfaces
+// (NOT the @/ds2 barrel) because the barrel re-exports this module — a direct import avoids the cycle.
+import { EmptyState } from '../ds2/surfaces';
 
 interface ResourceState<T> {
   data: T | null;
@@ -74,7 +77,7 @@ export function DataBoundary({ loading, error, empty, children }: DataBoundaryPr
     return <Alert type="error" showIcon message={t('data.error')} description={error} style={{ margin: '16px 0' }} />;
   }
   if (empty) {
-    return <Empty description={t('data.empty')} style={{ padding: 32 }} />;
+    return <EmptyState size="page" message={t('data.empty')} />;
   }
   return <>{children}</>;
 }

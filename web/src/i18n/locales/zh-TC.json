@@ -541,6 +541,9 @@
   },
   "common": {
     "reasonLabel": "原因",
+    "actions": "操作",
+    "status": "狀態",
+    "when": "時間",
     "cancel": "取消",
     "confirm": "確認"
   },

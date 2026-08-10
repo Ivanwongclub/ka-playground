@@ -121,7 +121,7 @@ export function ConsentEvidence() {
                 { title: t('consent.evidence.language'), dataIndex: 'language', render: (v: string) => <StatusTag domain="language" value={v} /> },
                 { title: t('consent.signedAt'), dataIndex: 'signed_at', render: (v: string) => formatHkt(v, locale) },
                 {
-                  title: '', dataIndex: 'id',
+                  title: t('common.actions'), dataIndex: 'id',
                   render: (id: string) => (
                     <Button
                       size="small"

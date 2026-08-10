@@ -541,6 +541,9 @@
   },
   "common": {
     "reasonLabel": "原因",
+    "actions": "操作",
+    "status": "状态",
+    "when": "时间",
     "cancel": "取消",
     "confirm": "确认"
   },

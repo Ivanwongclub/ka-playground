@@ -47,7 +47,7 @@ export function Enrolments() {
               { title: t('enrol.programme'), render: (_, row) => programmeName(row, locale) },
               { title: t('enrol.student'), render: (_, row) => personName(row.student_name) },
               {
-                title: '', dataIndex: 'status',
+                title: t('common.status'), dataIndex: 'status',
                 // DS2: state as a VISUAL (StateBadge) + the SAME localized label (enrol.status.*) — same
                 // three states as the old Tag colours (bad→warn · completed→ok · in-progress→action).
                 render: (s: string) => (

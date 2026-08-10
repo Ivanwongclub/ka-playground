@@ -12,7 +12,7 @@ import { ReasonModal } from '../components/ReasonModal';
 import { formatHkt } from '../display/date';
 // DS2 (restyle rollout C5 — child-data tier: child-linked approval authority). ALLOWED adopter
 // (import-guard). Container-framing only (Card→SubPanel); approve/decline/reject decision logic byte-identical.
-import { SubPanel } from '@/ds2';
+import { SubPanel, EmptyState } from '@/ds2';
 
 const { Title, Paragraph } = Typography;
 
@@ -75,13 +75,13 @@ export function Approvals() {
             size="small"
             dataSource={accounts}
             pagination={false}
-            locale={{ emptyText: t('approvals.noneRegistrations') }}
+            locale={{ emptyText: <EmptyState size="inline" message={t('approvals.noneRegistrations')} /> }}
             columns={[
               { title: t('approvals.applicant'), dataIndex: 'applicant_name' },
               { title: t('approvals.kind'), dataIndex: 'kind', render: (v: string) => <Tag>{t(`role.${v}`)}</Tag> },
               { title: t('approvals.age'), dataIndex: 'age_days', render: (v: number) => t('approvals.ageDays', { n: v }) },
               {
-                title: '', key: 'act',
+                title: t('common.actions'), key: 'act',
                 render: (_, r) => (
                   <Space>
                     <Button size="small" type="primary" onClick={() =>
@@ -112,7 +112,7 @@ export function Approvals() {
             size="small"
             dataSource={links}
             pagination={false}
-            locale={{ emptyText: t('approvals.noneLinks') }}
+            locale={{ emptyText: <EmptyState size="inline" message={t('approvals.noneLinks')} /> }}
             columns={[
               {
                 title: t('approvals.relationship'), key: 'rel',
@@ -120,7 +120,7 @@ export function Approvals() {
               },
               { title: t('approvals.age'), dataIndex: 'age_days', render: (v: number) => t('approvals.ageDays', { n: v }) },
               {
-                title: '', key: 'act',
+                title: t('common.actions'), key: 'act',
                 render: (_, r) => (
                   <Space>
                     {/* OD-28 sensitive act — the confirm copy STATES the access consequence. */}
@@ -153,7 +153,7 @@ export function Approvals() {
             size="small"
             dataSource={held}
             pagination={false}
-            locale={{ emptyText: t('approvals.noneHeld') }}
+            locale={{ emptyText: <EmptyState size="inline" message={t('approvals.noneHeld')} /> }}
             columns={[
               { title: t('approvals.counterpart'), dataIndex: 'counterpart_name', render: (v: string | null) => v ?? '—' },
               { title: t('approvals.heldEmail'), dataIndex: 'counterpart_email' },

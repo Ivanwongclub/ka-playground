@@ -2,7 +2,7 @@
 // built/existing-RLS endpoints; the one write surfaced is the existing mint-payment-link (guardian's own
 // audited act — "get the payment link", NEVER "pay"; actual payment leaves via the /pay page). Refusals
 // shown-not-hidden. The teacher roster is the STEP-1 gated read /api/my/students (allowlist {id,name}).
-import { App, Button, Card, Empty, List, Space, Typography } from 'antd';
+import { App, Button, Card, List, Space, Typography } from 'antd';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
@@ -14,7 +14,7 @@ import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
 // DS2 (restyle rollout — anchor STEP 1 MyChildren; C3 MyPayments/MyStudents). ALLOWED adopter already
 // (import-guard, no change). C3 is container-framing only (List/Card→SubPanel); MyChildren is untouched.
-import { SubPanel, ZoneStack, Attest, StatChip, StateBadge, Seal } from '@/ds2';
+import { SubPanel, ZoneStack, Attest, StatChip, StateBadge, Seal, EmptyState } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -222,7 +222,7 @@ export function MyStudents() {
               <SubPanel tone="neutral"><Text strong>{personName(s.student_name)}</Text></SubPanel>
             </List.Item>
           )}
-          locale={{ emptyText: <Empty description={t('selfService.noStudents')} /> }}
+          locale={{ emptyText: <EmptyState size="inline" message={t('selfService.noStudents')} /> }}
         />
       </DataBoundary>
     </Space>

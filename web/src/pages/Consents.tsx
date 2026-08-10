@@ -81,7 +81,7 @@ export function ConsentList() {
               render: (s: string) => <Tag color={statusColor[s]}>{t(`consent.status.${s}`)}</Tag>,
             },
             {
-              title: '', dataIndex: 'id',
+              title: t('common.actions'), dataIndex: 'id',
               render: (id: string, row) =>
                 ['sent', 'viewed'].includes(row.status)
                   ? <Link to={`/consents/${id}`}>{t('consent.open')}</Link>
