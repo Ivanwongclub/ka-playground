@@ -451,18 +451,5 @@ h3 {
   color: var(--ka-muted-fg);
 }
 
-/* ── DS2 rollout D1 — Dashboard KPI card (SubPanel zone made clickable) ─────── */
-.ka-dash-kpi {
-  cursor: pointer;
-  border-radius: var(--ka-r-lg);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
-}
-.ka-dash-kpi:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-}
-.ka-dash-kpi:focus-visible {
-  outline: 2px solid var(--ka-gold);
-  outline-offset: 2px;
-}
-/* .ka-dash-kpi__value moved into DS2 as .ds2-statcard__value (StatCard primitive). */
+/* .ka-dash-kpi retired (R0-B2): the Dashboard KPI clickability now lives in the DS2 StatCard's own
+   to/onClick (.ds2-statcard-link / .ds2-statcard-btn), not a bespoke wrapper. */

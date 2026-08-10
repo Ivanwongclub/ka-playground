@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import { Col, Row, Spin, Typography } from 'antd';
 import { CalendarCheck, CircleAlert, FileSignature, GraduationCap, Link2, Scale, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { authFetch } from '../auth/session';
 import { useIdentity } from '../auth/identity';
 import { StatCard } from '@/ds2'; // DS2 — migrated to the shared StatCard primitive (was a local tile)
@@ -37,7 +36,6 @@ function upcomingSessionCount(sessions: { starts_at: string; status: string }[])
 
 export function Dashboard() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { identity, has } = useIdentity();
   const [metrics, setMetrics] = useState<Metric[] | null>(null);
 
@@ -133,22 +131,9 @@ export function Dashboard() {
         <Row gutter={[16, 16]}>
           {metrics.map((m) => (
             <Col key={m.key} xs={24} sm={12} md={8}>
-              {/* DS2: a shade-banded SubPanel zone + MetaChip header; the KPI number is token-styled
-                  (display font, tabular-nums) — same value, same click-to-open, same alert tint. */}
-              <div
-                className="ka-dash-kpi"
-                role="button"
-                tabIndex={0}
-                onClick={() => void navigate(m.to)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    void navigate(m.to);
-                  }
-                }}
-              >
-                <StatCard label={t(m.labelKey)} value={m.value} icon={m.icon} alert={m.alert} />
-              </div>
+              {/* R0-B2: the StatCard is the interactive element — its built-in `to` (a Link) provides the
+                  drill-down (role=button/keyboard/focus) the old .ka-dash-kpi wrapper hand-wired. */}
+              <StatCard label={t(m.labelKey)} value={m.value} icon={m.icon} alert={m.alert} to={m.to} />
             </Col>
           ))}
         </Row>

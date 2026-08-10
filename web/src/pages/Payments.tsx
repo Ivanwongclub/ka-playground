@@ -15,26 +15,11 @@ import { formatMoney } from '../display/money';
 import { StatusTag } from '../display/status';
 import { programmeName, personName } from '../display/names';
 import { useIdentity } from '../auth/identity';
-import { ZebraTable, StatChip, Seal } from '@/ds2';
+import { ZebraTable, StatCard } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
 
-// A summary money KPI card — composed from --ka-* tokens (candidate future DS2 StatCard).
-function StatCard({ label, count, unit, value, tone, seal }: {
-  label: string; count: number; unit: string; value: string;
-  tone?: 'default' | 'warn' | 'gold'; seal?: boolean;
-}) {
-  const color = tone === 'warn' ? 'var(--ka-warning)' : tone === 'gold' ? 'var(--ka-gold)' : 'var(--ka-fg)';
-  return (
-    <div style={{ background: 'var(--ka-card)', border: '1px solid var(--ka-border)', borderRadius: 'var(--ka-r-lg)', padding: '14px 16px' }}>
-      <div style={{ fontSize: 12, color: 'var(--ka-muted-fg)', display: 'flex', alignItems: 'center', gap: 7 }}>
-        {seal && <Seal size={15} />}{label}
-      </div>
-      <div style={{ fontFamily: 'var(--ka-font-display)', fontWeight: 700, fontSize: 26, marginTop: 5, fontVariantNumeric: 'tabular-nums', lineHeight: 1, color }}>{value}</div>
-      <div style={{ marginTop: 7 }}><StatChip value={count} label={unit} /></div>
-    </div>
-  );
-}
+// R0-B2: the local StatCard was consolidated into the DS2 StatCard (count/unit props, 30px value).
 
 interface OrderRow {
   id: string;
@@ -138,8 +123,8 @@ export function Payments() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 'var(--ka-gap)' }}>
           <StatCard label={t('payments.outstanding')} value={formatMoney(outstandingMinor, currency, locale)} count={awaiting.length} unit={t('payments.unitOrders')} />
-          <StatCard label={t('payments.awaiting')} value={formatMoney(awaitingMinor, currency, locale)} count={pending.length} unit={t('payments.unitToConfirm')} tone="warn" />
-          <StatCard label={t('payments.confirmedLabel')} value={formatMoney(confirmedMinor, currency, locale)} count={confirmed.length} unit={t('payments.unitConfirmed')} tone="gold" seal />
+          <StatCard label={t('payments.awaiting')} value={formatMoney(awaitingMinor, currency, locale)} count={pending.length} unit={t('payments.unitToConfirm')} accent="warn" />
+          <StatCard label={t('payments.confirmedLabel')} value={formatMoney(confirmedMinor, currency, locale)} count={confirmed.length} unit={t('payments.unitConfirmed')} accent="gold" seal />
         </div>
 
         <DataBoundary loading={orders.loading} error={orders.error} empty={awaiting.length === 0}>
