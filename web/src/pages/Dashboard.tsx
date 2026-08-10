@@ -4,7 +4,7 @@
 // caller could not open. Counts only — money formatting is S-UX2a's shared kit, not here.
 import { useEffect, useState } from 'react';
 import { Col, Row, Spin, Typography } from 'antd';
-import { CircleAlert, FileSignature, GraduationCap, Link2, Scale, Users } from 'lucide-react';
+import { CalendarCheck, CircleAlert, FileSignature, GraduationCap, Link2, Scale, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { authFetch } from '../auth/session';
@@ -22,6 +22,18 @@ interface Metric {
 
 const OPEN_CONSENT = new Set(['sent', 'viewed']);
 const SETTLED_LINK = new Set(['paid', 'expired', 'void', 'cancelled']);
+const TERMINAL_SESSION = new Set(['completed', 'cancelled']);
+
+// S-FIX-UX-1 D3: upcoming = a future start (API timestamp normalised as in display/date) that has not
+// completed/cancelled. Module-level so the metric line carries no `>` (the i18n-check JSX heuristic).
+function upcomingSessionCount(sessions: { starts_at: string; status: string }[]): number {
+  const now = Date.now();
+  return sessions.filter((s) => {
+    if (TERMINAL_SESSION.has(s.status)) return false;
+    const t = Date.parse(s.starts_at.trim().replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'));
+    return !Number.isNaN(t) && t > now;
+  }).length;
+}
 
 export function Dashboard() {
   const { t } = useTranslation();
@@ -62,7 +74,16 @@ export function Dashboard() {
       if (identity?.role === 'guardian') {
         tasks.push(
           json('/api/my/payment-links').then((d) => [
-            { key: 'links', labelKey: 'dashboard.liveLinks', value: (d?.data ?? []).filter((r: { status: string }) => !SETTLED_LINK.has(r.status)).length, icon: <Link2 size={18} aria-hidden />, to: '/enrolments' },
+            { key: 'links', labelKey: 'dashboard.liveLinks', value: (d?.data ?? []).filter((r: { status: string }) => !SETTLED_LINK.has(r.status)).length, icon: <Link2 size={18} aria-hidden />, to: '/my/payments' },
+          ]),
+        );
+      }
+      // S-FIX-UX-1 D3: teacher (mentor) tile — same gate as the mentor nav item (teams.approve ∧
+      // ¬operations.manage). Upcoming = a future start that hasn't completed/cancelled. Opens /attendance.
+      if (has('teams.approve') && !has('operations.manage')) {
+        tasks.push(
+          json('/api/my/mentor/sessions').then((d) => [
+            { key: 'mentorSessions', labelKey: 'dashboard.mentorSessions', value: upcomingSessionCount(d?.sessions ?? []), icon: <CalendarCheck size={18} aria-hidden />, to: '/attendance' },
           ]),
         );
       }

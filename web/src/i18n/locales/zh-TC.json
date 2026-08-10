@@ -448,6 +448,7 @@
     "enrolments": "報名",
     "openConsent": "待處理同意事項",
     "liveLinks": "有效付款連結",
+    "mentorSessions": "即將舉行的課節",
     "poolProgrammes": "設有候補池的課程",
     "issuanceGaps": "發出缺口",
     "orders": "訂單"
@@ -571,7 +572,13 @@
     "approveLinkBody": "這將授予 {{guardian}} 存取 {{student}} 記錄的權限。",
     "rejectLinkTitle": "駁回監護人連結",
     "noneRegistrations": "沒有待審註冊",
-    "noneLinks": "沒有待審連結"
+    "noneLinks": "沒有待審連結",
+    "pendingHeld": "保留中的連結申請",
+    "heldNote": "等待對方註冊的連結申請 — 此處僅供檢視。",
+    "counterpart": "對方",
+    "heldEmail": "電郵",
+    "deadline": "限期",
+    "noneHeld": "沒有保留中的連結申請"
   },
   "withdrawals": {
     "title": "退出申請",
@@ -742,6 +749,7 @@
     "joinedOk": "已加入團隊。",
     "createTitle": "建立新團隊",
     "createLobby": "選擇大堂",
+    "schoolBoundHint": "校本大堂 — 只限本校學生加入",
     "createName": "團隊名稱",
     "createCta": "建立團隊",
     "createdOk": "已建立團隊。",

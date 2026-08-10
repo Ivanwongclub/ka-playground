@@ -448,6 +448,7 @@
     "enrolments": "Enrolments",
     "openConsent": "Open consent tasks",
     "liveLinks": "Live payment links",
+    "mentorSessions": "Upcoming sessions",
     "poolProgrammes": "Programmes with a pool",
     "issuanceGaps": "Issuance gaps",
     "orders": "Orders"
@@ -571,7 +572,13 @@
     "approveLinkBody": "This grants {{guardian}} access to {{student}}'s records.",
     "rejectLinkTitle": "Reject guardian link",
     "noneRegistrations": "No pending registrations",
-    "noneLinks": "No pending links"
+    "noneLinks": "No pending links",
+    "pendingHeld": "Held claims",
+    "heldNote": "Link claims awaiting the other party to register — read-only here.",
+    "counterpart": "Counterpart",
+    "heldEmail": "Email",
+    "deadline": "Deadline",
+    "noneHeld": "No held claims"
   },
   "withdrawals": {
     "title": "Withdrawals",
@@ -742,6 +749,7 @@
     "joinedOk": "Joined the team.",
     "createTitle": "Create a new team",
     "createLobby": "Choose a lobby",
+    "schoolBoundHint": "School-bound lobby — open only to this school's students",
     "createName": "Team name",
     "createCta": "Create team",
     "createdOk": "Team created.",

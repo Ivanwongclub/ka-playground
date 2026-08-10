@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useResource, DataBoundary } from '../api/useResource';
 import { mutate, type MutateResult } from '../api/mutate';
 import { ReasonModal } from '../components/ReasonModal';
+import { formatHkt } from '../display/date';
 // DS2 (restyle rollout C5 — child-data tier: child-linked approval authority). ALLOWED adopter
 // (import-guard). Container-framing only (Card→SubPanel); approve/decline/reject decision logic byte-identical.
 import { SubPanel } from '@/ds2';
@@ -17,12 +18,15 @@ const { Title, Paragraph } = Typography;
 
 interface Account { id: string; kind: string; routing: string; applicant_name: string; age_days: number }
 interface Link { id: string; student_name: string | null; guardian_name: string | null; origin: string; age_days: number }
-interface Queue { threshold_days: number; accounts: Account[]; links: Link[]; held: unknown[] }
+// S-FIX-UX-1 D6: a held guardian-link claim (held_links) — awaiting the counterpart to register.
+// Read-only in this card (no actions); counterpart_name/expires_at are additive display fields.
+interface Held { id: string; counterpart_email: string; counterpart_name: string | null; expires_at: string | null; age_days: number }
+interface Queue { threshold_days: number; accounts: Account[]; links: Link[]; held: Held[] }
 
 type Reasoned = { url: string; title: string; consequence?: string; okText: string } | null;
 
 export function Approvals() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { modal, message } = App.useApp();
   const { data, loading, error, reload } = useResource<Queue>('/api/admin/onboarding-queue');
   const [reasoned, setReasoned] = useState<Reasoned>(null);
@@ -53,6 +57,7 @@ export function Approvals() {
 
   const accounts = data?.accounts ?? [];
   const links = data?.links ?? [];
+  const held = data?.held ?? [];
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
@@ -135,6 +140,25 @@ export function Approvals() {
                   </Space>
                 ),
               },
+            ]}
+          />
+        </SubPanel>
+
+        {/* S-FIX-UX-1 D6: held guardian-link claims — READ-ONLY here (no actions on this card). */}
+        <SubPanel tone="neutral">
+          <Title level={5} style={{ marginTop: 0 }}>{t('approvals.pendingHeld')}</Title>
+          <Paragraph type="secondary" style={{ marginTop: -8 }}>{t('approvals.heldNote')}</Paragraph>
+          <Table<Held>
+            rowKey="id"
+            size="small"
+            dataSource={held}
+            pagination={false}
+            locale={{ emptyText: t('approvals.noneHeld') }}
+            columns={[
+              { title: t('approvals.counterpart'), dataIndex: 'counterpart_name', render: (v: string | null) => v ?? '—' },
+              { title: t('approvals.heldEmail'), dataIndex: 'counterpart_email' },
+              { title: t('approvals.deadline'), dataIndex: 'expires_at', render: (v: string | null) => (v ? formatHkt(v, i18n.language) : '—') },
+              { title: t('approvals.age'), dataIndex: 'age_days', render: (v: number) => t('approvals.ageDays', { n: v }) },
             ]}
           />
         </SubPanel>

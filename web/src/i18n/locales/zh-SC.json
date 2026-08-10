@@ -448,6 +448,7 @@
     "enrolments": "报名",
     "openConsent": "待处理同意事项",
     "liveLinks": "有效付款链接",
+    "mentorSessions": "即将举行的课节",
     "poolProgrammes": "设有候补池的课程",
     "issuanceGaps": "发出缺口",
     "orders": "订单"
@@ -571,7 +572,13 @@
     "approveLinkBody": "这将授予 {{guardian}} 访问 {{student}} 记录的权限。",
     "rejectLinkTitle": "驳回监护人链接",
     "noneRegistrations": "没有待审注册",
-    "noneLinks": "没有待审链接"
+    "noneLinks": "没有待审链接",
+    "pendingHeld": "保留中的连结申请",
+    "heldNote": "等待对方注册的连结申请 — 此处仅供查看。",
+    "counterpart": "对方",
+    "heldEmail": "邮箱",
+    "deadline": "期限",
+    "noneHeld": "没有保留中的连结申请"
   },
   "withdrawals": {
     "title": "退出申请",
@@ -742,6 +749,7 @@
     "joinedOk": "已加入团队。",
     "createTitle": "创建新团队",
     "createLobby": "选择大堂",
+    "schoolBoundHint": "校本大堂 — 只限本校学生加入",
     "createName": "团队名称",
     "createCta": "创建团队",
     "createdOk": "已创建团队。",

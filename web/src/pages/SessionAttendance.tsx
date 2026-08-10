@@ -9,7 +9,7 @@ import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
 import { mutate } from '../api/mutate';
 import { personName } from '../display/names';
-import { formatHkt } from '../display/date';
+import { formatHkt, formatHktTime } from '../display/date';
 import { StatusTag } from '../display/status';
 import { SubPanel } from '@/ds2'; // DS2 rollout C2 — container framing (List/Card→SubPanel). The attendance
 // MARK handler (mark) and the book/cancel handler (act) + their payloads are BYTE-IDENTICAL (see the proofs).
@@ -20,7 +20,7 @@ interface SessionRow { id: string; title: string; starts_at: string; ends_at: st
 interface MentorSessionRow extends SessionRow { capacity: number; booked: number; attended: number; no_show: number }
 interface RosterEntry { student_id: number; student_name: string | null; status: string }
 interface RosterPayload { session: { id: string; title: string; starts_at: string; ends_at: string; status: string; capacity: number }; roster: RosterEntry[] }
-interface ConsentRow { student_id: number; student_name: string | null }
+interface EnrolChildRow { student_id: number; student_name: string | null }
 interface ProgrammeRow { id: number; code: string; name_en: string; name_tc: string; name_sc: string }
 
 function programmeName(p: ProgrammeRow, locale: KaLocale): string {
@@ -28,7 +28,8 @@ function programmeName(p: ProgrammeRow, locale: KaLocale): string {
 }
 
 function whenLabel(s: SessionRow, locale: KaLocale): string {
-  return formatHkt(s.starts_at, locale);
+  // S-FIX-UX-1 D5: show start AND end (end as time-only beside the full start).
+  return `${formatHkt(s.starts_at, locale)} – ${formatHktTime(s.ends_at, locale)}`;
 }
 
 // ── A session's attendance chip (read views) ────────────────────────────────────────────────────────
@@ -88,14 +89,16 @@ export function MySessions() {
   );
 }
 
-// ── Guardian: My Child's Sessions (read-only; child picker from consent-requests) ───────────────────
+// ── Guardian: My Child's Sessions (read-only; child picker from enrolments) ─────────────────────────
 export function ChildSessions() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language as KaLocale;
-  const children = useResource<{ data: ConsentRow[] }>('/api/consent-requests');
+  // S-FIX-UX-1 D2: derive the picker from enrolments (not consent-requests) so a child with no
+  // consent request still appears — distinct on (student_id, student_name).
+  const children = useResource<{ data: EnrolChildRow[] }>('/api/enrolments');
   const [studentId, setStudentId] = useState<number | null>(null);
 
-  // Distinct children the guardian has activity for (each consent request carries the student).
+  // Distinct children the guardian has an enrolment for (each enrolment carries the student).
   const options = Array.from(
     new Map((children.data?.data ?? []).map((c) => [c.student_id, c.student_name])).entries(),
   ).map(([id, name]) => ({ value: id, label: personName(name) }));
@@ -158,7 +161,7 @@ function RosterMark({ sessionId }: { sessionId: string }) {
       {res.data && (
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <Text type="secondary">
-            {res.data.session.title} · {formatHkt(res.data.session.starts_at, locale)} · <StatusTag domain="sessionStatus" value={res.data.session.status} />
+            {res.data.session.title} · {formatHkt(res.data.session.starts_at, locale)} – {formatHktTime(res.data.session.ends_at, locale)} · <StatusTag domain="sessionStatus" value={res.data.session.status} />
           </Text>
           <List<RosterEntry>
             dataSource={res.data.roster}
@@ -231,12 +234,12 @@ export function MentorAttendance() {
 }
 
 // ── Ops oversight: programme → attendance report → a session's roster + mark ─────────────────────────
-// NOTE: the programme list (/api/admin/programmes) is configuration.manage-gated, so this surface serves
-// configuration/super admins. An operations-only admin has no programme-list source — a follow-on.
+// S-FIX-UX-1 D7: the programme picker reads /api/admin/attendance/programmes — an operations.manage-gated
+// list of id/code/trilingual-names ONLY (no config data), so an operations-only admin has a source too.
 export function OpsAttendance() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language as KaLocale;
-  const programmes = useResource<{ data: ProgrammeRow[] }>('/api/admin/programmes');
+  const programmes = useResource<{ data: ProgrammeRow[] }>('/api/admin/attendance/programmes');
   const [programmeId, setProgrammeId] = useState<number | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
 

@@ -165,13 +165,14 @@ export const NAV: NavGroup[] = [
         visible: (h) => h('operations.manage'),
       },
       {
-        // S-UX3-4 — ops attendance oversight (programme → report → roster + mark). Gated
-        // configuration.manage because the programme list (/api/admin/programmes) is; an
-        // operations-only admin has no programme-list source yet (a follow-on).
+        // S-UX3-4 / S-FIX-UX-1 D7 — ops attendance oversight (programme → report → roster + mark).
+        // Gated operations.manage, mirroring the server: the picker now reads
+        // /api/admin/attendance/programmes (ProgrammeController@opsOptions), an operations.manage
+        // route, so an operations-only admin has a programme-list source.
         path: '/admin/attendance',
         i18nKey: 'nav.attendanceOversight',
         icon: <NotebookPen size={16} aria-hidden />,
-        visible: (h) => h('configuration.manage'),
+        visible: (h) => h('operations.manage'),
       },
       {
         path: '/admin/programmes',

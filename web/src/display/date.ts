@@ -21,6 +21,17 @@ export function formatHkt(iso: string | null | undefined, locale: string): strin
   }).format(d);
 }
 
+/** Time only in HKT, e.g. "19:27". S-FIX-UX-1 D5 — for a session's end time beside its start. */
+export function formatHktTime(iso: string | null | undefined, locale: string): string {
+  if (!iso) return '—';
+  const d = parse(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: 'Asia/Hong_Kong',
+    timeStyle: 'short',
+  }).format(d);
+}
+
 /**
  * Date only. A bare calendar date (YYYY-MM-DD, e.g. a formation deadline) is formatted as
  * a calendar date with NO timezone shift; a full timestamp is rendered as its HKT date.

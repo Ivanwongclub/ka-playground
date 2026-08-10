@@ -43,9 +43,11 @@ class OnboardingQueueService
             ->get(['gl.id', 'gl.student_id', 'gl.guardian_id', 'gl.origin', 'gl.created_at', 's.name as student_name', 'g.name as guardian_name'])
             ->map(fn ($r) => ['id' => $r->id, 'student_id' => $r->student_id, 'guardian_id' => $r->guardian_id, 'student_name' => $r->student_name, 'guardian_name' => $r->guardian_name, 'origin' => $r->origin, 'age_days' => $age($r->created_at)])->all();
 
+        // S-FIX-UX-1 D6: additive counterpart_name + expires_at (deadline) so the held-claims table
+        // can name the party and render a deadline via formatHkt — display-only, no held-link state change.
         $held = DB::table('held_links')->where('status', 'held')->orderBy('created_at')
-            ->get(['id', 'counterpart_email', 'created_at'])
-            ->map(fn ($r) => ['id' => $r->id, 'counterpart_email' => $r->counterpart_email, 'age_days' => $age($r->created_at)])->all();
+            ->get(['id', 'counterpart_email', 'counterpart_name', 'expires_at', 'created_at'])
+            ->map(fn ($r) => ['id' => $r->id, 'counterpart_email' => $r->counterpart_email, 'counterpart_name' => $r->counterpart_name, 'expires_at' => $r->expires_at, 'age_days' => $age($r->created_at)])->all();
 
         return ['threshold_days' => self::ESCALATION_THRESHOLD_DAYS, 'accounts' => $accounts, 'links' => $links, 'held' => $held];
     }

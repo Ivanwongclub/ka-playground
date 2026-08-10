@@ -30,7 +30,7 @@ class FormationService
      * auto_by_school matches the student's active school links; else open
      * lobbies + the default.
      *
-     * @return array<int, array{id: int, name_en: string, assignment_rule: string, school_bound: bool, eligible: bool}>
+     * @return array<int, array{id: int, name_en: string, name_tc: string, name_sc: string, assignment_rule: string, school_bound: bool, eligible: bool}>
      */
     public function lobbiesFor(int $programmeId, User $student): array
     {
@@ -41,8 +41,10 @@ class FormationService
         return $categories->map(function ($c) use ($schoolIds): array {
             $eligible = $c->school_id === null || in_array((int) $c->school_id, array_map('intval', $schoolIds), true);
 
+            // S-FIX-UX-1 D4: additive name_tc/name_sc (already fetched by ->get()) so the student
+            // create-team lobby picker renders trilingual — display-only, no formation-logic change.
             return [
-                'id' => $c->id, 'name_en' => $c->name_en,
+                'id' => $c->id, 'name_en' => $c->name_en, 'name_tc' => $c->name_tc, 'name_sc' => $c->name_sc,
                 'assignment_rule' => $c->assignment_rule, 'is_default' => (bool) $c->is_default,
                 'school_bound' => $c->school_id !== null, 'eligible' => $eligible,
             ];

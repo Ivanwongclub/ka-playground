@@ -8,7 +8,7 @@
 // reads 0. This rides on the tm_read co-member wall (same dependency as the B2 names/count split) — if
 // tm_read is ever widened, revisit this split.
 import { useState } from 'react';
-import { Alert, App, Button, Empty, Input, List, Select, Space, Tag, Typography } from 'antd';
+import { Alert, App, Button, Empty, Input, List, Select, Space, Tag, Tooltip, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
@@ -35,7 +35,7 @@ interface TeamRow {
 interface EnrolRow { id: string; programme_id: number; status: string; programme_name_en?: string | null; programme_name_tc?: string | null; programme_name_sc?: string | null }
 interface RosterMember { student_id: number; student_name: string | null; role: { name_en: string; name_tc: string; name_sc: string } | null }
 interface Roster { team_id: string; member_count: number; members: RosterMember[] | null }
-interface Lobby { id: string; name_en: string; school_bound: boolean; eligible: boolean }
+interface Lobby { id: string; name_en: string; name_tc: string; name_sc: string; school_bound: boolean; eligible: boolean }
 
 function tri(o: { name_en: string; name_tc: string; name_sc: string } | null, locale: KaLocale): string {
   if (!o) return '—';
@@ -217,7 +217,16 @@ function FormOrJoin({ enrolment, joinable, onChange }: { enrolment: EnrolRow; jo
                 placeholder={t('studentTeam.createLobby')}
                 value={lobbyId}
                 onChange={setLobbyId}
-                options={eligibleLobbies.map((l) => ({ value: l.id, label: l.name_en + (l.school_bound ? ' ★' : '') }))}
+                options={eligibleLobbies.map((l) => ({
+                  value: l.id,
+                  // S-FIX-UX-1 D4: trilingual lobby name via tri(); school-bound shown as a Tooltip-ed marker.
+                  label: (
+                    <span>
+                      {tri(l, locale)}
+                      {l.school_bound && <> <Tooltip title={t('studentTeam.schoolBoundHint')}>★</Tooltip></>}
+                    </span>
+                  ),
+                }))}
               />
               <Input
                 style={{ maxWidth: 360 }}

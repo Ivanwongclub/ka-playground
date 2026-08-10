@@ -24,6 +24,18 @@ class ProgrammeController extends Controller
         return response()->json(Programme::query()->orderBy('code')->paginate(50));
     }
 
+    /**
+     * S-FIX-UX-1 D7: a thin ops-readable programme picker — id/code/trilingual names ONLY, no
+     * configuration data. Gated permission:operations.manage on the route so an operations-only
+     * admin has a programme-list source for attendance oversight (the config-gated index() is not
+     * reachable by ops). Read-only sibling of index(); no pagination, shape {data:[…]}.
+     */
+    public function opsOptions(): JsonResponse
+    {
+        return response()->json(['data' => Programme::query()->orderBy('code')
+            ->get(['id', 'code', 'name_en', 'name_tc', 'name_sc'])]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validated = $this->validated($request);
