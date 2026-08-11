@@ -24,8 +24,9 @@ export type { Tone, Ds2Column, Ds2ColType, StepState, RailStep, RailPhase, Ds2La
 export { PageCard, AuthCard, HeroBanner, TaskCard, EmptyState, UrgencyChip } from './surfaces';
 export type { PageCardWidth, Ds2Cta } from './surfaces';
 
-// The pure urgency helper + per-domain thresholds (§3) — a level from a deadline; treatment is DS2-owned.
-export { urgencyLevel, approvalThresholds, URGENCY } from '../display/urgency';
+// The pure urgency helpers + per-domain thresholds (§3) — a level from a deadline (or from approvals'
+// age/threshold integers), the signed day-count, and the ONE shared countdown label; treatment is DS2-owned.
+export { urgencyLevel, urgencyDays, approvalLevel, approvalThresholds, urgencyLabel, URGENCY } from '../display/urgency';
 export type { UrgencyLevel, UrgencyThresholds } from '../display/urgency';
 
 // Status pills + money/date/name formatting — the existing display layer, re-exported (not reinvented).

@@ -547,6 +547,13 @@
     "cancel": "Cancel",
     "confirm": "Confirm"
   },
+  "urgency": {
+    "inDays_one": "in {{count}} day",
+    "inDays_other": "in {{count}} days",
+    "dueToday": "Due today",
+    "overdueDays_one": "Overdue by {{count}} day",
+    "overdueDays_other": "Overdue by {{count}} days"
+  },
   "mutate": {
     "success": "Done",
     "failed": "That didn't go through",

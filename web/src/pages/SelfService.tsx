@@ -14,7 +14,7 @@ import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
 // DS2 (restyle rollout — anchor STEP 1 MyChildren; C3 MyPayments/MyStudents). ALLOWED adopter already
 // (import-guard, no change). C3 is container-framing only (List/Card→SubPanel); MyChildren is untouched.
-import { SubPanel, ZoneStack, Attest, StatChip, StateBadge, Seal, EmptyState } from '@/ds2';
+import { SubPanel, ZoneStack, Attest, StatChip, StateBadge, Seal, EmptyState, UrgencyChip, urgencyLevel, urgencyDays, urgencyLabel, URGENCY } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -163,8 +163,11 @@ export function MyPayments() {
         <SubPanel tone="neutral">
           <List<Order>
             dataSource={payable}
-            renderItem={(o) => (
-              <List.Item key={o.id} actions={[
+            renderItem={(o) => {
+              // R0-B4: urgency only on an unpaid (issued) order — payment_due_at is the deadline. getLink untouched.
+              const lvl = o.status === 'issued' ? urgencyLevel(o.payment_due_at, URGENCY.payment) : 'none';
+              return (
+              <List.Item key={o.id} className={lvl !== 'none' ? `ds2-urgent--${lvl}` : undefined} actions={[
                 <StatusTag key="st" domain="orderStatus" value={o.status} />,
                 o.status === 'issued'
                   ? <Button key="lnk" size="small" type="primary" className="ka-cta" onClick={() => void getLink(o)}>{t('selfService.getLink')}</Button>
@@ -172,10 +175,16 @@ export function MyPayments() {
               ]}>
                 <List.Item.Meta
                   title={progName(o, locale)}
-                  description={<Text type="secondary">{formatMoney(o.total_amount_minor, o.currency, locale)}{o.payment_due_at ? ` · ${t('selfService.due')} ${formatHkt(o.payment_due_at, locale)}` : ''}</Text>}
+                  description={
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <Text type="secondary">{formatMoney(o.total_amount_minor, o.currency, locale)}{o.payment_due_at ? ` · ${t('selfService.due')} ${formatHkt(o.payment_due_at, locale)}` : ''}</Text>
+                      {lvl !== 'none' && <UrgencyChip level={lvl} label={urgencyLabel(lvl, urgencyDays(o.payment_due_at), t)} />}
+                    </span>
+                  }
                 />
               </List.Item>
-            )}
+              );
+            }}
           />
         </SubPanel>
       </DataBoundary>

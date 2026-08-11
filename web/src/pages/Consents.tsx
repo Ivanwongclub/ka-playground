@@ -16,8 +16,10 @@ import { useResource, DataBoundary } from '../api/useResource';
 import { programmeName, personName } from '../display/names';
 import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
-import { SubPanel } from '@/ds2'; // DS2 rollout C1 — markup-only framing (Card→SubPanel). The BI-6 signing
-// flow (scroll-gate, affirmation, SignaturePad, sign()/decline() handlers, hashes) is BYTE-IDENTICAL.
+import { SubPanel, UrgencyChip, urgencyLevel, urgencyDays, urgencyLabel, URGENCY } from '@/ds2';
+// DS2 rollout C1 — markup-only framing (Card→SubPanel). The BI-6 signing flow (scroll-gate, affirmation,
+// SignaturePad, sign()/decline() handlers, hashes) is BYTE-IDENTICAL. R0-B4 adds urgency to the LIST only.
+import type { UrgencyLevel } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -28,6 +30,7 @@ interface RequestRow {
   programme_id: number;
   student_id: number;
   status: string;
+  expires_at: string | null; // R0-B4: already returned by ConsentRequestController@index — was just untyped here
   programme_name_en: string | null;
   programme_name_tc: string | null;
   programme_name_sc: string | null;
@@ -64,6 +67,11 @@ export function ConsentList() {
   const { data, loading, error } = useResource<{ data: RequestRow[] }>('/api/consent-requests');
   const rows = data?.data ?? [];
 
+  // Urgency applies ONLY to a live (awaiting-action) consent — a signed/declined/expired row has no
+  // actionable deadline, so it carries no chip or emphasis. Not a proxy: the deadline is expires_at.
+  const rowLevel = (row: RequestRow): UrgencyLevel =>
+    ['sent', 'viewed'].includes(row.status) ? urgencyLevel(row.expires_at, URGENCY.consent) : 'none';
+
   return (
     <SubPanel tone="neutral">
       <Title level={3}>{t('consent.listTitle')}</Title>
@@ -73,12 +81,21 @@ export function ConsentList() {
           rowKey="id"
           dataSource={rows}
           pagination={false}
+          rowClassName={(row) => { const lvl = rowLevel(row); return lvl !== 'none' ? `ds2-urgent--${lvl}` : ''; }}
           columns={[
             { title: t('consent.programme'), render: (_, row) => programmeName(row, locale) },
             { title: t('consent.student'), render: (_, row) => personName(row.student_name) },
             {
               title: t('consent.evidence.statusCol'), dataIndex: 'status',
-              render: (s: string) => <Tag color={statusColor[s]}>{t(`consent.status.${s}`)}</Tag>,
+              render: (s: string, row) => {
+                const lvl = rowLevel(row);
+                return (
+                  <Space>
+                    <Tag color={statusColor[s]}>{t(`consent.status.${s}`)}</Tag>
+                    {lvl !== 'none' && <UrgencyChip level={lvl} label={urgencyLabel(lvl, urgencyDays(row.expires_at), t)} />}
+                  </Space>
+                );
+              },
             },
             {
               title: t('common.actions'), dataIndex: 'id',

@@ -12,7 +12,7 @@ import { ReasonModal } from '../components/ReasonModal';
 import { formatHkt } from '../display/date';
 // DS2 (restyle rollout C5 — child-data tier: child-linked approval authority). ALLOWED adopter
 // (import-guard). Container-framing only (Card→SubPanel); approve/decline/reject decision logic byte-identical.
-import { SubPanel, EmptyState } from '@/ds2';
+import { SubPanel, EmptyState, UrgencyChip, approvalLevel, urgencyLabel } from '@/ds2';
 
 const { Title, Paragraph } = Typography;
 
@@ -59,6 +59,23 @@ export function Approvals() {
   const links = data?.links ?? [];
   const held = data?.held ?? [];
 
+  // R0-B4: approvals urgency from age_days vs the queue's threshold_days (no raw deadline in the payload) —
+  // approvalLevel windows match approvalThresholds (overdue past threshold, due at it, soon within 2d).
+  const threshold = data?.threshold_days ?? 0;
+  const ageCell = (v: number) => {
+    const lvl = approvalLevel(v, threshold);
+    return (
+      <Space>
+        {t('approvals.ageDays', { n: v })}
+        {lvl !== 'none' && <UrgencyChip level={lvl} label={urgencyLabel(lvl, threshold - v, t)} />}
+      </Space>
+    );
+  };
+  const rowUrg = (row: { age_days: number }) => {
+    const lvl = approvalLevel(row.age_days, threshold);
+    return lvl !== 'none' ? `ds2-urgent--${lvl}` : '';
+  };
+
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <div>
@@ -72,6 +89,7 @@ export function Approvals() {
           <Title level={5} style={{ marginTop: 0 }}>{t('approvals.pendingRegistrations')}</Title>
           <Table<Account>
             rowKey="id"
+            rowClassName={rowUrg}
             size="small"
             dataSource={accounts}
             pagination={false}
@@ -79,7 +97,7 @@ export function Approvals() {
             columns={[
               { title: t('approvals.applicant'), dataIndex: 'applicant_name' },
               { title: t('approvals.kind'), dataIndex: 'kind', render: (v: string) => <Tag>{t(`role.${v}`)}</Tag> },
-              { title: t('approvals.age'), dataIndex: 'age_days', render: (v: number) => t('approvals.ageDays', { n: v }) },
+              { title: t('approvals.age'), dataIndex: 'age_days', render: (v: number) => ageCell(v) },
               {
                 title: t('common.actions'), key: 'act',
                 render: (_, r) => (
@@ -109,6 +127,7 @@ export function Approvals() {
           <Paragraph type="secondary" style={{ marginTop: -8 }}>{t('approvals.linksNote')}</Paragraph>
           <Table<Link>
             rowKey="id"
+            rowClassName={rowUrg}
             size="small"
             dataSource={links}
             pagination={false}
@@ -118,7 +137,7 @@ export function Approvals() {
                 title: t('approvals.relationship'), key: 'rel',
                 render: (_, r) => t('approvals.link', { guardian: r.guardian_name ?? '—', student: r.student_name ?? '—' }),
               },
-              { title: t('approvals.age'), dataIndex: 'age_days', render: (v: number) => t('approvals.ageDays', { n: v }) },
+              { title: t('approvals.age'), dataIndex: 'age_days', render: (v: number) => ageCell(v) },
               {
                 title: t('common.actions'), key: 'act',
                 render: (_, r) => (
@@ -150,6 +169,7 @@ export function Approvals() {
           <Paragraph type="secondary" style={{ marginTop: -8 }}>{t('approvals.heldNote')}</Paragraph>
           <Table<Held>
             rowKey="id"
+            rowClassName={rowUrg}
             size="small"
             dataSource={held}
             pagination={false}
@@ -158,7 +178,7 @@ export function Approvals() {
               { title: t('approvals.counterpart'), dataIndex: 'counterpart_name', render: (v: string | null) => v ?? '—' },
               { title: t('approvals.heldEmail'), dataIndex: 'counterpart_email' },
               { title: t('approvals.deadline'), dataIndex: 'expires_at', render: (v: string | null) => (v ? formatHkt(v, i18n.language) : '—') },
-              { title: t('approvals.age'), dataIndex: 'age_days', render: (v: number) => t('approvals.ageDays', { n: v }) },
+              { title: t('approvals.age'), dataIndex: 'age_days', render: (v: number) => ageCell(v) },
             ]}
           />
         </SubPanel>

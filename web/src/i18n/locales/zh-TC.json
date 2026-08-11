@@ -547,6 +547,11 @@
     "cancel": "取消",
     "confirm": "確認"
   },
+  "urgency": {
+    "inDays_other": "{{count}} 天內",
+    "dueToday": "今天到期",
+    "overdueDays_other": "逾期 {{count}} 天"
+  },
   "mutate": {
     "success": "已完成",
     "failed": "操作未成功",

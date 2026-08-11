@@ -55,3 +55,42 @@ export function urgencyLevel(
   if (delta <= thresholds.soonWithin) return 'soon';
   return 'none';
 }
+
+/** Signed whole-day countdown to a deadline (ceil): +N days until, −N days overdue. `null`→0. Used to
+ *  drive the shared label; the sign never lands on 0 for a passed deadline (overdue is at least −1). */
+export function urgencyDays(deadline: string | null | undefined, nowMs: number = Date.now()): number {
+  if (!deadline) return 0;
+  const t = parseTs(deadline);
+  if (Number.isNaN(t)) return 0;
+  const delta = t - nowMs;
+  return delta >= 0 ? Math.ceil(delta / DAY) : -Math.ceil(-delta / DAY);
+}
+
+/**
+ * Approvals carry no raw deadline timestamp — only age_days + threshold_days. Compute the level from
+ * those integers, with windows matching approvalThresholds() exactly (overdue past the threshold, due
+ * AT it, soon within 2 days of it). The signed day-count for the label is (thresholdDays − ageDays).
+ */
+export function approvalLevel(ageDays: number, thresholdDays: number): UrgencyLevel {
+  const { soonWithin, dueWithin } = approvalThresholds(thresholdDays);
+  const deltaMs = (thresholdDays - ageDays) * DAY;
+  if (deltaMs < 0) return 'overdue';
+  if (deltaMs <= dueWithin) return 'due';
+  if (deltaMs <= soonWithin) return 'soon';
+  return 'none';
+}
+
+/**
+ * The ONE shared countdown label (all three surfaces — no per-surface variants). `days` is the signed
+ * whole-day count (positive = until, 0 = today, negative = overdue). Pluralised via i18next's reserved
+ * `count` option (JSON-v4 _one/_other suffixes; the checker's family-collapse keeps zh CLDR-honest).
+ */
+export function urgencyLabel(
+  level: UrgencyLevel,
+  days: number,
+  t: (key: string, opts?: Record<string, unknown>) => string,
+): string {
+  if (level === 'overdue') return t('urgency.overdueDays', { count: Math.abs(days) });
+  if (days <= 0) return t('urgency.dueToday');
+  return t('urgency.inDays', { count: days });
+}

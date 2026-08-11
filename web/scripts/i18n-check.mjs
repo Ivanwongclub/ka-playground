@@ -21,12 +21,22 @@ let failed = false;
 const keySets = Object.fromEntries(
   locales.map((f) => [f, new Set(flatten(JSON.parse(readFileSync(join(localesDir, f), 'utf8'))))]),
 );
-const union = new Set(locales.flatMap((f) => [...keySets[f]]));
+// CLDR plural collapse (i18next JSON-v4) — PARITY ONLY. A key ending in a CLDR plural suffix belongs to
+// a FAMILY, and parity is checked per family: English carries _one AND _other, but Chinese (zh-TC/zh-SC)
+// carries ONLY _other (Chinese has a single CLDR plural category). Checking raw keys would wrongly flag
+// zh for "missing" the _one form it legitimately never uses. A GENUINELY missing translation still fails —
+// a whole family absent in a locale is still absent after the collapse (families are compared, not raw
+// keys). Only these six CLDR suffixes collapse; nothing else. The hardcoded-string scan below is untouched.
+// Do NOT revert this to raw-key parity.
+const CLDR_PLURAL = /_(zero|one|two|few|many|other)$/;
+const familyOf = (k) => k.replace(CLDR_PLURAL, '');
+const famSets = Object.fromEntries(locales.map((f) => [f, new Set([...keySets[f]].map(familyOf))]));
+const union = new Set(locales.flatMap((f) => [...famSets[f]]));
 for (const f of locales) {
-  const missing = [...union].filter((k) => !keySets[f].has(k));
+  const missing = [...union].filter((k) => !famSets[f].has(k));
   if (missing.length) {
     failed = true;
-    console.error(`FAIL ${f} missing ${missing.length} key(s): ${missing.join(', ')}`);
+    console.error(`FAIL ${f} missing ${missing.length} key family(ies): ${missing.join(', ')}`);
   } else {
     console.log(`OK   ${f} — ${keySets[f].size} keys, parity complete`);
   }
