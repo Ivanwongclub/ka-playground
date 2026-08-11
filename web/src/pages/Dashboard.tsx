@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { authFetch } from '../auth/session';
 import { useIdentity } from '../auth/identity';
 import { StatCard } from '@/ds2'; // DS2 — migrated to the shared StatCard primitive (was a local tile)
+import { StudentHome } from './StudentHome';
 
 interface Metric {
   key: string;
@@ -34,7 +35,19 @@ function upcomingSessionCount(sessions: { starts_at: string; status: string }[])
   }).length;
 }
 
+// R1-S — the persona router. It routes the WHOLE home. The student predicate is verified STUDENT-ONLY
+// against config/permission-matrix.php + the seeded roles: enrolment.view ∧ events.rsvp ∧ ¬operations.manage.
+// (teams.view ∧ ¬operations.manage — the first proposal — was ALSO satisfied by teacher and school_admin;
+// events.rsvp is the student discriminator, and ¬operations.manage excludes super_admin's '*'.) Every
+// non-student renders PersonaMetrics — a VERBATIM extraction of the prior Dashboard body — so their output
+// is byte-identical to before.
 export function Dashboard() {
+  const { has } = useIdentity();
+  if (has('enrolment.view') && has('events.rsvp') && !has('operations.manage')) return <StudentHome />;
+  return <PersonaMetrics />;
+}
+
+function PersonaMetrics() {
   const { t } = useTranslation();
   const { identity, has } = useIdentity();
   const [metrics, setMetrics] = useState<Metric[] | null>(null);

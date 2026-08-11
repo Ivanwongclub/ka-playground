@@ -547,6 +547,17 @@
     "cancel": "Cancel",
     "confirm": "Confirm"
   },
+  "studentHome": {
+    "viewSessions": "My sessions",
+    "noNextSession": "Nothing scheduled",
+    "noNextSessionDetail": "Your next booked session will appear here.",
+    "formOrJoin": "Form or join your team",
+    "formOrJoinDetail": "You're in the pool — team up to take part.",
+    "teamNone": "You're not on a team yet.",
+    "viewTeam": "My team",
+    "consentWaiting": "Waiting on your guardian",
+    "consentWaitingSub": "Your guardian signs consent for you — nothing for you to do."
+  },
   "urgency": {
     "inDays_one": "in {{count}} day",
     "inDays_other": "in {{count}} days",

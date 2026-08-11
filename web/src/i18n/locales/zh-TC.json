@@ -547,6 +547,17 @@
     "cancel": "取消",
     "confirm": "確認"
   },
+  "studentHome": {
+    "viewSessions": "我的課節",
+    "noNextSession": "暫無安排",
+    "noNextSessionDetail": "你下一節已預約的課節將顯示於此。",
+    "formOrJoin": "組建或加入你的團隊",
+    "formOrJoinDetail": "你已在候補池 — 組隊即可參與。",
+    "teamNone": "你尚未加入團隊。",
+    "viewTeam": "我的團隊",
+    "consentWaiting": "等待家長處理",
+    "consentWaitingSub": "由家長為你簽署同意書 — 你無需處理。"
+  },
   "urgency": {
     "inDays_other": "{{count}} 天內",
     "dueToday": "今天到期",

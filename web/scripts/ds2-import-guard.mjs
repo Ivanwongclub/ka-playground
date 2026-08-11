@@ -18,6 +18,8 @@ const ALLOWED = [
   'src/pages/Ds2Gallery.tsx', // the DEV-only gallery (STEP 2) — dead-code-eliminated from production
   // ── rollout R0-B3 (EmptyState adoption) — the shared data-fetch convention ──
   'src/api/useResource.tsx', // R0-B3 — DataBoundary's empty branch renders the DS2 EmptyState (one central adoption)
+  // ── R1-S (student persona home) — HeroBanner/TaskCard/StatCard/EmptyState composition ──
+  'src/pages/StudentHome.tsx', // R1-S — the action-first student home (reads only; routed by Dashboard)
   // ── restyle rollout: each surface is a deliberate adoption in its own gated card ──
   'src/pages/SelfService.tsx', // ANCHORS STEP 1 — My Children (MyPayments/MyStudents in-file are untouched)
   'src/pages/AdminProgrammes.tsx', // ANCHORS STEP 2 — the wizard
