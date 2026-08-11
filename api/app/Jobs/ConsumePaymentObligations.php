@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 
-/** Dispatched after a claim commits (S05 wires 成團 to it); also safe to re-run any time. */
+/** Dispatched after a claim commits (S05 wires Team Formation to it); also safe to re-run any time. */
 class ConsumePaymentObligations implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;

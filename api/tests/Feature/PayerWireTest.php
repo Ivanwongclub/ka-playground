@@ -23,7 +23,7 @@ use Tests\Support\EicarOnlyScanner;
 use Tests\TestCase;
 
 /**
- * S04F STEP 1 — the E6-payer wire. Both 成團 obligation sites
+ * S04F STEP 1 — the E6-payer wire. Both Team Formation obligation sites
  * (TeamConfirmationService, TeamResolutionService) resolve the payer from the
  * programme's E6 payer_party through ONE helper; a school-paid programme mints a
  * school obligation (never a silent guardian), and a roll-less school student is
@@ -157,7 +157,7 @@ class PayerWireTest extends TestCase
         $this->sys(fn () => $r->resolve($schoolProg, $noRoll));
     }
 
-    // ── SITE 1: 成團 confirm writes school obligations ─────────────────────────
+    // ── SITE 1: Team Formation confirm writes school obligations ─────────────────────────
 
     public function test_confirm_school_programme_writes_school_obligations(): void
     {
@@ -197,7 +197,7 @@ class PayerWireTest extends TestCase
         [$programme, , $lobby] = $this->publishedProgramme('school');
         $teamId = $this->submittedTeam($programme, $lobby, onRoll: false); // students NOT on any roll
         Sanctum::actingAs($this->ops);
-        $this->postJson("/api/teams/{$teamId}/confirm")->assertStatus(500); // UnresolvablePayerException aborts 成團
+        $this->postJson("/api/teams/{$teamId}/confirm")->assertStatus(500); // UnresolvablePayerException aborts Team Formation
 
         // no silent guardian obligation, team not confirmed (rolled back)
         $this->assertSame(0, $this->sys(fn () => DB::table('payment_obligations')->where('programme_id', $programme->id)->count()));

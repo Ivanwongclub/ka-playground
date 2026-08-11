@@ -120,7 +120,7 @@ class ConsentHardeningTest extends TestCase
 
     public function test_requires_all_hardening_reds_on_an_active_guardian_who_did_not_sign(): void
     {
-        // baseline: requires_all 成團 where each member's single (active) guardian signed → GREEN
+        // baseline: requires_all Team Formation where each member's single (active) guardian signed → GREEN
         [$s1, ] = $this->confirmedTeam();
         $this->assertTrue($this->sys(fn () => (new ConsentCompleteAtConfirmAssertion)->check()->passed));
 

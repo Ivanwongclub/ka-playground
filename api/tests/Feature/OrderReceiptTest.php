@@ -87,7 +87,7 @@ class OrderReceiptTest extends TestCase
         $this->enrolmentId = $this->postJson('/api/my/enrolments', [
             'programme_id' => $this->programme->id, 'student_id' => $this->student->id,
         ])->json('id');
-        // walk to Confirmed via the system state machine (成團 itself is S05)
+        // walk to Confirmed via the system state machine (Team Formation itself is S05)
         $this->app['auth']->forgetGuards();
         $machine = app(EnrolmentService::class);
         foreach (['in_pool', 'teamed', 'confirmed'] as $to) {

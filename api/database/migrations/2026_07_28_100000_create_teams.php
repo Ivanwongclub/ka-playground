@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 
 // S05 STEP 1 — formation in lobbies (TEAM-CATEGORIES §4–§8). A team belongs to
 // ONE lobby (team_category) for life; joining transitions the member's
-// enrolment in_pool → teamed (成團 → confirmed is STEP 2). Suspension lives on
+// enrolment in_pool → teamed (Team Formation → confirmed is STEP 2). Suspension lives on
 // team_members (OD-45, ruling 4); capacity/claim is STEP 2.
 return new class extends Migration
 {

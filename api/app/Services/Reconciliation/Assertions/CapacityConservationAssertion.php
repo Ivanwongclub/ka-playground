@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
  * S05-6 — capacity conservation (OD-31/32). The DB CHECK (claimed ≤ capacity)
  * guards the COUNTER; this independently guards REALITY: the seats actually held
  * by confirmed teams (their live members) must not exceed the programme capacity.
- * It is the backstop against an overbook the 成團 transaction somehow let through
+ * It is the backstop against an overbook the Team Formation transaction somehow let through
  * — so a planted claimed > capacity is exactly the red we want to catch.
  */
 class CapacityConservationAssertion implements Assertion

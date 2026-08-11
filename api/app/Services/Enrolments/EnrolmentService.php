@@ -13,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * S04A: enrolment as INTENT (OD-31). Creation records the acting guardian
  * (2.22); consent gates the pool (OD-34/50a); no seat, no money, no capacity —
- * those belong to 成團 (S05) and the trigger (S04B). Every transition is
+ * those belong to Team Formation (S05) and the trigger (S04B). Every transition is
  * audited with its actor (BI-8); Completed is terminal (OD-65).
  */
 class EnrolmentService
@@ -96,7 +96,7 @@ class EnrolmentService
     /**
      * The consent gate (OD-34/50a), BOTH directions: satisfied → In Pool;
      * a supersede/void that breaks satisfaction pulls the enrolment BACK to
-     * Pending Consent. Never touches Teamed or beyond (成團 stakes are S05's).
+     * Pending Consent. Never touches Teamed or beyond (Team Formation stakes are S05's).
      */
     public function evaluateConsentGate(int $programmeId, int $studentId, ?User $actor, ?string $reason = null): void
     {

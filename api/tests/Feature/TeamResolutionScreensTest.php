@@ -15,7 +15,7 @@ use Tests\TestCase;
  * Backend deltas B4 (matching screen: additive student names + min) and B5 (capacity report: additive
  * approver/student/waived_by names) — S-UX2b LEFT joins, count-preserving, double-gated by users_read,
  * resolved WITHIN the caller's RLS (NO elevation). Plus the write authority (OD-37 academy operations —
- * NARROWER than 成團's OD-39) and each terminal action's representative refusal.
+ * NARROWER than Team Formation's OD-39) and each terminal action's representative refusal.
  */
 class TeamResolutionScreensTest extends TestCase
 {
@@ -67,7 +67,7 @@ class TeamResolutionScreensTest extends TestCase
             DB::table('teams')->insert(['id' => $conf, 'programme_id' => $pid, 'category_id' => $lobby, 'name' => 'Confirmed Crew', 'status' => 'confirmed', 'created_by' => $this->ops->id, 'waiver_reason' => 'below minimum accepted', 'waived_by' => $this->ops->id, 'waived_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
             [$memberEnrol, $memberStu] = $mkEnrol('Mia Member', 'confirmed');
             DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $conf, 'enrolment_id' => $memberEnrol, 'category_id' => $lobby, 'student_id' => $memberStu, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
-            // the immutable 成團 audit event backing the confirm log (approver = ops)
+            // the immutable Team Formation audit event backing the confirm log (approver = ops)
             DB::table('audit_events')->insert(['event_id' => (string) Str::uuid7(), 'occurred_at' => now(), 'actor_id' => $this->ops->id, 'actor_role' => 'academy_admin', 'entity_type' => 'team', 'entity_id' => $conf, 'action' => 'team.confirmed', 'to_state' => 'confirmed', 'programme_id' => $pid, 'payload_after' => json_encode(['seats_claimed' => 1, 'member_count' => 1])]);
 
             // forming under-strength team (1 member vs min 3)
@@ -130,7 +130,7 @@ class TeamResolutionScreensTest extends TestCase
         $this->assertNull($belowMin['student_name']);
     }
 
-    // ── write authority: OD-37 academy operations (narrower than 成團's OD-39) ────────────────────────
+    // ── write authority: OD-37 academy operations (narrower than Team Formation's OD-39) ────────────────────────
     public function test_resolution_writes_require_an_academy_operator(): void
     {
         $this->act($this->guardian);

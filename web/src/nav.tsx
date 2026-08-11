@@ -157,7 +157,7 @@ export const NAV: NavGroup[] = [
         visible: (h) => h('operations.manage'),
       },
       {
-        // S-UX3-3a — the ops 成團 view. Gated on operations.manage like its sibling ops queues;
+        // S-UX3-3a — the ops Team Formation view. Gated on operations.manage like its sibling ops queues;
         // lobby school-admins retain direct server access (OD-39) under shown-not-hidden.
         path: '/team',
         i18nKey: 'nav.team',

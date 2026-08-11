@@ -108,7 +108,7 @@ function Root() {
               {/* S-UX3 domain screens — routes retained as stubs; their nav items are hidden
                   until each S-UX3 card builds the screen and reveals its item (D-UX1.1). */}
               <Route path="/tracker" element={<Placeholder titleKey="empty.title" />} />
-              {/* S-UX3-3a STEP 2 — the ops 成團 view now occupies /team (nav item revealed). */}
+              {/* S-UX3-3a STEP 2 — the ops Team Formation view now occupies /team (nav item revealed). */}
               <Route path="/team" element={<Teams />} />
               {/* S-UX3-3b — the student team-formation surface (distinct from the ops /team). */}
               <Route path="/my/team" element={<StudentTeam />} />

@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * Team formation in lobbies (TEAM-CATEGORIES §4–§8). A team belongs to one
  * lobby for life (§8); school-bound lobbies admit only linked students (§5);
- * joining transitions the member's enrolment in_pool → teamed. 成團 (the
+ * joining transitions the member's enrolment in_pool → teamed. Team Formation (the
  * capacity claim + teamed→confirmed) is STEP 2.
  */
 class FormationService

@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 // S04B STEP 2 — the Q1 OUTBOX: the payment OBLIGATION is written atomically
-// with the seat claim (S05's 成團 transaction; a fixture claim until then);
+// with the seat claim (S05's Team Formation transaction; a fixture claim until then);
 // ISSUANCE happens after commit via the system consumer. Nothing user-reachable
 // writes here — INSERT is system-only, structurally.
 return new class extends Migration

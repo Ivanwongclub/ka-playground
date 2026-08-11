@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * S04F STEP 1 (OD-25 · D-18) — the ONE place a payment obligation's payer is
- * resolved from the programme's E6 `payer_party`. Both 成團 obligation-creation
+ * resolved from the programme's E6 `payer_party`. Both Team Formation obligation-creation
  * sites (TeamConfirmationService, TeamResolutionService) call this — if only one
  * did, a school order from the other path would silently keep `guardian` and
  * drop from the invoice branch.

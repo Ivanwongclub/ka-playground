@@ -95,7 +95,7 @@ class EnrolmentActivationTest extends TestCase
         return $student;
     }
 
-    /** @return array{0:string,1:list<User>} teamId, members (all confirmed via 成團) */
+    /** @return array{0:string,1:list<User>} teamId, members (all confirmed via Team Formation) */
     private function confirmedTeam(Programme $programme, string $lobby, int $size = 2): array
     {
         $creator = $this->pooledStudent($programme);
@@ -158,10 +158,10 @@ class EnrolmentActivationTest extends TestCase
 
     public function test_late_joiner_confirmed_after_start_activates_on_the_next_run_not_stranded(): void
     {
-        // programme already started; a team 成團s "now" (after start) — a late joiner
+        // programme already started; a team Team Formations "now" (after start) — a late joiner
         [$programme, $lobby] = $this->publishedProgramme(started: true);
         [, $members] = $this->confirmedTeam($programme, $lobby, 2);
-        // immediately after 成團, before the next job run: confirmed, NOT active
+        // immediately after Team Formation, before the next job run: confirmed, NOT active
         foreach ($members as $m) {
             $this->assertSame('confirmed', $this->statusOf($programme, $m));
         }

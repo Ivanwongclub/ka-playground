@@ -283,7 +283,7 @@ class DemoSeeder extends Seeder
     private function confirmOrder(EnrolmentService $enrolments, OrderService $orders, User $ops, User $student): object
     {
         $id = DB::table('enrolments')->where('student_id', $student->id)->orderByDesc('created_at')->value('id');
-        foreach (['teamed', 'confirmed'] as $to) { // fixture 成團 (the real formation transaction is exercised separately by formTeam)
+        foreach (['teamed', 'confirmed'] as $to) { // fixture Team Formation (the real formation transaction is exercised separately by formTeam)
             if (in_array(DB::table('enrolments')->where('id', $id)->value('status'), ['in_pool', 'teamed'], true)) {
                 $enrolments->transition($id, $to, $ops, 'demo fixture 成團');
             }

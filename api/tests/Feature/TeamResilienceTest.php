@@ -95,7 +95,7 @@ class TeamResilienceTest extends TestCase
         return $student;
     }
 
-    /** A CONFIRMED team of $size (成團'd; orders issued by the consumer). @return array{0:string,1:list<User>} */
+    /** A CONFIRMED team of $size (Team Formation'd; orders issued by the consumer). @return array{0:string,1:list<User>} */
     private function confirmedTeam(Programme $programme, string $lobby, int $size): array
     {
         $creator = $this->pooledStudent($programme);
@@ -263,7 +263,7 @@ class TeamResilienceTest extends TestCase
     public function test_repooled_paid_member_re_teams_without_recharge_or_crash(): void
     {
         // The path dissolution creates: a PAID member re-pooled to in_pool, who then
-        // joins a NEW team and 成團s. It must NOT crash on orders_one_live_per_enrolment
+        // joins a NEW team and Team Formations. It must NOT crash on orders_one_live_per_enrolment
         // and must NOT re-charge — seat claimed + confirmed, but no second order (OD-38).
         [$programme, , $lobby] = $this->publishedProgramme(minTeam: 2);
         [$teamA, $membersA] = $this->confirmedTeam($programme, $lobby, 2);

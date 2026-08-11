@@ -23,7 +23,7 @@ use Tests\TestCase;
 
 /**
  * S04F STEP 2 — consolidated invoice issuance/aggregation (OD-25). School-payer
- * 成團 orders aggregate into ONE (school, programme) invoice; the original is the
+ * Team Formation orders aggregate into ONE (school, programme) invoice; the original is the
  * sum of covered orders; re-running never double-counts; a covered order is a
  * receivable (not paid, no receipt).
  */

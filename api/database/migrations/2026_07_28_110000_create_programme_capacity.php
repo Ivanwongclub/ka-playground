@@ -6,8 +6,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 // S05 STEP 2 — the seat counter S04A deliberately did NOT build. A narrow row
-// the 成團 transaction locks FOR UPDATE (OD-31/32). Sourced from the eligibility
-// `capacity` wizard field, seeded at publish; claimed advances only inside 成團.
+// the Team Formation transaction locks FOR UPDATE (OD-31/32). Sourced from the eligibility
+// `capacity` wizard field, seeded at publish; claimed advances only inside Team Formation.
 return new class extends Migration
 {
     public function up(): void
@@ -31,7 +31,7 @@ return new class extends Migration
         DB::unprepared("CREATE POLICY pc_insert ON programme_capacity FOR INSERT WITH CHECK ({$system})");
         DB::unprepared("CREATE POLICY pc_update ON programme_capacity FOR UPDATE USING ({$system}) WITH CHECK ({$system})");
         // The counter's whole lifecycle is system-owned: seeded at publish, advanced
-        // at 成團, and removed only if the programme itself is ever torn down (system).
+        // at Team Formation, and removed only if the programme itself is ever torn down (system).
         DB::unprepared("CREATE POLICY pc_delete ON programme_capacity FOR DELETE USING ({$system})");
     }
 

@@ -75,7 +75,7 @@ class TeamResolutionService
                     // dissolution) claims the seat and confirms, but gets NO second obligation.
                     $oid = null;
                     if (! DB::table('orders')->where('enrolment_id', $enrolment->id)->where('status', 'paid')->exists()) {
-                        // payer resolved from the programme E6 (S04F STEP 1) — same helper as 成團,
+                        // payer resolved from the programme E6 (S04F STEP 1) — same helper as Team Formation,
                         // loud on an unresolvable school payer, never a silent guardian fallback (D-18).
                         $payer = $this->payer->resolve((int) $team->programme_id, (int) $enrolment->student_id);
                         $oid = (string) Str::uuid7();

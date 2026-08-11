@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * S05-6 audit element — the Team & Capacity Report (the client-facing product
  * screen, distinct from AUDIT.md). Per programme: capacity vs claimed vs pool
- * depth vs formation deadline; the 成團 log (approver + seat math, from the
+ * depth vs formation deadline; the Team Formation log (approver + seat math, from the
  * immutable team.confirmed audit events); the exception ledger with parking age
  * against the backstop; and the waiver register. Every read is RLS-shaped — the
  * report shows exactly what the requesting admin is entitled to see.

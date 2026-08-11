@@ -154,7 +154,7 @@ class TeamConfirmationTest extends TestCase
         // The twin-team lock proof, like the receipt-sequence race: two teams reach
         // for the SAME capacity row. A holds it FOR UPDATE, B BLOCKS, and after A
         // commits its claim B sees the incremented `claimed` — no lost update, so the
-        // 成團 seat check-and-increment can never be interleaved. The fixture is a
+        // Team Formation seat check-and-increment can never be interleaved. The fixture is a
         // COMMITTED synthetic row (outside RefreshDatabase's tx) so both raw
         // connections can see and contend on it, then it is cleaned up.
         $dsn = sprintf('pgsql:host=%s;port=%s;dbname=%s', env('DB_HOST', '127.0.0.1'), env('DB_PORT', '54329'), env('DB_DATABASE', 'kap_test'));
@@ -201,11 +201,11 @@ class TeamConfirmationTest extends TestCase
     public function test_supersede_before_成團_refuses_stale_confirm(): void
     {
         $teamId = $this->submittedTeam($this->programme, $this->templateId, $this->lobby, 1);
-        // a material consent change supersedes the member's signed request BEFORE 成團
+        // a material consent change supersedes the member's signed request BEFORE Team Formation
         Sanctum::actingAs($this->ops);
         $vid = $this->postJson("/api/admin/consent-templates/{$this->templateId}/versions", ['language' => 'en', 'body_html' => '<p>v2 material {{signature}}</p>'])->json('version_id');
         $this->postJson("/api/admin/consent-templates/{$this->templateId}/versions/{$vid}/publish", ['material' => true])->assertOk();
-        // 成團 re-checks consent under the FOR SHARE lock → member no longer satisfied → refused
+        // Team Formation re-checks consent under the FOR SHARE lock → member no longer satisfied → refused
         $this->postJson("/api/teams/{$teamId}/confirm")->assertStatus(422);
         $this->assertSame('submitted', DB::table('teams')->where('id', $teamId)->value('status'));
         $this->assertSame(0, (int) DB::table('programme_capacity')->where('programme_id', $this->programme->id)->value('claimed'));
@@ -215,7 +215,7 @@ class TeamConfirmationTest extends TestCase
     {
         $teamId = $this->submittedTeam($this->programme, $this->templateId, $this->lobby, 1);
         Sanctum::actingAs($this->ops);
-        // 成團 first — consent valid at this instant → confirms
+        // Team Formation first — consent valid at this instant → confirms
         $this->postJson("/api/teams/{$teamId}/confirm")->assertOk();
         $this->assertSame('confirmed', DB::table('teams')->where('id', $teamId)->value('status'));
         // a later material change supersedes; the confirmed team stands (re-consent is a fresh request)
@@ -230,7 +230,7 @@ class TeamConfirmationTest extends TestCase
         $teamId = $this->submittedTeam($this->programme, $this->templateId, $this->lobby, 1);
         $enrolmentId = DB::table('team_members')->where('team_id', $teamId)->value('enrolment_id');
         $studentId = DB::table('enrolments')->where('id', $enrolmentId)->value('student_id');
-        // remove the signed status (simulate an unconsented member at 成團)
+        // remove the signed status (simulate an unconsented member at Team Formation)
         DB::table('consent_requests')->where('student_id', $studentId)->where('status', 'signed')->update(['status' => 'declined']);
         Sanctum::actingAs($this->ops);
         $this->postJson("/api/teams/{$teamId}/confirm")->assertStatus(422);
@@ -238,7 +238,7 @@ class TeamConfirmationTest extends TestCase
 
     public function test_confirm_refused_without_capacity_configured(): void
     {
-        // capacity unset at publish is a WARNING (publishes), but 成團 has no counter to claim
+        // capacity unset at publish is a WARNING (publishes), but Team Formation has no counter to claim
         [$p, $tid, $lobby] = $this->publishedProgramme(capacity: null);
         $this->assertSame(0, DB::table('programme_capacity')->where('programme_id', $p->id)->count());
         $teamId = $this->submittedTeam($p, $tid, $lobby, 1);

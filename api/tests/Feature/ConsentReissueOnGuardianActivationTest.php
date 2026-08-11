@@ -87,7 +87,7 @@ class ConsentReissueOnGuardianActivationTest extends TestCase
         $this->assertFalse($this->sys(fn () => app(ConsentSigningService::class)->consentSatisfied($programme->id, $this->studentA->id)), 'requires_all: unsigned new guardian → not satisfied');
         $this->assertSame('pending_consent', $this->enrolStatus($programme->id), 'D3 reopen: in_pool regressed to pending_consent until the new guardian signs');
 
-        // the new guardian signs → satisfied again → gate re-closes → in_pool (成團 could then proceed)
+        // the new guardian signs → satisfied again → gate re-closes → in_pool (Team Formation could then proceed)
         $this->sign($guardianB, $programme);
         $this->sys(fn () => app(EnrolmentService::class)->evaluateConsentGate($programme->id, $this->studentA->id, $this->ops, 're-check'));
         $this->assertTrue($this->sys(fn () => app(ConsentSigningService::class)->consentSatisfied($programme->id, $this->studentA->id)));

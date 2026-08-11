@@ -115,7 +115,7 @@ function MyTeamCard({ team, onChange }: { team: TeamRow; onChange: () => void })
         <Text type="secondary">{programmeName(team, locale)}</Text>
       </div>
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-        {/* UNMISSABLE consent advisory — prevents the student-side dead-loop at 成團. */}
+        {/* UNMISSABLE consent advisory — prevents the student-side dead-loop at Team Formation. */}
         <DataBoundary loading={consent.loading} error={consent.error}>
           {satisfied === false && (
             <Alert

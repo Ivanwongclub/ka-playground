@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * S-FIX-consent-reissue (D1, synchronous). A newly-active guardian must receive a consent request for
  * the student's PRE-CONFIRM enrolments — else `consent.issuance_completeness` reds and, on
- * requires_all programmes, consent can never complete (dead loop / 成團 block). Reuses the existing
+ * requires_all programmes, consent can never complete (dead loop / Team Formation block). Reuses the existing
  * atomic issuance (ConsentSigningService::issueRequest) and the gate re-evaluation
  * (EnrolmentService::evaluateConsentGate). Idempotent; runs in its own system context.
  */

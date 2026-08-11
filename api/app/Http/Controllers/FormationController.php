@@ -43,7 +43,7 @@ class FormationController extends Controller
      * `created_by` person, each LEFT-joined so the row count is preserved (a name resolves or is
      * NULL, the team never drops). `created_by_name` rides `users_read`'s own gate (double-gated):
      * NULL when the caller may not see that user — expected, never the raw id on screen. Plus an
-     * additive active-member count for the 成團 queue. No column removed; existing keys unchanged.
+     * additive active-member count for the Team Formation queue. No column removed; existing keys unchanged.
      */
     public function index(): JsonResponse
     {

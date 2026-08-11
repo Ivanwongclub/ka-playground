@@ -203,7 +203,7 @@ class S05GateAssertionsTest extends TestCase
     public function test_consent_complete_at_confirm_reds_on_a_signature_superseded_before_confirm(): void
     {
         // The STALE case: a member's ONLY signature had its request SUPERSEDED
-        // before the confirm event — signed, but not valid at 成團.
+        // before the confirm event — signed, but not valid at Team Formation.
         [$programme, $lobby] = $this->publishedProgramme(minTeam: 2);
         [, $members] = $this->confirmedTeam($programme, $lobby, 2);
         $this->assertTrue($this->sys(fn () => (new ConsentCompleteAtConfirmAssertion)->check()->passed));

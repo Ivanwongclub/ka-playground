@@ -187,9 +187,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/my/teams', [\App\Http\Controllers\FormationController::class, 'create'])->middleware('role:student');
     Route::post('/teams/{id}/join', [\App\Http\Controllers\FormationController::class, 'join'])->middleware('role:student');
     Route::get('/teams', [\App\Http\Controllers\FormationController::class, 'index']); // RLS-shaped
-    // S-UX3-3a — per-member consent status for the 成團 gate (booleans/counts only; OD-39 authority in-service).
+    // S-UX3-3a — per-member consent status for the Team Formation gate (booleans/counts only; OD-39 authority in-service).
     Route::get('/teams/{team}/consent-status', [\App\Http\Controllers\TeamConsentStatusController::class, 'show']);
-    // S05 step 2 — 成團: submit (student) then approve (school admin of lobby / academy ops)
+    // S05 step 2 — Team Formation: submit (student) then approve (school admin of lobby / academy ops)
     Route::post('/teams/{id}/submit', [\App\Http\Controllers\TeamConfirmationController::class, 'submit'])->middleware('role:student');
     Route::post('/teams/{id}/confirm', [\App\Http\Controllers\TeamConfirmationController::class, 'confirm']); // authority checked in-service (OD-39)
     // S05 step 3 — deadline matching screen (OD-35): screen read is RLS-shaped; action authority in-service (academy operations)

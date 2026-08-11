@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
  *
  * At/after a programme's formation_deadline_on: forming teams that meet the
  * minimum size AUTO-SUBMIT (forming → submitted, SYSTEM actor, so an approver
- * can 成團 them); teams below the minimum raise a `deadline_noncompliant`
+ * can Team Formation them); teams below the minimum raise a `deadline_noncompliant`
  * exception (OD-33 "non-compliant → admin alert") that surfaces on the matching
  * screen beside the unplaced pool. The unteamed pool itself is queried live
  * (in_pool enrolments not in an active team) — no per-student row until an admin

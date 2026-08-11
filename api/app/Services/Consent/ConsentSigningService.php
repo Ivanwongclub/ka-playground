@@ -394,7 +394,7 @@ class ConsentSigningService
     }
 
     /**
-     * S-UX3-3a — aggregate consent summary for the 成團 gate. BOOLEANS/COUNTS ONLY: no guardian id,
+     * S-UX3-3a — aggregate consent summary for the Team Formation gate. BOOLEANS/COUNTS ONLY: no guardian id,
      * name, request row, timestamp or signing order leaves this method (§1 privacy allowlist).
      * `satisfied` DELEGATES to consentSatisfied — the single source; the read never re-derives the gate.
      * Advisory only — the confirm-time FOR SHARE re-check in TeamConfirmationService is the authority.

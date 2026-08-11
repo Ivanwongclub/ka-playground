@@ -15,7 +15,7 @@ return new class extends Migration
     public function up(): void
     {
         // FIXTURE consolidated invoice (school-settled receivable, OD-53). Live
-        // issuance arrives with 成團 volume (S05/S04E); the balance invariant
+        // issuance arrives with Team Formation volume (S05/S04E); the balance invariant
         // and the OD-54 branch are proven here against seeded rows.
         Schema::create('consolidated_invoices', function (Blueprint $table) {
             $table->uuid('id')->primary();

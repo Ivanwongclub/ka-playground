@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**
- * S-UX3-3a — the ops-facing per-member consent status for the 成團 gate. Response is BOOLEANS/COUNTS
+ * S-UX3-3a — the ops-facing per-member consent status for the Team Formation gate. Response is BOOLEANS/COUNTS
  * ONLY (§1 allowlist): team_id, mode, all_satisfied, blocking_count, members[{student_id, student_name,
  * satisfied, signed_count, guardian_count, blocker}]. NO guardian id/name/request row/timestamp ever
  * leaves it. ADVISORY — the confirm-time FOR SHARE re-check in TeamConfirmationService is the authority.
@@ -33,7 +33,7 @@ class TeamConsentStatusController extends Controller
         // 403 existence leak (unaffiliated school-admin / non-member → 404).
         $t = DB::table('teams')->where('id', $team)->first() ?? abort(404);
 
-        // OD-39 authority (the SAME gate as 成團 confirm): a caller who can SEE the team but is not a
+        // OD-39 authority (the SAME gate as Team Formation confirm): a caller who can SEE the team but is not a
         // lobby school-admin / academy ops·super (e.g. a guardian, a student member) → 403.
         $this->confirmation->assertApprover($t, $request->user());
 

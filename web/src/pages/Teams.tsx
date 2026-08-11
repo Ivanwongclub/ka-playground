@@ -1,4 +1,4 @@
-// S-UX3-3a STEP 2+3 — the ops-facing 成團 view. A work queue of `submitted` teams (RLS-shaped
+// S-UX3-3a STEP 2+3 — the ops-facing Team Formation view. A work queue of `submitted` teams (RLS-shaped
 // GET /teams, B1 names), a per-team detail drawer with two tabs:
 //  · Consent status (STEP 2) — per-member booleans/counts from /teams/{team}/consent-status (no
 //    guardian identity); "X of N signed" is the PRIMARY signal, the coarse `blocker` a subordinate
@@ -6,7 +6,7 @@
 //  · Roles & tenure (STEP 3) — /teams/{team}/roles (B3, member-readable, resolved within RLS): the
 //    current holder per role + past (ended) tenures; assignRole records a rotation with a
 //    tenure-change confirm. One active holder per role (DB-enforced); the read never shows two open.
-// 成團 confirm and assignRole are both SHOWN + ENABLED; the server is the authority and every refusal
+// Team Formation confirm and assignRole are both SHOWN + ENABLED; the server is the authority and every refusal
 // is rendered (S-UX3-1 error surface).
 import { useState } from 'react';
 import { Alert, App, Button, Drawer, List, Modal, Select, Space, Table, Tabs, Tag, Typography } from 'antd';
@@ -19,7 +19,7 @@ import { programmeName, personName } from '../display/names';
 import { formatHkt } from '../display/date';
 import { ReasonModal } from '../components/ReasonModal';
 // DS2 (restyle rollout M4 — money tier; last card). ALLOWED adopter (import-guard). Appearance only:
-// the two titled section cards → SubPanel framing; 成團 confirm/assign/resolution logic is byte-identical.
+// the two titled section cards → SubPanel framing; Team Formation confirm/assign/resolution logic is byte-identical.
 import { SubPanel, EmptyState } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
@@ -123,7 +123,7 @@ export function Teams() {
         (r.status === 403 ? t('mutate.forbidden') : r.status === 0 ? t('mutate.network') : t('mutate.failed')),
     );
 
-  // 成團 success closes the drawer + refreshes the queue.
+  // Team Formation success closes the drawer + refreshes the queue.
   const surfaceConfirm = (r: MutateResult) => {
     if (r.ok) {
       void message.success(t('teams.confirmed'));
@@ -134,7 +134,7 @@ export function Teams() {
     surfaceError(r);
   };
 
-  // 成團 confirm — enabled + advisory; the server FOR SHARE re-check is the gate.
+  // Team Formation confirm — enabled + advisory; the server FOR SHARE re-check is the gate.
   const confirm = (team: TeamRow, blocking: number) =>
     modal.confirm({
       title: t('teams.confirmTitle', { team: team.name }),

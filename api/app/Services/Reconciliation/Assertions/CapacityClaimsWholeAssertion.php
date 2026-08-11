@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * S05-6 — every seat claim was WHOLE: the seat count claimed equalled the team's
- * member count AT 成團. Judged against the CONFIRM-TIME fact — the immutable
+ * member count AT Team Formation. Judged against the CONFIRM-TIME fact — the immutable
  * `team.confirmed` audit payload (seats_claimed, member_count) — NOT a live join,
- * because a legitimate post-成團 change (assign, dissolve) would move the live
+ * because a legitimate post-Team Formation change (assign, dissolve) would move the live
  * count away from what was claimed. No partial claim ever existed.
  */
 class CapacityClaimsWholeAssertion implements Assertion

@@ -19,7 +19,7 @@ class TeamConfirmationController extends Controller
         return response()->json(['status' => 'submitted']);
     }
 
-    /** 成團 — an approver confirms; the outbox consumer is dispatched AFTER the tx commits. */
+    /** Team Formation — an approver confirms; the outbox consumer is dispatched AFTER the tx commits. */
     public function confirm(Request $request, string $id): JsonResponse
     {
         $result = $this->confirmation->confirm($id, $request->user());

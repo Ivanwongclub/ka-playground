@@ -64,7 +64,7 @@ class MatchingService
                 // any open parked/failed exception for this student is resolved by placement
                 $this->exceptions->resolveOpenFor((int) $team->programme_id, 'enrolment', $enrolment->id, 'matched', by: $admin);
 
-                // if the team now meets minimum, clear its deadline exception and make it 成團-ready
+                // if the team now meets minimum, clear its deadline exception and make it Team Formation-ready
                 $minSize = (int) ($this->teamRules((int) $team->programme_id)['min_team_size'] ?? 1);
                 $count = DB::table('team_members')->where('team_id', $team->id)->where('status', 'active')->count();
                 if ($count >= $minSize) {

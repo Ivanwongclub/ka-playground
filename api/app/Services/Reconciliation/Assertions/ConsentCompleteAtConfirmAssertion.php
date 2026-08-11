@@ -7,7 +7,7 @@ use App\Services\Reconciliation\AssertionResult;
 use Illuminate\Support\Facades\DB;
 
 /**
- * S05-6 (OD-57/58) — no team was 成團-confirmed with a member whose consent was
+ * S05-6 (OD-57/58) — no team was Team Formation-confirmed with a member whose consent was
  * unsatisfied OR STALE at that moment. Judged by PAST FACTS: for every
  * `enrolment.confirmed` audit event (the confirm-time fact), the student had a
  * consent SIGNATURE that was both (a) signed at or before that event AND (b) whose
@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
  * correctly-confirmed team; a supersede BEFORE confirm does. Supersede time comes
  * from the immutable supersede audit event, not a mutable column. Scope: at least
  * one satisfied, non-stale signature by confirm time; the requires_all_guardians
- * nuance is enforced live at 成團 (consentSatisfied under the FOR SHARE lock).
+ * nuance is enforced live at Team Formation (consentSatisfied under the FOR SHARE lock).
  */
 class ConsentCompleteAtConfirmAssertion implements Assertion
 {

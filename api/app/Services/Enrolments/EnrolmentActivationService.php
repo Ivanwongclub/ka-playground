@@ -7,10 +7,10 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * S06-1 (R3) — enrolment activation. "Active" = the programme is running, NOT
- * 成團 and NOT payment (school-settled activate on invoice, so activation is
+ * Team Formation and NOT payment (school-settled activate on invoice, so activation is
  * payment-decoupled). A SYSTEM-actor scheduled job moves `confirmed → active`
  * for every confirmed enrolment whose programme has STARTED (basics.starts_on ≤
- * now). A late-joiner (成團 after the start date) is already confirmed, so the
+ * now). A late-joiner (Team Formation after the start date) is already confirmed, so the
  * next run picks it up — activation fires at max(programme_start, confirmed_at)
  * without any timestamp column: the job keys purely on "confirmed AND started".
  * The tracker is locked until Active (see TrackerService::approveGate).

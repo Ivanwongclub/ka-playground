@@ -73,7 +73,7 @@ class PaymentObligationTest extends TestCase
         $this->app['auth']->forgetGuards();
     }
 
-    /** Enrol N students and walk each to Teamed (the state 成團 confirms FROM). */
+    /** Enrol N students and walk each to Teamed (the state Team Formation confirms FROM). */
     private function teamedEnrolments(int $count): array
     {
         $machine = app(EnrolmentService::class);
@@ -102,7 +102,7 @@ class PaymentObligationTest extends TestCase
 
     /**
      * THE FIXTURE SEAT CLAIM (Q1): confirm + obligation in ONE transaction —
-     * exactly what S05's 成團 will do, minus the real capacity counter.
+     * exactly what S05's Team Formation will do, minus the real capacity counter.
      */
     private function fixtureClaim(array $enrolmentIds, string $payerParty = 'guardian', ?int $schoolId = null): void
     {

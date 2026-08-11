@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
  * S05-5 (OD-61) — a teacher links to the TEAM, not to individual students. The
  * link is created by the lobby's school admin or an academy admin; a linked
  * teacher may then approve that team's stage gates. Required before a team's
- * first gate, not at 成團.
+ * first gate, not at Team Formation.
  */
 class TeamTeacherLinkService
 {

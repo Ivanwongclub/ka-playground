@@ -160,7 +160,7 @@ class PreviewSeeder extends Seeder
         };
         $confirmOrder = function (User $student) use ($enrolments, $orders, $ops): object {
             $id = DB::table('enrolments')->where('student_id', $student->id)->orderByDesc('created_at')->value('id');
-            foreach (['teamed', 'confirmed'] as $to) { // fixture 成團 (real transaction is S05)
+            foreach (['teamed', 'confirmed'] as $to) { // fixture Team Formation (real transaction is S05)
                 if (in_array(DB::table('enrolments')->where('id', $id)->value('status'), ['in_pool', 'teamed'], true)) {
                     $enrolments->transition($id, $to, $ops, 'preview fixture 成團');
                 }

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
  * school-settled (the consolidated invoice covers it, OD-53 — no family task).
  * Idempotent end to end: a crash between issuance and consumption re-scans
  * into OrderService's duplicate-returns-original path. Never holds any lock
- * the 成團 race contends; never runs under provider IO.
+ * the Team Formation race contends; never runs under provider IO.
  */
 class PaymentObligationConsumer
 {

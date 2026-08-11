@@ -12,14 +12,14 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
- * 成團 — the concurrency core (S05-2). One DB transaction, LOCKS AND STATE ONLY,
+ * Team Formation — the concurrency core (S05-2). One DB transaction, LOCKS AND STATE ONLY,
  * issuance AFTER commit. The whole transaction runs under a system elevation
  * (the state machine writes as system; the approver's authority is established
  * BEFORE the elevation). BINDING LOCK ORDER, every path:
  *   FIRST  — FOR SHARE on the members' signed consent_requests (ORDER BY id),
  *            and (requires_all_guardians) their active guardian_links (ORDER BY id);
  *   SECOND — FOR UPDATE on the programme_capacity row.
- * This order is the only guard against the supersede↔成團 / team↔team deadlock.
+ * This order is the only guard against the supersede↔Team Formation / team↔team deadlock.
  */
 class TeamConfirmationService
 {
@@ -49,7 +49,7 @@ class TeamConfirmationService
             programmeId: (int) $team->programme_id, actor: $student);
     }
 
-    /** 成團 — approve a submitted team. Authority checked in the approver's context; the transaction runs as system. */
+    /** Team Formation — approve a submitted team. Authority checked in the approver's context; the transaction runs as system. */
     public function confirm(string $teamId, User $approver): array
     {
         $team = DB::table('teams')->where('id', $teamId)->first() ?? abort(404);
@@ -65,7 +65,7 @@ class TeamConfirmationService
         }
         // 1. approver authority (OD-39): school admin of the lobby's school, or academy ops/super
         $this->assertApprover($team, $approver);
-        // capacity must be configured (S05-2 hard requirement at 成團)
+        // capacity must be configured (S05-2 hard requirement at Team Formation)
         if (! DB::table('programme_capacity')->where('programme_id', $team->programme_id)->exists()) {
             abort(422, 'Programme capacity is not configured — 成團 refused (OD-31)');
         }
@@ -142,7 +142,7 @@ class TeamConfirmationService
     }
 
     /** OD-39 authority (single source): lobby school-admin of the team's category, or academy ops/super.
-     *  Public so the S-UX3-3a consent-status read reuses the SAME gate as the 成團 confirm. */
+     *  Public so the S-UX3-3a consent-status read reuses the SAME gate as the Team Formation confirm. */
     public function assertApprover(object $team, User $approver): void
     {
         // academy operations / super always
