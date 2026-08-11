@@ -567,6 +567,24 @@
     "stagePitch": "推介",
     "stageLaunch": "启动"
   },
+  "guardianHome": {
+    "subtitle": "您家庭的待办事项",
+    "allClear": "目前没有需要您处理的事项",
+    "allClearDetail": "暂无同意书待签署，亦无款项到期。",
+    "consentCta": "查看并签署",
+    "paymentCta": "查看付款",
+    "viewAllConsents": "查看所有同意书请求（{{count}}）",
+    "viewAllPayments": "查看所有付款（{{count}}）",
+    "children": "子女",
+    "outstanding": "未付款项"
+  },
+  "order": {
+    "lines": {
+      "show": "查看项目",
+      "hide": "收起项目",
+      "snapshotNote": "费用按订单记录显示 — 更正以贷记单处理，绝不修改。"
+    }
+  },
   "urgency": {
     "inDays_other": "{{count}} 天内",
     "dueToday": "今天到期",

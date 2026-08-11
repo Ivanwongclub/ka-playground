@@ -4,6 +4,7 @@
 // stay visible and the server's refusal is rendered, never pre-hidden by the client.
 import { useEffect, useState } from 'react';
 import { App, Button, List, Segmented, Select, Space, Typography } from 'antd';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
@@ -121,6 +122,7 @@ export function ChildSessions() {
   // S-FIX-UX-1 D2: derive the picker from enrolments (not consent-requests) so a child with no
   // consent request still appears — distinct on (student_id, student_name).
   const children = useResource<{ data: EnrolChildRow[] }>('/api/enrolments');
+  const [params] = useSearchParams();
   const [studentId, setStudentId] = useState<number | null>(null);
 
   // Distinct children the guardian has an enrolment for (each enrolment carries the student).
@@ -128,9 +130,13 @@ export function ChildSessions() {
     new Map((children.data?.data ?? []).map((c) => [c.student_id, c.student_name])).entries(),
   ).map(([id, name]) => ({ value: id, label: personName(name) }));
 
+  // R1-G: preselect the ?student= child (from My Children "view sessions") when it's a real option;
+  // otherwise fall back to the first child — the prior default. Only until the user picks explicitly.
   useEffect(() => {
-    if (studentId == null && options.length > 0) setStudentId(options[0].value);
-  }, [options, studentId]);
+    if (studentId != null || options.length === 0) return;
+    const requested = Number(params.get('student'));
+    setStudentId(options.some((o) => o.value === requested) ? requested : options[0].value);
+  }, [options, studentId, params]);
 
   const sessions = useResource<{ sessions: SessionRow[] }>(studentId != null ? `/api/my/students/${studentId}/sessions` : null);
 

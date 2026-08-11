@@ -567,6 +567,24 @@
     "stagePitch": "推介",
     "stageLaunch": "啟動"
   },
+  "guardianHome": {
+    "subtitle": "您家庭的待辦事項",
+    "allClear": "目前沒有需要您處理的事項",
+    "allClearDetail": "暫無同意書待簽署，亦無款項到期。",
+    "consentCta": "查看並簽署",
+    "paymentCta": "查看付款",
+    "viewAllConsents": "查看所有同意書請求（{{count}}）",
+    "viewAllPayments": "查看所有付款（{{count}}）",
+    "children": "子女",
+    "outstanding": "未付款項"
+  },
+  "order": {
+    "lines": {
+      "show": "查看項目",
+      "hide": "收起項目",
+      "snapshotNote": "費用按訂單記錄顯示 — 更正以貸記單處理，絕不修改。"
+    }
+  },
   "urgency": {
     "inDays_other": "{{count}} 天內",
     "dueToday": "今天到期",

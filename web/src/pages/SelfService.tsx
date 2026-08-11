@@ -2,7 +2,8 @@
 // built/existing-RLS endpoints; the one write surfaced is the existing mint-payment-link (guardian's own
 // audited act — "get the payment link", NEVER "pay"; actual payment leaves via the /pay page). Refusals
 // shown-not-hidden. The teacher roster is the STEP-1 gated read /api/my/students (allowlist {id,name}).
-import { App, Button, Card, List, Space, Typography } from 'antd';
+import { useState } from 'react';
+import { App, Button, Card, Descriptions, List, Space, Typography } from 'antd';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
@@ -23,9 +24,67 @@ interface Order { id: string; programme_id: number; student_id: number; payer_pa
 interface Receipt { id: string; order_id: string; receipt_number: number; amount_minor: number; currency: string; issued_at: string }
 interface StudentRow { student_id: number; student_name: string | null }
 interface ConsentStatus { consent_met: boolean; your_signature_needed: boolean }
+interface OrderLine { id: string; name_en: string; name_tc: string; name_sc: string; amount_minor: number; currency: string }
 
 function progName(r: { programme_name_en: string; programme_name_tc: string; programme_name_sc: string }, locale: KaLocale): string {
   return (locale === 'zh-TC' ? r.programme_name_tc : locale === 'zh-SC' ? r.programme_name_sc : r.programme_name_en) || r.programme_name_en;
+}
+
+function lineName(l: OrderLine, locale: KaLocale): string {
+  return (locale === 'zh-TC' ? l.name_tc : locale === 'zh-SC' ? l.name_sc : l.name_en) || l.name_en;
+}
+
+// R1-G — an order's line items (the additive read /api/orders/{id}/lines; order_lines is INSERT-only, BI-5).
+// DISPLAY ONLY: the snapshotted trilingual line name (tri pattern) + amount (formatMoney). Lazy — the read
+// only fires when the row is expanded. Closes the Part-1 headline (order_line_items were rendered nowhere).
+function OrderLines({ orderId }: { orderId: string }) {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language as KaLocale;
+  const res = useResource<{ data: OrderLine[] }>(`/api/orders/${orderId}/lines`);
+  return (
+    <DataBoundary loading={res.loading} error={res.error} empty={(res.data?.data.length ?? 0) === 0}>
+      <Descriptions size="small" column={1} bordered style={{ marginTop: 8 }}>
+        {(res.data?.data ?? []).map((l) => (
+          <Descriptions.Item key={l.id} label={lineName(l, locale)}>
+            {formatMoney(l.amount_minor, l.currency, locale)}
+          </Descriptions.Item>
+        ))}
+      </Descriptions>
+      <div style={{ marginTop: 6 }}><Text type="secondary">{t('order.lines.snapshotNote')}</Text></div>
+    </DataBoundary>
+  );
+}
+
+// R1-G — one payable order row with an expandable line-items detail. The status tag + getLink action + the
+// urgency row treatment are BYTE-IDENTICAL to the pre-R1-G renderItem; only the expandable detail is added.
+function PayableOrderItem({ o, locale, onGetLink }: { o: Order; locale: KaLocale; onGetLink: (o: Order) => void }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const lvl = o.status === 'issued' ? urgencyLevel(o.payment_due_at, URGENCY.payment) : 'none';
+  return (
+    <List.Item className={lvl !== 'none' ? `ds2-urgent--${lvl}` : undefined} actions={[
+      <StatusTag key="st" domain="orderStatus" value={o.status} />,
+      o.status === 'issued'
+        ? <Button key="lnk" size="small" type="primary" className="ka-cta" onClick={() => onGetLink(o)}>{t('selfService.getLink')}</Button>
+        : <span key="lnk" />,
+    ]}>
+      <div style={{ width: '100%' }}>
+        <List.Item.Meta
+          title={progName(o, locale)}
+          description={
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <Text type="secondary">{formatMoney(o.total_amount_minor, o.currency, locale)}{o.payment_due_at ? ` · ${t('selfService.due')} ${formatHkt(o.payment_due_at, locale)}` : ''}</Text>
+              {lvl !== 'none' && <UrgencyChip level={lvl} label={urgencyLabel(lvl, urgencyDays(o.payment_due_at), t)} />}
+            </span>
+          }
+        />
+        <Button type="link" size="small" style={{ paddingLeft: 0 }} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+          {open ? t('order.lines.hide') : t('order.lines.show')}
+        </Button>
+        {open && <OrderLines orderId={o.id} />}
+      </div>
+    </List.Item>
+  );
 }
 
 function childInitials(name: string | null): string {
@@ -115,7 +174,8 @@ export function MyChildren() {
                     <Title level={5} style={{ margin: 0 }}>{personName(name)}</Title>
                     <div style={{ marginTop: 6 }}><StatChip value={enrolments.length} label={t('selfService.programmes')} /></div>
                   </div>
-                  <Link to="/family/sessions">{t('selfService.viewSessions')}</Link>
+                  {/* R1-G: preselect this child in the sessions picker (falls back to first child if absent). */}
+                  <Link to={`/family/sessions?student=${studentId}`}>{t('selfService.viewSessions')}</Link>
                 </div>
                 <ZoneStack>
                   {enrolments.map((e) => <EnrolmentZone key={e.id} e={e} />)}
@@ -163,28 +223,7 @@ export function MyPayments() {
         <SubPanel tone="neutral">
           <List<Order>
             dataSource={payable}
-            renderItem={(o) => {
-              // R0-B4: urgency only on an unpaid (issued) order — payment_due_at is the deadline. getLink untouched.
-              const lvl = o.status === 'issued' ? urgencyLevel(o.payment_due_at, URGENCY.payment) : 'none';
-              return (
-              <List.Item key={o.id} className={lvl !== 'none' ? `ds2-urgent--${lvl}` : undefined} actions={[
-                <StatusTag key="st" domain="orderStatus" value={o.status} />,
-                o.status === 'issued'
-                  ? <Button key="lnk" size="small" type="primary" className="ka-cta" onClick={() => void getLink(o)}>{t('selfService.getLink')}</Button>
-                  : <span key="lnk" />,
-              ]}>
-                <List.Item.Meta
-                  title={progName(o, locale)}
-                  description={
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <Text type="secondary">{formatMoney(o.total_amount_minor, o.currency, locale)}{o.payment_due_at ? ` · ${t('selfService.due')} ${formatHkt(o.payment_due_at, locale)}` : ''}</Text>
-                      {lvl !== 'none' && <UrgencyChip level={lvl} label={urgencyLabel(lvl, urgencyDays(o.payment_due_at), t)} />}
-                    </span>
-                  }
-                />
-              </List.Item>
-              );
-            }}
+            renderItem={(o) => <PayableOrderItem key={o.id} o={o} locale={locale} onGetLink={(ord) => void getLink(ord)} />}
           />
         </SubPanel>
       </DataBoundary>

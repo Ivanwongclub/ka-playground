@@ -30,6 +30,15 @@ const JOURNEY = ['submitted', 'pending_consent', 'in_pool', 'teamed', 'confirmed
 const TERMINAL_BAD = ['withdrawn', 'released'];
 // R1-S2 B1: per-stage deep-link targets (student context). A stage with no entry is not clickable.
 const DEEP: Record<string, string> = { pending_consent: '/consents', in_pool: '/my/team', teamed: '/my/team', confirmed: '/my/team' };
+// R1-G: per-stage deep-link targets (GUARDIAN context). pending_consent→the signing list, confirmed→the
+// order to settle, active→the child's sessions (needs the row's student_id). submitted/in_pool/teamed/
+// completed stay non-clickable — team formation is the STUDENT's act (no guardian team view exists) and
+// completed has no next action.
+const guardianDeep = (stage: string, row: Row): string | undefined =>
+  stage === 'pending_consent' ? '/consents'
+    : stage === 'confirmed' ? '/my/payments'
+      : stage === 'active' ? `/family/sessions?student=${row.student_id}`
+        : undefined;
 
 export function Enrolments() {
   const { t, i18n } = useTranslation();
@@ -38,6 +47,8 @@ export function Enrolments() {
   const { has } = useIdentity();
   // The R1-S student predicate (verified student-only in R1-S). onStep deep-links are gated to students.
   const isStudent = has('enrolment.view') && has('events.rsvp') && !has('operations.manage');
+  // R1-G: guardian is consent.sign-exclusive (capability_forbidden bars it from every capability group).
+  const isGuardian = has('consent.sign');
   const { data, loading, error } = useResource<{ data: Row[] }>('/api/enrolments');
   const rows = data?.data ?? [];
 
@@ -81,13 +92,15 @@ export function Enrolments() {
                       steps: JOURNEY.map((s, i) => {
                         const cur = JOURNEY.indexOf(row.status);
                         const state = i < cur ? 'done' : i === cur ? 'current' : 'todo';
-                        return { label: t(`enrol.status.${s}`), state, key: DEEP[s] };
+                        const key = isStudent ? DEEP[s] : isGuardian ? guardianDeep(s, row) : undefined;
+                        return { label: t(`enrol.status.${s}`), state, key };
                       }),
                     }]}
-                    // R1-S2 B1: onStep deep-links are STUDENT-context (pending_consent→/consents,
-                    // in_pool|teamed|confirmed→/my/team) — gated to student viewers this card; display-only
-                    // for guardian/teacher/ops. R1-G will add guardian-context links with correct targets.
-                    onStep={isStudent ? (key) => navigate(key) : undefined}
+                    // R1-S2 B1 + R1-G: onStep deep-links are VIEWER-scoped — student targets (…→/my/team) or
+                    // guardian targets (confirmed→/my/payments, active→/family/sessions?student=). Display-only
+                    // for teacher/ops. A stage with no target for the viewer stays non-clickable (WizardRail
+                    // requires both onStep AND a per-step key).
+                    onStep={isStudent || isGuardian ? (key) => navigate(key) : undefined}
                   />
                 ),
             }}

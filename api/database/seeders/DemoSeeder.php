@@ -93,10 +93,10 @@ class DemoSeeder extends Seeder
         $signing = app(ConsentSigningService::class);
         $orders = app(OrderService::class);
 
-        // ── Family A — one guardian, five children in VARIED states ──
+        // ── Family A — one guardian, six children in VARIED states ──
         $guardianA = $this->account('guardianA@example.com', 'Demo Guardian A', 'guardian');
         $a = [];
-        foreach (['a1', 'a2', 'a3', 'a4', 'a5'] as $k) {
+        foreach (['a1', 'a2', 'a3', 'a4', 'a5', 'a6'] as $k) {
             $a[$k] = $this->account("student.{$k}@example.com", 'Demo Student '.strtoupper($k), 'student');
             $this->activeGuardianLink($guardianA, $a[$k]);
         }
@@ -115,6 +115,13 @@ class DemoSeeder extends Seeder
             $this->enrol($enrolments, $programme, $guardianA, $a[$k]);
             $this->sign($signing, $enrolments, $programme, $guardianA, $a[$k]);
         }
+        // A6 (R1-G) — confirmed with its order ISSUED but UNPAID, via the real order service (no
+        // recordManualPayment). guardianA thus carries one payable order, so the guardian-home payment
+        // TaskCard + outstanding StatCard demo populated. OD-43 green (the order artifact exists); a3's
+        // recorded payment (the only receipt/BI-9 moment) is left intact.
+        $this->enrol($enrolments, $programme, $guardianA, $a['a6']);
+        $this->sign($signing, $enrolments, $programme, $guardianA, $a['a6']);
+        $this->confirmOrder($enrolments, $orders, $ops, $a['a6']);
 
         // ── Family B — a SEPARATE guardian + child (the cross-family RLS boundary) ──
         $guardianB = $this->account('guardianB@example.com', 'Demo Guardian B', 'guardian');
@@ -149,7 +156,7 @@ class DemoSeeder extends Seeder
         $this->command->info('');
         $this->command->info('════ DEMO SEED READY (synthetic; @example.com; strong creds) ════');
         $this->command->line("RLS-PROOF-FIXTURES={$guardianA->id},{$guardianB->id},{$childB->id}");
-        $this->command->info('Family A: guardianA (5 children, varied states) · Family B: guardianB (B1 in-pool = RLS fixture + 3 session-cohort kids)');
+        $this->command->info('Family A: guardianA (6 children, varied states) · Family B: guardianB (B1 in-pool = RLS fixture + 3 session-cohort kids)');
         $this->command->info('Populated: sessions/attendance (2 sessions + marked roster) · member (2 events, 3 directory profiles, RSVPs) · withdrawals + approvals queue');
     }
 
