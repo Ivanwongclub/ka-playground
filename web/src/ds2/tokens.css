@@ -56,6 +56,10 @@
   --ka-row: 40px;
   --ka-page-x: 28px;
   --ka-stack: 16px;
+  /* AL-1 (S-UX-AUDIT-1) — spacing scale. zone-gap separates ZONES (admin default 20px; product = 24px);
+   * card-gap is the intra-zone CARD gutter and stays 16px everywhere ("cards stay 16"). */
+  --ka-zone-gap: 20px;
+  --ka-card-gap: 16px;
 
   /* ════════ DS2 v2 additions (R0-B1) — DS2-owned, NOT drift-checked ════════
    * Every colour value below is an rgba()/gradient DERIVATIVE of an existing token — no new hue
@@ -100,4 +104,5 @@
   --ka-row: 46px;
   --ka-page-x: 40px;
   --ka-stack: 22px;
+  --ka-zone-gap: 24px; /* AL-1: product zones breathe wider than admin */
 }

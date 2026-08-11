@@ -20,7 +20,7 @@ import { SubPanel, ZoneStack, Attest, StatChip, StateBadge, Seal, EmptyState, Ur
 const { Title, Paragraph, Text } = Typography;
 
 interface Enrolment { id: string; programme_id: number; student_id: number; status: string; student_name: string | null; programme_name_en: string; programme_name_tc: string; programme_name_sc: string }
-interface Order { id: string; programme_id: number; student_id: number; payer_party: string; status: string; total_amount_minor: number; currency: string; payment_due_at: string | null; programme_name_en: string; programme_name_tc: string; programme_name_sc: string }
+interface Order { id: string; programme_id: number; student_id: number; payer_party: string; status: string; total_amount_minor: number; currency: string; payment_due_at: string | null; student_name: string | null; programme_name_en: string; programme_name_tc: string; programme_name_sc: string }
 interface Receipt { id: string; order_id: string; receipt_number: number; amount_minor: number; currency: string; issued_at: string }
 interface StudentRow { student_id: number; student_name: string | null }
 interface ConsentStatus { consent_met: boolean; your_signature_needed: boolean }
@@ -69,8 +69,9 @@ function PayableOrderItem({ o, locale, onGetLink }: { o: Order; locale: KaLocale
         : <span key="lnk" />,
     ]}>
       <div style={{ width: '100%' }}>
+        {/* AD-4: name the child on the payable row — "Demo Student A6 · Summer STEM 2026". */}
         <List.Item.Meta
-          title={progName(o, locale)}
+          title={o.student_name ? `${personName(o.student_name)} · ${progName(o, locale)}` : progName(o, locale)}
           description={
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <Text type="secondary">{formatMoney(o.total_amount_minor, o.currency, locale)}{o.payment_due_at ? ` · ${t('selfService.due')} ${formatHkt(o.payment_due_at, locale)}` : ''}</Text>
@@ -156,7 +157,8 @@ export function MyChildren() {
     entry.enrolments.push(e);
     byChild.set(e.student_id, entry);
   }
-  const children = Array.from(byChild.entries());
+  // AL-8: order the children by name (stable, locale-aware) so the list reads predictably.
+  const children = Array.from(byChild.entries()).sort((a, b) => personName(a[1].name).localeCompare(personName(b[1].name)));
 
   return (
     <div data-density="product">
@@ -172,7 +174,8 @@ export function MyChildren() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <Title level={5} style={{ margin: 0 }}>{personName(name)}</Title>
-                    <div style={{ marginTop: 6 }}><StatChip value={enrolments.length} label={t('selfService.programmes')} /></div>
+                    {/* AD-3: pluralize the label via CLDR (_one/_other) — "1 programme" / "2 programmes". */}
+                    <div style={{ marginTop: 6 }}><StatChip value={enrolments.length} label={t('selfService.programmes', { count: enrolments.length })} /></div>
                   </div>
                   {/* R1-G: preselect this child in the sessions picker (falls back to first child if absent). */}
                   <Link to={`/family/sessions?student=${studentId}`}>{t('selfService.viewSessions')}</Link>
@@ -219,7 +222,8 @@ export function MyPayments() {
         <Title level={3} style={{ marginBottom: 0 }}>{t('selfService.paymentsTitle')}</Title>
         <Paragraph type="secondary">{t('selfService.paymentsSubtitle')}</Paragraph>
       </div>
-      <DataBoundary loading={orders.loading} error={orders.error} empty={payable.length === 0}>
+      {/* AL-4: section boundary → inline empty (not a route-body page empty). */}
+      <DataBoundary loading={orders.loading} error={orders.error} empty={payable.length === 0} emptySize="inline">
         <SubPanel tone="neutral">
           <List<Order>
             dataSource={payable}
@@ -228,12 +232,13 @@ export function MyPayments() {
         </SubPanel>
       </DataBoundary>
 
-      <div>
-        <Title level={4} style={{ marginBottom: 0 }}>{t('selfService.receiptsTitle')}</Title>
-      </div>
-      <DataBoundary loading={receipts.loading} error={receipts.error} empty={(receipts.data?.data.length ?? 0) === 0}>
-        <SubPanel tone="neutral">
+      {/* AL-3: "Receipts" is a section title (level 5) INSIDE its SubPanel (C6 idiom) — the header stays
+          even when empty, so the DataBoundary lives inside. AL-4: inline empty. AL-9: list size="small". */}
+      <SubPanel tone="neutral">
+        <Title level={5} style={{ margin: '0 0 8px' }}>{t('selfService.receiptsTitle')}</Title>
+        <DataBoundary loading={receipts.loading} error={receipts.error} empty={(receipts.data?.data.length ?? 0) === 0} emptySize="inline">
           <List<Receipt>
+            size="small"
             dataSource={receipts.data?.data ?? []}
             renderItem={(r) => (
               <List.Item key={r.id} actions={[<Text key="a" strong>{formatMoney(r.amount_minor, r.currency, locale)}</Text>]}>
@@ -244,8 +249,8 @@ export function MyPayments() {
               </List.Item>
             )}
           />
-        </SubPanel>
-      </DataBoundary>
+        </DataBoundary>
+      </SubPanel>
     </Space>
   );
 }
@@ -263,6 +268,7 @@ export function MyStudents() {
       </div>
       <DataBoundary loading={res.loading} error={res.error} empty={(res.data?.data.length ?? 0) === 0}>
         <List<StudentRow>
+          size="small"
           grid={{ gutter: 12, xs: 1, sm: 2, md: 3 }}
           dataSource={res.data?.data ?? []}
           renderItem={(s) => (

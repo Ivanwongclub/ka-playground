@@ -198,14 +198,18 @@ function stepGlyph(s: RailStep): ReactNode {
 /** State is a `state` ENUM per step (icon + colour) — there is no caption/description prop, so "Needs X" /
  *  "In progress" prose cannot be added. Per-phase `done/total` count is computed, not authored. `onStep`
  *  (optional) makes a step selectable — the step passes its own `key` back so the caller opens its editor. */
-export function WizardRail({ phases, onStep }: { phases: RailPhase[]; onStep?: (key: string) => void }) {
+// AL-6 (S-UX-AUDIT-1) — `direction` (default 'auto'): horizontal ≥768px, vertical below (spec R-M2). The
+// steps are wrapped in a `.ds2-rail__steps` container so the horizontal row is a pure CSS flip; no call site
+// needs to know. A rail that must stay a vertical sidebar (the AdminProgrammes wizard nav) passes 'vertical'.
+export function WizardRail({ phases, onStep, direction = 'auto' }: { phases: RailPhase[]; onStep?: (key: string) => void; direction?: 'auto' | 'horizontal' | 'vertical' }) {
   return (
-    <div className="ds2-rail">
+    <div className={`ds2-rail ds2-rail--${direction}`}>
       {phases.map((ph, i) => {
         const done = ph.steps.filter((s) => s.state === 'done').length;
         return (
-          <div key={i}>
+          <div key={i} className="ds2-rail__group">
             <div className="ds2-rail__phase">{ph.title}<span className="ds2-rail__ct">{done}/{ph.steps.length}</span></div>
+            <div className="ds2-rail__steps">
             {ph.steps.map((s, j) => {
               const clickable = onStep && s.key !== undefined;
               return (
@@ -223,6 +227,7 @@ export function WizardRail({ phases, onStep }: { phases: RailPhase[]; onStep?: (
                 </div>
               );
             })}
+            </div>
           </div>
         );
       })}

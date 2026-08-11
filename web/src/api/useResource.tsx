@@ -61,10 +61,13 @@ interface DataBoundaryProps {
   empty?: boolean;
   onRetry?: () => void;
   children: ReactNode;
+  // AL-4 (S-UX-AUDIT-1): 'page' for a route's whole body (default — zero change to existing call sites);
+  // 'inline' when the boundary wraps a SECTION inside a page (Receipts, the finance money tables, …).
+  emptySize?: 'inline' | 'page';
 }
 
 /** Consistent loading / error / empty chrome around a resource-backed view. */
-export function DataBoundary({ loading, error, empty, children }: DataBoundaryProps) {
+export function DataBoundary({ loading, error, empty, children, emptySize = 'page' }: DataBoundaryProps) {
   const { t } = useTranslation();
   if (loading) {
     return (
@@ -77,7 +80,7 @@ export function DataBoundary({ loading, error, empty, children }: DataBoundaryPr
     return <Alert type="error" showIcon message={t('data.error')} description={error} style={{ margin: '16px 0' }} />;
   }
   if (empty) {
-    return <EmptyState size="page" message={t('data.empty')} />;
+    return <EmptyState size={emptySize} message={t('data.empty')} />;
   }
   return <>{children}</>;
 }

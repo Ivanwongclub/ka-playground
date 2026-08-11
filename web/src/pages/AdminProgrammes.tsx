@@ -217,7 +217,8 @@ export function AdminProgrammes() {
             <ProgressRing value={wizard.readiness.complete} total={wizard.readiness.required} />
             <Text type="secondary" className="ka-tabular-nums">{t('wizard.readiness', wizard.readiness)}</Text>
           </Flex>
-          <WizardRail phases={railPhases} onStep={openFromRail} />
+          {/* AL-6: the wizard section-nav is a vertical sidebar — pin it (default 'auto' would go horizontal ≥768). */}
+          <WizardRail phases={railPhases} onStep={openFromRail} direction="vertical" />
           <Flex gap={12} style={{ marginTop: 16 }}>
             <Button onClick={() => void runPreFlight()}>{t('wizard.preFlight')}</Button>
             <Button

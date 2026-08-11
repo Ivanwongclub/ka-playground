@@ -73,12 +73,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/refunds/{id}/reject', [\App\Http\Controllers\RefundController::class, 'reject'])->middleware('permission:finance.confirm');
     // S04B step 1 — RLS-shaped money reads (OD-67: guardians+student read;
     // school admins get ZERO family orders; finance/audit see all)
-    Route::get('/orders', fn () => response()->json(['data' => \Illuminate\Support\Facades\DB::table('orders as o') // S-UX3-2: additive names (student resolves for ops/audit; NULL for finance-only per users_read)
-        ->leftJoin('users as s', 's.id', '=', 'o.student_id')
-        ->leftJoin('programmes as pr', 'pr.id', '=', 'o.programme_id')
-        ->orderBy('o.created_at')
-        ->get(['o.id', 'o.enrolment_id', 'o.programme_id', 'o.student_id', 'o.payer_party', 'o.status', 'o.total_amount_minor', 'o.currency', 'o.payment_due_at',
-            's.name as student_name', 'pr.name_en as programme_name_en', 'pr.name_tc as programme_name_tc', 'pr.name_sc as programme_name_sc'])]));
+    Route::get('/orders', [\App\Http\Controllers\OrdersController::class, 'index']); // S-UX-AUDIT-1 AD-2: moved to a controller so student-attribution resolves at a REGISTERED elevation call site
     Route::get('/orders/{id}/lines', fn (string $id) => response()->json(['data' => \Illuminate\Support\Facades\DB::table('order_lines')->where('order_id', $id)->get(['id', 'name_en', 'name_tc', 'name_sc', 'amount_minor', 'currency'])]));
     Route::get('/receipts', fn () => response()->json(['data' => \Illuminate\Support\Facades\DB::table('receipts')->orderBy('receipt_number')->get(['id', 'order_id', 'sequence_key', 'receipt_number', 'amount_minor', 'currency', 'issued_at'])]));
     // S04B step 3 — payment links (OD-44). Mint = the guardian's own audited

@@ -20,7 +20,7 @@ import {
 } from '@/ds2';
 
 interface ConsentRow { id: string; status: string; expires_at: string | null; student_name: string | null; programme_name_en: string | null; programme_name_tc: string | null; programme_name_sc: string | null }
-interface OrderRow { id: string; student_id: number; payer_party: string; status: string; total_amount_minor: number; currency: string; payment_due_at: string | null; programme_name_en: string; programme_name_tc: string; programme_name_sc: string }
+interface OrderRow { id: string; student_id: number; payer_party: string; status: string; total_amount_minor: number; currency: string; payment_due_at: string | null; student_name: string | null; programme_name_en: string; programme_name_tc: string; programme_name_sc: string }
 interface EnrolRow { student_id: number }
 
 const OPEN_CONSENT = new Set(['sent', 'viewed']);
@@ -64,6 +64,45 @@ export function GuardianHome() {
   const moreConsents = openConsents.length > CONSENT_CAP;
   const morePayments = payable.length > PAYMENT_CAP;
 
+  // AL-2: consent + payment TaskCards share ONE grid so an odd last card can span full width (no dead
+  // half-column). Consents first (the guardian's own legal act), then the payable orders.
+  const pendingCards = [
+    ...openConsents.slice(0, CONSENT_CAP).map((c) => {
+      const lvl = urgencyLevel(c.expires_at, URGENCY.consent);
+      return {
+        key: `c-${c.id}`,
+        render: () => (
+          <TaskCard
+            icon={<FileSignature size={18} />}
+            title={personName(c.student_name)}
+            context={progName(c, locale)}
+            urgency={lvl}
+            urgencyLabel={lvl !== 'none' ? urgencyLabel(lvl, urgencyDays(c.expires_at), t) : undefined}
+            cta={{ label: t('guardianHome.consentCta'), to: `/consents/${c.id}` }}
+          />
+        ),
+      };
+    }),
+    ...payable.slice(0, PAYMENT_CAP).map((o) => {
+      const lvl = urgencyLevel(o.payment_due_at, URGENCY.payment);
+      // AD-4: the guardian payment card now names the child — "Demo Student A6 · Summer STEM 2026".
+      const who = o.student_name ? `${personName(o.student_name)} · ${progName(o, locale)}` : progName(o, locale);
+      return {
+        key: `p-${o.id}`,
+        render: () => (
+          <TaskCard
+            icon={<CreditCard size={18} />}
+            title={who}
+            context={`${formatMoney(o.total_amount_minor, o.currency, locale)}${o.payment_due_at ? ` · ${t('selfService.due')} ${formatHkt(o.payment_due_at, locale)}` : ''}`}
+            urgency={lvl}
+            urgencyLabel={lvl !== 'none' ? urgencyLabel(lvl, urgencyDays(o.payment_due_at), t) : undefined}
+            cta={{ label: t('guardianHome.paymentCta'), to: '/my/payments' }}
+          />
+        ),
+      };
+    }),
+  ];
+
   return (
     <div style={{ maxWidth: 1100 }} data-density="product">
       <HeroBanner image={{ src: asset('auth/featured-sc5.jpg'), alt: '' }} height="band">
@@ -73,53 +112,24 @@ export function GuardianHome() {
 
       {/* PENDING WORK — the family's outstanding actions, front and centre. */}
       {loadingWork ? (
-        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Row gutter={[16, 16]} style={{ marginTop: 'var(--ka-zone-gap)' }}>
           {[0, 1].map((i) => <Col key={i} xs={24} md={12}><Skeleton active paragraph={{ rows: 2 }} /></Col>)}
         </Row>
       ) : nothingPending ? (
-        <div style={{ marginTop: 16 }}>
+        <div style={{ marginTop: 'var(--ka-zone-gap)' }}>
           <SubPanel tone="neutral">
             <EmptyState size="inline" icon={<FileSignature size={28} />} message={t('guardianHome.allClear')} detail={t('guardianHome.allClearDetail')} />
           </SubPanel>
         </div>
       ) : (
-        <Row gutter={[16, 16]} align="stretch" style={{ marginTop: 16 }}>
-          {/* Consent tasks — the guardian's own legal act; CTA links straight to the ceremony (/consents/{id}). */}
-          {openConsents.slice(0, CONSENT_CAP).map((c) => {
-            const lvl = urgencyLevel(c.expires_at, URGENCY.consent);
-            return (
-              <Col key={c.id} xs={24} md={12}>
-                <TaskCard
-                  icon={<FileSignature size={18} />}
-                  title={personName(c.student_name)}
-                  context={progName(c, locale)}
-                  urgency={lvl}
-                  urgencyLabel={lvl !== 'none' ? urgencyLabel(lvl, urgencyDays(c.expires_at), t) : undefined}
-                  cta={{ label: t('guardianHome.consentCta'), to: `/consents/${c.id}` }}
-                />
-              </Col>
-            );
+        <Row gutter={[16, 16]} align="stretch" style={{ marginTop: 'var(--ka-zone-gap)' }}>
+          {pendingCards.map((card, i) => {
+            const full = i === pendingCards.length - 1 && pendingCards.length % 2 === 1;
+            return <Col key={card.key} xs={24} md={full ? 24 : 12}>{card.render()}</Col>;
           })}
           {moreConsents && (
             <Col xs={24}><Link to="/consents">{t('guardianHome.viewAllConsents', { count: openConsents.length })}</Link></Col>
           )}
-
-          {/* Payment tasks — the paying persona's money, on the home for the first time. */}
-          {payable.slice(0, PAYMENT_CAP).map((o) => {
-            const lvl = urgencyLevel(o.payment_due_at, URGENCY.payment);
-            return (
-              <Col key={o.id} xs={24} md={12}>
-                <TaskCard
-                  icon={<CreditCard size={18} />}
-                  title={progName(o, locale)}
-                  context={`${formatMoney(o.total_amount_minor, o.currency, locale)}${o.payment_due_at ? ` · ${t('selfService.due')} ${formatHkt(o.payment_due_at, locale)}` : ''}`}
-                  urgency={lvl}
-                  urgencyLabel={lvl !== 'none' ? urgencyLabel(lvl, urgencyDays(o.payment_due_at), t) : undefined}
-                  cta={{ label: t('guardianHome.paymentCta'), to: '/my/payments' }}
-                />
-              </Col>
-            );
-          })}
           {morePayments && (
             <Col xs={24}><Link to="/my/payments">{t('guardianHome.viewAllPayments', { count: payable.length })}</Link></Col>
           )}
@@ -127,7 +137,7 @@ export function GuardianHome() {
       )}
 
       {/* AT A GLANCE — children, the outstanding total (client-summed, display-only), enrolments. */}
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+      <Row gutter={[16, 16]} style={{ marginTop: 'var(--ka-zone-gap)' }}>
         <Col xs={24} sm={8}>
           {enrolments.loading ? <Skeleton active paragraph={{ rows: 1 }} title={{ width: '55%' }} />
             : <StatCard label={t('guardianHome.children')} value={childCount} icon={<Users size={18} />} to="/my/children" />}

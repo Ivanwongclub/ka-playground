@@ -159,17 +159,19 @@ h3 {
 .ka-mobile-content {
   flex: 1;
   padding: 16px;
-  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  /* AD-1 (S-UX-AUDIT-1): clear the fixed TabBar via the SAME token as its height, so the two can never
+     drift (was a magic 72px). Content bottom padding = tab-bar height + the bottom safe-area inset. */
+  padding-bottom: calc(var(--ka-tabbar-h) + env(safe-area-inset-bottom));
   -webkit-overflow-scrolling: touch;
 }
 
-/* §17.2 — bottom tab bar: 56px + safe area, z 20 */
+/* §17.2 — bottom tab bar: --ka-tabbar-h + safe area, z 20 (AD-1: token-bound so content inset can't drift) */
 .ka-tabbar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: calc(56px + env(safe-area-inset-bottom));
+  height: calc(var(--ka-tabbar-h) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
   display: flex;
   background: var(--ka-card);

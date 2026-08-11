@@ -162,7 +162,9 @@ function MyTeamCard({ team, onChange }: { team: TeamRow; onChange: () => void })
           />
         </DataBoundary>
 
-        {team.status === 'forming' ? (
+        {/* AL-7: the header StatusTag pill already carries the team's state — the forming branch keeps its
+            submit action, but the non-forming branch's floating status text is REMOVED (it was a duplicate). */}
+        {team.status === 'forming' && (
           <div>
             {/* Submit is SHOWN to every member; the server enforces submitter-only (403 rendered). */}
             <Button type="primary" onClick={submit}>{t('studentTeam.submit')}</Button>
@@ -170,8 +172,6 @@ function MyTeamCard({ team, onChange }: { team: TeamRow; onChange: () => void })
               {t('studentTeam.leaveDisabled')}
             </Paragraph>
           </div>
-        ) : (
-          <Text type="secondary">{t(`studentTeam.state.${team.status}`)}</Text>
         )}
       </Space>
     </SubPanel>

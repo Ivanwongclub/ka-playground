@@ -18,11 +18,11 @@ import './surfaces.css';
 // `to` (navigate) XOR `onClick` (handler) — the spec's discriminated union for every one-action primitive.
 export type Ds2Cta = { label: ReactNode; to: string } | { label: ReactNode; onClick: () => void };
 
-function CtaButton({ cta, primary = false, block = false }: { cta: Ds2Cta; primary?: boolean; block?: boolean }) {
+function CtaButton({ cta, primary = false, block = false, size = 'small' }: { cta: Ds2Cta; primary?: boolean; block?: boolean; size?: 'small' | 'middle' }) {
   const btn = (
     <Button
       type={primary ? 'primary' : 'default'}
-      size="small"
+      size={size}
       block={block}
       className={primary ? 'ka-cta' : undefined}
       onClick={'onClick' in cta ? cta.onClick : undefined}
@@ -171,7 +171,9 @@ export function TaskCard({
           {urgency !== 'none' && urgencyLabel != null && <UrgencyChip level={urgency} label={urgencyLabel} />}
         </div>
         {context != null && <div className="ds2-taskcard__ctx">{context}</div>}
-        <div className="ds2-taskcard__cta"><CtaButton cta={cta} primary /></div>
+        {/* AL-5 (S-UX-AUDIT-1): the TaskCard CTA is a middle-weight primary button — one place, every
+            TaskCard. EmptyState's CtaButton keeps the default small (its call site is unchanged). */}
+        <div className="ds2-taskcard__cta"><CtaButton cta={cta} primary size="middle" /></div>
       </div>
     </SubPanel>
   );

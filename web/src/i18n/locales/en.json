@@ -870,7 +870,8 @@
     "studentsTitle": "My Students",
     "studentsSubtitle": "Students on your school's roll.",
     "noStudents": "No students on your roll yet.",
-    "programmes": "programmes",
+    "programmes_one": "programme",
+    "programmes_other": "programmes",
     "reviewSign": "Review & sign",
     "viewRecord": "View record"
   }

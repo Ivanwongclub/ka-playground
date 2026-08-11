@@ -22,6 +22,19 @@
 
 /* WizardRail — grouped stepper; state by icon + colour, no captions */
 .ds2-rail { display: flex; flex-direction: column; gap: 2px; }
+/* AL-6 (S-UX-AUDIT-1) — the steps wrapper is column by default (vertical rail = the pre-audit layout). */
+.ds2-rail__steps { display: flex; flex-direction: column; gap: 2px; }
+/* Horizontal (spec R-M2): 'horizontal' always, 'auto' at ≥768px — groups flow in a row, steps in a row,
+   each step sized to content. 'vertical' pins the pre-audit column (e.g. the AdminProgrammes wizard nav). */
+.ds2-rail--horizontal, .ds2-rail--vertical { /* explicit modifiers; base rules above hold for column */ }
+.ds2-rail--horizontal { flex-direction: row; flex-wrap: wrap; gap: 20px; }
+.ds2-rail--horizontal .ds2-rail__steps { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 6px; }
+.ds2-rail--horizontal .ds2-rail__steps .ds2-step { flex: 0 0 auto; }
+@media (min-width: 768px) {
+  .ds2-rail--auto { flex-direction: row; flex-wrap: wrap; gap: 20px; }
+  .ds2-rail--auto .ds2-rail__steps { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 6px; }
+  .ds2-rail--auto .ds2-rail__steps .ds2-step { flex: 0 0 auto; }
+}
 .ds2-rail__phase { display: flex; align-items: center; justify-content: space-between; font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase; color: #5c566b; padding: 13px 10px 5px; }
 .ds2-rail__ct { font-family: var(--ka-font-mono); color: var(--ka-muted-fg); letter-spacing: 0; }
 .ds2-step { display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: var(--ka-r-md); color: var(--ka-muted-fg); }

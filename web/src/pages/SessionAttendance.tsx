@@ -28,16 +28,18 @@ function programmeName(p: ProgrammeRow, locale: KaLocale): string {
   return (locale === 'zh-TC' ? p.name_tc : locale === 'zh-SC' ? p.name_sc : p.name_en) || p.name_en;
 }
 
-function whenLabel(s: SessionRow, locale: KaLocale): string {
-  // S-FIX-UX-1 D5: show start AND end (end as time-only beside the full start).
-  return `${formatHkt(s.starts_at, locale)} – ${formatHktTime(s.ends_at, locale)}`;
+// AL-7 (S-UX-AUDIT-1): `timeOnly` drops the date from start — used by MySessions, where the day-group
+// header already carries the date. The ungrouped ChildSessions list keeps the full-dated start.
+function whenLabel(s: SessionRow, locale: KaLocale, timeOnly = false): string {
+  // S-FIX-UX-1 D5: show start AND end (end as time-only beside the start).
+  return `${timeOnly ? formatHktTime(s.starts_at, locale) : formatHkt(s.starts_at, locale)} – ${formatHktTime(s.ends_at, locale)}`;
 }
 
 // ── A session's attendance chip (read views) ────────────────────────────────────────────────────────
-function SessionMeta({ s, locale }: { s: SessionRow; locale: KaLocale }) {
+function SessionMeta({ s, locale, timeOnly = false }: { s: SessionRow; locale: KaLocale; timeOnly?: boolean }) {
   return (
     <Text type="secondary">
-      {whenLabel(s, locale)} · <StatusTag domain="sessionStatus" value={s.status} />
+      {whenLabel(s, locale, timeOnly)} · <StatusTag domain="sessionStatus" value={s.status} />
     </Text>
   );
 }
@@ -90,7 +92,8 @@ export function MySessions() {
             : <span key="act" />,
       ]}
     >
-      <List.Item.Meta title={s.title} description={<SessionMeta s={s} locale={locale} />} />
+      {/* AL-7: time-only within the day group — the group header carries the date. */}
+      <List.Item.Meta title={s.title} description={<SessionMeta s={s} locale={locale} timeOnly />} />
     </List.Item>
   );
   const todayKey = hktDayKey(new Date().toISOString());

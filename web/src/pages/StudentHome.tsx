@@ -58,8 +58,10 @@ export function StudentHome() {
         <div style={{ fontSize: 13 }}>{t('dashboard.subtitle')}</div>
       </HeroBanner>
 
-      {/* R1-S2 balance: the two TaskCards on one equal-height row; the StatCards on their own row below. */}
-      <Row gutter={[16, 16]} align="stretch" style={{ marginTop: 16 }}>
+      {/* R1-S2 balance: the two TaskCards on one equal-height row; the StatCards on their own row below.
+          AL-1: inter-zone gap is --ka-zone-gap (24px product); the [16,16] gutter is the intra-zone
+          --ka-card-gap value (AntD gutter needs a numeric literal, so it stays 16 — RULING 2). */}
+      <Row gutter={[16, 16]} align="stretch" style={{ marginTop: 'var(--ka-zone-gap)' }}>
         {/* 1 — NEXT SESSION (action-first): the soonest booked/waitlisted upcoming session, or a designed empty. */}
         <Col xs={24} md={12}>
           {sessions.loading ? (
@@ -110,7 +112,7 @@ export function StudentHome() {
         </Col>
       </Row>
 
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+      <Row gutter={[16, 16]} style={{ marginTop: 'var(--ka-zone-gap)' }}>
         {/* 3 — CONSENT-WAITING: a StatCard (count), framed WAITING ON YOUR GUARDIAN. NOT a student task, no
             urgency chip. Shown only when something is actually pending. */}
         {!consents.loading && consentWaiting > 0 && (

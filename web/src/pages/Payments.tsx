@@ -127,7 +127,8 @@ export function Payments() {
           <StatCard label={t('payments.confirmedLabel')} value={formatMoney(confirmedMinor, currency, locale)} count={confirmed.length} unit={t('payments.unitConfirmed')} accent="gold" seal />
         </div>
 
-        <DataBoundary loading={orders.loading} error={orders.error} empty={awaiting.length === 0}>
+        {/* AL-4: these are SECTIONS within the page → inline empty (not a route-body page empty). */}
+        <DataBoundary loading={orders.loading} error={orders.error} empty={awaiting.length === 0} emptySize="inline">
           <Card title={t('payments.ordersAwaiting')}>
             <ZebraTable<OrderRow>
               rowKey={(o) => o.id}
@@ -142,7 +143,7 @@ export function Payments() {
           </Card>
         </DataBoundary>
 
-        <DataBoundary loading={payments.loading} error={payments.error} empty={pending.length === 0}>
+        <DataBoundary loading={payments.loading} error={payments.error} empty={pending.length === 0} emptySize="inline">
           <Card title={t('payments.pendingConfirmation')}>
             <ZebraTable<PaymentRow>
               rowKey={(p) => p.id}
