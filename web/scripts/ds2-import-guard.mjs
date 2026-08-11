@@ -22,6 +22,8 @@ const ALLOWED = [
   'src/pages/StudentHome.tsx', // R1-S — the action-first student home (reads only; routed by Dashboard)
   // ── R1-G (guardian persona home) — HeroBanner/TaskCard/StatCard/EmptyState composition (reads only) ──
   'src/pages/GuardianHome.tsx', // R1-G — the action-first guardian home (the paying persona; routed by Dashboard)
+  // ── R1-P360 (My Profile / Student 360) — WizardRail/SubPanel/EmptyState composition (reads only) ──
+  'src/pages/Profile360.tsx', // R1-P360 — the 360 record view (self + guardian child-view; reused by staff in R1-F2)
   // ── restyle rollout: each surface is a deliberate adoption in its own gated card ──
   'src/pages/SelfService.tsx', // ANCHORS STEP 1 — My Children (MyPayments/MyStudents in-file are untouched)
   'src/pages/AdminProgrammes.tsx', // ANCHORS STEP 2 — the wizard

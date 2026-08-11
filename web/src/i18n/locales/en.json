@@ -53,7 +53,8 @@
     "attendanceOversight": "Attendance Oversight",
     "myChildren": "My Children",
     "myPayments": "My Payments",
-    "myStudents": "My Students"
+    "myStudents": "My Students",
+    "myProfile": "My Profile"
   },
   "shell": {
     "openNavigation": "Open navigation",
@@ -559,6 +560,16 @@
     "consentWaiting": "Waiting on your guardian",
     "consentWaitingSub": "Your guardian signs consent for you — nothing for you to do."
   },
+  "profile360": {
+    "subtitle": "Programme record & team",
+    "programmeRecord": "Programme record",
+    "teamRoles": "Team & roles",
+    "noTeam": "Not on a team yet.",
+    "roleHistory": "Role history",
+    "noRoles": "No roles held yet.",
+    "roleCurrent": "Current",
+    "notFound": "Record not found."
+  },
   "tracker": {
     "title": "Activity Tracker",
     "stagePlan": "Plan",
@@ -721,6 +732,13 @@
     "confirmCta": "Confirm formation",
     "confirmed": "Team formed — seats claimed and obligations issued.",
     "tabConsent": "Consent status",
+    "tabStages": "Stages",
+    "stagePassed": "Passed",
+    "stagePending": "Pending",
+    "stageApprove": "Approve",
+    "stageApproveTitle": "Approve the {{stage}} gate?",
+    "stageApproveBody": "This permanently marks the {{stage}} stage as passed and advances the team's tracker progress. It cannot be undone.",
+    "stagePassedMsg": "Stage passed.",
     "rolesTitle": "Roles & tenure",
     "roleCurrent": "Current holder",
     "roleVacant": "Vacant",
@@ -857,6 +875,7 @@
     "childrenTitle": "My Children",
     "childrenSubtitle": "Your children's enrolments and consent.",
     "viewSessions": "View sessions",
+    "viewProfile": "View record",
     "consentNeeded": "Your signature needed",
     "consentMet": "Consent complete",
     "consentPending": "Consent pending",

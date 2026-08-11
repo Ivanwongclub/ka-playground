@@ -66,6 +66,8 @@ const OpsAttendance = lazy(() => import('./pages/SessionAttendance').then((m) =>
 const MyChildren = lazy(() => import('./pages/SelfService').then((m) => ({ default: m.MyChildren })));
 const MyPayments = lazy(() => import('./pages/SelfService').then((m) => ({ default: m.MyPayments })));
 const MyStudents = lazy(() => import('./pages/SelfService').then((m) => ({ default: m.MyStudents })));
+const MyProfile = lazy(() => import('./pages/Profile360').then((m) => ({ default: m.MyProfile })));
+const ChildProfile = lazy(() => import('./pages/Profile360').then((m) => ({ default: m.ChildProfile })));
 const MemberEvents = lazy(() => import('./pages/Community').then((m) => ({ default: m.MemberEvents })));
 const MemberDirectory = lazy(() => import('./pages/Community').then((m) => ({ default: m.MemberDirectory })));
 const MemberProfile = lazy(() => import('./pages/Community').then((m) => ({ default: m.MemberProfile })));
@@ -119,6 +121,9 @@ function Root() {
               <Route path="/admin/attendance" element={<OpsAttendance />} />
               {/* S-UX3-9 — guardian/teacher self-service (My Children / My Payments / My Students). */}
               <Route path="/my/children" element={<MyChildren />} />
+              {/* R1-P360 — the student 360 (self) + the guardian child-view (same Profile360 per child). */}
+              <Route path="/my/profile" element={<MyProfile />} />
+              <Route path="/my/children/:studentId" element={<ChildProfile />} />
               <Route path="/my/payments" element={<MyPayments />} />
               <Route path="/my/students" element={<MyStudents />} />
               <Route path="/learn" element={<Placeholder titleKey="empty.title" />} />

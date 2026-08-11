@@ -177,8 +177,12 @@ export function MyChildren() {
                     {/* AD-3: pluralize the label via CLDR (_one/_other) — "1 programme" / "2 programmes". */}
                     <div style={{ marginTop: 6 }}><StatChip value={enrolments.length} label={t('selfService.programmes', { count: enrolments.length })} /></div>
                   </div>
-                  {/* R1-G: preselect this child in the sessions picker (falls back to first child if absent). */}
-                  <Link to={`/family/sessions?student=${studentId}`}>{t('selfService.viewSessions')}</Link>
+                  {/* R1-P360: "View record" opens the SAME Profile360 for this child (guardian child-view).
+                      R1-G: "View sessions" preselects the child in the sessions picker. */}
+                  <Space size="middle">
+                    <Link to={`/my/children/${studentId}`}>{t('selfService.viewProfile')}</Link>
+                    <Link to={`/family/sessions?student=${studentId}`}>{t('selfService.viewSessions')}</Link>
+                  </Space>
                 </div>
                 <ZoneStack>
                   {enrolments.map((e) => <EnrolmentZone key={e.id} e={e} />)}

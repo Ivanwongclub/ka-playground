@@ -132,6 +132,13 @@ class DemoSeeder extends Seeder
 
         // ── A REAL team for /my/team + formation surfaces (FormationService, not raw) ──
         $this->formTeam($programme, $a['a4'], $a['a5']);
+        // R1-P360 (3c): pass TWO Activity-Tracker gates on Demo Team Alpha via the REAL approveGate service
+        // (ops = the OD-39 approver) so a4/a5's rail and the ops Stages tab demo 2/5 mid-progress. NB: the
+        // mapped "Plan+Design" pair BAILED OUT — the Plan gate's hard precondition (an ACTIVE team_budget,
+        // Spec:210) needs a 4-call / 2-actor BudgetService chain (createDraft→addLine→submit→approve), which
+        // trips the ruling's ">~3 calls / multi-actor" tripwire. Per the pre-authorised fallback we approve
+        // Design + Pitch instead (both precondition-free for this team) — zero other seed changes.
+        $this->approveDemoGates($programme, $ops);
 
         // R3 activation for the started programme (as the scheduled job does).
         app(\App\Services\Enrolments\EnrolmentActivationService::class)->run();
@@ -335,6 +342,28 @@ class DemoSeeder extends Seeder
         // R1-S2 Delta 2: advance forming → submitted via the REAL submit() (submitter = creator), so the
         // team shows the journey MID-FLIGHT (awaiting Team Formation) on /my/team + the ops confirm queue.
         app(\App\Services\Teams\TeamConfirmationService::class)->submit($team->id, $creator);
+    }
+
+    /**
+     * R1-P360 (3c): pass Design + Pitch on Demo Team Alpha via the REAL TrackerService::approveGate (ops =
+     * OD-39 approver), for a 2/5 mid-progress rail. Design and Pitch are precondition-free for this team;
+     * Plan (active budget, Spec:210) and Learn (attendance) are not — the Plan+Design pair bailed out per
+     * the ruling. Idempotent: skips a stage already passed (approveGate 409s on a duplicate).
+     */
+    private function approveDemoGates(Programme $programme, User $ops): void
+    {
+        $teamId = DB::table('teams')->where('programme_id', $programme->id)
+            ->where('name', 'Demo Team Alpha')->value('id');
+        if ($teamId === null) {
+            return;
+        }
+        $tracker = app(\App\Services\Teams\TrackerService::class);
+        foreach (['Design', 'Pitch'] as $stage) {
+            $already = DB::table('stage_gates')->where('team_id', $teamId)->where('stage', $stage)->exists();
+            if (! $already) {
+                $tracker->approveGate($teamId, $stage, $ops, 'demo fixture (R1-P360)');
+            }
+        }
     }
 
     /** Member/staff account through the real invitation flow; returns the accepted User. */

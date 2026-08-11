@@ -53,7 +53,8 @@
     "attendanceOversight": "點名總覽",
     "myChildren": "我的子女",
     "myPayments": "我的付款",
-    "myStudents": "我的學生"
+    "myStudents": "我的學生",
+    "myProfile": "我的檔案"
   },
   "shell": {
     "openNavigation": "開啟導覽",
@@ -559,6 +560,16 @@
     "consentWaiting": "等待家長處理",
     "consentWaitingSub": "由家長為你簽署同意書 — 你無需處理。"
   },
+  "profile360": {
+    "subtitle": "課程紀錄與團隊",
+    "programmeRecord": "課程紀錄",
+    "teamRoles": "團隊與角色",
+    "noTeam": "尚未加入團隊。",
+    "roleHistory": "角色歷程",
+    "noRoles": "尚未擔任角色。",
+    "roleCurrent": "現任",
+    "notFound": "找不到紀錄。"
+  },
   "tracker": {
     "title": "活動追蹤",
     "stagePlan": "計劃",
@@ -719,6 +730,13 @@
     "confirmCta": "確認成團",
     "confirmed": "已成團 — 名額已佔用，付款責任已發出。",
     "tabConsent": "同意狀態",
+    "tabStages": "階段",
+    "stagePassed": "已通過",
+    "stagePending": "待處理",
+    "stageApprove": "批准",
+    "stageApproveTitle": "批准「{{stage}}」階段？",
+    "stageApproveBody": "此操作將「{{stage}}」階段永久標記為已通過，並推進團隊的活動追蹤進度，且無法復原。",
+    "stagePassedMsg": "階段已通過。",
     "rolesTitle": "角色與任期",
     "roleCurrent": "現任",
     "roleVacant": "懸空",
@@ -855,6 +873,7 @@
     "childrenTitle": "我的子女",
     "childrenSubtitle": "你子女的報名與同意狀況。",
     "viewSessions": "查看課節",
+    "viewProfile": "查看檔案",
     "consentNeeded": "需要你簽署",
     "consentMet": "同意已完成",
     "consentPending": "同意待處理",

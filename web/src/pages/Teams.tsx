@@ -99,9 +99,11 @@ export function Teams() {
   const { data, loading, error, reload } = useResource<{ data: TeamRow[] }>('/api/teams');
   const [open, setOpen] = useState<TeamRow | null>(null);
 
-  // Both detail reads are fetched only while a team is open.
+  // Detail reads are fetched only while a team is open.
   const detail = useResource<ConsentStatus>(open ? `/api/teams/${open.id}/consent-status` : '');
   const roles = useResource<RolesData>(open ? `/api/teams/${open.id}/roles` : '');
+  // R1-P360 (3a): the Activity Tracker gates — same member/guardian/ops wall; ops passes via opsAudit.
+  const gates = useResource<{ stages: { stage: string; passed: boolean }[] }>(open ? `/api/teams/${open.id}/tracker` : '');
 
   // assignRole modal state
   const [assign, setAssign] = useState<RoleRow | null>(null);
@@ -163,6 +165,24 @@ export function Teams() {
       surfaceError(r);
     }
   };
+
+  // R1-P360 (3b): approve a pending Activity-Tracker gate. Consequence-stating confirm (the stage becomes
+  // PERMANENTLY passed and feeds the team's progress). The server (OD-39 approver gate + FR012/Spec:210
+  // preconditions) is the AUTHORITY — a refusal (403 not-an-approver, 422 precondition, 409 already-passed)
+  // is rendered, never pre-hidden beyond this tab's ops gating. Wires the EXISTING endpoint; no new write.
+  const approveStage = (stage: string) =>
+    modal.confirm({
+      title: t('teams.stageApproveTitle', { stage: t(`tracker.stage${stage}`) }),
+      content: t('teams.stageApproveBody', { stage: t(`tracker.stage${stage}`) }),
+      okText: t('teams.stageApprove'),
+      cancelText: t('common.cancel'),
+      onOk: async () => {
+        if (!open) return;
+        const r = await mutate(`/api/teams/${open.id}/gates/${stage}/approve`);
+        if (r.ok) { void message.success(t('teams.stagePassedMsg')); gates.reload(); }
+        else surfaceError(r);
+      },
+    });
 
   const members = detail.data?.members ?? [];
   const pickName = (id?: string) => personName(roles.data?.members.find((m) => m.enrolment_id === id)?.student_name);
@@ -251,6 +271,30 @@ export function Teams() {
     </DataBoundary>
   );
 
+  const stagesTab = (
+    <DataBoundary loading={gates.loading} error={gates.error}>
+      <List<{ stage: string; passed: boolean }>
+        size="small"
+        dataSource={gates.data?.stages ?? []}
+        renderItem={(g) => (
+          <List.Item
+            key={g.stage}
+            actions={[
+              g.passed
+                ? <Tag key="st" color="success">{t('teams.stagePassed')}</Tag>
+                : <Button key="ap" size="small" type="primary" onClick={() => approveStage(g.stage)}>{t('teams.stageApprove')}</Button>,
+            ]}
+          >
+            <List.Item.Meta
+              title={t(`tracker.stage${g.stage}`)}
+              description={<Text type="secondary">{g.passed ? t('teams.stagePassed') : t('teams.stagePending')}</Text>}
+            />
+          </List.Item>
+        )}
+      />
+    </DataBoundary>
+  );
+
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <div>
@@ -303,6 +347,7 @@ export function Teams() {
             items={[
               { key: 'consent', label: t('teams.tabConsent'), children: consentTab },
               { key: 'roles', label: t('teams.rolesTitle'), children: rolesTab },
+              { key: 'stages', label: t('teams.tabStages'), children: stagesTab },
             ]}
           />
         )}
