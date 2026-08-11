@@ -58,7 +58,8 @@ export function StudentHome() {
         <div style={{ fontSize: 13 }}>{t('dashboard.subtitle')}</div>
       </HeroBanner>
 
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+      {/* R1-S2 balance: the two TaskCards on one equal-height row; the StatCards on their own row below. */}
+      <Row gutter={[16, 16]} align="stretch" style={{ marginTop: 16 }}>
         {/* 1 — NEXT SESSION (action-first): the soonest booked/waitlisted upcoming session, or a designed empty. */}
         <Col xs={24} md={12}>
           {sessions.loading ? (
@@ -107,11 +108,13 @@ export function StudentHome() {
             />
           )}
         </Col>
+      </Row>
 
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         {/* 3 — CONSENT-WAITING: a StatCard (count), framed WAITING ON YOUR GUARDIAN. NOT a student task, no
             urgency chip. Shown only when something is actually pending. */}
         {!consents.loading && consentWaiting > 0 && (
-          <Col xs={24} sm={12} md={8}>
+          <Col xs={24} sm={12}>
             <StatCard
               label={t('studentHome.consentWaiting')}
               value={consentWaiting}
@@ -122,8 +125,8 @@ export function StudentHome() {
           </Col>
         )}
 
-        {/* 4 — ENROLMENTS (folded in from the old count tile): a drill-down StatCard. */}
-        <Col xs={24} sm={12} md={8}>
+        {/* 4 — ENROLMENTS (folded in from the old count tile): full-width when consent is hidden (no dead space). */}
+        <Col xs={24} sm={consentWaiting > 0 ? 12 : 24}>
           {enrolments.loading ? (
             <Skeleton active paragraph={{ rows: 1 }} title={{ width: '55%' }} />
           ) : (

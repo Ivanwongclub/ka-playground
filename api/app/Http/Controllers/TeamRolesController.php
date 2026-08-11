@@ -88,4 +88,25 @@ class TeamRolesController extends Controller
             ])->all(),
         ]);
     }
+
+    /**
+     * R1-S2 (B3) — the Activity Tracker rail read (GET /teams/{team}/tracker). SAME wall as show():
+     * MEMBER-READABLE, resolved WITHIN the caller's RLS (a team the caller cannot see is absent → 404,
+     * never a 403 existence leak), NO elevation (never asSystem), NO OD-39 approver gate. Returns the FIVE
+     * fixed Tracker stages as {stage, passed} BOOLEANS only — 'passed' = a stage_gates row exists for that
+     * stage (absence = pending). NO approver identity, NO notes, NO timestamps leave this read.
+     */
+    public function tracker(Request $request, string $team): JsonResponse
+    {
+        DB::table('teams')->where('id', $team)->first() ?? abort(404);
+        $passed = DB::table('stage_gates')->where('team_id', $team)->where('status', 'passed')->pluck('stage')->all();
+
+        return response()->json([
+            'team_id' => $team,
+            'stages' => array_map(
+                fn (string $s): array => ['stage' => $s, 'passed' => in_array($s, $passed, true)],
+                \App\Services\Teams\TrackerService::STAGES,
+            ),
+        ]);
+    }
 }

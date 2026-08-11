@@ -308,6 +308,7 @@
   },
   "enrol": {
     "listTitle": "Enrolments",
+    "journeyTitle": "Enrolment journey",
     "listCaption": "Programme enrolments for your family",
     "student": "Student",
     "programme": "Programme",
@@ -558,6 +559,14 @@
     "consentWaiting": "Waiting on your guardian",
     "consentWaitingSub": "Your guardian signs consent for you — nothing for you to do."
   },
+  "tracker": {
+    "title": "Activity Tracker",
+    "stagePlan": "Plan",
+    "stageDesign": "Design",
+    "stageLearn": "Learn",
+    "stagePitch": "Pitch",
+    "stageLaunch": "Launch"
+  },
   "urgency": {
     "inDays_one": "in {{count}} day",
     "inDays_other": "in {{count}} days",
@@ -803,6 +812,7 @@
   },
   "attendance": {
     "myTitle": "My Sessions",
+    "today": "Today",
     "mySubtitle": "Your programme sessions — book a seat and see your attendance.",
     "book": "Book",
     "cancel": "Cancel",

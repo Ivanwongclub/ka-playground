@@ -308,6 +308,7 @@
   },
   "enrol": {
     "listTitle": "報名",
+    "journeyTitle": "報名歷程",
     "listCaption": "您家庭的課程報名",
     "student": "學生",
     "programme": "課程",
@@ -558,6 +559,14 @@
     "consentWaiting": "等待家長處理",
     "consentWaitingSub": "由家長為你簽署同意書 — 你無需處理。"
   },
+  "tracker": {
+    "title": "活動追蹤",
+    "stagePlan": "計劃",
+    "stageDesign": "設計",
+    "stageLearn": "學習",
+    "stagePitch": "推介",
+    "stageLaunch": "啟動"
+  },
   "urgency": {
     "inDays_other": "{{count}} 天內",
     "dueToday": "今天到期",
@@ -801,6 +810,7 @@
   },
   "attendance": {
     "myTitle": "我的課節",
+    "today": "今天",
     "mySubtitle": "你的課程課節 — 預約座位並查看出席紀錄。",
     "book": "預約",
     "cancel": "取消",

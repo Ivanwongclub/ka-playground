@@ -9,7 +9,7 @@ import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
 import { mutate } from '../api/mutate';
 import { personName } from '../display/names';
-import { formatHkt, formatHktTime } from '../display/date';
+import { formatHkt, formatHktTime, formatHktDate } from '../display/date';
 import { StatusTag } from '../display/status';
 import { SubPanel, EmptyState } from '@/ds2'; // DS2 rollout C2 — container framing (List/Card→SubPanel). The attendance
 // MARK handler (mark) and the book/cancel handler (act) + their payloads are BYTE-IDENTICAL (see the proofs).
@@ -41,6 +41,25 @@ function SessionMeta({ s, locale }: { s: SessionRow; locale: KaLocale }) {
   );
 }
 
+// R1-S2 B2: group a student's sessions by HKT calendar day. UPCOMING days first (ascending), PAST days
+// after (most-recent first); within a day, by start time. Presentation only — no read/write change.
+const hktDayKey = (iso: string): string =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Hong_Kong' }).format(new Date(iso.trim().replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00')));
+const startMs = (s: SessionRow): number => Date.parse(s.starts_at.trim().replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00'));
+function groupByDay(sessions: SessionRow[], todayKey: string): { key: string; sessions: SessionRow[] }[] {
+  const map = new Map<string, SessionRow[]>();
+  for (const s of sessions) {
+    const k = hktDayKey(s.starts_at);
+    const arr = map.get(k);
+    if (arr) arr.push(s); else map.set(k, [s]);
+  }
+  for (const arr of map.values()) arr.sort((a, b) => startMs(a) - startMs(b));
+  const keys = [...map.keys()];
+  const upcoming = keys.filter((k) => k >= todayKey).sort();
+  const past = keys.filter((k) => k < todayKey).sort().reverse();
+  return [...upcoming, ...past].map((k) => ({ key: k, sessions: map.get(k) ?? [] }));
+}
+
 // ── Student: My Sessions (book / cancel own seat + own attendance) ──────────────────────────────────
 export function MySessions() {
   const { t, i18n } = useTranslation();
@@ -57,6 +76,24 @@ export function MySessions() {
   const booked = (s: SessionRow) => s.booking_status === 'booked' || s.booking_status === 'waitlisted';
   const bookable = (s: SessionRow) => (s.booking_status == null || s.booking_status === 'cancelled') && (s.status === 'published' || s.status === 'full');
 
+  // The session row — actions (book/cancel via act()) BYTE-IDENTICAL, extracted so each day-group reuses it.
+  const renderSession = (s: SessionRow) => (
+    <List.Item
+      key={s.id}
+      actions={[
+        <StatusTag key="bk" domain="bookingStatus" value={s.booking_status} />,
+        booked(s)
+          ? <Button key="act" size="small" onClick={() => void act(s.id, 'cancel')}>{t('attendance.cancel')}</Button>
+          : bookable(s)
+            ? <Button key="act" size="small" type="primary" className="ka-cta" onClick={() => void act(s.id, 'book')}>{t('attendance.book')}</Button>
+            : <span key="act" />,
+      ]}
+    >
+      <List.Item.Meta title={s.title} description={<SessionMeta s={s} locale={locale} />} />
+    </List.Item>
+  );
+  const todayKey = hktDayKey(new Date().toISOString());
+
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <div>
@@ -64,26 +101,14 @@ export function MySessions() {
         <Paragraph type="secondary">{t('attendance.mySubtitle')}</Paragraph>
       </div>
       <DataBoundary loading={res.loading} error={res.error} empty={(res.data?.sessions.length ?? 0) === 0}>
-        <SubPanel tone="neutral">
-        <List<SessionRow>
-          dataSource={res.data?.sessions ?? []}
-          renderItem={(s) => (
-            <List.Item
-              key={s.id}
-              actions={[
-                <StatusTag key="bk" domain="bookingStatus" value={s.booking_status} />,
-                booked(s)
-                  ? <Button key="act" size="small" onClick={() => void act(s.id, 'cancel')}>{t('attendance.cancel')}</Button>
-                  : bookable(s)
-                    ? <Button key="act" size="small" type="primary" className="ka-cta" onClick={() => void act(s.id, 'book')}>{t('attendance.book')}</Button>
-                    : <span key="act" />,
-              ]}
-            >
-              <List.Item.Meta title={s.title} description={<SessionMeta s={s} locale={locale} />} />
-            </List.Item>
-          )}
-        />
-        </SubPanel>
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          {groupByDay(res.data?.sessions ?? [], todayKey).map((g) => (
+            <SubPanel key={g.key} tone="neutral">
+              <Text strong>{g.key === todayKey ? t('attendance.today') : formatHktDate(g.key, locale)}</Text>
+              <List<SessionRow> dataSource={g.sessions} renderItem={renderSession} />
+            </SubPanel>
+          ))}
+        </Space>
       </DataBoundary>
     </Space>
   );

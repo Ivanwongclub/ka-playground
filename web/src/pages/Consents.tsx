@@ -13,6 +13,7 @@ import { authFetch } from '../auth/session';
 import { kaColors } from '../theme/theme';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
+import { useIdentity } from '../auth/identity';
 import { programmeName, personName } from '../display/names';
 import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
@@ -64,6 +65,10 @@ export function ConsentList() {
   const locale = i18n.language as KaLocale;
   // S-UX2a: the shared fetch convention — res.ok guarded, errors caught (was an unguarded
   // r.json() that crashed the promise chain on any error response), loading/empty/error states.
+  const { has } = useIdentity();
+  // R1-S2 B4: the STUDENT sees their consents as WAITING ON THE GUARDIAN (they cannot sign — the ceremony
+  // 403s a student). The GUARDIAN view is byte-identical (the actionable "Open" link). Verified student-only.
+  const isStudent = has('enrolment.view') && has('events.rsvp') && !has('operations.manage');
   const { data, loading, error } = useResource<{ data: RequestRow[] }>('/api/consent-requests');
   const rows = data?.data ?? [];
 
@@ -101,7 +106,9 @@ export function ConsentList() {
               title: t('common.actions'), dataIndex: 'id',
               render: (id: string, row) =>
                 ['sent', 'viewed'].includes(row.status)
-                  ? <Link to={`/consents/${id}`}>{t('consent.open')}</Link>
+                  ? (isStudent
+                      ? <Text type="secondary">{t('studentHome.consentWaiting')}</Text>
+                      : <Link to={`/consents/${id}`}>{t('consent.open')}</Link>)
                   : null,
             },
           ]}

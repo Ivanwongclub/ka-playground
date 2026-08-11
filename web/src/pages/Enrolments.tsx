@@ -1,12 +1,14 @@
 // S04A step 6: E5 timeline reshaped for team-based capacity — the pool is a
 // state; each enrolment renders its journey with the current stage highlighted.
 // S-UX2a: names (S-UX2b fields) instead of raw FK ids; shared fetch convention.
-import { Space, Steps, Table, Typography } from 'antd';
+import { Space, Table, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
+import { useIdentity } from '../auth/identity';
 import { programmeName, personName } from '../display/names';
-import { SubPanel, StateBadge } from '@/ds2'; // DS2 rollout D1 — markup-only restyle (read-only surface, no mutation)
+import { SubPanel, StateBadge, WizardRail } from '@/ds2'; // DS2 rollout D1 + R1-S2 B1 (journey → WizardRail)
 
 const { Title, Paragraph } = Typography;
 
@@ -26,10 +28,16 @@ interface Row {
 
 const JOURNEY = ['submitted', 'pending_consent', 'in_pool', 'teamed', 'confirmed', 'active', 'completed'];
 const TERMINAL_BAD = ['withdrawn', 'released'];
+// R1-S2 B1: per-stage deep-link targets (student context). A stage with no entry is not clickable.
+const DEEP: Record<string, string> = { pending_consent: '/consents', in_pool: '/my/team', teamed: '/my/team', confirmed: '/my/team' };
 
 export function Enrolments() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language as KaLocale;
+  const navigate = useNavigate();
+  const { has } = useIdentity();
+  // The R1-S student predicate (verified student-only in R1-S). onStep deep-links are gated to students.
+  const isStudent = has('enrolment.view') && has('events.rsvp') && !has('operations.manage');
   const { data, loading, error } = useResource<{ data: Row[] }>('/api/enrolments');
   const rows = data?.data ?? [];
 
@@ -67,10 +75,19 @@ export function Enrolments() {
                   </span>
                 )
                 : (
-                  <Steps
-                    size="small"
-                    current={JOURNEY.indexOf(row.status)}
-                    items={JOURNEY.map((s) => ({ title: t(`enrol.status.${s}`) }))}
+                  <WizardRail
+                    phases={[{
+                      title: t('enrol.journeyTitle'),
+                      steps: JOURNEY.map((s, i) => {
+                        const cur = JOURNEY.indexOf(row.status);
+                        const state = i < cur ? 'done' : i === cur ? 'current' : 'todo';
+                        return { label: t(`enrol.status.${s}`), state, key: DEEP[s] };
+                      }),
+                    }]}
+                    // R1-S2 B1: onStep deep-links are STUDENT-context (pending_consent→/consents,
+                    // in_pool|teamed|confirmed→/my/team) — gated to student viewers this card; display-only
+                    // for guardian/teacher/ops. R1-G will add guardian-context links with correct targets.
+                    onStep={isStudent ? (key) => navigate(key) : undefined}
                   />
                 ),
             }}

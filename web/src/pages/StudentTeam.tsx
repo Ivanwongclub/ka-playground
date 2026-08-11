@@ -17,7 +17,7 @@ import { StatusTag } from '../display/status';
 import { programmeName, personName } from '../display/names';
 // DS2 (restyle rollout C4 — child-data tier). StudentTeam.tsx joins the ALLOWED @/ds2 adopters
 // (import-guard). Container-framing only (Card→SubPanel); formation/join/submit handlers byte-identical.
-import { SubPanel, EmptyState } from '@/ds2';
+import { SubPanel, EmptyState, WizardRail } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -88,6 +88,8 @@ function MyTeamCard({ team, onChange }: { team: TeamRow; onChange: () => void })
   const { modal, message } = App.useApp();
   const roster = useResource<Roster>(`/api/teams/${team.id}/members`);
   const consent = useResource<{ satisfied: boolean }>(`/api/my/consent-status?programme_id=${team.programme_id}`);
+  // R1-S2 B3: the Activity Tracker rail — the additive member-readable gates read ({stage, passed} booleans).
+  const tracker = useResource<{ stages: { stage: string; passed: boolean }[] }>(`/api/teams/${team.id}/tracker`);
 
   const surface = (r: MutateResult) => {
     if (r.ok) { void message.success(t('studentTeam.submitted')); onChange(); return; }
@@ -147,6 +149,17 @@ function MyTeamCard({ team, onChange }: { team: TeamRow; onChange: () => void })
               )}
             />
           </div>
+        </DataBoundary>
+
+        {/* R1-S2 B3: the Activity Tracker rail (Plan · Design · Learn · Pitch · Launch) — passed stages
+            'done', the rest pending. Display-only (no onStep); reads {stage, passed} booleans. */}
+        <DataBoundary loading={tracker.loading} error={tracker.error}>
+          <WizardRail
+            phases={[{
+              title: t('tracker.title'),
+              steps: (tracker.data?.stages ?? []).map((g) => ({ label: t(`tracker.stage${g.stage}`), state: g.passed ? 'done' : 'todo' })),
+            }]}
+          />
         </DataBoundary>
 
         {team.status === 'forming' ? (

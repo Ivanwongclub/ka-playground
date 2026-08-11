@@ -308,6 +308,7 @@
   },
   "enrol": {
     "listTitle": "报名",
+    "journeyTitle": "报名历程",
     "listCaption": "您家庭的课程报名",
     "student": "学生",
     "programme": "课程",
@@ -558,6 +559,14 @@
     "consentWaiting": "等待家长处理",
     "consentWaitingSub": "由家长为你签署同意书 — 你无需处理。"
   },
+  "tracker": {
+    "title": "活动追踪",
+    "stagePlan": "计划",
+    "stageDesign": "设计",
+    "stageLearn": "学习",
+    "stagePitch": "推介",
+    "stageLaunch": "启动"
+  },
   "urgency": {
     "inDays_other": "{{count}} 天内",
     "dueToday": "今天到期",
@@ -801,6 +810,7 @@
   },
   "attendance": {
     "myTitle": "我的课节",
+    "today": "今天",
     "mySubtitle": "你的课程课节 — 预约座位并查看出席记录。",
     "book": "预约",
     "cancel": "取消",

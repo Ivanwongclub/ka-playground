@@ -140,7 +140,7 @@ class DemoSeeder extends Seeder
 
         // ── Populate the surfaces that would otherwise render EMPTY (demo-quality). All via
         //    REAL service flows; @example.com synthetic; the RLS fixtures (B1) stay untouched. ──
-        $this->seedSessions($programme, $ops, $teacher, $enrolments, $orders, $signing, $guardianB); // attendance surfaces + RosterMark
+        $this->seedSessions($programme, $ops, $teacher, $enrolments, $orders, $signing, $guardianB, $a['a3']); // attendance surfaces + RosterMark + a3 showcase booking
         $this->seedMemberCommunity($ops, $member);                                           // Events / Directory / Profile / RSVP
         $this->seedAdminQueues($guardianA, $a['a2']);                                         // Withdrawals + onboarding/Approvals queue
         app(\App\Services\Enrolments\EnrolmentActivationService::class)->run();               // activate the session cohort (confirmed → active)
@@ -325,6 +325,9 @@ class DemoSeeder extends Seeder
         $formation = app(FormationService::class);
         $team = $formation->create($programme->id, $categoryId, 'Demo Team Alpha', $creator); // creator: in_pool → teamed
         $formation->join($team->id, $joiner);                                                 // joiner:  in_pool → teamed
+        // R1-S2 Delta 2: advance forming → submitted via the REAL submit() (submitter = creator), so the
+        // team shows the journey MID-FLIGHT (awaiting Team Formation) on /my/team + the ops confirm queue.
+        app(\App\Services\Teams\TeamConfirmationService::class)->submit($team->id, $creator);
     }
 
     /** Member/staff account through the real invitation flow; returns the accepted User. */
@@ -391,7 +394,7 @@ class DemoSeeder extends Seeder
      * Service). A 3-child cohort under guardian B (leaving B1, the RLS fixture, in-pool) is taken to
      * 'confirmed', booked into a COMPLETED session (mixed marks) + an UPCOMING session.
      */
-    private function seedSessions(Programme $programme, User $ops, ?User $teacher, EnrolmentService $enrolments, OrderService $orders, ConsentSigningService $signing, User $guardianB): void
+    private function seedSessions(Programme $programme, User $ops, ?User $teacher, EnrolmentService $enrolments, OrderService $orders, ConsentSigningService $signing, User $guardianB, User $showcase): void
     {
         if ($teacher === null || DB::table('programme_sessions')->where('programme_id', $programme->id)->exists()) {
             return; // needs a mentor; idempotent
@@ -433,6 +436,9 @@ class DemoSeeder extends Seeder
         foreach ($cohort as $s) {
             $booking->book($s2, $s);
         }
+        // R1-S2 Delta 1: the showcase student (a3 — active, carries its order → OD-43 green) booked into
+        // the UPCOMING session, so the student-home Next Session card is populated on the a3 login.
+        $booking->book($s2, $showcase);
     }
 
     /**
