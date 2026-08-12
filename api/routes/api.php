@@ -136,6 +136,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
         Route::put('/admin/schools/{id}', [SchoolController::class, 'update']);
         Route::get('/admin/programmes', [ProgrammeController::class, 'index']);
         Route::post('/admin/programmes', [ProgrammeController::class, 'store']);
+        Route::post('/admin/programmes/{id}/banner', [\App\Http\Controllers\MarketplaceController::class, 'uploadBanner']); // KAP-MKT-1: optional storefront banner (ClamAV intake, context 'image')
         Route::put('/admin/programmes/{id}', [ProgrammeController::class, 'update']);
         Route::post('/admin/programmes/{id}/versions', [ProgrammeController::class, 'snapshot']);
 
@@ -316,6 +317,8 @@ Route::post('/demo/gate', [\App\Http\Controllers\DemoGateController::class, 'ent
 // Option B; constant-shape not-found; no PII; throttled per-IP.
 Route::get('/programmes', [\App\Http\Controllers\MarketplaceController::class, 'catalogue'])
     ->middleware('throttle:catalogue');
+Route::get('/programmes/{id}/banner', [\App\Http\Controllers\MarketplaceController::class, 'banner'])
+    ->middleware('throttle:catalogue'); // KAP-MKT-1: public, clean-only banner stream (published programmes; UI falls back to brand_color)
 Route::get('/programmes/{id}', [\App\Http\Controllers\MarketplaceController::class, 'show'])
     ->middleware('throttle:catalogue');
 

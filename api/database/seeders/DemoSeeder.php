@@ -160,6 +160,7 @@ class DemoSeeder extends Seeder
         $this->seedAdminQueues($guardianA, $a['a2']);                                         // Withdrawals + onboarding/Approvals queue
         app(\App\Services\Enrolments\EnrolmentActivationService::class)->run();               // activate the session cohort (confirmed → active)
         $this->seedAssessments($programme, $ops, $a['a3']);                                   // R2-ASSESS: one Released (scored) + one mid-flight
+        $this->seedBanner($programme, $ops);                                                  // KAP-MKT-1: storefront banner via the REAL intake+scan path
 
         // ── Machine-readable fixtures for deploy/gcp/rls-proof.sh ──
         $this->command->info('');
@@ -248,12 +249,21 @@ class DemoSeeder extends Seeder
             $vid = $templates->draftVersion($templateId, $lang, $body, $ops);
             $templates->publishVersion($vid, $ops);
         }
-        foreach (['basics', 'eligibility', 'fees', 'consent', 'team_rules', 'role_library', 'tracker', 'learning', 'certification'] as $key) {
+        foreach (['basics', 'eligibility', 'fees', 'consent', 'team_rules', 'role_library', 'tracker', 'learning', 'certification', 'marketing'] as $key) {
             $data = match ($key) {
                 'fees' => ['has_fee_items' => true],
                 'consent' => ['template_ref' => $templateId],
                 'basics' => ['enrolment_closes_on' => '2026-06-01', 'starts_on' => '2026-07-15'],
                 'team_rules' => ['formation_deadline_on' => '2026-06-20'],
+                // KAP-MKT-1: complete, trilingual marketing so the demo programme appears in the storefront
+                // (the catalogue's sole safety gate is marketingLanguageGaps === []; brand_color a valid hex).
+                'marketing' => [
+                    'tagline' => ['en' => 'Build. Pitch. Launch.', 'tc' => '構建・展示・啟航', 'sc' => '构建・展示・启航'],
+                    'category' => ['en' => 'STEM', 'tc' => 'STEM', 'sc' => 'STEM'],
+                    'age_range' => ['en' => 'Ages 10–14', 'tc' => '10 至 14 歲', 'sc' => '10 至 14 岁'],
+                    'duration' => ['en' => '6 weeks', 'tc' => '六週', 'sc' => '六周'],
+                    'brand_color' => '#6B4E71',
+                ],
                 default => ['x' => 1],
             };
             DB::table('wizard_sections')->updateOrInsert(
@@ -418,6 +428,27 @@ class DemoSeeder extends Seeder
         // Mid-flight: created then published (the admin section shows the lifecycle in progress).
         $pub = $svc->create($programme->id, ['title' => 'Term 2 Project'], $ops);
         $svc->transition($pub, 'published', $ops);
+    }
+
+    /**
+     * KAP-MKT-1 — a storefront banner on the demo programme through the REAL file-intake + ClamAV path
+     * (BI-10), the same pipeline recordManualPayment uses. A synthetic (provably-fake) JPEG generated via GD
+     * → UploadService::intake (context 'image') → ScanUpload → clean; the reference lands on the programme.
+     * The scan is async (Horizon); until clean the catalogue shows brand_color — the honest fallback.
+     */
+    private function seedBanner(Programme $programme, User $ops): void
+    {
+        if ($programme->banner_upload_id !== null) {
+            return; // idempotent
+        }
+        $tmp = tempnam(sys_get_temp_dir(), 'ban').'.jpg';
+        $img = imagecreatetruecolor(1200, 400);
+        imagefill($img, 0, 0, imagecolorallocate($img, 58, 42, 74)); // aubergine band
+        imagejpeg($img, $tmp);
+        imagedestroy($img);
+        $file = new \Illuminate\Http\UploadedFile($tmp, 'banner.jpg', 'image/jpeg', null, true);
+        $upload = app(\App\Services\Uploads\UploadService::class)->intake($file, 'image', $ops);
+        DB::table('programmes')->where('id', $programme->id)->update(['banner_upload_id' => $upload->id, 'updated_at' => now()]);
     }
 
     /** Member/staff account through the real invitation flow; returns the accepted User. */

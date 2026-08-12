@@ -136,7 +136,9 @@ class MarketplaceCatalogueTest extends TestCase
         }
         // exact key allowlist on a detail row
         $this->assertEqualsCanonicalizing(
-            ['id', 'code', 'name_en', 'name_tc', 'name_sc', 'phase', 'starts_on', 'enrolment_closes_on', 'tagline', 'category', 'age_range', 'duration', 'brand_color'],
+            // KAP-MKT-1: +status (open/closed, derived — no capacity), +banner_url (a public marketing URL, no
+            // PII). Still the marketing + programme-identity allowlist; nothing personal / count / capacity.
+            ['id', 'code', 'name_en', 'name_tc', 'name_sc', 'phase', 'starts_on', 'enrolment_closes_on', 'tagline', 'category', 'age_range', 'duration', 'brand_color', 'status', 'banner_url'],
             array_keys($detail->json()),
         );
     }

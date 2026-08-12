@@ -26,6 +26,8 @@ const ALLOWED = [
   'src/pages/Profile360.tsx', // R1-P360 — the 360 record view (self + guardian child-view; reused by staff in R1-F2)
   // ── R1-F2 (Programme 360) — SubPanel/EmptyState composition (reads only) ──
   'src/pages/Programme360.tsx', // R1-F2 — the programme entity page (header + funnel/sessions/teams, capability-honest)
+  // ── KAP-MKT-1 (Marketplace) — SubPanel/EmptyState card grid over the anonymous-safe catalogue ──
+  'src/pages/Marketplace.tsx', // KAP-MKT-1 — the programme storefront (catalogue + guardian-led enrolment)
   // ── restyle rollout: each surface is a deliberate adoption in its own gated card ──
   'src/pages/SelfService.tsx', // ANCHORS STEP 1 — My Children (MyPayments/MyStudents in-file are untouched)
   'src/pages/AdminProgrammes.tsx', // ANCHORS STEP 2 — the wizard

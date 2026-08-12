@@ -48,6 +48,7 @@
     "events": "Events",
     "directory": "Directory",
     "mySessions": "My Sessions",
+    "marketplace": "Marketplace",
     "childSessions": "My Child's Sessions",
     "attendance": "Attendance",
     "attendanceOversight": "Attendance Oversight",
@@ -614,6 +615,20 @@
     "cancelBody": "The assessment is cancelled and cannot proceed. This cannot be undone.",
     "state": { "draft": "Draft", "published": "Published", "open": "Open", "closed": "Closed", "graded": "Graded", "released": "Released", "cancelled": "Cancelled" },
     "action": { "published": "Publish", "open": "Open", "closed": "Close", "graded": "Mark graded", "released": "Release", "cancelled": "Cancel" }
+  },
+  "marketplace": {
+    "title": "Programme Marketplace",
+    "subtitle": "Browse open programmes and enrol.",
+    "enrol": "Enrol",
+    "enrolled": "Enrolment submitted — your guardian receives the consent task.",
+    "enrolledState": "Enrolled",
+    "closed": "Closed",
+    "guardianEnrols": "Your guardian enrols you",
+    "enrolTitle": "Enrol in {{programme}}",
+    "enrolBody": "Choose a child — enrolment starts here; the consent task then goes to you.",
+    "pickChild": "Choose a child",
+    "noChildren": "No linked children yet.",
+    "status": { "open": "Open", "closed": "Closed" }
   },
   "tracker": {
     "title": "Activity Tracker",

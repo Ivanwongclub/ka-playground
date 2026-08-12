@@ -48,6 +48,7 @@
     "events": "活动",
     "directory": "成员目录",
     "mySessions": "我的课节",
+    "marketplace": "课程市集",
     "childSessions": "子女的课节",
     "attendance": "点名",
     "attendanceOversight": "点名总览",
@@ -614,6 +615,20 @@
     "cancelBody": "此评核将被取消且无法继续，且无法复原。",
     "state": { "draft": "草稿", "published": "已发布", "open": "进行中", "closed": "已截止", "graded": "已评分", "released": "已公布", "cancelled": "已取消" },
     "action": { "published": "发布", "open": "开放", "closed": "截止", "graded": "标记已评分", "released": "公布", "cancelled": "取消" }
+  },
+  "marketplace": {
+    "title": "课程市集",
+    "subtitle": "浏览开放中的课程并报名。",
+    "enrol": "报名",
+    "enrolled": "已提交报名 — 家长将收到同意书任务。",
+    "enrolledState": "已报名",
+    "closed": "已截止",
+    "guardianEnrols": "由家长为你报名",
+    "enrolTitle": "报名 {{programme}}",
+    "enrolBody": "请选择子女 — 报名由此开始，同意书任务随后送达您。",
+    "pickChild": "选择子女",
+    "noChildren": "尚未关联子女。",
+    "status": { "open": "开放中", "closed": "已截止" }
   },
   "tracker": {
     "title": "活动追踪",

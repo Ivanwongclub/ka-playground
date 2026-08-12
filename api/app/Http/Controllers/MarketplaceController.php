@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Upload;
 use App\Services\Programmes\WizardService;
+use App\Services\Uploads\UploadService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -47,6 +50,48 @@ class MarketplaceController extends Controller
     }
 
     /**
+     * KAP-MKT-1 (D-MKT-4) — stream the storefront banner, ONLY when it has passed the BI-10 scan. PUBLIC (a
+     * banner is public marketing, no PII) but gated to PUBLISHED, non-template programmes (a draft's image
+     * never serves). A not-clean / absent / non-listable banner returns the SAME constant-shape not-found —
+     * the UI then renders the brand_color fallback, never a broken image.
+     */
+    public function banner(string $id): mixed
+    {
+        if (! ctype_digit($id)) {
+            return $this->notFound();
+        }
+        $bannerId = DB::table('programmes')->where('id', (int) $id)
+            ->where('status', 'published')->where('is_template', false)->value('banner_upload_id');
+        if ($bannerId === null) {
+            return $this->notFound();
+        }
+        $upload = Upload::query()->find($bannerId);
+        if ($upload === null || $upload->status !== Upload::STATUS_CLEAN) {
+            return $this->notFound(); // pending / quarantined → constant not-found; UI falls back to brand_color
+        }
+
+        return response(app(UploadService::class)->contents($upload), 200, [
+            'Content-Type' => $upload->mime_type ?: 'application/octet-stream',
+            'Cache-Control' => 'private, max-age=300',
+        ]);
+    }
+
+    /**
+     * KAP-MKT-1 — the wizard's OPTIONAL banner upload (config.manage-gated at the route). Goes through the
+     * SAME file-intake + ClamAV path (BI-10) as every other upload (context 'image': jpeg/png/webp ≤5MB);
+     * the scan-clean reference lands on programmes.banner_upload_id. Marketing completeness is UNCHANGED —
+     * the banner is never a publish/storefront prerequisite.
+     */
+    public function uploadBanner(Request $request, string $id): JsonResponse
+    {
+        $request->validate(['banner' => ['required', 'file']]);
+        $upload = app(UploadService::class)->intake($request->file('banner'), 'image', $request->user());
+        DB::table('programmes')->where('id', (int) $id)->update(['banner_upload_id' => $upload->id, 'updated_at' => now()]);
+
+        return response()->json(['upload_id' => $upload->id, 'status' => $upload->status], 201);
+    }
+
+    /**
      * Every listable storefront row (optionally a single id). Reads ONLY `programmes` + `wizard_sections`.
      *
      * @return Collection<int, array<string, mixed>>
@@ -57,7 +102,8 @@ class MarketplaceController extends Controller
         if ($onlyId !== null) {
             $q->where('id', $onlyId);
         }
-        $programmes = $q->orderBy('id')->get(['id', 'code', 'name_en', 'name_tc', 'name_sc']);
+        $programmes = $q->orderBy('id')->get(['id', 'code', 'name_en', 'name_tc', 'name_sc',
+            'enrolment_opens_at', 'enrolment_closes_at', 'banner_upload_id']); // KAP-MKT-1: window + banner
         if ($programmes->isEmpty()) {
             return collect();
         }
@@ -68,8 +114,13 @@ class MarketplaceController extends Controller
             ->get(['programme_id', 'section_key', 'data'])
             ->groupBy('programme_id');
         $today = now()->toDateString();
+        // KAP-MKT-1 (D-MKT-4): which banners have passed the scan — `uploads` is global, no PII. A banner_url
+        // is surfaced ONLY for a clean upload; otherwise null → the UI renders the brand_color fallback.
+        $bannerIds = $programmes->pluck('banner_upload_id')->filter()->values();
+        $cleanBanners = $bannerIds->isEmpty() ? collect() : DB::table('uploads')->whereIn('id', $bannerIds)->where('status', 'clean')->pluck('id')->flip();
+        $now = now();
 
-        return $programmes->map(function ($p) use ($sections, $today): ?array {
+        return $programmes->map(function ($p) use ($sections, $today, $cleanBanners, $now): ?array {
             $byKey = ($sections->get($p->id) ?? collect())->keyBy('section_key');
 
             $mkRow = $byKey->get('marketing');
@@ -94,6 +145,12 @@ class MarketplaceController extends Controller
                 'tagline' => $mk['tagline'], 'category' => $mk['category'],
                 'age_range' => $mk['age_range'], 'duration' => $mk['duration'],
                 'brand_color' => $mk['brand_color'],
+                // KAP-MKT-1: derived enrolment STATUS — open/closed ONLY (D-MKT-2). Capacity/"Full" is NOT
+                // derivable by families (pc_read is staff-only; claimed advances at Team Formation, not at
+                // enrolment — OD-31). Do NOT add "Full" here without that context: it would fake R-4-unsafe data.
+                'status' => (($p->enrolment_opens_at !== null && $now->lt(\Illuminate\Support\Carbon::parse($p->enrolment_opens_at)))
+                    || ($p->enrolment_closes_at !== null && $now->gte(\Illuminate\Support\Carbon::parse($p->enrolment_closes_at)))) ? 'closed' : 'open',
+                'banner_url' => ($p->banner_upload_id !== null && $cleanBanners->has($p->banner_upload_id)) ? "/api/programmes/{$p->id}/banner" : null,
             ];
         })->filter()->values();
     }

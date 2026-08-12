@@ -33,6 +33,7 @@ import {
   Baby,
   Wallet,
   UsersRound,
+  Store,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -80,6 +81,15 @@ export const NAV: NavGroup[] = [
         visible: (h) => h('enrolment.view') && h('events.rsvp'),
       },
       {
+        // KAP-MKT-1 — the STUDENT marketplace entry (browse + R-2 status; enrolment is guardian-led, so a
+        // student sees status, not an Enroll press). events.rsvp is the student signature (a member lacks
+        // enrolment.view; a guardian/teacher/ops lacks events.rsvp) — same predicate as My Sessions/Profile.
+        path: '/marketplace',
+        i18nKey: 'nav.marketplace',
+        icon: <Store size={16} aria-hidden />,
+        visible: (h) => h('enrolment.view') && h('events.rsvp'),
+      },
+      {
         // R1-P360 — student "My Profile" (the 360 record view: programme record incl. terminal states,
         // team/roles/tracker, role history). events.rsvp is the STUDENT SIGNATURE (a member lacks
         // enrolment.view; a guardian/teacher/ops lacks events.rsvp) — same predicate as My Sessions, so
@@ -95,6 +105,14 @@ export const NAV: NavGroup[] = [
         path: '/my/children',
         i18nKey: 'nav.myChildren',
         icon: <Baby size={16} aria-hidden />,
+        visible: (h) => h('consent.sign'),
+      },
+      {
+        // KAP-MKT-1 — the GUARDIAN marketplace entry (browse + Enroll a child → the existing /my/enrolments
+        // path). consent.sign is guardian-exclusive (capability_forbidden bars every capability group).
+        path: '/marketplace',
+        i18nKey: 'nav.marketplace',
+        icon: <Store size={16} aria-hidden />,
         visible: (h) => h('consent.sign'),
       },
       {
