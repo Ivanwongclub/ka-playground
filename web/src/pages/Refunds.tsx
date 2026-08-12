@@ -3,6 +3,7 @@
 // refusal (403) is surfaced, never pre-hidden. Amounts via formatMoney. Refresh after mutate.
 import { useState } from 'react';
 import { App, Button, Descriptions, Space, Table, Typography } from 'antd';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
@@ -19,6 +20,7 @@ const { Title, Paragraph, Text } = Typography;
 
 interface RefundRow {
   id: string;
+  student_id: number | null; // R1-F2: links the student name → Staff Student 360
   amount_minor: number;
   currency: string;
   destination_party: string;
@@ -92,7 +94,8 @@ export function Refunds() {
             pagination={false}
             expandable={{ expandedRowRender: renderDetail }}
             columns={[
-              { title: t('refund.student'), render: (_, r) => personName(r.student_name) },
+              // R1-F2: the student name links to the Staff Student 360 (student_id may be null on a school-payer order).
+              { title: t('refund.student'), render: (_, r) => (r.student_id ? <Link to={`/admin/students/${r.student_id}`}>{personName(r.student_name)}</Link> : personName(r.student_name)) },
               { title: t('refund.amount'), render: (_, r) => <Text strong>{formatMoney(r.amount_minor, r.currency, locale)}</Text> },
               { title: t('refund.destination'), dataIndex: 'destination_party', render: (v: string) => <StatusTag domain="refundDestination" value={v} /> },
               { title: t('common.status'), dataIndex: 'status', render: (s: string) => <StatusTag domain="refundStatus" value={s} /> },

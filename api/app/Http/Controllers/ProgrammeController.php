@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Programme;
 use App\Models\ProgrammeVersion;
 use App\Services\Audit\AuditService;
+use App\Services\Authz\PermissionResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +35,51 @@ class ProgrammeController extends Controller
     {
         return response()->json(['data' => Programme::query()->orderBy('code')
             ->get(['id', 'code', 'name_en', 'name_tc', 'name_sc'])]);
+    }
+
+    // R1-F2: the Programme 360 is reached from ops / audit / config surfaces. These two reads are gated on
+    // that union IN-CONTROLLER (an OR the route `permission:` middleware can't express) — the config-gated
+    // index() is not reachable by ops/audit.
+    private function assertStaff(Request $request, PermissionResolver $resolver): void
+    {
+        $u = $request->user();
+        if (! $resolver->allows($u, 'operations.manage') && ! $resolver->allows($u, 'audit.read') && ! $resolver->allows($u, 'configuration.manage')) {
+            abort(403, 'Programme overview is an academy operations / audit / configuration surface');
+        }
+    }
+
+    /**
+     * R1-F2 — Programme 360 HEADER. Display columns ONLY (id/code/trilingual names/status/enrolment window),
+     * NOTHING from the config payload (that is the config-gated wizard). Gated ops∨audit∨config.
+     */
+    public function overview(Request $request, PermissionResolver $resolver, string $id): JsonResponse
+    {
+        $this->assertStaff($request, $resolver);
+        $p = Programme::query()->findOrFail($id);
+
+        return response()->json([
+            'id' => $p->id, 'code' => $p->code,
+            'name_en' => $p->name_en, 'name_tc' => $p->name_tc, 'name_sc' => $p->name_sc,
+            'status' => $p->status,
+            'enrolment_opens_at' => $p->enrolment_opens_at, 'enrolment_closes_at' => $p->enrolment_closes_at,
+        ]);
+    }
+
+    /**
+     * R1-F2 — Programme 360 FUNNEL (option b): per-programme enrolment counts BY STATUS only — no names, no
+     * ids, no PII. Gated ops∨audit∨config; the counts resolve under the CALLER'S RLS (enr_read), so ops/audit
+     * (opsAudit) get true tallies. A config-only admin's RLS does not admit enrolments — the UI renders this
+     * funnel ONLY for ops/audit holders (config-only sees a link onward); NOT elevated (no wall crossed here).
+     */
+    public function enrolmentSummary(Request $request, PermissionResolver $resolver, string $id): JsonResponse
+    {
+        $this->assertStaff($request, $resolver);
+
+        return response()->json([
+            'programme_id' => (int) $id,
+            'by_status' => DB::table('enrolments')->where('programme_id', $id)
+                ->groupBy('status')->select('status', DB::raw('count(*) as n'))->orderBy('status')->get(),
+        ]);
     }
 
     public function store(Request $request): JsonResponse

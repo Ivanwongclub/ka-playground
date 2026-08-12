@@ -256,6 +256,10 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/teacher/students', [\App\Http\Controllers\TeacherStudentsController::class, 'index'])->middleware('role:teacher'); // S-UX3-9: teacher's school roll (allowlist {student_id,student_name}, elevation-free). NOT /my/students — that path is the RETIRED guardian-create endpoint (OD-27), which must keep 404ing.
     Route::get('/admin/sessions/{id}/roster', [\App\Http\Controllers\SessionReadController::class, 'roster']); // authority in-controller (mentor/ops)
     Route::get('/admin/attendance/programmes', [ProgrammeController::class, 'opsOptions'])->middleware('permission:operations.manage'); // S-FIX-UX-1 D7: ops-readable programme picker (id/code/trilingual names only, no config) for attendance oversight
+    // R1-F2 — Programme 360 header + funnel: gated ops∨audit∨config IN-CONTROLLER (an OR the permission
+    // middleware can't express); auth:sanctum comes from the enclosing group. Display fields / counts only.
+    Route::get('/admin/programmes/{id}/overview', [ProgrammeController::class, 'overview']);
+    Route::get('/admin/programmes/{id}/enrolment-summary', [ProgrammeController::class, 'enrolmentSummary']);
     // S06-4b — assessment lifecycle (2.5); the result read is RLS-embargoed (hidden until Released)
     Route::post('/admin/programmes/{programmeId}/assessments', [\App\Http\Controllers\AssessmentController::class, 'store']);
     Route::post('/admin/assessments/{id}/transition', [\App\Http\Controllers\AssessmentController::class, 'transition']);

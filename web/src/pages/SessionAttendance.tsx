@@ -4,9 +4,10 @@
 // stay visible and the server's refusal is rendered, never pre-hidden by the client.
 import { useEffect, useState } from 'react';
 import { App, Button, List, Segmented, Select, Space, Typography } from 'antd';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
+import { useIdentity } from '../auth/identity';
 import { useResource, DataBoundary } from '../api/useResource';
 import { mutate } from '../api/mutate';
 import { personName } from '../display/names';
@@ -181,6 +182,10 @@ function RosterMark({ sessionId }: { sessionId: string }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language as KaLocale;
   const { message } = App.useApp();
+  const { has } = useIdentity();
+  // R1-F2: RosterMark serves BOTH the mentor and ops-oversight views. Link a name to the Staff Student 360
+  // ONLY for a viewer who can reach it (ops ∨ audit) — a teacher (no such cap) sees a plain name, no dead link.
+  const canDeepView = has('operations.manage') || has('audit.read');
   const res = useResource<RosterPayload>(`/api/admin/sessions/${sessionId}/roster`);
 
   const mark = async (studentId: number, status: string) => {
@@ -217,7 +222,7 @@ function RosterMark({ sessionId }: { sessionId: string }) {
                 ]}
               >
                 <List.Item.Meta
-                  title={personName(m.student_name)}
+                  title={canDeepView ? <Link to={`/admin/students/${m.student_id}`}>{personName(m.student_name)}</Link> : personName(m.student_name)}
                   description={<StatusTag domain="bookingStatus" value={m.status} />}
                 />
               </List.Item>

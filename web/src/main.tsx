@@ -68,6 +68,8 @@ const MyPayments = lazy(() => import('./pages/SelfService').then((m) => ({ defau
 const MyStudents = lazy(() => import('./pages/SelfService').then((m) => ({ default: m.MyStudents })));
 const MyProfile = lazy(() => import('./pages/Profile360').then((m) => ({ default: m.MyProfile })));
 const ChildProfile = lazy(() => import('./pages/Profile360').then((m) => ({ default: m.ChildProfile })));
+const StaffStudent360 = lazy(() => import('./pages/Profile360').then((m) => ({ default: m.StaffStudent360 })));
+const Programme360 = lazy(() => import('./pages/Programme360').then((m) => ({ default: m.Programme360 })));
 const MemberEvents = lazy(() => import('./pages/Community').then((m) => ({ default: m.MemberEvents })));
 const MemberDirectory = lazy(() => import('./pages/Community').then((m) => ({ default: m.MemberDirectory })));
 const MemberProfile = lazy(() => import('./pages/Community').then((m) => ({ default: m.MemberProfile })));
@@ -137,6 +139,9 @@ function Root() {
               <Route path="/admin/audit" element={<AdminAudit />} />
               <Route path="/admin/access-identity" element={<AccessIdentity />} />
               <Route path="/admin/programmes" element={<AdminProgrammes />} />
+              {/* R1-F2 — entity pages (reached via linkified names; no picker/nav entry). */}
+              <Route path="/admin/students/:studentId" element={<StaffStudent360 />} />
+              <Route path="/admin/programmes/:id/overview" element={<Programme360 />} />
               <Route path="/consents" element={<ConsentList />} />
               <Route path="/consents/:id" element={<ConsentSign />} />
               <Route path="/admin/consent-evidence" element={<ConsentEvidence />} />

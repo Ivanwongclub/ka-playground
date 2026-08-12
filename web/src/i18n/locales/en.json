@@ -574,6 +574,24 @@
     "roleCurrent": "Current",
     "notFound": "Record not found."
   },
+  "programme360": {
+    "overview": "Overview",
+    "enrolWindow": "Enrolment {{from}} – {{to}}",
+    "funnel": "Enrolment funnel",
+    "status": "Status",
+    "count": "Count",
+    "sessions": "Sessions",
+    "session": "Session",
+    "when": "When",
+    "teams": "Teams",
+    "team": "Team",
+    "members": "Members",
+    "openPool": "Open the Enrolment Pool",
+    "openAttendance": "Open Attendance Oversight",
+    "openWizard": "Edit in the wizard",
+    "openFinance": "Financial Integrity",
+    "hint": "A read-only 360 view — every figure lives in its own screen."
+  },
   "tracker": {
     "title": "Activity Tracker",
     "stagePlan": "Plan",

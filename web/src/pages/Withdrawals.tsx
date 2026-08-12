@@ -3,6 +3,7 @@
 // queue refreshes after a decide. The server owns the withdrawal workflow — this UI drives it.
 import { useState } from 'react';
 import { App, Button, Descriptions, Space, Table, Typography } from 'antd';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
@@ -20,6 +21,8 @@ const { Title, Paragraph } = Typography;
 interface Endorsement { endorser_name: string | null; endorser_role: string; comment: string; created_at: string }
 interface Row {
   id: string;
+  student_id: number;
+  programme_id: number | null; // R1-F2: links the programme name → Programme 360
   student_name: string | null;
   requested_by_name: string | null;
   reason: string;
@@ -94,7 +97,8 @@ export function Withdrawals() {
   };
   const renderDetail = (row: Row) => (
     <Descriptions size="small" column={1} bordered>
-      <Descriptions.Item label={t('withdrawals.dProgramme')}>{programmeName(row, locale)}</Descriptions.Item>
+      {/* R1-F2: the programme name links to Programme 360. */}
+      <Descriptions.Item label={t('withdrawals.dProgramme')}>{row.programme_id ? <Link to={`/admin/programmes/${row.programme_id}/overview`}>{programmeName(row, locale)}</Link> : programmeName(row, locale)}</Descriptions.Item>
       <Descriptions.Item label={t('withdrawals.dRefundWindow')}>{refundChip(row)}</Descriptions.Item>
       {row.decision_reason ? <Descriptions.Item label={t('withdrawals.dDecisionReason')}>{row.decision_reason}</Descriptions.Item> : null}
       <Descriptions.Item label={t('withdrawals.dEndorsements')}>
@@ -126,7 +130,8 @@ export function Withdrawals() {
             pagination={false}
             expandable={{ expandedRowRender: renderDetail }}
             columns={[
-              { title: t('withdrawals.student'), dataIndex: 'student_name', render: (v: string | null) => v ?? '—' },
+              // R1-F2: the student name links to the Staff Student 360.
+              { title: t('withdrawals.student'), dataIndex: 'student_name', render: (v: string | null, r) => <Link to={`/admin/students/${r.student_id}`}>{v ?? '—'}</Link> },
               { title: t('withdrawals.requestedBy'), dataIndex: 'requested_by_name', render: (v: string | null) => v ?? '—' },
               { title: t('withdrawals.reason'), dataIndex: 'reason' },
               { title: t('common.status'), dataIndex: 'status', render: (s: string) => <StatusTag domain="withdrawalStatus" value={s} /> },

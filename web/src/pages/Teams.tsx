@@ -8,8 +8,12 @@
 //    tenure-change confirm. One active holder per role (DB-enforced); the read never shows two open.
 // Team Formation confirm and assignRole are both SHOWN + ENABLED; the server is the authority and every refusal
 // is rendered (S-UX3-1 error surface).
+// R1-F2 (Part 3 ruling): the ops drawer below IS the Team 360 — it already composes consent + roles +
+// stages, the full team read-set. No standalone /admin/teams/{id} page is built; the roster names here
+// linkify to the Staff Student 360. (team_teacher_links remains an OPEN DECISION — no surface built.)
 import { useState } from 'react';
 import { Alert, App, Button, Drawer, List, Modal, Select, Space, Table, Tabs, Tag, Typography } from 'antd';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
@@ -205,7 +209,8 @@ export function Teams() {
           dataSource={members}
           pagination={false}
           columns={[
-            { title: t('teams.member'), dataIndex: 'student_name', render: (v: string | null) => personName(v) },
+            // R1-F2: the drawer roster (this IS the Team 360) links member names → Staff Student 360.
+            { title: t('teams.member'), dataIndex: 'student_name', render: (v: string | null, m) => <Link to={`/admin/students/${m.student_id}`}>{personName(v)}</Link> },
             {
               title: t('teams.guardiansSigned'), key: 'signed',
               render: (_, m) => <Text>{t('teams.signedOf', { signed: m.signed_count, total: m.guardian_count })}</Text>,
@@ -249,7 +254,7 @@ export function Teams() {
               }
               description={
                 role.current ? (
-                  <Text strong>{t('teams.roleCurrent')}: {personName(role.current.student_name)}</Text>
+                  <Text strong>{t('teams.roleCurrent')}: <Link to={`/admin/students/${role.current.student_id}`}>{personName(role.current.student_name)}</Link></Text>
                 ) : (
                   <Text type="secondary">{t('teams.roleVacant')}</Text>
                 )
@@ -260,7 +265,7 @@ export function Teams() {
                 <Text type="secondary" style={{ fontSize: 12 }}>{t('teams.rolePast')}:</Text>
                 {role.past.map((p, i) => (
                   <div key={i} style={{ fontSize: 12, opacity: 0.75 }}>
-                    {personName(p.student_name)} · {formatHkt(p.started_at, locale)} → {formatHkt(p.ended_at, locale)}
+                    <Link to={`/admin/students/${p.student_id}`}>{personName(p.student_name)}</Link> · {formatHkt(p.started_at, locale)} → {formatHkt(p.ended_at, locale)}
                   </div>
                 ))}
               </div>

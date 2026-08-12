@@ -574,6 +574,24 @@
     "roleCurrent": "现任",
     "notFound": "找不到记录。"
   },
+  "programme360": {
+    "overview": "概览",
+    "enrolWindow": "报名 {{from}} – {{to}}",
+    "funnel": "报名漏斗",
+    "status": "状态",
+    "count": "数量",
+    "sessions": "课节",
+    "session": "课节",
+    "when": "时间",
+    "teams": "团队",
+    "team": "团队",
+    "members": "成员",
+    "openPool": "开启报名池",
+    "openAttendance": "开启点名总览",
+    "openWizard": "在设置向导中编辑",
+    "openFinance": "财务完整性",
+    "hint": "只读的 360 视图 — 每项数据皆有其专属画面。"
+  },
   "tracker": {
     "title": "活动追踪",
     "stagePlan": "计划",

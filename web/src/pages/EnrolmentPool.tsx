@@ -1,6 +1,7 @@
 // S04A audit element: Enrolment & Pool Report (audit_read).
 import { useEffect, useState } from 'react';
 import { Alert, Space, Table, Typography } from 'antd';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '../auth/session';
 import { formatHktDate } from '../display/date';
@@ -69,7 +70,8 @@ export function EnrolmentPool() {
           dataSource={report?.pool_by_programme ?? []}
           pagination={false}
           columns={[
-            { title: t('enrol.programme'), dataIndex: 'code' },
+            // R1-F2: the programme code links to Programme 360.
+            { title: t('enrol.programme'), dataIndex: 'code', render: (v: string, r) => <Link to={`/admin/programmes/${r.programme_id}/overview`}>{v}</Link> },
             { title: t('enrol.pool.pendingConsent'), dataIndex: 'pending_consent' },
             { title: t('enrol.pool.inPool'), dataIndex: 'in_pool' },
             { title: t('enrol.pool.teamedPlus'), dataIndex: 'teamed_plus' },

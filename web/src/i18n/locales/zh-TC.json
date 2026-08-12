@@ -574,6 +574,24 @@
     "roleCurrent": "現任",
     "notFound": "找不到紀錄。"
   },
+  "programme360": {
+    "overview": "概覽",
+    "enrolWindow": "報名 {{from}} – {{to}}",
+    "funnel": "報名漏斗",
+    "status": "狀態",
+    "count": "數量",
+    "sessions": "課節",
+    "session": "課節",
+    "when": "時間",
+    "teams": "團隊",
+    "team": "團隊",
+    "members": "成員",
+    "openPool": "開啟報名池",
+    "openAttendance": "開啟點名總覽",
+    "openWizard": "在設定精靈中編輯",
+    "openFinance": "財務完整性",
+    "hint": "唯讀的 360 檢視 — 每項數據皆有其專屬畫面。"
+  },
   "tracker": {
     "title": "活動追蹤",
     "stagePlan": "計劃",

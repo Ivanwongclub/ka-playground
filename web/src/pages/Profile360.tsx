@@ -62,7 +62,7 @@ function EnrolmentJourney({ status }: { status: string }) {
 
 /** The composition. `studentId` selects the subject; `displayName` overrides the name shown (the self-view
  *  passes it from /api/me; the child-view derives it from the enrolment rows). */
-export function Profile360({ studentId, displayName }: { studentId: number; displayName?: string }) {
+export function Profile360({ studentId, displayName, density = 'product' }: { studentId: number; displayName?: string; density?: 'product' | 'admin' }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language as KaLocale;
 
@@ -72,6 +72,8 @@ export function Profile360({ studentId, displayName }: { studentId: number; disp
   // Resolve WHICH team is this student's by roster-matching the guardian/member-readable rosters (bounded:
   // only teams with ≥1 active member are probed; a student is in ≤1 team). No widen — /teams/{id}/members
   // is the member-or-guardian-walled read. Teamless → the section renders its EmptyState, not an error.
+  // R1-F2 note: for STAFF (ops sees ALL teams) this iterates every team until it matches — accepted as a
+  // known bound for phase 1; a future direct student→team read is the optimization path if team counts grow.
   const [team, setTeam] = useState<TeamRow | null>(null);
   const [teamResolved, setTeamResolved] = useState(false);
   useEffect(() => {
@@ -107,7 +109,7 @@ export function Profile360({ studentId, displayName }: { studentId: number; disp
   }
 
   return (
-    <div style={{ maxWidth: 900 }} data-density="product">
+    <div style={{ maxWidth: 900 }} data-density={density}>
       {/* IDENTITY HEADER — initials + display name. No school: /api/me carries none and no student-own read
           does, so we do NOT widen for it (R1-P360 flag). */}
       <SubPanel tone="neutral">
@@ -210,4 +212,16 @@ export function ChildProfile() {
   const id = Number(studentId);
   if (!Number.isFinite(id)) return <Paragraph type="secondary">{t('profile360.notFound')}</Paragraph>;
   return <Profile360 studentId={id} />;
+}
+
+// ── R1-F2 — STAFF Student 360: /admin/students/:studentId. The SAME Profile360 (the R1-P360 reuse contract),
+// at ADMIN density, composed from the staff caller's own reads. Gate operations.manage ∨ audit.read (super
+// via *); both empirically admit every read. Entry is via linkified student names on staff surfaces — there
+// is no student picker this card. Only the density differs from the guardian child-view. ────────────────
+export function StaffStudent360() {
+  const { studentId } = useParams();
+  const { t } = useTranslation();
+  const id = Number(studentId);
+  if (!Number.isFinite(id)) return <Paragraph type="secondary">{t('profile360.notFound')}</Paragraph>;
+  return <Profile360 studentId={id} density="admin" />;
 }

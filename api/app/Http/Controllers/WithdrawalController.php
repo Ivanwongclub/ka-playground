@@ -65,7 +65,7 @@ class WithdrawalController extends Controller
             ->orderBy('w.created_at')
             ->get([
                 'w.id', 'w.enrolment_id', 'w.student_id', 'w.requested_by', 'w.reason', 'w.status', 'w.decided_by', 'w.decided_at',
-                'w.decision_reason',
+                'w.decision_reason', 'e.programme_id', // R1-F2: +programme_id to linkify the programme name → Programme 360
                 's.name as student_name', 'rb.name as requested_by_name', 'db.name as decided_by_name',
                 'p.name_en as programme_name_en', 'p.name_tc as programme_name_tc', 'p.name_sc as programme_name_sc',
                 'wp.full_refund_before', 'wp.no_refund_after',

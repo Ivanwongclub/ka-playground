@@ -47,8 +47,8 @@ class RefundController extends Controller
             ->leftJoin('users as ab', 'ab.id', '=', 'r.approved_by')
             ->leftJoin('users as cb', 'cb.id', '=', 'r.confirmed_by')
             ->orderBy('r.created_at')
-            ->get(['r.id', 'r.order_id', 'r.withdrawal_request_id', 'r.amount_minor', 'r.currency', 'r.destination_party', 'r.status', 'r.approved_by', 'r.confirmed_by',
-                'ab.name as approved_by_name', 'cb.name as confirmed_by_name', 's.name as student_name']);
+            ->get(['r.id', 'r.order_id', 'o.student_id', 'r.withdrawal_request_id', 'r.amount_minor', 'r.currency', 'r.destination_party', 'r.status', 'r.approved_by', 'r.confirmed_by',
+                'ab.name as approved_by_name', 'cb.name as confirmed_by_name', 's.name as student_name']); // R1-F2: +student_id to linkify the name → Staff Student 360
 
         // R1-F1 (item 4): the ORIGIN in view. A refund carries withdrawal_request_id, but finance is NOT in
         // wr_read — the join would NULL. Resolve DISPLAY fields only (reason + requested_by/decided_by names)

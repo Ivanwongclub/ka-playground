@@ -6,6 +6,7 @@ import {
   Alert, App, Button, Card, Drawer, Flex, Input, InputNumber,
   Select, Switch, Table, Tag, Typography,
 } from 'antd';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '../auth/session';
 import { kaColors } from '../theme/theme';
@@ -207,6 +208,12 @@ export function AdminProgrammes() {
                 {s === 'published' ? t('wizard.published') : t('wizard.draft')}
               </Tag>
             ),
+          },
+          {
+            // R1-F2: the Programme 360 overview, alongside the row's wizard-open onClick (stopPropagation
+            // so the link navigates instead of opening the wizard).
+            title: t('common.actions'), key: 'overview',
+            render: (_, r) => <Link to={`/admin/programmes/${r.id}/overview`} onClick={(e) => e.stopPropagation()}>{t('programme360.overview')}</Link>,
           },
         ]}
       />

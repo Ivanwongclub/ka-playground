@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { App, Button, Card, Descriptions, Input, Modal, Space, Typography, Upload } from 'antd';
 import type { UploadFile } from 'antd';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { authFetch } from '../auth/session';
@@ -44,6 +45,7 @@ interface PaymentRow {
   recorded_by_name: string | null;
   confirmed_by_name: string | null;
   student_name: string | null;
+  student_id: number | null; // R1-F2: links the name → Staff Student 360 (from the AD-2 read's o.student_id)
   note: string | null; // R1-F1 (item 3a): the recorder's note
 }
 interface EvidenceMeta { upload_id: string; original_name: string; mime_type: string; size_bytes: number; status: string; scanned_at: string | null }
@@ -182,7 +184,7 @@ export function Payments() {
               rowKey={(o) => o.id}
               data={awaiting}
               columns={[
-                { key: 'student', title: t('payments.student'), type: 'text', render: (o) => personName(o.student_name) },
+                { key: 'student', title: t('payments.student'), type: 'text', render: (o) => (o.student_id ? <Link to={`/admin/students/${o.student_id}`}>{personName(o.student_name)}</Link> : personName(o.student_name)) }, // R1-F2: → Staff Student 360
                 { key: 'programme', title: t('payments.programme'), type: 'text', render: (o) => programmeName(o, locale) },
                 { key: 'amount', title: t('payments.amount'), type: 'money', render: (o) => formatMoney(o.total_amount_minor, o.currency, locale) },
                 { key: 'act', title: t('common.actions'), type: 'action', render: (o) => <Button size="small" type="primary" onClick={() => setRecordFor(o)}>{t('payments.record')}</Button> },
@@ -198,7 +200,7 @@ export function Payments() {
               data={pending}
               renderDetail={(p) => <PaymentEvidence payment={p} />}
               columns={[
-                { key: 'student', title: t('payments.student'), type: 'text', render: (p) => personName(p.student_name) },
+                { key: 'student', title: t('payments.student'), type: 'text', render: (p) => (p.student_id ? <Link to={`/admin/students/${p.student_id}`}>{personName(p.student_name)}</Link> : personName(p.student_name)) }, // R1-F2: → Staff Student 360
                 { key: 'amount', title: t('payments.amount'), type: 'money', render: (p) => formatMoney(p.amount_minor, p.currency, locale) },
                 // BI-9: the confirmer SEES who recorded it; when it is themselves the row shows "You".
                 { key: 'recordedBy', title: t('payments.recordedBy'), type: 'text',
