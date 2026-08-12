@@ -263,6 +263,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/admin/programmes/{id}/overview', [ProgrammeController::class, 'overview']);
     Route::get('/admin/programmes/{id}/enrolment-summary', [ProgrammeController::class, 'enrolmentSummary']);
     // S06-4b — assessment lifecycle (2.5); the result read is RLS-embargoed (hidden until Released)
+    Route::get('/programmes/{programmeId}/assessments', [\App\Http\Controllers\AssessmentController::class, 'index']); // R2-ASSESS (ruling 1): RLS-shaped list (title/status only; scores stay embargoed)
     Route::post('/admin/programmes/{programmeId}/assessments', [\App\Http\Controllers\AssessmentController::class, 'store']);
     Route::post('/admin/assessments/{id}/transition', [\App\Http\Controllers\AssessmentController::class, 'transition']);
     Route::post('/admin/assessments/{id}/grade', [\App\Http\Controllers\AssessmentController::class, 'grade']);

@@ -593,6 +593,28 @@
     "openFinance": "Financial Integrity",
     "hint": "A read-only 360 view — every figure lives in its own screen."
   },
+  "assess": {
+    "title": "Assessments",
+    "new": "New",
+    "newTitle": "New assessment",
+    "name": "Assessment",
+    "namePlaceholder": "e.g. Term 1 Showcase",
+    "status": "Status",
+    "grade": "Enter scores",
+    "gradeTitle": "Enter scores — {{title}}",
+    "save": "Save",
+    "scored": "Score saved.",
+    "current": "Current: {{score}}",
+    "ungraded": "Not yet scored",
+    "results": "Results",
+    "advanceTitle": "{{action}} — {{title}}?",
+    "advanceBody": "Advance this assessment to the next stage.",
+    "releaseBody": "Results become visible to students and their guardians, and this cannot be undone.",
+    "cancelTitle": "Cancel {{title}}?",
+    "cancelBody": "The assessment is cancelled and cannot proceed. This cannot be undone.",
+    "state": { "draft": "Draft", "published": "Published", "open": "Open", "closed": "Closed", "graded": "Graded", "released": "Released", "cancelled": "Cancelled" },
+    "action": { "published": "Publish", "open": "Open", "closed": "Close", "graded": "Mark graded", "released": "Release", "cancelled": "Cancel" }
+  },
   "tracker": {
     "title": "Activity Tracker",
     "stagePlan": "Plan",

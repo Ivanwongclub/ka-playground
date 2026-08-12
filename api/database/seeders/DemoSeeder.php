@@ -159,6 +159,7 @@ class DemoSeeder extends Seeder
         $this->seedMemberCommunity($ops, $member);                                           // Events / Directory / Profile / RSVP
         $this->seedAdminQueues($guardianA, $a['a2']);                                         // Withdrawals + onboarding/Approvals queue
         app(\App\Services\Enrolments\EnrolmentActivationService::class)->run();               // activate the session cohort (confirmed → active)
+        $this->seedAssessments($programme, $ops, $a['a3']);                                   // R2-ASSESS: one Released (scored) + one mid-flight
 
         // ── Machine-readable fixtures for deploy/gcp/rls-proof.sh ──
         $this->command->info('');
@@ -382,6 +383,41 @@ class DemoSeeder extends Seeder
         if ($teamId !== null && ! DB::table('team_teacher_links')->where('team_id', $teamId)->where('teacher_id', $teacher->id)->where('status', 'active')->exists()) {
             app(\App\Services\Teams\TeamTeacherLinkService::class)->link($teamId, (int) $teacher->id, $ops);
         }
+    }
+
+    /**
+     * R2-ASSESS — one assessment taken through the REAL lifecycle to RELEASED with scores for the LIVE
+     * enrolments (a3 active + the b-cohort confirmed/active), and a SECOND left at 'published' so the admin
+     * section demos the lifecycle mid-flight. a4/a5 are 'teamed' (not confirmed/active) → not gradeable
+     * (the grade precondition), so they are excluded — exactly what the map's precondition flag caught.
+     */
+    private function seedAssessments(Programme $programme, User $ops, User $a3): void
+    {
+        $svc = app(\App\Services\Assessments\AssessmentService::class);
+        if (DB::table('assessments')->where('programme_id', $programme->id)->exists()) {
+            return; // idempotent
+        }
+        // Released, scored.
+        $rel = $svc->create($programme->id, ['title' => 'Term 1 Showcase'], $ops);
+        foreach (['published', 'open', 'closed'] as $to) { // draft→published→open→closed (grade while closed)
+            $svc->transition($rel, $to, $ops);
+        }
+        $scores = [$a3->id => 88];
+        foreach (['b2' => 91, 'b3' => 76, 'b4' => 84] as $k => $score) {
+            $sid = DB::table('users')->where('email', "student.{$k}@example.com")->value('id');
+            if ($sid !== null) {
+                $scores[$sid] = $score;
+            }
+        }
+        foreach ($scores as $sid => $score) {
+            $svc->grade($rel, (int) $sid, (int) $score, $ops);
+        }
+        $svc->transition($rel, 'graded', $ops);
+        $svc->transition($rel, 'released', $ops); // terminal — lifts the embargo
+
+        // Mid-flight: created then published (the admin section shows the lifecycle in progress).
+        $pub = $svc->create($programme->id, ['title' => 'Term 2 Project'], $ops);
+        $svc->transition($pub, 'published', $ops);
     }
 
     /** Member/staff account through the real invitation flow; returns the accepted User. */

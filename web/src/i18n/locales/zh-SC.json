@@ -593,6 +593,28 @@
     "openFinance": "财务完整性",
     "hint": "只读的 360 视图 — 每项数据皆有其专属画面。"
   },
+  "assess": {
+    "title": "评核",
+    "new": "新增",
+    "newTitle": "新增评核",
+    "name": "评核",
+    "namePlaceholder": "例如：第一学期展示",
+    "status": "状态",
+    "grade": "输入成绩",
+    "gradeTitle": "输入成绩 — {{title}}",
+    "save": "保存",
+    "scored": "成绩已保存。",
+    "current": "目前：{{score}}",
+    "ungraded": "尚未评分",
+    "results": "成绩",
+    "advanceTitle": "{{action}} — {{title}}？",
+    "advanceBody": "将此评核推进至下一阶段。",
+    "releaseBody": "成绩将对学生及其家长公开，且无法复原。",
+    "cancelTitle": "取消 {{title}}？",
+    "cancelBody": "此评核将被取消且无法继续，且无法复原。",
+    "state": { "draft": "草稿", "published": "已发布", "open": "进行中", "closed": "已截止", "graded": "已评分", "released": "已公布", "cancelled": "已取消" },
+    "action": { "published": "发布", "open": "开放", "closed": "截止", "graded": "标记已评分", "released": "公布", "cancelled": "取消" }
+  },
   "tracker": {
     "title": "活动追踪",
     "stagePlan": "计划",

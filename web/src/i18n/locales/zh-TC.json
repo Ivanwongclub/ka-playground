@@ -593,6 +593,28 @@
     "openFinance": "財務完整性",
     "hint": "唯讀的 360 檢視 — 每項數據皆有其專屬畫面。"
   },
+  "assess": {
+    "title": "評核",
+    "new": "新增",
+    "newTitle": "新增評核",
+    "name": "評核",
+    "namePlaceholder": "例如：第一學期展示",
+    "status": "狀態",
+    "grade": "輸入成績",
+    "gradeTitle": "輸入成績 — {{title}}",
+    "save": "儲存",
+    "scored": "成績已儲存。",
+    "current": "目前：{{score}}",
+    "ungraded": "尚未評分",
+    "results": "成績",
+    "advanceTitle": "{{action}} — {{title}}？",
+    "advanceBody": "將此評核推進至下一階段。",
+    "releaseBody": "成績將對學生及其家長公開，且無法復原。",
+    "cancelTitle": "取消 {{title}}？",
+    "cancelBody": "此評核將被取消且無法繼續，且無法復原。",
+    "state": { "draft": "草稿", "published": "已發布", "open": "進行中", "closed": "已截止", "graded": "已評分", "released": "已公佈", "cancelled": "已取消" },
+    "action": { "published": "發布", "open": "開放", "closed": "截止", "graded": "標記已評分", "released": "公佈", "cancelled": "取消" }
+  },
   "tracker": {
     "title": "活動追蹤",
     "stagePlan": "計劃",

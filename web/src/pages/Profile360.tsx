@@ -23,7 +23,7 @@ import type { StepState } from '@/ds2';
 
 const { Title, Text, Paragraph } = Typography;
 
-interface EnrolRow { id: string; student_id: number; status: string; student_name: string | null; programme_name_en: string | null; programme_name_tc: string | null; programme_name_sc: string | null }
+interface EnrolRow { id: string; student_id: number; programme_id: number; status: string; student_name: string | null; programme_name_en: string | null; programme_name_tc: string | null; programme_name_sc: string | null }
 interface TeamRow { id: string; name: string; status: string; member_count: number; programme_name_en?: string | null; programme_name_tc?: string | null; programme_name_sc?: string | null }
 interface Member { student_id: number; student_name: string | null }
 interface Tenure { student_id: number; student_name: string | null; started_at: string; ended_at?: string | null; ended_reason?: string | null }
@@ -41,6 +41,45 @@ function initials(name: string): string {
 
 function roleName(r: RoleRow, locale: KaLocale): string {
   return (locale === 'zh-TC' ? r.name_tc : locale === 'zh-SC' ? r.name_sc : r.name_en) || r.name_en;
+}
+
+// R2-ASSESS (ruling 3) — released assessment results in the programme record (the record lens; the guardian
+// child-view and staff-360 inherit this via the same component — the reuse contract). N+1 compose: the RLS
+// list gives the programme's assessments; each RELEASED one's score is fetched from the EMBARGOED result read
+// (returns null until Released / for non-family). Renders NOTHING when the student has no released result —
+// no teasing empty section (for ALL three consumers).
+function ReleasedResults({ studentId, programmeId }: { studentId: number; programmeId: number }) {
+  const { t } = useTranslation();
+  const assessments = useResource<{ data: { id: string; title: string; status: string }[] }>(`/api/programmes/${programmeId}/assessments`);
+  const [results, setResults] = useState<{ title: string; score: number }[]>([]);
+  useEffect(() => {
+    const released = (assessments.data?.data ?? []).filter((a) => a.status === 'released');
+    if (released.length === 0) { setResults([]); return; }
+    let alive = true;
+    (async () => {
+      const out: { title: string; score: number }[] = [];
+      for (const a of released) {
+        try {
+          const r = await authFetch(`/api/assessments/${a.id}/results/${studentId}`);
+          if (!r.ok) continue;
+          const body = (await r.json()) as { result: { score: number | null } | null };
+          if (body.result && body.result.score !== null) out.push({ title: a.title, score: body.result.score });
+        } catch { /* embargoed / unreadable → simply not shown */ }
+      }
+      if (alive) setResults(out);
+    })();
+    return () => { alive = false; };
+  }, [assessments.data, studentId]);
+
+  if (results.length === 0) return null; // honest: no released result → nothing rendered
+  return (
+    <div style={{ marginTop: 10 }}>
+      <Text type="secondary" style={{ fontSize: 12 }}>{t('assess.results')}</Text>
+      {results.map((r, i) => (
+        <div key={i} style={{ fontSize: 13, marginTop: 2 }}><Text strong>{r.title}</Text>: {r.score}</div>
+      ))}
+    </div>
+  );
 }
 
 function EnrolmentJourney({ status }: { status: string }) {
@@ -137,7 +176,7 @@ export function Profile360({ studentId, displayName, density = 'product' }: { st
                   <StatusTag domain="enrolmentStatus" value={e.status} />
                 </span>
               ),
-              children: <EnrolmentJourney status={e.status} />,
+              children: <><EnrolmentJourney status={e.status} /><ReleasedResults studentId={studentId} programmeId={e.programme_id} /></>,
             }))}
           />
         </DataBoundary>

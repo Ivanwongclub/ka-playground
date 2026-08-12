@@ -12,6 +12,20 @@ class AssessmentController extends Controller
 {
     public function __construct(private readonly AssessmentService $assessments) {}
 
+    /**
+     * R2-ASSESS (ruling 1) — the per-programme assessment LIST. RLS-shaped on the existing assessments_read
+     * (ops/audit see all; a programme's student and their guardian see title/status only — NEVER a score;
+     * scores stay embargoed in assessment_results_read). No elevation. Serves both the admin section and the
+     * family's Profile360 released-results composition.
+     */
+    public function index(Request $request, string $programmeId): JsonResponse
+    {
+        return response()->json(['data' => DB::table('assessments')
+            ->where('programme_id', $programmeId)
+            ->orderBy('created_at')
+            ->get(['id', 'title', 'status', 'team_id'])]);
+    }
+
     public function store(Request $request, string $programmeId): JsonResponse
     {
         $data = $request->validate(['title' => 'required|string', 'team_id' => 'sometimes|nullable|uuid']);
