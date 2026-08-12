@@ -145,10 +145,13 @@ export function ZebraTable<T extends object>({
   columns,
   data,
   rowKey,
+  renderDetail,
 }: {
   columns: Ds2Column<T>[];
   data: T[];
   rowKey: (row: T) => string;
+  // R1-F1: optional expandable-row detail (evidence beside the button). Omitted → byte-identical to before.
+  renderDetail?: (row: T) => ReactNode;
 }) {
   const cols: ColumnsType<T> = columns.map((c) => ({
     key: c.key,
@@ -166,6 +169,7 @@ export function ZebraTable<T extends object>({
       rowKey={rowKey}
       size="small"
       pagination={false}
+      expandable={renderDetail ? { expandedRowRender: renderDetail } : undefined}
     />
   );
 }

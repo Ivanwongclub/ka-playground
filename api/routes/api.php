@@ -57,6 +57,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/withdrawal-requests', [\App\Http\Controllers\WithdrawalController::class, 'index']); // RLS-shaped
     Route::get('/payments', [\App\Http\Controllers\ManualPaymentController::class, 'index'])
         ->middleware('permission:finance.view'); // S04B step 4: real surface; RLS-shaped inside the S01 gate
+    // R1-F1 (item 3b): evidence beside the confirm control — metadata list + clean-only file stream. Both
+    // finance-gated; metadata rides caller RLS (pe_read → parent payment); download resolves ONLY via the
+    // payment_evidence→uploads join on {payment id + upload_id} and streams status='clean' (409 otherwise).
+    Route::get('/payments/{id}/evidence', [\App\Http\Controllers\ManualPaymentController::class, 'evidence'])
+        ->middleware('permission:finance.view');
+    Route::get('/payments/{id}/evidence/{uploadId}/download', [\App\Http\Controllers\ManualPaymentController::class, 'evidenceDownload'])
+        ->middleware('permission:finance.view');
     // Manual recording under BI-9 (OD-47 scope): record and decide are SEPARATE
     // permissions AND separate people — the DB policy refuses recorder=confirmer
     Route::post('/admin/payments', [\App\Http\Controllers\ManualPaymentController::class, 'record'])
@@ -333,6 +340,9 @@ Route::get('/reports/enrolment-pool', [\App\Http\Controllers\EnrolmentPoolReport
     ->middleware(['auth:sanctum', 'permission:audit.read']); // S04A audit element
 Route::get('/reports/financial-integrity', [\App\Http\Controllers\FinancialIntegrityReportController::class, 'index'])
     ->middleware('auth:sanctum'); // S04B audit element — finance/audit gated in-controller, academy-scoped
+// R1-F1 (item 5): recon-history strip — last 10 run summaries; SAME finance/audit in-controller gate.
+Route::get('/reports/reconciliation-history', [\App\Http\Controllers\FinancialIntegrityReportController::class, 'reconciliationHistory'])
+    ->middleware('auth:sanctum');
 Route::get('/reports/consent-evidence', [\App\Http\Controllers\ConsentEvidenceReportController::class, 'index'])
     ->middleware(['auth:sanctum', 'permission:audit.read']);
 Route::get('/reports/consent-evidence/{signatureId}/bundle', [\App\Http\Controllers\ConsentEvidenceReportController::class, 'bundle'])

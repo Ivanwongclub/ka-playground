@@ -2,7 +2,7 @@
 // the DB rf_update WITH CHECK) or reject. Confirm shown to every finance.confirm holder; the same-person
 // refusal (403) is surfaced, never pre-hidden. Amounts via formatMoney. Refresh after mutate.
 import { useState } from 'react';
-import { App, Button, Space, Table, Typography } from 'antd';
+import { App, Button, Descriptions, Space, Table, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
@@ -28,6 +28,11 @@ interface RefundRow {
   approved_by_name: string | null;
   confirmed_by_name: string | null;
   student_name: string | null;
+  // R1-F1 (item 4): the ORIGIN — the originating withdrawal's display fields (resolved via the governed
+  // elevation server-side, since finance is not in wr_read).
+  withdrawal_reason: string | null;
+  withdrawal_requested_by_name: string | null;
+  withdrawal_decided_by_name: string | null;
 }
 
 type Reasoned = { url: string; title: string; okText: string; minLen: number; field: 'reason' | 'evidence_note' } | null;
@@ -62,6 +67,15 @@ export function Refunds() {
       onOk: async () => surface(await mutate(`/api/admin/refunds/${row.id}/confirm`)),
     });
 
+  // R1-F1 (item 4): the originating withdrawal in the same view as the refund decision.
+  const renderDetail = (r: RefundRow) => (
+    <Descriptions size="small" column={1} bordered>
+      <Descriptions.Item label={t('refund.dReason')}>{r.withdrawal_reason ?? '—'}</Descriptions.Item>
+      <Descriptions.Item label={t('refund.dRequestedBy')}>{personName(r.withdrawal_requested_by_name)}</Descriptions.Item>
+      <Descriptions.Item label={t('refund.dDecidedBy')}>{personName(r.withdrawal_decided_by_name)}</Descriptions.Item>
+    </Descriptions>
+  );
+
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <div>
@@ -76,6 +90,7 @@ export function Refunds() {
             size="small"
             dataSource={rows}
             pagination={false}
+            expandable={{ expandedRowRender: renderDetail }}
             columns={[
               { title: t('refund.student'), render: (_, r) => personName(r.student_name) },
               { title: t('refund.amount'), render: (_, r) => <Text strong>{formatMoney(r.amount_minor, r.currency, locale)}</Text> },

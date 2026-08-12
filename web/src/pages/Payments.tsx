@@ -4,10 +4,11 @@
 // DISABLED with the reason (shown-not-hidden — the controls are shown, not hidden). Amounts via formatMoney.
 // DS2 restyle: markup only — the mutate calls, endpoints and server authority are UNTOUCHED.
 import { useState } from 'react';
-import { App, Button, Card, Input, Modal, Space, Typography, Upload } from 'antd';
+import { App, Button, Card, Descriptions, Input, Modal, Space, Typography, Upload } from 'antd';
 import type { UploadFile } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
+import { authFetch } from '../auth/session';
 import { useResource, DataBoundary } from '../api/useResource';
 import { mutate, type MutateResult } from '../api/mutate';
 import { ReasonModal } from '../components/ReasonModal';
@@ -43,6 +44,53 @@ interface PaymentRow {
   recorded_by_name: string | null;
   confirmed_by_name: string | null;
   student_name: string | null;
+  note: string | null; // R1-F1 (item 3a): the recorder's note
+}
+interface EvidenceMeta { upload_id: string; original_name: string; mime_type: string; size_bytes: number; status: string; scanned_at: string | null }
+
+// R1-F1 (item 3b) — the confirming officer's PROOF: the recorder's note + the scanned evidence file(s), in
+// the same view as the confirm control. Evidence metadata is a LAZY read (fires only on row expand). Only
+// clean files download (fetched WITH the bearer token, then streamed to a blob); pending/quarantined render
+// honestly. This is the four-eyes control's missing half — display only, no decision-chain change.
+function PaymentEvidence({ payment }: { payment: PaymentRow }) {
+  const { t } = useTranslation();
+  const { message } = App.useApp();
+  const ev = useResource<{ data: EvidenceMeta[] }>(`/api/payments/${payment.id}/evidence`);
+  const download = async (m: EvidenceMeta) => {
+    // authFetch carries the bearer token — a plain <a href> could not, and the endpoint is finance-gated.
+    const r = await authFetch(`/api/payments/${payment.id}/evidence/${m.upload_id}/download`);
+    if (!r.ok) { void message.error(t('payments.evUnavailable')); return; }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = m.original_name || 'evidence';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+  return (
+    <Descriptions size="small" column={1} bordered>
+      <Descriptions.Item label={t('payments.dNote')}>{payment.note || '—'}</Descriptions.Item>
+      <Descriptions.Item label={t('payments.dEvidence')}>
+        <DataBoundary loading={ev.loading} error={ev.error} empty={(ev.data?.data.length ?? 0) === 0} emptySize="inline">
+          <Space direction="vertical" size={4} style={{ width: '100%' }}>
+            {(ev.data?.data ?? []).map((m) => (
+              <span key={m.upload_id} style={{ display: 'inline-flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <Typography.Text>{m.original_name}</Typography.Text>
+                {m.status === 'clean'
+                  ? <Button size="small" onClick={() => void download(m)}>{t('payments.evDownload')}</Button>
+                  : m.status === 'pending'
+                    ? <Typography.Text type="secondary">{t('payments.evScanning')}</Typography.Text>
+                    : <Typography.Text type="danger">{t('payments.evQuarantined')}</Typography.Text>}
+              </span>
+            ))}
+          </Space>
+        </DataBoundary>
+      </Descriptions.Item>
+    </Descriptions>
+  );
 }
 
 export function Payments() {
@@ -148,6 +196,7 @@ export function Payments() {
             <ZebraTable<PaymentRow>
               rowKey={(p) => p.id}
               data={pending}
+              renderDetail={(p) => <PaymentEvidence payment={p} />}
               columns={[
                 { key: 'student', title: t('payments.student'), type: 'text', render: (p) => personName(p.student_name) },
                 { key: 'amount', title: t('payments.amount'), type: 'money', render: (p) => formatMoney(p.amount_minor, p.currency, locale) },

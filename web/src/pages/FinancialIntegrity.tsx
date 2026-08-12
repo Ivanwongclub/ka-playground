@@ -28,6 +28,9 @@ interface Report {
   obligations: { pending: number; consumed: number };
   invoice_credit_reconciliation: { credited_via_notes_minor: number; invoice_original_minus_balance_minor: number };
 }
+// R1-F1 (item 5): a reconcile-run summary — status + timestamp only (reconciliation_log is a global,
+// no-personal-data table; the read is gated by the FI-report gate, no RLS/elevation).
+interface RunRow { run_id: string; passed: boolean; ran_at: string }
 
 export function FinancialIntegrity() {
   const { t, i18n } = useTranslation();
@@ -36,11 +39,16 @@ export function FinancialIntegrity() {
   // hardcoded '$'/'en-HK'. Phase 1 is HKD (multi-currency is Phase 2 / OD-18).
   const hkd = (minor: number) => formatMoney(minor, 'HKD', locale);
   const [report, setReport] = useState<Report | null>(null);
+  const [runs, setRuns] = useState<RunRow[]>([]);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     void authFetch('/api/reports/financial-integrity')
       .then(async (r) => (r.ok ? setReport((await r.json()) as Report) : setError(true)));
+    // R1-F1 (item 5): the recon-history strip — best-effort; a failure never blocks the verdict below.
+    void authFetch('/api/reports/reconciliation-history')
+      .then(async (r) => { if (r.ok) setRuns(((await r.json()) as { data: RunRow[] }).data); })
+      .catch(() => { /* strip stays empty */ });
   }, []);
 
   if (error) return <Alert type="error" showIcon message={t('fin.loadError')} />;
@@ -73,6 +81,20 @@ export function FinancialIntegrity() {
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <Title level={3}>{t('fin.title')}</Title>
+      {/* R1-F1 (item 5): "last N reconcile runs" strip ABOVE the verdict — the trust context for the figures
+          below. Gold tint = passed, danger tint = failed (reused urgency tokens, no invented colours). */}
+      {runs.length > 0 && (
+        <SubPanel tone="neutral">
+          <Text type="secondary" style={{ fontSize: 12 }}>{t('fin.reconHistory')}</Text>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
+            {runs.map((r) => (
+              <span key={r.run_id} style={{ display: 'inline-flex', alignItems: 'center', fontSize: 12, background: `var(${r.passed ? '--ka-gold-tint' : '--ka-danger-tint'})`, border: `1px solid var(${r.passed ? '--ka-gold-line' : '--ka-danger-line'})`, borderRadius: 6, padding: '2px 9px' }}>
+                {`${r.passed ? '✓' : '✗'} ${formatHkt(r.ran_at, locale)}`}
+              </span>
+            ))}
+          </div>
+        </SubPanel>
+      )}
       {report && <Alert type="success" showIcon message={`${t('fin.live')} · ${formatHkt(report.generated_at, locale)}`} />}
       <SubPanel tone="neutral">
         <Title level={5} style={{ marginTop: 0 }}>{t('fin.orders')}</Title>

@@ -75,4 +75,24 @@ class FinancialIntegrityReportController extends Controller
             ],
         ]);
     }
+
+    /**
+     * R1-F1 (item 5): the recon-history strip above the FI verdict — "last N reconcile runs" (green/red +
+     * timestamp). reconciliation_log is a GLOBAL (non-RLS) table — scope-map.php classifies it "Assertion
+     * run records (SR010); no personal data; read surface permission-gated (audit_read)". So the read is
+     * gated HERE (finance.record ∨ audit.read, matching this report — a superset of audit_read, no PII), no
+     * RLS/elevation. Returns the last 10 RUN-SUMMARY rows (assertion_key='_run') as status + timestamp only.
+     */
+    public function reconciliationHistory(Request $request, PermissionResolver $resolver): JsonResponse
+    {
+        $user = $request->user();
+        if (! $resolver->allows($user, 'finance.record') && ! $resolver->allows($user, 'audit.read')) {
+            abort(403, 'Reconciliation history is an academy finance-capability / audit surface');
+        }
+
+        return response()->json(['data' => DB::table('reconciliation_log')
+            ->where('assertion_key', '_run')
+            ->orderByDesc('ran_at')->limit(10)
+            ->get(['run_id', 'passed', 'ran_at'])]);
+    }
 }

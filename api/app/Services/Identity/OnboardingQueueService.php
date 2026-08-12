@@ -30,9 +30,25 @@ class OnboardingQueueService
     {
         $age = fn ($ts) => (int) now()->diffInDays($ts, absolute: true);
 
-        $accounts = DB::table('registration_requests')->where('status', 'submitted')->orderBy('created_at')
-            ->get(['id', 'kind', 'routing', 'applicant_name', 'created_at'])
-            ->map(fn ($r) => ['id' => $r->id, 'kind' => $r->kind, 'routing' => $r->routing, 'applicant_name' => $r->applicant_name, 'age_days' => $age($r->created_at)])->all();
+        // R1-F1 (item 1): the pending-registration IDENTITY beside the approve control — a child's account is
+        // no longer approved on a name alone. DISPLAY fields only, all from the registration_requests row the
+        // reviewer already reads (no wall crossed) + the routed school name (schools is admin-readable).
+        $accounts = DB::table('registration_requests as rr')
+            ->leftJoin('schools as sc', 'sc.id', '=', 'rr.school_id')
+            ->where('rr.status', 'submitted')->orderBy('rr.created_at')
+            ->get(['rr.id', 'rr.kind', 'rr.routing', 'rr.applicant_name', 'rr.created_at',
+                'rr.applicant_email', 'rr.applicant_phone', 'rr.date_of_birth', 'rr.preferred_language',
+                'rr.counterpart_email', 'rr.counterpart_name', 'rr.reference',
+                'sc.name_en as school_name_en', 'sc.name_tc as school_name_tc', 'sc.name_sc as school_name_sc'])
+            ->map(fn ($r) => [
+                'id' => $r->id, 'kind' => $r->kind, 'routing' => $r->routing, 'applicant_name' => $r->applicant_name,
+                'age_days' => $age($r->created_at),
+                'applicant_email' => $r->applicant_email, 'applicant_phone' => $r->applicant_phone,
+                'date_of_birth' => $r->date_of_birth, 'preferred_language' => $r->preferred_language,
+                'counterpart_email' => $r->counterpart_email, 'counterpart_name' => $r->counterpart_name,
+                'reference' => $r->reference,
+                'school_name_en' => $r->school_name_en, 'school_name_tc' => $r->school_name_tc, 'school_name_sc' => $r->school_name_sc,
+            ])->all();
 
         // S-UX3-1: additive student_name/guardian_name (LEFT — never drop a pending row) so the
         // approver names both parties before granting access (OD-28 decision-safety, not cosmetics).

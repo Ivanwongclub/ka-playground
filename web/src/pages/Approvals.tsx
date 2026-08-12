@@ -4,7 +4,7 @@
 // consequence-stating copy; server errors are surfaced; the queue refreshes after a mutate.
 // The server re-checks authority on every call — this UI adds none.
 import { useState } from 'react';
-import { App, Button, Space, Table, Tag, Typography } from 'antd';
+import { App, Button, Descriptions, Space, Table, Tag, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useResource, DataBoundary } from '../api/useResource';
 import { mutate, type MutateResult } from '../api/mutate';
@@ -16,7 +16,13 @@ import { SubPanel, EmptyState, UrgencyChip, approvalLevel, urgencyLabel } from '
 
 const { Title, Paragraph } = Typography;
 
-interface Account { id: string; kind: string; routing: string; applicant_name: string; age_days: number }
+// R1-F1 (item 1): the identity fields beside the approve control — display-only, from the same row.
+interface Account {
+  id: string; kind: string; routing: string; applicant_name: string; age_days: number;
+  applicant_email: string; applicant_phone: string | null; date_of_birth: string | null; preferred_language: string;
+  counterpart_email: string | null; counterpart_name: string | null; reference: string;
+  school_name_en: string | null; school_name_tc: string | null; school_name_sc: string | null;
+}
 interface Link { id: string; student_name: string | null; guardian_name: string | null; origin: string; age_days: number }
 // S-FIX-UX-1 D6: a held guardian-link claim (held_links) — awaiting the counterpart to register.
 // Read-only in this card (no actions); counterpart_name/expires_at are additive display fields.
@@ -76,6 +82,20 @@ export function Approvals() {
     return lvl !== 'none' ? `ds2-urgent--${lvl}` : '';
   };
 
+  // R1-F1 (item 1): the registration identity, rendered in the same view as the approve control.
+  const schoolName = (r: Account) => (i18n.language === 'zh-TC' ? r.school_name_tc : i18n.language === 'zh-SC' ? r.school_name_sc : r.school_name_en) || r.school_name_en;
+  const renderAccountDetail = (r: Account) => (
+    <Descriptions size="small" column={1} bordered>
+      <Descriptions.Item label={t('approvals.dEmail')}>{r.applicant_email}</Descriptions.Item>
+      <Descriptions.Item label={t('approvals.dPhone')}>{r.applicant_phone || '—'}</Descriptions.Item>
+      <Descriptions.Item label={t('approvals.dDob')}>{r.date_of_birth || '—'}</Descriptions.Item>
+      <Descriptions.Item label={t('approvals.dLanguage')}>{r.preferred_language}</Descriptions.Item>
+      <Descriptions.Item label={t('approvals.dRouting')}>{r.routing === 'school' ? (schoolName(r) || t('approvals.routeSchool')) : t('approvals.routeAcademy')}</Descriptions.Item>
+      <Descriptions.Item label={t('approvals.dCounterpart')}>{[r.counterpart_name, r.counterpart_email].filter(Boolean).join(' · ') || '—'}</Descriptions.Item>
+      <Descriptions.Item label={t('approvals.dReference')}>{r.reference}</Descriptions.Item>
+    </Descriptions>
+  );
+
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <div>
@@ -93,6 +113,7 @@ export function Approvals() {
             size="small"
             dataSource={accounts}
             pagination={false}
+            expandable={{ expandedRowRender: renderAccountDetail }}
             locale={{ emptyText: <EmptyState size="inline" message={t('approvals.noneRegistrations')} /> }}
             columns={[
               { title: t('approvals.applicant'), dataIndex: 'applicant_name' },
