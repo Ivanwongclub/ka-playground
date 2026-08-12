@@ -331,9 +331,16 @@ function SectionFields({
       );
     case 'team_rules':
       return (
-        <Flex gap={12}>
-          <InputNumber addonBefore={t('field.min')} value={(draft.min_size as number) ?? undefined} onChange={(v) => set('min_size', v)} />
-          <InputNumber addonBefore={t('field.max')} value={(draft.max_size as number) ?? undefined} onChange={(v) => set('max_size', v)} />
+        <Flex vertical gap={16}>
+          <Flex gap={12}>
+            <InputNumber addonBefore={t('field.min')} value={(draft.min_size as number) ?? undefined} onChange={(v) => set('min_size', v)} />
+            <InputNumber addonBefore={t('field.max')} value={(draft.max_size as number) ?? undefined} onChange={(v) => set('max_size', v)} />
+          </Flex>
+          {/* S-MENTOR-1: per-programme mentor team-view toggle — mirrored to programmes.mentor_team_access on save. */}
+          <Flex gap={10} align="center">
+            <Switch checked={Boolean(draft.mentor_team_access)} onChange={(v) => set('mentor_team_access', v)} />
+            <Text>{t('field.mentorAccess')}</Text>
+          </Flex>
         </Flex>
       );
     case 'learning':

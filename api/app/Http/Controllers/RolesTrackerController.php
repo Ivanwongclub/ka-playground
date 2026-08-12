@@ -28,6 +28,15 @@ class RolesTrackerController extends Controller
         return response()->json(['status' => 'linked', 'link_id' => $linkId]);
     }
 
+    /** S-MENTOR-1 (ruling 5) — remove a team-teacher link; authority enforced in-service (same as link). */
+    public function unlinkTeacher(Request $request, string $id): JsonResponse
+    {
+        $data = $request->validate(['teacher_id' => 'required|integer']);
+        $this->teacherLinks->unlink($id, (int) $data['teacher_id'], $request->user());
+
+        return response()->json(['status' => 'unlinked']);
+    }
+
     /** Record a role assignment/rotation (OD-15) — staff. */
     public function assignRole(Request $request, string $id): JsonResponse
     {

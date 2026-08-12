@@ -169,6 +169,14 @@ class WizardService
             ['programme_id' => $programme->id, 'section_key' => $key],
             ['status' => $status, 'data' => $data, 'updated_by' => $actor->id],
         );
+
+        // S-MENTOR-1: mirror the team_rules mentor-access toggle to the programmes COLUMN. The RLS arm reads
+        // it under the TEACHER'S context; wizard_sections is configuration-gated (teacher-unreadable), so the
+        // flag must live on the global-read programmes table. Boolean → no OD-19 (not a user-facing string).
+        if ($key === 'team_rules') {
+            DB::table('programmes')->where('id', $programme->id)
+                ->update(['mentor_team_access' => (bool) ($data['mentor_team_access'] ?? false)]);
+        }
         $this->audit->record(
             'programme', (string) $programme->id, 'programme.section_saved',
             toState: $status,
@@ -339,7 +347,7 @@ class WizardService
                 'programme_id' => $programme->id,
                 'version' => $next,
                 'config' => [
-                    'programme' => $programme->only(['code', 'name_en', 'name_tc', 'name_sc', 'status', 'jurisdiction', 'hold_window_days', 'payer_party']),
+                    'programme' => $programme->only(['code', 'name_en', 'name_tc', 'name_sc', 'status', 'jurisdiction', 'hold_window_days', 'payer_party', 'mentor_team_access']),
                     'sections' => collect($this->state($programme)['sections'])->keyBy('key')->map(fn ($s) => ['status' => $s['status'], 'data' => $s['data']])->all(),
                 ],
                 'created_by' => $actor->id,
@@ -407,6 +415,7 @@ class WizardService
                 'status' => 'draft',
                 'jurisdiction' => $source->jurisdiction,
                 'hold_window_days' => $source->hold_window_days,
+                'mentor_team_access' => $source->mentor_team_access, // S-MENTOR-1: clone carries the toggle
                 'payer_party' => $source->payer_party,
                 'is_template' => $isTemplate,
             ]);

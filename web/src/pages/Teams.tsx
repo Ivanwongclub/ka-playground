@@ -108,6 +108,8 @@ export function Teams() {
   const roles = useResource<RolesData>(open ? `/api/teams/${open.id}/roles` : '');
   // R1-P360 (3a): the Activity Tracker gates — same member/guardian/ops wall; ops passes via opsAudit.
   const gates = useResource<{ stages: { stage: string; passed: boolean }[] }>(open ? `/api/teams/${open.id}/tracker` : '');
+  // S-MENTOR-1 (ruling 1): the team's linked teachers (names-only elevation read).
+  const teachers = useResource<{ teachers: { teacher_id: number; teacher_name: string | null }[] }>(open ? `/api/teams/${open.id}/teachers` : '');
 
   // assignRole modal state
   const [assign, setAssign] = useState<RoleRow | null>(null);
@@ -184,6 +186,23 @@ export function Teams() {
         if (!open) return;
         const r = await mutate(`/api/teams/${open.id}/gates/${stage}/approve`);
         if (r.ok) { void message.success(t('teams.stagePassedMsg')); gates.reload(); }
+        else surfaceError(r);
+      },
+    });
+
+  // S-MENTOR-1 (ruling 5): unlink a mentor — consequence-stating (they lose the config-gated team view).
+  // Server authority (lobby school-admin ∨ academy ops) is the enforcement; refusals surfaced.
+  const unlinkTeacher = (teacherId: number, name: string) =>
+    modal.confirm({
+      title: t('teams.unlinkTitle', { name }),
+      content: t('teams.unlinkBody'),
+      okText: t('teams.unlink'),
+      cancelText: t('common.cancel'),
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        if (!open) return;
+        const r = await mutate(`/api/admin/teams/${open.id}/teacher-unlink`, { teacher_id: teacherId });
+        if (r.ok) { void message.success(t('teams.unlinked')); teachers.reload(); }
         else surfaceError(r);
       },
     });
@@ -300,6 +319,24 @@ export function Teams() {
     </DataBoundary>
   );
 
+  // S-MENTOR-1 (ruling 1): read-only linked-teacher list + the ruling-5 unlink action.
+  const teachersTab = (
+    <DataBoundary loading={teachers.loading} error={teachers.error} empty={(teachers.data?.teachers.length ?? 0) === 0}>
+      <List<{ teacher_id: number; teacher_name: string | null }>
+        size="small"
+        dataSource={teachers.data?.teachers ?? []}
+        renderItem={(tt) => (
+          <List.Item
+            key={tt.teacher_id}
+            actions={[<Button key="ul" size="small" danger onClick={() => unlinkTeacher(tt.teacher_id, personName(tt.teacher_name))}>{t('teams.unlink')}</Button>]}
+          >
+            <List.Item.Meta title={personName(tt.teacher_name)} description={<Text type="secondary">{t('teams.mentorRole')}</Text>} />
+          </List.Item>
+        )}
+      />
+    </DataBoundary>
+  );
+
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <div>
@@ -353,6 +390,7 @@ export function Teams() {
               { key: 'consent', label: t('teams.tabConsent'), children: consentTab },
               { key: 'roles', label: t('teams.rolesTitle'), children: rolesTab },
               { key: 'stages', label: t('teams.tabStages'), children: stagesTab },
+              { key: 'teachers', label: t('teams.tabTeachers'), children: teachersTab },
             ]}
           />
         )}

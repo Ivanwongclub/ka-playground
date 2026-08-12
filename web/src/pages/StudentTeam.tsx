@@ -90,6 +90,8 @@ function MyTeamCard({ team, onChange }: { team: TeamRow; onChange: () => void })
   const consent = useResource<{ satisfied: boolean }>(`/api/my/consent-status?programme_id=${team.programme_id}`);
   // R1-S2 B3: the Activity Tracker rail — the additive member-readable gates read ({stage, passed} booleans).
   const tracker = useResource<{ stages: { stage: string; passed: boolean }[] }>(`/api/teams/${team.id}/tracker`);
+  // S-MENTOR-1 (ruling 2): the team's mentor name(s) — the names-only elevation read (empty when none/config-off).
+  const teachers = useResource<{ teachers: { teacher_id: number; teacher_name: string | null }[] }>(`/api/teams/${team.id}/teachers`);
 
   const surface = (r: MutateResult) => {
     if (r.ok) { void message.success(t('studentTeam.submitted')); onChange(); return; }
@@ -150,6 +152,11 @@ function MyTeamCard({ team, onChange }: { team: TeamRow; onChange: () => void })
             />
           </div>
         </DataBoundary>
+
+        {/* S-MENTOR-1 (ruling 2): the team's mentor(s), when the programme enables the mentor view. */}
+        {(teachers.data?.teachers.length ?? 0) > 0 && (
+          <div><Text type="secondary">{t('studentTeam.mentor')}: </Text><Text strong>{(teachers.data?.teachers ?? []).map((tt) => personName(tt.teacher_name)).join(', ')}</Text></div>
+        )}
 
         {/* R1-S2 B3: the Activity Tracker rail (Plan · Design · Learn · Pitch · Launch) — passed stages
             'done', the rest pending. Display-only (no onStep); reads {stage, passed} booleans. */}

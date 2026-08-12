@@ -13,7 +13,7 @@ import { mutate } from '../api/mutate';
 import { personName } from '../display/names';
 import { formatHkt, formatHktTime, formatHktDate } from '../display/date';
 import { StatusTag } from '../display/status';
-import { SubPanel, EmptyState } from '@/ds2'; // DS2 rollout C2 — container framing (List/Card→SubPanel). The attendance
+import { SubPanel, EmptyState, WizardRail } from '@/ds2'; // DS2 rollout C2 — container framing (List/Card→SubPanel). The attendance
 // MARK handler (mark) and the book/cancel handler (act) + their payloads are BYTE-IDENTICAL (see the proofs).
 
 const { Title, Paragraph, Text } = Typography;
@@ -235,6 +235,38 @@ function RosterMark({ sessionId }: { sessionId: string }) {
 }
 
 // ── Teacher (mentor): Attendance — pick one of my sessions → its roster → mark ───────────────────────
+// S-MENTOR-1 (ruling 7): the linked mentor's "My Teams" — team name/status + the Tracker rail, from the
+// new config-gated teams_read / stage_gates_read arms (/api/teams returns exactly the teacher's linked teams
+// where the programme enables the view). Nothing else — no roster/consent/money here (this is the teacher home).
+function MentorTeamCard({ team }: { team: { id: string; name: string; status: string } }) {
+  const { t } = useTranslation();
+  const tracker = useResource<{ stages: { stage: string; passed: boolean }[] }>(`/api/teams/${team.id}/tracker`);
+  return (
+    <SubPanel tone="neutral">
+      <span style={{ display: 'inline-flex', gap: 10, alignItems: 'center' }}>
+        <Text strong>{team.name}</Text><StatusTag domain="teamStatus" value={team.status} />
+      </span>
+      <DataBoundary loading={tracker.loading} error={tracker.error}>
+        <WizardRail phases={[{ title: t('tracker.title'), steps: (tracker.data?.stages ?? []).map((g) => ({ label: t(`tracker.stage${g.stage}`), state: g.passed ? 'done' : 'todo' })) }]} />
+      </DataBoundary>
+    </SubPanel>
+  );
+}
+function MentorTeams() {
+  const { t } = useTranslation();
+  const teams = useResource<{ data: { id: string; name: string; status: string }[] }>('/api/teams');
+  const mine = teams.data?.data ?? [];
+  if (mine.length === 0) return null;
+  return (
+    <div>
+      <Title level={5} style={{ marginBottom: 8 }}>{t('attendance.myTeams')}</Title>
+      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        {mine.map((tm) => <MentorTeamCard key={tm.id} team={tm} />)}
+      </Space>
+    </div>
+  );
+}
+
 export function MentorAttendance() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language as KaLocale;
@@ -247,6 +279,8 @@ export function MentorAttendance() {
         <Title level={3} style={{ marginBottom: 0 }}>{t('attendance.mentorTitle')}</Title>
         <Paragraph type="secondary">{t('attendance.mentorSubtitle')}</Paragraph>
       </div>
+      <MentorTeams />
+
       <DataBoundary loading={res.loading} error={res.error} empty={(res.data?.sessions.length ?? 0) === 0}>
         <SubPanel tone="neutral">
         <List<MentorSessionRow>

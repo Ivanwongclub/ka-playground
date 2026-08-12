@@ -51,6 +51,31 @@ class TeamTeacherLinkService
         );
     }
 
+    /**
+     * S-MENTOR-1 (ruling 5): remove a link — the mentor loses the config-gated team view. SAME authority as
+     * link() (lobby school admin ∨ academy ops). Idempotent: a not-active link is a 409, never a silent no-op.
+     */
+    public function unlink(string $teamId, int $teacherId, User $admin): void
+    {
+        $team = DB::table('teams')->where('id', $teamId)->first() ?? abort(404);
+        $this->assertCanManageTeam($admin, $team);
+
+        $this->scope->asSystem(
+            'Team-teacher UNLINK (S-MENTOR-1, OD-61): the lobby school admin or an academy admin removes a teacher\'s link to a TEAM; the mentor then loses the per-programme config-gated team view. team_teacher_links is a system-only write; the admin authority was established before the elevation.',
+            function () use ($team, $teacherId, $admin): void {
+                $link = DB::table('team_teacher_links')->where('team_id', $team->id)
+                    ->where('teacher_id', $teacherId)->where('status', 'active')->first();
+                if ($link === null) {
+                    abort(409, 'That teacher is not actively linked to this team');
+                }
+                DB::table('team_teacher_links')->where('id', $link->id)->update(['status' => 'removed', 'updated_at' => now()]);
+                $this->audit->record('team_teacher_link', $link->id, 'team_teacher_link.removed',
+                    programmeId: (int) $team->programme_id, reason: 'teacher unlinked from team (OD-61)',
+                    payloadAfter: ['team_id' => $team->id, 'teacher_id' => $teacherId], actor: $admin);
+            },
+        );
+    }
+
     private function assertCanManageTeam(User $admin, object $team): void
     {
         if ($admin->role === 'academy_admin') {

@@ -151,6 +151,7 @@ class DemoSeeder extends Seeder
         //    binding is raw-inserted (no service exists) — flagged above. ──
         $this->provisionSchool($ops);
         $teacher = User::query()->where('email', 'teacher@example.com')->first();
+        $this->linkDemoMentor($programme, $teacher, $ops); // S-MENTOR-1: enable the flag + link teacher@ → Demo Team Alpha
 
         // ── Populate the surfaces that would otherwise render EMPTY (demo-quality). All via
         //    REAL service flows; @example.com synthetic; the RLS fixtures (B1) stay untouched. ──
@@ -363,6 +364,23 @@ class DemoSeeder extends Seeder
             if (! $already) {
                 $tracker->approveGate($teamId, $stage, $ops, 'demo fixture (R1-P360)');
             }
+        }
+    }
+
+    /**
+     * S-MENTOR-1: enable the per-programme mentor view on the demo programme and link teacher@ to Demo Team
+     * Alpha via the REAL TeamTeacherLinkService (ops as the linking admin), so every mentor-access surface
+     * demos populated. Idempotent: skips an existing active link.
+     */
+    private function linkDemoMentor(Programme $programme, ?User $teacher, User $ops): void
+    {
+        if ($teacher === null) {
+            return;
+        }
+        DB::table('programmes')->where('id', $programme->id)->update(['mentor_team_access' => true]);
+        $teamId = DB::table('teams')->where('programme_id', $programme->id)->where('name', 'Demo Team Alpha')->value('id');
+        if ($teamId !== null && ! DB::table('team_teacher_links')->where('team_id', $teamId)->where('teacher_id', $teacher->id)->where('status', 'active')->exists()) {
+            app(\App\Services\Teams\TeamTeacherLinkService::class)->link($teamId, (int) $teacher->id, $ops);
         }
     }
 
