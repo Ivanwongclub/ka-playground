@@ -3,14 +3,15 @@
 
 :root {
   color-scheme: dark;
-  --ka-bg: #0f0b15;
-  --ka-card: #1a1326;
-  --ka-fg: #f4f4f5;
-  --ka-gold: #c9a962;
-  --ka-gold-hover: #d4b876;
-  --ka-muted: #1e1729;
-  --ka-muted-fg: #a1a1aa;
-  --ka-border: #2a2235;
+  /* DS2 v3 palette — mirrors theme.ts kaColors (drift-checked; @media prefers-contrast steps below intentionally differ). */
+  --ka-bg: #0f0d14;
+  --ka-card: #191521;
+  --ka-fg: #ffffff;
+  --ka-gold: #e0a83b;
+  --ka-gold-hover: #eab652;
+  --ka-muted: #1e1927;
+  --ka-muted-fg: #9ba1ac;
+  --ka-border: #26232e;
 }
 
 * {

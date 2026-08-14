@@ -10,19 +10,21 @@
  * imports the barrel, so these tokens are not on any page and nothing renders differently (Ruling 2). */
 
 :root {
-  /* ── neutrals · gold · semantic — MIRROR theme.ts kaColors (drift-checked) ── */
-  --ka-bg: #0F0B15;
-  --ka-card: #1A1326;
-  --ka-muted: #1E1729;
-  --ka-fg: #F4F4F5;
-  --ka-muted-fg: #A1A1AA;   /* same name as the existing index.css --ka-* layer — one coherent palette */
-  --ka-gold: #C9A962;
-  --ka-gold-hover: #D4B876;
-  --ka-border: #2A2235;         /* decorative separators (v2.1 §3.1) */
+  /* ── neutrals · gold · semantic — MIRROR theme.ts kaColors (drift-checked) — DS2 v3 palette ── */
+  --ka-bg: #0F0D14;
+  --ka-card: #191521;
+  --ka-muted: #1E1927;
+  --ka-fg: #FFFFFF;
+  --ka-fg-soft: #D6D9E0;    /* v3: body text — softer than pure white (drift-checked → foregroundSoft) */
+  --ka-muted-fg: #9BA1AC;   /* same name as the existing index.css --ka-* layer — one coherent palette */
+  --ka-gold: #E0A83B;
+  --ka-gold-hover: #EAB652;
+  --ka-border: #26232E;         /* decorative separators (v2.1 §3.1) */
   --ka-border-strong: #726889;  /* control boundaries (1.4.11) */
-  --ka-success: #22C55E;
-  --ka-warning: #FBBF24;
-  --ka-danger: #EF4444;
+  --ka-success: #4FB477;
+  --ka-warning: #E8863C;
+  --ka-danger: #E5646E;
+  --ka-pending: #4D7CF0;        /* v3: informational / in-progress (drift-checked → pending) */
 
   /* ── category accents — MIRROR theme.ts kaCategoryAccents (drift-checked) ── */
   --ka-cat-language: #6366F1;
@@ -31,10 +33,10 @@
   --ka-cat-maths: #F97316;
   --ka-cat-featured: #06B6D4;
 
-  /* ── DS2 additions (no theme.ts counterpart — NOT drift-checked) ── */
-  --ka-gold-tint: rgba(201, 169, 98, 0.10);   /* attested/zone tint (D3/D6) */
-  --ka-gold-line: rgba(201, 169, 98, 0.30);   /* attested hairline */
-  --ka-seal: radial-gradient(circle at 32% 30%, #E7D290, #C9A962 52%, #957a3b); /* the D3 seal */
+  /* ── DS2 additions (no theme.ts counterpart — NOT drift-checked) — rebased to v3 gold #E0A83B ── */
+  --ka-gold-tint: rgba(224, 168, 59, 0.10);   /* attested/zone tint (D3/D6) — alpha preserved, RGB → v3 gold */
+  --ka-gold-line: rgba(224, 168, 59, 0.30);   /* attested hairline — alpha preserved, RGB → v3 gold */
+  --ka-seal: radial-gradient(circle at 32% 30%, #F1D089, #E0A83B 52%, #A17A2B); /* the D3 seal — warm stops around v3 gold */
 
   /* ── type (v2.1 §4) ── */
   --ka-font-display: 'Montserrat', sans-serif;
@@ -88,6 +90,26 @@
   --ka-drawer-w: min(560px, 100vw);
   --ka-tabbar-h: 56px;
   --ka-sheet-radius: 16px;
+
+  /* ════════ DS2 v3 AMBIENT (P0-1 STEP 3) — DEFINED for P0-2, NOT applied here ════════
+   * DS2-owned, NOT drift-checked. No surface references these yet; P0-2 wires them onto the app-shell /
+   * auth ground so the palette swap (P0-1) and the ambient land as separate, reviewable steps. */
+
+  /* four radial-glow layers — low-alpha derivatives of v3 gold / pending / the aubergine floor; composite as one bg-image */
+  --ka-glow-1: radial-gradient(60% 50% at 12% 0%,  rgba(224, 168, 59, 0.10), transparent 70%);  /* gold, top-left */
+  --ka-glow-2: radial-gradient(55% 45% at 100% 8%, rgba(77, 124, 240, 0.08), transparent 68%);  /* pending, top-right */
+  --ka-glow-3: radial-gradient(70% 60% at 50% 100%, rgba(25, 21, 33, 0.55), transparent 72%);   /* card-deep, floor */
+  --ka-glow-4: radial-gradient(40% 35% at 82% 62%, rgba(224, 168, 59, 0.05), transparent 75%);  /* gold, faint mid */
+  --ka-ambient: var(--ka-glow-1), var(--ka-glow-2), var(--ka-glow-3), var(--ka-glow-4);         /* → background-image */
+
+  /* glass recipe — transparent fill + backdrop blur + hairline divider; apply the three together */
+  --ka-glass-fill: rgba(25, 21, 33, 0.55);                    /* v3 card at 55% — the ambient reads through */
+  --ka-glass-blur: blur(18px);                                /* → backdrop-filter: var(--ka-glass-blur) */
+  --ka-glass-hairline: 1px solid rgba(255, 255, 255, 0.08);   /* top/edge divider on the glass */
+  /* CAVEAT (P0-2 MUST honour): an element with backdrop-filter establishes a CONTAINING BLOCK for its
+   * position:fixed descendants — a fixed child (the mobile .ka-tabbar, a Modal) inside a glass ancestor
+   * anchors to that ancestor, NOT the viewport, and mis-positions. Keep glass off any ancestor of a fixed
+   * overlay (same containing-block effect as transform / filter / will-change). */
 }
 
 [data-density="admin"] {

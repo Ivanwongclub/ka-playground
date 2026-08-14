@@ -12,9 +12,11 @@ const theme = readFileSync(join(root, 'src/theme/theme.ts'), 'utf8');
 // --ka-* token  →  theme.ts key (kaColors + kaCategoryAccents)
 const MAP = {
   '--ka-bg': 'background', '--ka-card': 'card', '--ka-muted': 'muted', '--ka-fg': 'foreground',
+  '--ka-fg-soft': 'foregroundSoft', // DS2 v3 — softer body text (colorText)
   '--ka-muted-fg': 'mutedForeground', '--ka-gold': 'gold', '--ka-gold-hover': 'goldHover',
   '--ka-border': 'border', '--ka-border-strong': 'borderStrong',
   '--ka-success': 'success', '--ka-warning': 'warning', '--ka-danger': 'danger',
+  '--ka-pending': 'pending', // DS2 v3 — informational / in-progress (colorInfo)
   '--ka-cat-language': 'language', '--ka-cat-stem': 'stem', '--ka-cat-arts': 'arts',
   '--ka-cat-maths': 'maths', '--ka-cat-featured': 'featured',
 };

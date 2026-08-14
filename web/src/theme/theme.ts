@@ -3,19 +3,23 @@
 import { theme as antdTheme } from 'antd';
 import type { ThemeConfig } from 'antd';
 
+// DS2 v3 palette (supersedes v2, owner-approved). theme.ts remains the single source; tokens.css +
+// index.css :root mirror it, gated by scripts/ds2-tokens-check.mjs.
 export const kaColors = {
-  background: '#0F0B15',
-  card: '#1A1326',
-  foreground: '#F4F4F5',
-  gold: '#C9A962',
-  goldHover: '#D4B876',
-  muted: '#1E1729',
-  mutedForeground: '#A1A1AA',
-  border: '#2A2235', // decorative separators: dividers, card edges, table lines (1.4.11-exempt)
+  background: '#0F0D14',
+  card: '#191521',
+  foreground: '#FFFFFF',          // headings / high-emphasis text
+  foregroundSoft: '#D6D9E0',      // v3: body text — softer than pure white (colorText)
+  gold: '#E0A83B',
+  goldHover: '#EAB652',
+  muted: '#1E1927',
+  mutedForeground: '#9BA1AC',
+  border: '#26232E', // decorative separators: dividers, card edges, table lines (1.4.11-exempt)
   borderStrong: '#726889', // control boundaries: inputs, selects, buttons — 3.48:1 on card, 3.76:1 on bg
-  success: '#22C55E',
-  warning: '#FBBF24',
-  danger: '#EF4444',
+  success: '#4FB477',
+  warning: '#E8863C',
+  danger: '#E5646E',
+  pending: '#4D7CF0',             // v3: informational / in-progress (colorInfo — no longer gold)
 } as const;
 
 // Category accents (§3.3) — programme colour coding
@@ -44,30 +48,36 @@ export const kaTheme: ThemeConfig = {
   algorithm: antdTheme.darkAlgorithm,
   token: {
     ...shared,
-    colorPrimary: kaColors.gold, // gold leads in dark
-    colorInfo: kaColors.gold,
+    colorPrimary: kaColors.gold, // gold leads in dark (unchanged)
+    colorInfo: kaColors.pending, // v3: informational is blue-pending, no longer gold
     colorError: kaColors.danger,
     colorSuccess: kaColors.success,
     colorWarning: kaColors.warning,
     colorBgLayout: kaColors.background,
     colorBgContainer: kaColors.card,
+    // v3 text ramp: headings pure white, body the softer foregroundSoft, secondary the muted tone
+    colorText: kaColors.foregroundSoft,
+    colorTextHeading: kaColors.foreground,
+    colorTextSecondary: kaColors.mutedForeground, // §3.1 mapping — one source of truth
     // 1.4.11 split (design review, 23 Jul 2026): controls get the 3.0-compliant
     // boundary; decorative separators keep the quiet aubergine line
     colorBorder: kaColors.borderStrong,
     colorBorderSecondary: kaColors.border,
     controlOutline: kaColors.gold, // solid — 8.01:1 on card; 0.35 alpha blended to 2.06
-    colorTextSecondary: kaColors.mutedForeground, // §3.1 mapping — one source of truth
     fontFamilyCode: "'JetBrains Mono', monospace",
   },
   components: {
     Layout: { siderBg: kaColors.background, headerBg: kaColors.card },
     Menu: { darkItemSelectedColor: kaColors.gold, darkItemHoverBg: kaColors.muted },
     Button: { primaryColor: kaColors.background }, // dark text on gold
+    Badge: { colorError: kaColors.warning }, // v3: numeric count badge uses warning (amber), not danger red
     Tabs: { inkBarColor: kaColors.gold, itemSelectedColor: kaColors.gold },
     Table: { headerBg: kaColors.card, headerColor: kaColors.gold, rowHoverBg: kaColors.muted },
     Modal: { headerBg: kaColors.card, titleColor: kaColors.gold },
     Steps: { colorPrimary: kaColors.gold },
-    Input: { activeBorderColor: kaColors.gold },
+    // v3: control fill is the muted tone; the focus/active edge is the 1.4.11 borderStrong (no longer gold)
+    Input: { colorBgContainer: kaColors.muted, activeBorderColor: kaColors.borderStrong },
+    Select: { colorBgContainer: kaColors.muted, activeBorderColor: kaColors.borderStrong },
     Progress: { defaultColor: kaColors.gold },
   },
 };
