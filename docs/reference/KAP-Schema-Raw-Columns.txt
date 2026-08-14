@@ -1,0 +1,987 @@
+TABLES/ALTERS FOUND: 109
+
+### [create] users   (0001_01_01_000000_create_users_table.php)
+    $table->id();
+    $table->string('name');
+    $table->string('email')->unique();
+    $table->timestamp('email_verified_at')->nullable();
+    $table->string('password');
+    $table->rememberToken();
+    $table->timestamps();
+
+### [create] password_reset_tokens   (0001_01_01_000000_create_users_table.php)
+    $table->string('email')->primary();
+    $table->string('token');
+    $table->timestamp('created_at')->nullable();
+
+### [create] sessions   (0001_01_01_000000_create_users_table.php)
+    $table->string('id')->primary();
+    $table->foreignId('user_id')->nullable()->index();
+    $table->string('ip_address', 45)->nullable();
+    $table->text('user_agent')->nullable();
+    $table->longText('payload');
+    $table->integer('last_activity')->index();
+
+### [create] audit_events   (2026_07_23_100000_create_audit_events_table.php)
+    $table->uuid('event_id')->primary();
+    $table->timestampTz('occurred_at')->useCurrent();
+    $table->unsignedBigInteger('actor_id')->nullable(); // unconstrained: an audit row must outlive any actor row
+    $table->string('actor_role')->nullable();
+    $table->unsignedBigInteger('on_behalf_of')->nullable();
+    $table->string('entity_type');
+    $table->string('entity_id');
+    $table->string('from_state')->nullable();
+    $table->string('to_state')->nullable();
+    $table->string('action');
+    $table->text('reason')->nullable();
+    $table->json('payload_before')->nullable();
+    $table->json('payload_after')->nullable();
+    $table->string('ip_address', 45)->nullable();
+    $table->text('user_agent')->nullable();
+    $table->string('request_id')->nullable();
+    $table->unsignedBigInteger('programme_id')->nullable();
+    $table->index(['entity_type', 'entity_id']);
+    $table->index('occurred_at');
+    $table->index('actor_id');
+    $table->index('action');
+    $table->index('programme_id');
+
+### [create] uploads   (2026_07_23_110000_create_uploads_table.php)
+    $table->uuid('id')->primary();
+    $table->string('context');
+    $table->string('disk');
+    $table->string('path');
+    $table->string('original_name');
+    $table->string('mime_type');
+    $table->unsignedBigInteger('size_bytes');
+    $table->string('sha256', 64);
+    $table->string('status')->default('pending'); // pending | clean | quarantined
+    $table->string('scan_signature')->nullable(); // virus name on a hit
+    $table->unsignedBigInteger('uploaded_by')->nullable();
+    $table->timestampTz('scanned_at')->nullable();
+    $table->timestampsTz();
+    $table->index(['context', 'status']);
+    $table->index('status');
+    $table->index('uploaded_by');
+
+### [create] reconciliation_log   (2026_07_24_090000_create_reconciliation_log_table.php)
+    $table->uuid('id')->primary();
+    $table->uuid('run_id');
+    $table->string('assertion_key'); // '_run' = run summary row
+    $table->json('tags');
+    $table->boolean('passed');
+    $table->text('details')->nullable();
+    $table->string('cites')->nullable(); // BI / requirement IDs the assertion proves
+    $table->unsignedInteger('duration_ms');
+    $table->timestampTz('ran_at');
+    $table->index('run_id');
+    $table->index(['assertion_key', 'ran_at']);
+    $table->index(['passed', 'ran_at']);
+
+### [create] roles   (2026_07_24_120000_create_authz_tables.php)
+    $table->string('key')->primary(); // student · guardian · teacher · school_admin · academy_admin · member
+    $table->timestampTz('created_at')->useCurrent();
+
+### [create] permissions   (2026_07_24_120000_create_authz_tables.php)
+    $table->string('key')->primary();
+    $table->timestampTz('created_at')->useCurrent();
+
+### [create] role_permissions   (2026_07_24_120000_create_authz_tables.php)
+    $table->string('role_key');
+    $table->string('permission_key');
+    $table->primary(['role_key', 'permission_key']);
+    $table->foreign('role_key')->references('key')->on('roles');
+    $table->foreign('permission_key')->references('key')->on('permissions');
+
+### [create] capability_permissions   (2026_07_24_120000_create_authz_tables.php)
+    $table->string('capability'); // super_admin · configuration · finance · operations · audit_read
+    $table->string('permission_key');
+    $table->primary(['capability', 'permission_key']);
+    $table->foreign('permission_key')->references('key')->on('permissions');
+
+### [create] admin_capabilities   (2026_07_24_120000_create_authz_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('user_id')->constrained();
+    $table->string('capability');
+    $table->foreignId('granted_by')->constrained('users');
+    $table->timestampTz('granted_at');
+    $table->foreignId('revoked_by')->nullable()->constrained('users');
+    $table->timestampTz('revoked_at')->nullable();
+    $table->index(['user_id', 'capability']);
+
+### [alter] users   (2026_07_24_120000_create_authz_tables.php)
+    $table->string('role')->default('student');
+    $table->foreign('role')->references('key')->on('roles');
+
+### [alter] users   (2026_07_24_120000_create_authz_tables.php)
+    $table->dropForeign(['role']);
+    $table->dropColumn('role');
+
+### [create] invitations   (2026_07_24_130000_create_invitations_and_link_tables.php)
+    $table->uuid('id')->primary();
+    $table->string('email');
+    $table->string('role'); // guardian | teacher | school_admin | academy_admin — never student (guardian-led) or member (OD-22)
+    $table->string('token_hash', 64)->unique(); // sha256 of the single-use token; plain token never stored
+    $table->foreignId('issued_by')->constrained('users');
+    $table->timestampTz('expires_at'); // issued + 14 days (2.11)
+    $table->timestampTz('accepted_at')->nullable();
+    $table->foreignId('user_id')->nullable()->constrained('users');
+    $table->timestampTz('created_at')->useCurrent();
+    $table->foreign('role')->references('key')->on('roles');
+    $table->index(['email', 'role']);
+
+### [create] schools   (2026_07_24_130000_create_invitations_and_link_tables.php)
+    $table->id();
+    $table->string('name_en');
+    $table->string('name_tc');
+    $table->string('name_sc');
+    $table->timestampsTz();
+
+### [create] guardian_links   (2026_07_24_130000_create_invitations_and_link_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('student_id')->constrained('users');
+    $table->foreignId('guardian_id')->constrained('users');
+    $table->string('status'); // B5 machine; every transition audited
+    $table->timestampTz('verified_at')->nullable();
+    $table->jsonb('permission_overrides')->nullable(); // B7 layer 2
+    $table->string('origin'); // onboarding | pairing_code | parent_initiated | school_mediated
+    $table->timestampsTz();
+    $table->index(['student_id', 'status']);
+    $table->index(['guardian_id', 'status']);
+
+### [create] school_links   (2026_07_24_130000_create_invitations_and_link_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('student_id')->constrained('users');
+    $table->foreignId('school_id')->constrained('schools');
+    $table->string('status');
+    $table->timestampsTz();
+    $table->index(['student_id', 'status']);
+
+### [create] teacher_links   (2026_07_24_130000_create_invitations_and_link_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('teacher_id')->constrained('users');
+    $table->foreignId('school_id')->constrained('schools');
+    $table->string('status');
+    $table->timestampsTz();
+    $table->index(['teacher_id', 'status']);
+
+### [alter] users   (2026_07_24_140000_add_lockout_columns_to_users.php)
+    $table->unsignedTinyInteger('failed_login_attempts')->default(0);
+    $table->timestampTz('locked_until')->nullable();
+
+### [alter] users   (2026_07_24_140000_add_lockout_columns_to_users.php)
+    $table->dropColumn(['failed_login_attempts', 'locked_until']);
+
+### [create] pairing_codes   (2026_07_24_150000_create_pairing_and_exception_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('student_id')->constrained('users');
+    $table->string('code', 6); // 6-char alphanumeric, case-sensitive (B4)
+    $table->timestampTz('expires_at'); // 7 days
+    $table->timestampTz('used_at')->nullable(); // first successful use consumes it
+    $table->timestampTz('invalidated_at')->nullable(); // 10 global fails (2.13)
+    $table->timestampTz('created_at')->useCurrent();
+    $table->index('code');
+    $table->index(['student_id', 'expires_at']);
+
+### [create] pairing_code_failures   (2026_07_24_150000_create_pairing_and_exception_tables.php)
+    $table->string('code', 6)->primary();
+    $table->unsignedInteger('attempts')->default(0);
+    $table->timestampTz('last_attempt_at');
+
+### [create] guardian_replacement_exceptions   (2026_07_24_150000_create_pairing_and_exception_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('student_id')->constrained('users');
+    $table->uuid('revoked_link_id');
+    $table->text('reason');
+    $table->timestampTz('deadline'); // +14 days (2.2)
+    $table->string('status')->default('open'); // open | resolved | expired_suspended
+    $table->foreignId('created_by')->constrained('users');
+    $table->timestampsTz();
+    $table->index(['status', 'deadline']);
+
+### [create] programmes   (2026_07_24_200000_create_programmes_tables.php)
+    $table->id();
+    $table->string('code')->unique(); // e.g. STEM-CAR-2026
+    $table->string('name_en');
+    $table->string('name_tc');
+    $table->string('name_sc');
+    $table->string('status')->default('draft'); // D5 machine; transitions built in S02B
+    $table->string('jurisdiction', 2)->default('HK'); // OD-16
+    $table->timestampTz('enrolment_opens_at')->nullable();
+    $table->timestampTz('enrolment_closes_at')->nullable();
+    $table->unsignedSmallInteger('hold_window_days')->default(7); // OD-11
+    $table->string('payer_party')->default('parent'); // E6
+    $table->timestampsTz();
+
+### [create] programme_versions   (2026_07_24_200000_create_programmes_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->constrained();
+    $table->unsignedInteger('version');
+    $table->jsonb('config'); // full config snapshot at freeze time
+    $table->foreignId('created_by')->constrained('users');
+    $table->timestampTz('created_at')->useCurrent();
+    $table->unique(['programme_id', 'version']);
+
+### [create] school_admin_links   (2026_07_24_210000_scope_layer_rls.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('school_admin_id')->constrained('users');
+    $table->foreignId('school_id')->constrained('schools');
+    $table->string('status');
+    $table->timestampsTz();
+    $table->index(['school_admin_id', 'status']);
+
+### [alter] invitations   (2026_07_24_210000_scope_layer_rls.php)
+    $table->foreignId('school_id')->nullable()->constrained('schools');
+
+### [alter] invitations   (2026_07_24_210000_scope_layer_rls.php)
+    $table->dropConstrainedForeignId('school_id');
+
+### [create] wizard_sections   (2026_07_25_090000_create_wizard_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->constrained();
+    $table->string('section_key'); // D2: basics … integration
+    $table->string('status')->default('not_started'); // not_started | incomplete | complete | deferred
+    $table->jsonb('data')->nullable(); // section config payload (no fees/terms — scoped tables)
+    $table->foreignId('updated_by')->nullable()->constrained('users');
+    $table->timestampsTz();
+    $table->unique(['programme_id', 'section_key']);
+
+### [create] pre_flight_results   (2026_07_25_090000_create_wizard_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->constrained();
+    $table->jsonb('findings'); // [{severity: error|warning|info, code, message}]
+    $table->boolean('publishable');
+    $table->foreignId('ran_by')->constrained('users');
+    $table->timestampTz('ran_at')->useCurrent();
+
+### [alter] programmes   (2026_07_25_090000_create_wizard_tables.php)
+    $table->boolean('is_template')->default(false); // D6
+
+### [alter] programmes   (2026_07_25_090000_create_wizard_tables.php)
+    $table->dropColumn('is_template');
+
+### [create] team_categories   (2026_07_25_100000_create_programme_config_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->constrained();
+    $table->string('name_en');
+    $table->string('name_tc');
+    $table->string('name_sc');
+    $table->foreignId('school_id')->nullable()->constrained('schools');
+    $table->string('assignment_rule'); // auto_by_school | open | admin_assigned
+    $table->boolean('is_default')->default(false);
+    $table->timestampTz('retired_at')->nullable(); // retiring keeps existing teams (TEAM-CATEGORIES §8)
+    $table->timestampsTz();
+
+### [create] fee_items   (2026_07_25_100000_create_programme_config_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->constrained();
+    $table->string('name_en');
+    $table->string('name_tc');
+    $table->string('name_sc');
+    $table->bigInteger('amount_minor'); // INTEGER MINOR UNITS — never float/decimal (OD-18)
+    $table->char('currency', 3)->default('HKD'); // explicit ISO code (OD-18)
+    $table->unsignedSmallInteger('sort')->default(0);
+    $table->timestampsTz();
+
+### [create] stage_requirements   (2026_07_25_100000_create_programme_config_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->constrained();
+    $table->string('stage'); // A2: the five stages are FIXED
+    $table->jsonb('requirements')->nullable(); // milestones, deliverables, gate conditions, OD-12 thresholds
+    $table->string('approver_role')->nullable();
+    $table->timestampsTz();
+    $table->unique(['programme_id', 'stage']);
+
+### [create] role_library   (2026_07_25_100000_create_programme_config_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->constrained();
+    $table->string('name_en');
+    $table->string('name_tc');
+    $table->string('name_sc');
+    $table->unsignedSmallInteger('min_holders')->default(0);
+    $table->unsignedSmallInteger('max_holders')->default(1);
+    $table->boolean('mandatory')->default(false);
+    $table->jsonb('in_team_permissions')->nullable();
+    $table->string('rotation_cadence')->nullable(); // config only — Phase 1 records rotations manually (OD-15)
+    $table->timestampsTz();
+
+### [create] certification_rules   (2026_07_25_100000_create_programme_config_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->unique()->constrained();
+    $table->unsignedSmallInteger('attendance_threshold_pct')->default(70); // OD-12 per-student
+    $table->unsignedSmallInteger('team_gate_pass_pct')->default(60); // OD-12 per-team, editable post-creation
+    $table->unsignedSmallInteger('assessment_threshold_pct')->nullable();
+    $table->string('certificate_template')->nullable(); // academy-issued ONLY — no co-branding columns exist (OD-21)
+    $table->timestampsTz();
+
+### [create] badge_rules   (2026_07_25_100000_create_programme_config_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->constrained();
+    $table->string('trigger_key'); // e.g. tenure.completed (S08 mints from tenures, OD-15)
+    $table->jsonb('criteria')->nullable();
+    $table->timestampsTz();
+
+### [create] withdrawal_policies   (2026_07_25_120000_create_withdrawal_policy_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->unique()->constrained();
+    $table->timestampTz('full_refund_before')->nullable();
+    $table->timestampTz('no_refund_after')->nullable();
+    $table->boolean('requires_approval')->default(true); // OD-2 default
+    $table->boolean('seeded_provisional')->default(false); // OD-2: seeds await client confirmation
+    $table->timestampsTz();
+
+### [create] withdrawal_bands   (2026_07_25_120000_create_withdrawal_policy_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->constrained();
+    $table->unsignedSmallInteger('position');
+    $table->timestampTz('until_date');
+    $table->smallInteger('refund_pct');
+    $table->timestampsTz();
+    $table->unique(['programme_id', 'position']);
+    $table->unique(['programme_id', 'until_date']); // equal dates = overlap, refused at the DB
+
+### [alter] programmes   (2026_07_25_120000_create_withdrawal_policy_tables.php)
+    $table->timestampTz('starts_at')->nullable();
+    $table->timestampTz('ends_at')->nullable();
+
+### [alter] programmes   (2026_07_25_120000_create_withdrawal_policy_tables.php)
+    $table->dropColumn(['starts_at', 'ends_at']);
+
+### [create] consent_templates   (2026_07_25_130000_create_consent_template_tables.php)
+    $table->uuid('id')->primary();
+    $table->string('name_en');
+    $table->string('name_tc');
+    $table->string('name_sc');
+    $table->foreignId('created_by')->constrained('users');
+    $table->timestampsTz();
+
+### [create] consent_template_versions   (2026_07_25_130000_create_consent_template_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('template_id')->constrained('consent_templates');
+    $table->string('language', 5); // en | zh-TC | zh-SC (OD-20)
+    $table->unsignedInteger('version');
+    $table->text('body_html');
+    $table->char('sha256', 64)->nullable(); // computed at publish, then frozen
+    $table->string('status')->default('draft'); // draft | published
+    $table->boolean('is_placeholder')->default(false); // R15
+    $table->timestampTz('published_at')->nullable();
+    $table->foreignId('created_by')->constrained('users');
+    $table->timestampsTz();
+    $table->unique(['template_id', 'language', 'version']);
+
+### [create] consent_requests   (2026_07_25_140000_create_consent_request_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('template_id')->constrained('consent_templates');
+    $table->foreignId('programme_id')->constrained();
+    $table->foreignId('student_id')->constrained('users');
+    $table->foreignId('signer_id')->constrained('users'); // the addressed guardian
+    $table->string('status')->default('sent'); // G5: draft|sent|viewed|signed|declined|expired|superseded
+    $table->jsonb('merge_data'); // frozen at issuance — the rendered document is deterministic
+    $table->jsonb('event_sequence')->default('[]'); // SERVER-recorded: opened/rendered/scrolled/signed
+    $table->timestampTz('expires_at')->nullable();
+    $table->timestampsTz();
+
+### [create] consent_signatures   (2026_07_25_140000_create_consent_request_tables.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('request_id')->unique()->constrained('consent_requests');
+    $table->foreignId('signer_id')->constrained('users');
+    $table->string('language', 5); // the language RENDERED to the signer, server-recorded
+    $table->foreignUuid('template_version_id')->constrained('consent_template_versions');
+    $table->char('template_sha256', 64); // BI-6/OD-20: the version's hash, signed language
+    $table->char('rendered_sha256', 64); // dual-hash: the merge-resolved document the guardian SAW
+    $table->string('method'); // drawn | typed
+    $table->jsonb('signature_payload'); // stroke vectors / typed name
+    $table->uuid('image_upload_id')->nullable(); // PNG via the S00 upload service (BI-10)
+    $table->string('ip_address', 45);
+    $table->text('user_agent');
+    $table->jsonb('event_sequence'); // snapshot at signing (G8)
+    $table->timestampTz('signed_at');
+    $table->timestampTz('created_at')->useCurrent();
+
+### [create] consent_documents   (2026_07_25_160000_create_consent_documents.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('signature_id')->unique()->constrained('consent_signatures');
+    $table->foreignUuid('request_id')->constrained('consent_requests');
+    $table->foreignId('signer_id')->constrained('users');
+    $table->string('language', 5);
+    $table->uuid('pdf_upload_id'); // rides the S00 upload service (BI-10)
+    $table->char('pdf_sha256', 64);
+    $table->string('generator'); // e.g. "mpdf/mpdf 8.3.1" — on the record (Leo condition 4)
+    $table->timestampTz('created_at')->useCurrent();
+
+### [alter] consent_template_versions   (2026_07_25_170000_add_is_material_to_consent_template_versions.php)
+    $table->boolean('is_material')->default(false);
+
+### [alter] consent_template_versions   (2026_07_25_170000_add_is_material_to_consent_template_versions.php)
+    $table->dropColumn('is_material');
+
+### [create] enrolments   (2026_07_27_110000_create_enrolments.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->constrained();
+    $table->foreignId('student_id')->constrained('users');
+    $table->foreignId('acting_guardian_id')->constrained('users'); // 2.22
+    $table->string('status')->default('submitted');
+    $table->timestampsTz();
+
+### [create] withdrawal_requests   (2026_07_27_120000_create_withdrawal_requests.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('enrolment_id')->constrained('enrolments');
+    $table->foreignId('student_id')->constrained('users');
+    $table->foreignId('requested_by')->constrained('users'); // acting guardian, 2.22
+    $table->text('reason');
+    $table->string('status')->default('pending'); // pending|approved|rejected|cancelled
+    $table->foreignId('decided_by')->nullable()->constrained('users');
+    $table->timestampTz('decided_at')->nullable();
+    $table->text('decision_reason')->nullable();
+    $table->timestampsTz();
+
+### [create] withdrawal_endorsements   (2026_07_27_120000_create_withdrawal_requests.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('withdrawal_request_id')->constrained('withdrawal_requests');
+    $table->foreignId('endorser_id')->constrained('users');
+    $table->string('endorser_role'); // snapshot: school_admin now; teacher arrives S05
+    $table->text('comment');
+    $table->timestampTz('created_at')->useCurrent();
+
+### [create] orders   (2026_07_27_130000_create_orders_receipts.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('enrolment_id')->constrained('enrolments');
+    $table->foreignId('programme_id')->constrained();
+    $table->foreignId('student_id')->constrained('users');
+    $table->string('payer_party'); // OD-25: WHO PAYS — never who collects
+    $table->foreignId('payer_school_id')->nullable()->constrained('schools');
+    $table->string('status')->default('issued');
+    $table->bigInteger('total_amount_minor'); // OD-18
+    $table->char('currency', 3)->default('HKD');
+    $table->timestampTz('payment_due_at')->nullable(); // OD-43 clock, set at issuance for family-paid
+    $table->timestampsTz();
+
+### [create] order_lines   (2026_07_27_130000_create_orders_receipts.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('order_id')->constrained('orders');
+    $table->string('name_en'); // OD-67: the PROGRAMME-level fee, snapshotted — same for all
+    $table->string('name_tc');
+    $table->string('name_sc');
+    $table->bigInteger('amount_minor');
+    $table->char('currency', 3)->default('HKD');
+    $table->timestampTz('created_at')->useCurrent();
+
+### [create] receipt_sequences   (2026_07_27_130000_create_orders_receipts.php)
+    $table->string('key')->primary();
+    $table->bigInteger('next_number');
+
+### [create] receipts   (2026_07_27_130000_create_orders_receipts.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('order_id')->constrained('orders');
+    $table->string('sequence_key');
+    $table->bigInteger('receipt_number'); // assigned INSIDE the issuing tx (BI-2)
+    $table->bigInteger('amount_minor');
+    $table->char('currency', 3)->default('HKD');
+    $table->foreignId('issued_by')->nullable()->constrained('users');
+    $table->timestampTz('issued_at');
+    $table->timestampTz('created_at')->useCurrent();
+    $table->unique(['sequence_key', 'receipt_number']);
+
+### [create] payment_obligations   (2026_07_27_140000_create_payment_obligations.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('enrolment_id')->constrained('enrolments');
+    $table->foreignId('programme_id')->constrained();
+    $table->foreignId('student_id')->constrained('users');
+    $table->string('payer_party'); // OD-25/52: guardian|student = family task; school = invoice route
+    $table->foreignId('payer_school_id')->nullable()->constrained('schools');
+    $table->timestampTz('consumed_at')->nullable();
+    $table->foreignUuid('order_id')->nullable()->constrained('orders');
+    $table->timestampTz('created_at')->useCurrent();
+
+### [create] payment_links   (2026_07_27_150000_create_payment_links_payments.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('order_id')->constrained('orders');
+    $table->foreignId('student_id')->constrained('users'); // RLS key only — never rendered
+    $table->foreignId('minted_by')->constrained('users');
+    $table->char('token_hash', 64)->unique(); // sha256; plaintext exists only in the mint response
+    $table->string('status')->default('active'); // active|paying|paid|expired
+    $table->string('order_reference');
+    $table->bigInteger('amount_minor');
+    $table->char('currency', 3)->default('HKD');
+    $table->string('programme_name_en');
+    $table->string('programme_name_tc');
+    $table->string('programme_name_sc');
+    $table->string('student_initials', 16); // FROZEN at mint (OD-44: initials only)
+    $table->timestampTz('expires_at');
+    $table->timestampTz('paid_at')->nullable();
+    $table->timestampsTz();
+
+### [create] payments   (2026_07_27_150000_create_payment_links_payments.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('order_id')->constrained('orders');
+    $table->string('origin'); // provider | manual (manual + BI-9 arrive step 4)
+    $table->string('provider')->nullable(); // mock | qfpay (S-QFPAY)
+    $table->string('provider_ref')->nullable();
+    $table->bigInteger('amount_minor');
+    $table->char('currency', 3)->default('HKD');
+    $table->boolean('via_link')->default(false);
+    $table->string('status'); // provider rows are born confirmed (OD-47)
+    $table->timestampTz('confirmed_at')->nullable();
+    $table->timestampsTz();
+
+### [create] payment_evidence   (2026_07_27_160000_manual_payments_bi9.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('payment_id')->constrained('payments');
+    $table->uuid('upload_id'); // BI-10: rides the uploads table + scan pipeline
+    $table->timestampTz('created_at')->useCurrent();
+
+### [alter] payments   (2026_07_27_160000_manual_payments_bi9.php)
+    $table->foreignId('recorded_by')->nullable()->constrained('users');
+    $table->foreignId('confirmed_by')->nullable()->constrained('users');
+    $table->text('note')->nullable();
+    $table->timestampTz('paid_at')->nullable(); // when the money actually arrived
+
+### [alter] payments   (2026_07_27_160000_manual_payments_bi9.php)
+    $table->dropColumn(['recorded_by', 'confirmed_by', 'note', 'paid_at']);
+
+### [create] consolidated_invoices   (2026_07_27_170000_refunds_credit_notes.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('school_id')->constrained('schools');
+    $table->foreignId('programme_id')->constrained();
+    $table->bigInteger('original_amount_minor');
+    $table->bigInteger('balance_minor'); // original − Σ credit notes (OD-54; asserted)
+    $table->char('currency', 3)->default('HKD');
+    $table->string('status')->default('issued'); // issued | paid (drives the OD-54 branch)
+    $table->timestampsTz();
+
+### [create] credit_notes   (2026_07_27_170000_refunds_credit_notes.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('order_id')->constrained('orders');
+    $table->foreignUuid('consolidated_invoice_id')->nullable()->constrained('consolidated_invoices');
+    $table->foreignUuid('withdrawal_request_id')->constrained('withdrawal_requests');
+    $table->bigInteger('amount_minor');
+    $table->char('currency', 3)->default('HKD');
+    $table->text('reason');
+    $table->foreignId('created_by')->nullable()->constrained('users');
+    $table->timestampTz('created_at')->useCurrent();
+
+### [create] refunds   (2026_07_27_170000_refunds_credit_notes.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('order_id')->constrained('orders');
+    $table->foreignUuid('withdrawal_request_id')->constrained('withdrawal_requests');
+    $table->bigInteger('amount_minor');
+    $table->char('currency', 3)->default('HKD');
+    $table->string('destination_party'); // guardian|student|school (= original payer, OD-25)
+    $table->foreignId('destination_school_id')->nullable()->constrained('schools');
+    $table->string('status')->default('requested');
+    $table->text('evidence_note')->nullable(); // 2.17: payout requires evidence
+    $table->foreignId('requested_by')->nullable()->constrained('users');
+    $table->foreignId('approved_by')->nullable()->constrained('users');
+    $table->foreignId('confirmed_by')->nullable()->constrained('users');
+    $table->timestampsTz();
+
+### [alter] orders   (2026_07_27_170000_refunds_credit_notes.php)
+    $table->foreignUuid('consolidated_invoice_id')->nullable()->constrained('consolidated_invoices');
+
+### [create] teams   (2026_07_28_100000_create_teams.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->constrained();
+    $table->foreignUuid('category_id')->constrained('team_categories'); // the lobby, for life
+    $table->string('name');
+    $table->foreignId('created_by')->constrained('users'); // the submitter (transient, OD-42)
+    $table->string('status')->default('forming'); // forming | submitted | confirmed | disbanded
+    $table->timestampsTz();
+
+### [create] team_members   (2026_07_28_100000_create_teams.php)
+    $table->uuid('id')->primary();
+    $table->foreignUuid('team_id')->constrained('teams');
+    $table->foreignUuid('enrolment_id')->constrained('enrolments');
+    $table->foreignUuid('category_id')->constrained('team_categories'); // denormalised from the team — breaks the teams↔team_members RLS recursion
+    $table->foreignId('student_id')->constrained('users');
+    $table->string('status')->default('active'); // active | suspended (OD-45) | removed
+    $table->timestampsTz();
+
+### [create] programme_capacity   (2026_07_28_110000_create_programme_capacity.php)
+    $table->foreignId('programme_id')->primary()->constrained();
+    $table->integer('capacity');
+    $table->integer('claimed')->default(0);
+    $table->timestampsTz();
+
+### [create] team_exceptions   (2026_07_28_120000_create_team_exceptions_and_system_refund.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->constrained();
+    $table->string('type'); // deadline_noncompliant | parked_rollforward | failed_assignment (STEP 4: below_min | lapse)
+    $table->uuid('team_id')->nullable();          // team-scoped exceptions
+    $table->uuid('enrolment_id')->nullable();     // student-scoped exceptions (parked/failed)
+    $table->string('status')->default('open');    // open | resolved | auto_released
+    $table->text('reason')->nullable();
+    $table->timestampTz('backstop_at')->nullable(); // parked_rollforward: when the auto-refund+release fires
+    $table->string('resolution')->nullable();     // matched | rolled | released | auto_refund_release | auto_release
+    $table->foreignId('created_by')->nullable()->constrained('users'); // null = SYSTEM
+    $table->foreignId('resolved_by')->nullable()->constrained('users');
+    $table->timestampTz('resolved_at')->nullable();
+    $table->timestampsTz();
+    $table->index(['programme_id', 'status', 'type']);
+    $table->index(['status', 'backstop_at']); // the backstop scan
+
+### [alter] refunds   (2026_07_28_120000_create_team_exceptions_and_system_refund.php)
+    $table->string('origin')->default('withdrawal'); // withdrawal | backstop_auto
+
+### [alter] refunds   (2026_07_28_120000_create_team_exceptions_and_system_refund.php)
+    $table->dropColumn('origin');
+
+### [alter] team_members   (2026_07_28_130000_team_resilience.php)
+    $table->timestampTz('suspended_at')->nullable();      // when the lapse suspended this member
+    $table->timestampTz('grace_until')->nullable();       // grace-extended payment deadline (overrides payment_due_at + grace)
+    $table->boolean('grace_extended')->default(false);    // OD-37: grace is extendable exactly ONCE
+
+### [alter] teams   (2026_07_28_130000_team_resilience.php)
+    $table->text('waiver_reason')->nullable();            // OD-40: under-strength waiver as a FIELD, with reason
+    $table->foreignId('waived_by')->nullable()->constrained('users');
+    $table->timestampTz('waived_at')->nullable();
+
+### [alter] teams   (2026_07_28_130000_team_resilience.php)
+    $table->dropConstrainedForeignId('waived_by');
+    $table->dropColumn(['waiver_reason', 'waived_at']);
+
+### [alter] team_members   (2026_07_28_130000_team_resilience.php)
+    $table->dropColumn(['suspended_at', 'grace_until', 'grace_extended']);
+
+### [create] team_teacher_links   (2026_07_28_140000_roles_and_tracker.php)
+    $table->uuid('id')->primary();
+    $table->uuid('team_id');
+    $table->uuid('category_id');            // denormalized lobby (RLS, no recursion)
+    $table->foreignId('teacher_id')->constrained('users');
+    $table->foreignId('created_by')->constrained('users');
+    $table->string('status')->default('active'); // active | removed
+    $table->timestampsTz();
+    $table->index(['team_id', 'status']);
+
+### [create] tenures   (2026_07_28_140000_roles_and_tracker.php)
+    $table->uuid('id')->primary();
+    $table->uuid('team_id');
+    $table->uuid('role_id');                // FK role_library (the CEO/captain definition)
+    $table->uuid('category_id');            // denormalized lobby
+    $table->uuid('enrolment_id');
+    $table->foreignId('student_id')->constrained('users'); // the holder
+    $table->string('state')->default('active'); // scheduled | active | completed | terminated (FR060)
+    $table->timestampTz('started_at')->useCurrent();
+    $table->timestampTz('ended_at')->nullable(); // set when rotated out / completed / terminated
+    $table->foreignId('assigned_by')->constrained('users');
+    $table->string('ended_reason')->nullable();
+    $table->timestampsTz();
+    $table->index(['team_id', 'role_id', 'state']);
+    $table->index(['student_id', 'state']);
+
+### [create] stage_gates   (2026_07_28_140000_roles_and_tracker.php)
+    $table->uuid('id')->primary();
+    $table->uuid('team_id');
+    $table->uuid('category_id');            // denormalized lobby
+    $table->string('stage');                // one of Tracker::STAGES (fixed)
+    $table->string('status')->default('passed'); // passed (S05 records passes); pending is the absence of a row
+    $table->foreignId('approved_by')->constrained('users');
+    $table->string('approver_kind');        // teacher | school_admin | academy
+    $table->timestampTz('approved_at')->useCurrent();
+    $table->text('notes')->nullable();
+    $table->timestampsTz();
+
+### [create] programme_sessions   (2026_07_29_100000_create_sessions.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->constrained();
+    $table->uuid('team_id')->nullable();          // team-specific session; null = programme-wide (D4)
+    $table->string('title');
+    $table->timestampTz('starts_at');
+    $table->timestampTz('ends_at');
+    $table->integer('capacity');
+    $table->foreignId('mentor_id')->nullable()->constrained('users'); // the assigned mentor (a teacher)
+    $table->string('status')->default('draft');   // draft|published|full|in_progress|completed|cancelled|rescheduled
+    $table->foreignId('created_by')->constrained('users');
+    $table->timestampsTz();
+    $table->index(['programme_id', 'status']);
+    $table->index(['mentor_id', 'starts_at']);
+
+### [create] session_versions   (2026_07_29_100000_create_sessions.php)
+    $table->uuid('id')->primary();
+    $table->uuid('session_id');                   // → programme_sessions.id
+    $table->unsignedInteger('version');
+    $table->jsonb('payload');                     // snapshot BEFORE the change: starts_at, ends_at, capacity, status
+    $table->string('reason')->nullable();
+    $table->foreignId('created_by')->nullable()->constrained('users');
+    $table->timestampTz('created_at')->useCurrent();
+    $table->unique(['session_id', 'version']);
+
+### [create] session_bookings   (2026_07_29_100000_create_sessions.php)
+    $table->uuid('id')->primary();
+    $table->uuid('session_id');                   // → programme_sessions.id
+    $table->uuid('enrolment_id');
+    $table->foreignId('student_id')->constrained('users');
+    $table->string('status')->default('booked');  // booked|waitlisted|cancelled|attended|no_show (STEP 3 workflow)
+    $table->timestampsTz();
+
+### [create] mentors   (2026_07_29_100000_create_sessions.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('user_id')->unique()->constrained('users');
+    $table->string('status')->default('active');  // active|inactive|departed (2.6)
+    $table->timestampsTz();
+
+### [alter] session_bookings   (2026_07_29_110000_session_booking_attendance.php)
+    $table->foreignId('recorded_by')->nullable()->constrained('users'); // who marked attendance
+    $table->timestampTz('recorded_at')->nullable();
+
+### [alter] session_bookings   (2026_07_29_110000_session_booking_attendance.php)
+    $table->dropConstrainedForeignId('recorded_by');
+    $table->dropColumn('recorded_at');
+
+### [create] assessments   (2026_07_29_120000_create_assessments.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('programme_id')->constrained();
+    $table->uuid('team_id')->nullable();
+    $table->string('title');
+    $table->string('status')->default('draft'); // draft|published|open|closed|graded|released|cancelled
+    $table->foreignId('created_by')->constrained('users');
+    $table->timestampsTz();
+    $table->index(['programme_id', 'status']);
+
+### [create] assessment_results   (2026_07_29_120000_create_assessments.php)
+    $table->uuid('id')->primary();
+    $table->uuid('assessment_id');
+    $table->uuid('enrolment_id');
+    $table->foreignId('student_id')->constrained('users');
+    $table->integer('score')->nullable();
+    $table->foreignId('graded_by')->nullable()->constrained('users');
+    $table->timestampTz('graded_at')->nullable();
+    $table->timestampsTz();
+    $table->unique(['assessment_id', 'enrolment_id']);
+
+### [create] events   (2026_07_29_130000_create_member_surfaces.php)
+    $table->uuid('id')->primary();
+    $table->string('title_en');
+    $table->string('title_tc');
+    $table->string('title_sc');
+    $table->timestampTz('starts_at');
+    $table->string('location')->nullable();
+    $table->string('status')->default('draft'); // draft|published|cancelled
+    $table->foreignId('created_by')->constrained('users');
+    $table->timestampsTz();
+    $table->index('status');
+
+### [create] event_rsvps   (2026_07_29_130000_create_member_surfaces.php)
+    $table->uuid('id')->primary();
+    $table->uuid('event_id');
+    $table->foreignId('member_id')->constrained('users');
+    $table->string('status')->default('going'); // going|not_going|maybe
+    $table->timestampsTz();
+    $table->unique(['event_id', 'member_id']);
+
+### [create] member_profiles   (2026_07_29_130000_create_member_surfaces.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('user_id')->unique()->constrained('users');
+    $table->string('display_name');
+    $table->string('headline')->nullable();
+    $table->boolean('visible')->default(true);
+    $table->timestampsTz();
+
+### [create] registration_requests   (2026_07_30_100000_create_registration_requests.php)
+    $table->uuid('id')->primary();
+    $table->string('kind');                 // student | guardian
+    $table->string('applicant_name');
+    $table->string('applicant_email');
+    $table->string('applicant_phone')->nullable();
+    $table->string('preferred_language');   // en | zh-TC | zh-SC
+    $table->date('date_of_birth')->nullable();
+    $table->string('routing');              // school | academy
+    $table->foreignId('school_id')->nullable()->constrained('schools'); // routed school; NULL when routing = academy
+    $table->string('counterpart_email')->nullable();
+    $table->string('counterpart_name')->nullable();
+    $table->string('status')->default('submitted'); // submitted | approved | declined
+    $table->string('reference')->unique();  // opaque acknowledgement; NOT publicly queryable (no status endpoint)
+    $table->foreignId('reviewed_by')->nullable()->constrained('users');
+    $table->timestampTz('reviewed_at')->nullable();
+    $table->text('decline_reason')->nullable();
+    $table->foreignId('created_account_id')->nullable()->constrained('users'); // set at approval (STEP 2)
+    $table->timestampsTz();
+    $table->index(['status', 'created_at']); // the approval queue reads this
+    $table->index(['school_id', 'status']);  // routed-school reads
+
+### [alter] schools   (2026_07_30_100000_create_registration_requests.php)
+    $table->boolean('public_listing')->default(false);
+
+### [alter] schools   (2026_07_30_100000_create_registration_requests.php)
+    $table->dropColumn('public_listing');
+
+### [alter] users   (2026_07_30_110000_add_activation_to_users.php)
+    $table->string('activation_token_hash', 64)->nullable();
+    $table->timestampTz('activation_expires_at')->nullable();
+
+### [alter] users   (2026_07_30_110000_add_activation_to_users.php)
+    $table->dropColumn(['activation_token_hash', 'activation_expires_at']);
+
+### [create] held_links   (2026_07_30_120000_create_held_links.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('claimant_id')->constrained('users');    // the account that named the counterpart
+    $table->string('claimant_role');                            // guardian | student (fixes the eventual link direction)
+    $table->string('counterpart_email');                        // the claimed, not-yet-verified address
+    $table->string('counterpart_name')->nullable();
+    $table->foreignId('school_id')->nullable()->constrained('schools'); // the claimant's routing (read scope)
+    $table->string('status')->default('held');                  // held | materialised | expired (terminal)
+    $table->string('origin')->default('form_claimed');          // "form-claimed — not confirmed by either party"
+    $table->timestampTz('expires_at');
+    $table->uuid('materialised_link_id')->nullable();           // the guardian_link it became, once verified
+    $table->uuid('registration_request_id')->nullable();        // provenance
+    $table->timestampsTz();
+    $table->index(['counterpart_email', 'status']);             // materialisation lookup
+    $table->index(['status', 'expires_at']);                    // the expiry sweep
+
+### [create] onboarding_exceptions   (2026_07_30_130000_create_onboarding_exceptions.php)
+    $table->uuid('id')->primary();
+    $table->string('subject_type');   // registration_request | guardian_link | held_link
+    $table->uuid('subject_id');
+    $table->integer('age_days');       // age at escalation
+    $table->text('reason');
+    $table->string('status')->default('open'); // open | resolved
+    $table->timestampsTz();
+    $table->index('status');
+
+### [create] link_visibility_events   (2026_07_31_140000_link_visibility_and_hardening.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('student_id')->constrained('users');           // whose guardian set changed
+    $table->foreignId('new_guardian_id')->constrained('users');      // the guardian added
+    $table->uuid('new_link_id');                                     // the guardian_link that activated
+    $table->foreignId('addressed_guardian_id')->constrained('users'); // the existing guardian who must see it
+    $table->string('origin');                                        // vouch/school_mediated | onboarding | form_claimed …
+    $table->timestampsTz();
+    $table->index(['addressed_guardian_id', 'created_at']);
+    $table->index('new_link_id');
+
+### [create] enrolment_batches   (2026_08_01_100000_create_enrolment_batches.php)
+    $table->uuid('id')->primary();
+    $table->foreignId('school_id')->constrained('schools');
+    $table->uuid('upload_id')->nullable();               // the batch-csv upload (BI-10 gate)
+    $table->string('status')->default('draft');
+    $table->string('failure_reason')->nullable();        // set when status = failed
+    $table->unsignedInteger('total_rows')->default(0);
+    $table->unsignedInteger('new_count')->default(0);    // disposition = new (→ create() at commit)
+    $table->unsignedInteger('existing_count')->default(0); // disposition = match_existing
+    $table->unsignedInteger('skipped_count')->default(0);
+    $table->unsignedInteger('failed_count')->default(0);
+    $table->foreignId('created_by')->constrained('users');
+    $table->timestampTz('validated_at')->nullable();
+    $table->timestampsTz();
+    $table->index(['school_id', 'status']);
+
+### [create] enrolment_batch_rows   (2026_08_01_100000_create_enrolment_batches.php)
+    $table->uuid('id')->primary();
+    $table->uuid('batch_id');
+    $table->foreignId('school_id')->constrained('schools'); // denormalised for RLS
+    $table->unsignedInteger('row_number');                  // 1-based data row (excludes header)
+    $table->string('name')->nullable();
+    $table->string('email')->nullable();
+    $table->string('status')->default('pending');           // pending|validated|skipped|failed
+    $table->string('disposition')->nullable();              // match_existing|new
+    $table->string('reason')->nullable();                   // required for skipped|failed (P4)
+    $table->foreignId('matched_user_id')->nullable()->constrained('users');
+    $table->timestampsTz();
+    $table->foreign('batch_id')->references('id')->on('enrolment_batches')->cascadeOnDelete();
+    $table->index(['batch_id', 'status']);
+
+### [alter] enrolment_batches   (2026_08_01_110000_enrolment_batch_commit_columns.php)
+    $table->foreignId('programme_id')->nullable()->after('school_id')->constrained('programmes');
+    $table->string('payer_party')->nullable()->after('programme_id');
+    $table->foreignId('payer_school_id')->nullable()->after('payer_party')->constrained('schools');
+    $table->unsignedInteger('enrolled_count')->default(0)->after('existing_count');
+    $table->unsignedInteger('not_enrolled_count')->default(0)->after('enrolled_count');
+    $table->timestampTz('committed_at')->nullable()->after('validated_at');
+
+### [alter] enrolment_batch_rows   (2026_08_01_110000_enrolment_batch_commit_columns.php)
+    $table->uuid('enrolment_id')->nullable()->after('matched_user_id');
+    $table->boolean('committed')->default(false)->after('enrolment_id');
+
+### [alter] enrolment_batch_rows   (2026_08_01_110000_enrolment_batch_commit_columns.php)
+    $table->dropColumn(['enrolment_id', 'committed']);
+
+### [alter] enrolment_batches   (2026_08_01_110000_enrolment_batch_commit_columns.php)
+    $table->dropConstrainedForeignId('programme_id');
+    $table->dropConstrainedForeignId('payer_school_id');
+    $table->dropColumn(['payer_party', 'enrolled_count', 'not_enrolled_count', 'committed_at']);
+
+### [create] budget_categories   (2026_08_03_100000_create_team_budgets.php)
+    $table->string('code')->primary();
+    $table->string('name_en');
+    $table->string('name_tc');
+    $table->string('name_sc');
+    $table->unsignedSmallInteger('sort_order')->default(0);
+    $table->timestampsTz();
+
+### [create] team_budgets   (2026_08_03_100000_create_team_budgets.php)
+    $table->uuid('id')->primary();
+    $table->uuid('team_id');
+    $table->string('status')->default('draft');
+    $table->char('currency', 3)->default('HKD');
+    $table->foreignId('submitted_by')->nullable()->constrained('users');
+    $table->foreignId('approved_by')->nullable()->constrained('users');
+    $table->timestampTz('activated_at')->nullable();
+    $table->timestampsTz();
+    $table->foreign('team_id')->references('id')->on('teams');
+    $table->index(['team_id', 'status']);
+
+### [create] budget_lines   (2026_08_03_100000_create_team_budgets.php)
+    $table->uuid('id')->primary();
+    $table->uuid('budget_id');
+    $table->uuid('team_id');                              // denormalised for a direct RLS predicate
+    $table->string('category')->default('other');        // FK budget_categories.code
+    $table->string('name');
+    $table->bigInteger('planned_amount_minor');
+    $table->char('currency', 3)->default('HKD');
+    $table->timestampsTz();
+    $table->foreign('budget_id')->references('id')->on('team_budgets')->cascadeOnDelete();
+    $table->foreign('category')->references('code')->on('budget_categories');
+    $table->index('budget_id');
+
+### [create] team_transactions   (2026_08_04_100000_create_team_transactions.php)
+    $table->uuid('id')->primary();
+    $table->uuid('team_id');
+    $table->string('type');                                    // income | expense
+    $table->bigInteger('amount_minor');
+    $table->char('currency', 3)->default('HKD');
+    $table->uuid('budget_line_id')->nullable();
+    $table->foreignId('beneficiary_member_id')->nullable()->constrained('users'); // D-B4: charity distribution detector
+    $table->string('description');
+    $table->date('occurred_on');                               // the offline date
+    $table->string('status')->default('draft');
+    $table->foreignId('recorded_by')->constrained('users');
+    $table->foreignId('verified_by')->nullable()->constrained('users');
+    $table->uuid('evidence_upload_id')->nullable();
+    $table->boolean('over_budget_acknowledged')->default(false); // D-B5: informed over-budget approval
+    $table->timestampTz('recorded_at')->nullable();
+    $table->timestampTz('verified_at')->nullable();
+    $table->timestampsTz();
+    $table->foreign('team_id')->references('id')->on('teams');
+    $table->foreign('budget_line_id')->references('id')->on('budget_lines');
+    $table->index(['team_id', 'status']);
+
+### [create] team_fundraising   (2026_08_05_100000_create_team_fundraising.php)
+    $table->uuid('id')->primary();
+    $table->uuid('team_id')->unique();                       // one per team
+    $table->string('project_type');                         // sponsorship | charity
+    $table->bigInteger('funding_target_minor')->default(0);
+    $table->char('currency', 3)->default('HKD');
+    $table->foreignId('declared_by')->constrained('users');
+    $table->timestampsTz();
+    $table->foreign('team_id')->references('id')->on('teams');
+
+
+================================================================
+== APPENDED: 2 migrations added after the initial extraction  ==
+== (current to main as of 2026-08-12; total 58 migrations)    ==
+================================================================
+
+### [alter] programmes   (2026_08_12_100000_mentor_team_access.php)
+    $table->boolean('mentor_team_access')->default(false); // S-MENTOR-1: per-programme mentor read-view toggle
+    -- ALSO rewrites 3 RLS read policies to add the (linked ∧ configOn) mentor arm:
+    --   teams_read        : + a linked mentor may read team name/status where programmes.mentor_team_access
+    --   tm_read           : + a linked mentor may read team_members (roster, names-only) where flag on
+    --   stage_gates_read  : the existing teacher arm is now CONFIG-GATED behind programmes.mentor_team_access
+    -- team_teacher_links_read is deliberately UNCHANGED (avoids a 42P17 policy recursion; a names-only
+    --   elevation endpoint GET /teams/{id}/teachers serves "who mentors this team" to members/guardians).
+    -- Scope admitted: team/roster names + tracker ONLY. Never consent, payments, guardian identity, family data.
+
+### [alter] programmes   (2026_08_12_140000_programme_banner.php)
+    $table->uuid('banner_upload_id')->nullable(); // KAP-MKT-1: scan-clean storefront banner (optional)
+    -- Nullable FK-by-convention to an uploads row that passed the ClamAV (BI-10) scan (status='clean').
+    -- Stored on programmes (no RLS — public marketing, no PII). Set via the wizard marketing section.
+    -- OPTIONAL: storefront completeness gate is unchanged; absent/not-clean banner → render brand_color fallback.
