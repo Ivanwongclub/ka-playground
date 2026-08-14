@@ -1,0 +1,46 @@
+/* P0-3a record/composition primitives — on the --ka-* tokens, `.ds2-` prefixed. Loads with @/ds2 (invisible
+ * until a surface adopts one of these). Zero outlines: elevation + single-edge hairlines only (kit §2.3). */
+
+/* ── Ds2SegBar (§3.3) — 5-seg labeled bar; done=success, current=gold+glow, todo=neutral track ── */
+.ds2-segbar { display: flex; gap: 7px; width: 100%; }
+.ds2-segbar__seg { flex: 1 1 0; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.ds2-segbar__bar { height: 5px; border-radius: 999px; background: color-mix(in srgb, var(--ka-muted-fg) 26%, var(--ka-card)); }
+.ds2-segbar__lbl { font-size: 10.5px; line-height: 1.25; color: var(--ka-muted-fg); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ds2-segbar__seg--done .ds2-segbar__bar { background: var(--ka-success); }
+.ds2-segbar__seg--done .ds2-segbar__lbl { color: var(--ka-fg-soft); }
+.ds2-segbar__seg--current .ds2-segbar__bar { background: var(--ka-gold); box-shadow: 0 0 8px var(--ka-gold-tint), 0 0 0 1px var(--ka-gold-line); }
+.ds2-segbar__seg--current .ds2-segbar__lbl { color: var(--ka-gold); font-weight: 700; }
+
+/* ── GlanceCard (§3.2) — image band → status row → segbar → label/value rows ── */
+.ds2-glance { background: var(--ka-card); border-radius: var(--ka-r-lg); overflow: hidden; box-shadow: var(--ka-shadow-md); display: flex; flex-direction: column; }
+.ds2-glance--clickable { cursor: pointer; transition: transform 150ms ease, box-shadow 150ms ease; }
+.ds2-glance--clickable:hover { transform: translateY(-2px); box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45); }
+.ds2-glance--clickable:focus-visible { outline: 2px solid var(--ka-border-strong); outline-offset: 2px; }
+.ds2-glance__band .ds2-hero { border-radius: 0; }
+.ds2-glance__body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.ds2-glance__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ds2-glance__title { font-family: var(--ka-font-display); font-weight: 700; font-size: 16px; color: var(--ka-fg); line-height: 1.3; }
+.ds2-glance__rows { display: flex; flex-direction: column; gap: 8px; }
+.ds2-glance__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 24px; }
+.ds2-glance__lbl { font-size: 13px; color: var(--ka-muted-fg); }
+.ds2-glance__val { display: inline-flex; align-items: center; gap: 8px; text-align: right; }
+.ds2-glance__val-text { font-size: 13px; color: var(--ka-fg); font-variant-numeric: tabular-nums; }
+
+/* ── ProgrammeBandHeader (§3.7) — name + status + switcher chevron ON the photo ── */
+.ds2-bandhdr { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; width: 100%; }
+.ds2-bandhdr__id { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-width: 0; }
+.ds2-bandhdr__name { font-family: var(--ka-font-display); font-weight: 700; font-size: 22px; color: #fff; line-height: 1.2; }
+.ds2-bandhdr__switch { display: inline-grid; place-items: center; width: 34px; height: 34px; border: none; border-radius: 50%; background: rgba(255, 255, 255, 0.12); color: #fff; cursor: pointer; flex: 0 0 auto; }
+.ds2-bandhdr__switch:hover { background: rgba(255, 255, 255, 0.2); }
+.ds2-bandhdr__switch:focus-visible { outline: 2px solid var(--ka-border-strong); outline-offset: 2px; }
+
+/* ── JourneyStepper (§3.4) — stat tiles + gold Steps (dated knots) + what-happens-next ── */
+.ds2-journey { display: flex; flex-direction: column; gap: 20px; }
+.ds2-journey__tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.ds2-journey__steps { padding: 6px 8px; }
+.ds2-journey__next { display: flex; flex-direction: column; gap: 4px; }
+.ds2-journey__next-lbl { font-family: var(--ka-font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ka-gold); }
+.ds2-journey__next-body { font-size: 13.5px; color: var(--ka-fg-soft); line-height: 1.5; }
+@media (max-width: 767px) {
+  .ds2-journey__tiles { grid-template-columns: 1fr; }
+}

@@ -4,12 +4,13 @@
 // developer-facing (component + prop-state names), so it is excluded from the i18n hardcoded-string scan.
 import { useState } from 'react';
 import { Button } from 'antd';
-import { CalendarClock, FileSignature } from 'lucide-react';
+import { CalendarClock, FileSignature, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   StatusAtom, StatChip, MetaChip, StateBadge, ProgressRing, DatedBadge, Seal, StatusTag,
   SubPanel, ZoneStack, StatCard, Attest, ZebraTable, WizardRail, FormLanguageSwitcher,
   PageCard, AuthCard, HeroBanner, TaskCard, EmptyState, UrgencyChip,
+  Ds2SegBar, GlanceCard, ProgrammeBandHeader, JourneyStepper,
 } from '@/ds2';
 import type { Ds2Lang } from '@/ds2';
 import { asset } from '../assets';
@@ -81,11 +82,13 @@ export function Ds2Gallery() {
         <ProgressRing value={0} total={5} />
       </Section>
 
-      <Section label="StatusTag (re-exported existing status pills)">
-        <StatusTag domain="orderStatus" value="paid" />
-        <StatusTag domain="paymentStatus" value="pending_confirmation" />
-        <StatusTag domain="enrolmentStatus" value="active" />
-        <StatusTag domain="sessionStatus" value="in_progress" />
+      <Section label="StatusTag (P0-3a §3.1 re-skin: ka-* pills — ok / warn / danger / pend / neutral; 15% tint, no dot/border/icon)">
+        <StatusTag domain="orderStatus" value="paid" />{/* success → ok */}
+        <StatusTag domain="paymentStatus" value="pending_confirmation" />{/* warning → warn */}
+        <StatusTag domain="paymentStatus" value="rejected" />{/* error → danger */}
+        <StatusTag domain="sessionStatus" value="in_progress" />{/* gold → pend */}
+        <StatusTag domain="orderStatus" value="issued" />{/* processing → pend */}
+        <StatusTag domain="enrolmentStatus" value="withdrawn" />{/* default → neutral */}
       </Section>
 
       <div style={{ ...S.h1, fontSize: 20, marginTop: 12 }}>Structure primitives</div>
@@ -223,6 +226,77 @@ export function Ds2Gallery() {
       <Section label="EmptyState (§2.4) — the designed zero surface (inline · page · with cta)">
         <div style={{ width: 260 }}><SubPanel tone="neutral"><EmptyState message="No pending links" size="inline" /></SubPanel></div>
         <div style={{ width: 320 }}><SubPanel tone="neutral"><EmptyState message="Your dashboard is empty" detail="It fills in as you take part." cta={{ label: 'Browse programmes', to: '/ds2-gallery' }} size="page" /></SubPanel></div>
+      </Section>
+
+      <div style={{ ...S.h1, fontSize: 20, marginTop: 12 }}>DS2 v3 record primitives (P0-3a)</div>
+
+      <Section label="Ds2SegBar (§3.3) — labeled 5-seg (done=success · current=gold+glow · todo=track); the 5 tracker stages">
+        <div style={{ width: '100%', maxWidth: 460 }}>
+          <Ds2SegBar segments={[
+            { label: 'Plan', state: 'done' },
+            { label: 'Design', state: 'done' },
+            { label: 'Learn', state: 'current' },
+            { label: 'Pitch', state: 'todo' },
+            { label: 'Launch', state: 'todo' },
+          ]} />
+        </div>
+      </Section>
+
+      <Section label="GlanceCard (§3.2) — image band → status pill → segbar → label/value rows (value = Text | Tag | Button)">
+        <div style={{ width: 320 }}>
+          <GlanceCard
+            image={{ src: asset('auth/featured-sc5.jpg'), alt: 'Summer STEM' }}
+            imageFallback={<div />}
+            title="Summer STEM 2026"
+            status={<StatusTag domain="sessionStatus" value="in_progress" />}
+            segments={[
+              { label: 'Plan', state: 'done' }, { label: 'Design', state: 'done' },
+              { label: 'Learn', state: 'current' }, { label: 'Pitch', state: 'todo' }, { label: 'Launch', state: 'todo' },
+            ]}
+            rows={[
+              { label: 'Next session', value: { text: 'Mon 16:00 · Kowloon studio' } },
+              { label: 'Consent', value: { tag: <StatusTag domain="enrolmentStatus" value="confirmed" /> } },
+              { label: '', value: { action: <Button type="primary" size="small">Open</Button> } },
+            ]}
+            onClick={() => alert('drill into the programme')}
+          />
+        </div>
+      </Section>
+
+      <Section label="ProgrammeBandHeader (§3.7) — name + status + switcher chevron ON the photo">
+        <div style={{ width: '100%', maxWidth: 640, borderRadius: 10, overflow: 'hidden' }}>
+          <ProgrammeBandHeader
+            image={{ src: asset('auth/featured-sc5.jpg'), alt: 'Programme' }}
+            imageFallback={<div />}
+            name="Summer STEM 2026"
+            status={<StatusTag domain="sessionStatus" value="in_progress" />}
+            onSwitch={() => alert('switch programme')}
+            switchLabel="Switch programme"
+          />
+        </div>
+      </Section>
+
+      <Section label="JourneyStepper (§3.4) — gold Steps + dated knots + 3 stat tiles + what-happens-next (≠ WizardRail)">
+        <div style={{ width: '100%', maxWidth: 720 }}>
+          <JourneyStepper
+            current={2}
+            locale={locale}
+            tiles={[
+              { label: 'Team', value: 'Team Alpha', icon: <Users size={16} /> },
+              { label: 'Next session', value: 'Mon 16:00', icon: <CalendarClock size={16} /> },
+              { label: 'Consent', value: 'Signed', icon: <FileSignature size={16} /> },
+            ]}
+            steps={[
+              { title: 'Enrolled', date: '2026-06-01T00:00:00Z' },
+              { title: 'Team formed', date: '2026-06-14T00:00:00Z' },
+              { title: 'Learning', date: '2026-07-01T00:00:00Z' },
+              { title: 'Pitch' },
+              { title: 'Launch' },
+            ]}
+            whatNextLabel="What happens next"
+            whatNext="Your team pitches on 2 Aug; the mentor confirms attendance after each session."
+          />
+        </div>
       </Section>
     </div>
   );

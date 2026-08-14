@@ -3,6 +3,7 @@
 // StatusTag humanises it; AuditAction always humanises and preserves the exact code beside it.
 import { Tag, Tooltip, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
+import './status.css';
 
 interface Entry {
   labelKey: string;
@@ -96,11 +97,22 @@ export function humanise(code: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+// P0-3a §3.1 — the closed antd-preset set the registry already uses → the five ka-* pill states. gold is NOT
+// a status color in v3 (gold = action accent only), so the four gold entries (covered_by_invoice, refund
+// approved, session in_progress, enrolment teamed) — all transitional/in-flight — collapse to `pend`.
+const KA_PILL: Record<string, 'ok' | 'warn' | 'danger' | 'pend' | 'neutral'> = {
+  success: 'ok', warning: 'warn', error: 'danger', processing: 'pend', gold: 'pend', default: 'neutral',
+};
+
 export function StatusTag({ domain, value }: { domain: keyof typeof REGISTRY | string; value: string | null | undefined }) {
   const { t } = useTranslation();
   if (!value) return <>—</>;
   const entry = REGISTRY[domain]?.[value];
-  return <Tag color={entry?.color ?? 'default'}>{entry ? t(entry.labelKey) : humanise(value)}</Tag>;
+  // Visual-only re-skin: the registry (enum + i18n label key + preset) is UNTOUCHED; we map its preset to the
+  // ka-* pill class at render. Props are identical, so all 32 call sites are unchanged. `bordered={false}` +
+  // the ka-pill class deliver the filled tint (no dot/border/icon).
+  const level = KA_PILL[entry?.color ?? 'default'] ?? 'neutral';
+  return <Tag bordered={false} className={`ka-pill ka-pill--${level}`}>{entry ? t(entry.labelKey) : humanise(value)}</Tag>;
 }
 
 /**

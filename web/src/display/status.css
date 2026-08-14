@@ -1,0 +1,22 @@
+/* P0-3a §3.1 — the ka-* status pill. Re-skins StatusTag (display/status.tsx) IN PLACE, app-wide: a filled
+ * 15% tint of the status color over --ka-card, colored 12.5px/600 text, radius 999, NO dot/border/icon.
+ * Five closed states only (ok/warn/danger/pend/neutral) — pills mark actionable/attention states; informative
+ * values are plain Typography, not pills (kit §3.1). Tints are DERIVED (color-mix over the token), never
+ * hardcoded. `.ant-tag.ka-pill*` beats antd's `.ant-tag` (two classes > one) so the skin always wins. */
+.ant-tag.ka-pill {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 1px 10px;
+  border: none;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+.ant-tag.ka-pill--ok      { background: color-mix(in srgb, var(--ka-success) 15%, var(--ka-card)); color: var(--ka-success); }
+.ant-tag.ka-pill--warn    { background: color-mix(in srgb, var(--ka-warning) 15%, var(--ka-card)); color: var(--ka-warning); }
+.ant-tag.ka-pill--danger  { background: color-mix(in srgb, var(--ka-danger)  15%, var(--ka-card)); color: var(--ka-danger); }
+.ant-tag.ka-pill--pend    { background: color-mix(in srgb, var(--ka-pending) 15%, var(--ka-card)); color: var(--ka-pending); }
+.ant-tag.ka-pill--neutral { background: color-mix(in srgb, var(--ka-muted-fg) 15%, var(--ka-card)); color: var(--ka-muted-fg); }

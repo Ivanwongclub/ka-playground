@@ -12,6 +12,12 @@
   --ka-muted: #1e1927;
   --ka-muted-fg: #9ba1ac;
   --ka-border: #26232e;
+  /* P0-3a: status colors promoted to the always-loaded :root so StatusTag pills (display/status.css) render
+     app-wide even on a surface that hasn't imported @/ds2. Drift-gated against theme.ts like the rest. */
+  --ka-success: #4fb477;
+  --ka-warning: #e8863c;
+  --ka-danger: #e5646e;
+  --ka-pending: #4d7cf0;
 }
 
 * {

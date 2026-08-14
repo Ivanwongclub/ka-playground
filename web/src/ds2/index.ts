@@ -24,6 +24,10 @@ export type { Tone, Ds2Column, Ds2ColType, StepState, RailStep, RailPhase, Ds2La
 export { PageCard, AuthCard, HeroBanner, TaskCard, EmptyState, UrgencyChip } from './surfaces';
 export type { PageCardWidth, Ds2Cta } from './surfaces';
 
+// DS2 v3 record/composition primitives (P0-3a) — pure/presentational, invisible until a surface adopts them.
+export { Ds2SegBar, GlanceCard, ProgrammeBandHeader, JourneyStepper } from './records';
+export type { SegState, SegItem, GlanceValue, GlanceRow, JourneyStep, JourneyTile } from './records';
+
 // The pure urgency helpers + per-domain thresholds (§3) — a level from a deadline (or from approvals'
 // age/threshold integers), the signed day-count, and the ONE shared countdown label; treatment is DS2-owned.
 export { urgencyLevel, urgencyDays, approvalLevel, approvalThresholds, urgencyLabel, URGENCY } from '../display/urgency';
