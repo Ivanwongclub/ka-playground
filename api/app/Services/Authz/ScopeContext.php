@@ -37,11 +37,18 @@ class ScopeContext
                 $schoolIds = DB::table('school_admin_links')
                     ->where('school_admin_id', $user->id)->where('status', 'active')
                     ->pluck('school_id')->all();
+                // A-3: fold the effective delegated capabilities (A-2 baseline grants + programme grant-
+                // overrides, request-wide superset ∩ A-1 delegable) into the SAME app.capabilities list.
+                // No policy reads them until A-4. Permission-key namespace — never collides with the
+                // academy_admin capability-GROUP names that also live in this GUC (groups are dot-free).
+                $capabilities = app(EffectiveCapabilityResolver::class)->capabilitiesForGuc($user);
                 break;
             case 'teacher':
                 $schoolIds = DB::table('teacher_links')
                     ->where('teacher_id', $user->id)->where('status', 'active')
                     ->pluck('school_id')->all();
+                // A-3: same effective-capability derivation as school_admin (request-wide superset).
+                $capabilities = app(EffectiveCapabilityResolver::class)->capabilitiesForGuc($user);
                 break;
             case 'guardian':
                 $studentIds = DB::table('guardian_links')
