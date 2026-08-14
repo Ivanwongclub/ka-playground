@@ -53,6 +53,9 @@ return [
         'teacher_links',
         'school_admin_links',
         'admin_capabilities',
+        // A-2 — the delegation grant tables (RLS-forced; system-write only; a school reads its own grants)
+        'school_authority_grants',
+        'programme_authority_overrides',
         'uploads',
         'audit_events',
         'guardian_replacement_exceptions',

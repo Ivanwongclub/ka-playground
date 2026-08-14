@@ -38,6 +38,7 @@ use App\Services\Reconciliation\Assertions\BatchRowConservationAssertion;
 use App\Services\Reconciliation\Assertions\BatchScanGatedAssertion;
 use App\Services\Reconciliation\Assertions\BudgetActualsMatchAssertion;
 use App\Services\Reconciliation\Assertions\DelegableCatalogueIntegrityAssertion;
+use App\Services\Reconciliation\Assertions\DelegationGrantsValidAssertion;
 use App\Services\Reconciliation\Assertions\CharityNoDistributionAssertion;
 use App\Services\Reconciliation\Assertions\BudgetApprovedProvenanceAssertion;
 use App\Services\Reconciliation\Assertions\TransactionVerificationSodAssertion;
@@ -172,6 +173,8 @@ class ReconciliationServiceProvider extends ServiceProvider
 
             // A-1 — the delegable-capability catalogue integrity (the delegation safety spine, gates A-2/A-4)
             $registry->register(new DelegableCatalogueIntegrityAssertion);
+            // A-2 — no never-capability ever persisted in the delegation grant tables
+            $registry->register(new DelegationGrantsValidAssertion);
 
             return $registry;
         });

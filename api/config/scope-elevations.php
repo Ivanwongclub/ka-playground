@@ -152,4 +152,12 @@ return [
     // R1-F1 (item 4): the refund surface (finance) shows WHY a refund exists — its originating withdrawal.
     // finance is NOT in wr_read, so display-only origin fields are resolved via this narrow elevation.
     'App\Http\Controllers\RefundController::index' => 'Refund origin attribution (R1-F1 item 4): resolve the originating withdrawal\'s DISPLAY fields only — reason, requested_by name, decided_by name — for the withdrawal_request_ids ALREADY in the caller-RLS refund payload, so a finance officer (finance is NOT in wr_read) sees why the refund exists. Display fields ONLY — no student/guardian id, no enrolment, nothing beyond these three. Resolved AFTER the caller-RLS refund fetch, one narrow call.',
+
+    // A-2 — the AuthorityGrantService is the ONLY writer of the delegation grant tables, and RLS makes those
+    // tables system-write-only. Writing the delegation map (which delegable capability a school/programme holds)
+    // is platform-exclusive: A-1 marks capabilities.grant + configuration.manage never-delegable, so an edge
+    // operator can never write it. Reasons reference the service constants verbatim (asSystem byte-matches).
+    'App\Services\Authz\AuthorityGrantService::grant' => \App\Services\Authz\AuthorityGrantService::REASON_GRANT,
+    'App\Services\Authz\AuthorityGrantService::revoke' => \App\Services\Authz\AuthorityGrantService::REASON_REVOKE,
+    'App\Services\Authz\AuthorityGrantService::setOverride' => \App\Services\Authz\AuthorityGrantService::REASON_OVERRIDE,
 ];
