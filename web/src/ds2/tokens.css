@@ -50,7 +50,7 @@
   --ka-r-xl: 16px;
   --ka-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --ka-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --ka-shadow-gold: 0 4px 16px rgba(201, 169, 98, 0.3);
+  --ka-shadow-gold: 0 4px 16px rgba(224, 168, 59, 0.3); /* v3 gold #E0A83B, alpha preserved */
 
   /* ── density (D4) — default is admin; a product surface sets [data-density="product"] ── */
   --ka-pad: 16px;
@@ -68,15 +68,15 @@
    * (DS2-V2-SPEC §0/§7). ds2-tokens-check only mirrors the 17 theme.ts colours; these are additive. */
 
   /* urgency (§3) — rgba() of existing semantic colours */
-  --ka-warning-tint: rgba(251, 191, 36, 0.10);   /* derivative of --ka-warning */
-  --ka-warning-line: rgba(251, 191, 36, 0.32);   /* formalises the literal already in .ds2-subpanel--action */
-  --ka-danger-tint:  rgba(239, 68, 68, 0.10);    /* derivative of --ka-danger */
-  --ka-danger-line:  rgba(239, 68, 68, 0.30);
+  --ka-warning-tint: rgba(232, 134, 60, 0.10);   /* derivative of --ka-warning (v3 #E8863C), alpha preserved */
+  --ka-warning-line: rgba(232, 134, 60, 0.32);   /* formalises the literal already in .ds2-subpanel--action */
+  --ka-danger-tint:  rgba(229, 100, 110, 0.10);  /* derivative of --ka-danger (v3 #E5646E), alpha preserved */
+  --ka-danger-line:  rgba(229, 100, 110, 0.30);
   /* (--ka-gold-tint / --ka-gold-line already exist above and are reused for the 'soon' level) */
 
   /* HeroBanner scrims (§2.2) — gradient derivatives of --ka-card */
-  --ka-scrim-duotone: linear-gradient(160deg, rgba(26, 19, 38, 0.82) 0%, rgba(26, 19, 38, 0.55) 100%);
-  --ka-scrim-bottom:  linear-gradient(0deg, rgba(26, 19, 38, 0.90) 0%, rgba(26, 19, 38, 0.00) 60%);
+  --ka-scrim-duotone: linear-gradient(160deg, rgba(25, 21, 33, 0.82) 0%, rgba(25, 21, 33, 0.55) 100%); /* v3 card #191521, alphas preserved */
+  --ka-scrim-bottom:  linear-gradient(0deg, rgba(25, 21, 33, 0.90) 0%, rgba(25, 21, 33, 0.00) 60%);   /* v3 card #191521, alphas preserved */
   --ka-scrim-flat:    linear-gradient(160deg, var(--ka-card), var(--ka-muted));   /* image-fail fallback */
   --ka-hero-band: 180px;
   --ka-hero-tall: 320px;
