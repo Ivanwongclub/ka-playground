@@ -67,7 +67,9 @@ export const kaTheme: ThemeConfig = {
     fontFamilyCode: "'JetBrains Mono', monospace",
   },
   components: {
-    Layout: { siderBg: kaColors.background, headerBg: kaColors.card },
+    // P0-2 glass chrome: sider/header fill goes transparent so the ambient ground shows through and the
+    // backdrop-filter (CSS-only, index.css §glass) has something to blur. colorBgLayout stays intact.
+    Layout: { siderBg: 'transparent', headerBg: 'transparent' },
     Menu: { darkItemSelectedColor: kaColors.gold, darkItemHoverBg: kaColors.muted },
     Button: { primaryColor: kaColors.background }, // dark text on gold
     Badge: { colorError: kaColors.warning }, // v3: numeric count badge uses warning (amber), not danger red

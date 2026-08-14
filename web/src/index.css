@@ -23,10 +23,22 @@ body,
 #root {
   margin: 0;
   min-height: 100dvh;
-  background: var(--ka-bg);
   color: var(--ka-fg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+/* P0-2 AMBIENT GROUND (§ambient) — the four radial glows (--ka-ambient) fixed over --ka-bg, painted on the
+   html canvas so it fills the viewport and does NOT scroll. body/#root stay transparent so it shows through;
+   glass chrome (below) blurs THIS ground. background-image is not a containing-block trigger — safe here. */
+html {
+  background-color: var(--ka-bg);
+  background-image: var(--ka-ambient);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+body,
+#root {
+  background: transparent;
 }
 
 h1,
@@ -136,8 +148,12 @@ h3 {
   gap: 12px;
   padding: 8px 16px;
   padding-top: calc(8px + env(safe-area-inset-top));
-  background: var(--ka-card);
-  border-bottom: 1px solid var(--ka-border);
+  /* P0-2 GLASS — sticky (NOT fixed), a sibling of the fixed .ka-tabbar, so backdrop-filter here never
+     becomes the tabbar's containing block. Tint + blur + bottom hairline; opaque fallback via @supports. */
+  background: var(--ka-glass-fill);
+  backdrop-filter: var(--ka-glass-blur);
+  -webkit-backdrop-filter: var(--ka-glass-blur);
+  border-bottom: var(--ka-glass-hairline);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -412,6 +428,52 @@ h3 {
 .ka-demo-banner-on aside.ant-layout-sider {
   top: var(--ka-demo-banner-h) !important;
   height: calc(100dvh - var(--ka-demo-banner-h)) !important;
+}
+
+/* ═══ P0-2 GLASS CHROME (desktop ProLayout) — consumes P0-1 --ka-glass-* / ambient tokens ═══
+   Root + content transparent so the html ambient ground (--ka-ambient) shows through; the sider (itself
+   position:fixed via fixSiderbar → safe to carry backdrop-filter) and header become glass. backdrop-filter
+   is CSS-only (no antd token); theme.ts flipped Layout.siderBg/headerBg → transparent. Cards keep --ka-card
+   fill and read fine over the glow. Base = opaque --ka-card (readable fallback); glass added under @supports. */
+/* Root + content transparent so the html ambient shows through. NOT .ant-pro-sider — the sider aside
+   carries BOTH ant-layout-sider AND ant-pro-sider, so transparent!important there would wipe its glass tint. */
+.ant-pro-layout,
+.ant-pro-layout .ant-layout,
+.ant-pro-layout .ant-pro-layout-content,
+.ant-pro-layout .ant-layout-content {
+  background: transparent !important;
+}
+/* The sider aside IS the glass (position:fixed via fixSiderbar → safe to carry backdrop-filter). Its inner
+   .ant-layout-sider-children is transparent by default, so the aside's tint reads through. */
+.ant-pro-layout aside.ant-layout-sider {
+  background: var(--ka-card) !important;
+  border-right: var(--ka-glass-hairline);
+}
+.ant-pro-layout .ant-pro-layout-header,
+.ant-pro-layout .ant-layout-header {
+  background: var(--ka-card);
+  border-bottom: var(--ka-glass-hairline);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ant-pro-layout aside.ant-layout-sider,
+  .ant-pro-layout .ant-pro-layout-header,
+  .ant-pro-layout .ant-layout-header {
+    background: var(--ka-glass-fill) !important; /* beats the base --ka-card !important on the sider aside */
+    backdrop-filter: var(--ka-glass-blur);
+    -webkit-backdrop-filter: var(--ka-glass-blur);
+  }
+}
+
+/* STEP 3 — where backdrop-filter is unsupported, glass falls back to opaque chrome (readable, no blur).
+   --ka-card is the opaque form of --ka-glass-fill (same rgb 25,21,33 at full alpha). No animation anywhere:
+   the glows are static radial gradients, so the ambient is reduced-motion-safe by construction. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ka-mobile-header,
+  .ant-pro-layout aside.ant-layout-sider,
+  .ant-pro-layout .ant-pro-layout-header,
+  .ant-pro-layout .ant-layout-header {
+    background: var(--ka-card);
+  }
 }
 
 /* Front-door access gate */
