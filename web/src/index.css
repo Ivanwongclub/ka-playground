@@ -482,6 +482,42 @@ h3 {
   }
 }
 
+/* ═══ P0-2b NAV CHROME (presentational only) — chevron/indicator column · 36px collapse handle · mini-rail
+   a11y · sider footer scaffold. Data-backed queue badges + session/last-sign-in timers are DEFERRED (no data
+   source yet); their slots render ABSENT. No nav logic touched. ═══ */
+
+/* (a) right-aligned chevron + a reserved indicator gutter on every row, so future queue-count badges align in
+   one column. Submenu arrows already sit right; this just fixes the gutter width. */
+.ant-pro-layout .ant-menu-submenu-arrow { inset-inline-end: 14px; }
+.ant-pro-layout .ant-menu-item,
+.ant-pro-layout .ant-menu-submenu-title { padding-inline-end: 28px; }
+
+/* (c) 36px edge collapse handle at the TOP of the rail. ProLayout drops collapsedButtonRender's content into
+   .ant-layout-sider-children (no wrapper class), so we position the handle itself: absolute, top-right edge of
+   the fixed sider (straddling the divider). z-index keeps it above the menu. */
+.ant-layout-sider-children { position: relative; overflow: visible; }
+.ka-rail-collapse { position: absolute; top: 12px; inset-inline-end: -16px; z-index: 6; display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 50%; background: var(--ka-card); color: var(--ka-fg-soft); box-shadow: var(--ka-shadow-md); border: 1px solid var(--ka-border); cursor: pointer; }
+.ka-rail-collapse:hover { color: var(--ka-gold); }
+.ka-rail-collapse:focus-visible { outline: 2px solid var(--ka-border-strong); outline-offset: 2px; }
+
+/* (b) mini-rail hover label chip — when collapsed, antd shows a tooltip; style it as a chip. The aria-label
+   added in menuItemRender is the REAL a11y fix (the tooltip is visual-only). */
+.ant-menu-inline-collapsed-tooltip .ant-tooltip-inner { background: var(--ka-card); color: var(--ka-fg); border: 1px solid var(--ka-border); border-radius: var(--ka-r-sm); font-size: 12.5px; box-shadow: var(--ka-shadow-md); }
+
+/* (d) sider footer scaffold (menuFooterRender): env dot + build version + logout. The session-timer and
+   last-sign-in slots render nothing until their data card lands (no faked "0:00"). */
+.ka-navfooter { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--ka-border); }
+.ka-navfooter--mini { padding: 10px 0; justify-content: center; }
+.ka-navfooter__envdot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.ka-navfooter__envdot--dev { background: var(--ka-warning); }
+.ka-navfooter__envdot--prod { background: var(--ka-success); }
+.ka-navfooter__version { font-family: var(--ka-font-mono); font-size: 11px; color: var(--ka-muted-fg); font-variant-numeric: tabular-nums; }
+.ka-navfooter__spacer { flex: 1 1 auto; }
+.ka-navfooter--mini .ka-navfooter__spacer { display: none; }
+.ka-navfooter__logout { display: inline-grid; place-items: center; width: 32px; height: 32px; border: none; background: none; color: var(--ka-muted-fg); cursor: pointer; border-radius: var(--ka-r-sm); }
+.ka-navfooter__logout:hover { color: var(--ka-gold); background: rgba(255, 255, 255, 0.04); }
+.ka-navfooter__logout:focus-visible { outline: 2px solid var(--ka-border-strong); outline-offset: 2px; }
+
 /* Front-door access gate */
 .ka-demo-gate {
   position: fixed;

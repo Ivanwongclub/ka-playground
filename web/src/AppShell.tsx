@@ -3,6 +3,7 @@
 // S-UX1: role-aware grouped nav (visibleGroups), real logo, user menu + logout, breadcrumbs.
 import { useCallback, useEffect, useState } from 'react';
 import { ProLayout, type MenuDataItem } from '@ant-design/pro-components';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { asset } from './assets';
@@ -10,6 +11,7 @@ import { IdentityProvider, useIdentity } from './auth/identity';
 import { visibleGroups, visibleLeaves } from './nav';
 import { LocaleSwitcher } from './components/LocaleSwitcher';
 import { UserMenu } from './components/UserMenu';
+import { NavFooter } from './components/NavFooter';
 import { KaBreadcrumb } from './components/KaBreadcrumb';
 import { BottomTabBar } from './components/mobile/BottomTabBar';
 import { NavDrawer, useEdgeSwipe } from './components/mobile/NavDrawer';
@@ -42,6 +44,8 @@ function ShellInner() {
   const { pathname } = useLocation();
   const isMobile = useIsMobile();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // P0-2b — desktop sider collapse (presentational chrome state; does NOT touch nav visibility/routing/identity).
+  const [collapsed, setCollapsed] = useState(false);
 
   const openDrawer = useCallback(() => setDrawerOpen(true), []);
   useEdgeSwipe(openDrawer);
@@ -105,9 +109,28 @@ function ShellInner() {
       location={{ pathname }}
       route={{ path: '/', routes }}
       menu={{ defaultOpenAll: true }}
+      // P0-2b — desktop rail collapse: a 36px top-edge handle (CSS-positioned) toggles the presentational
+      // `collapsed` state. Nav data (visibleGroups/routing) is unchanged; only the chrome width flips.
+      collapsed={collapsed}
+      onCollapse={setCollapsed}
+      collapsedButtonRender={(isCollapsed) => (
+        // ProLayout renders this content but does NOT wire the toggle in this version — wire it ourselves via
+        // the controlled `collapsed` state (we own it). A real button element for keyboard/focus.
+        <button
+          type="button"
+          className="ka-rail-collapse"
+          aria-label={t(isCollapsed ? 'nav.expand' : 'nav.collapse')}
+          onClick={() => setCollapsed(!isCollapsed)}
+        >
+          {isCollapsed ? <ChevronRight size={18} strokeWidth={1.9} aria-hidden /> : <ChevronLeft size={18} strokeWidth={1.9} aria-hidden />}
+        </button>
+      )}
+      menuFooterRender={() => <NavFooter collapsed={collapsed} />}
       menuItemRender={(item, dom) =>
         item.path && !item.routes ? (
+          // P0-2b — aria-label makes the collapsed mini-rail readable (antd's hover tooltip is visual-only).
           <a
+            aria-label={typeof item.name === 'string' ? item.name : undefined}
             onClick={(e) => {
               e.preventDefault();
               void navigate(item.path!);
