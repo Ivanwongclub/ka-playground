@@ -37,6 +37,12 @@ export type {
 // so StyleGuide's existing direct import stays byte-identical). Matches how the barrel re-exports StatusTag etc.
 export { BottomSheet } from '../components/mobile/BottomSheet';
 
+// DS2 icon convention (§3.17 · P0-3c) — lucide-react, stroke 1.9, ~20px. Spread onto NEW lucide icons:
+//   <FileSignature {...DS2_ICON} />   (override size per call site where a smaller/larger glyph is needed).
+// NON-enforcing and NOT retrofitted app-wide (that would touch many surfaces — out of scope). A convention for
+// new code only. Emoji are prohibited everywhere and enforced at build by scripts/emoji-ban.mjs.
+export const DS2_ICON = { size: 20, strokeWidth: 1.9 } as const;
+
 // The pure urgency helpers + per-domain thresholds (§3) — a level from a deadline (or from approvals'
 // age/threshold integers), the signed day-count, and the ONE shared countdown label; treatment is DS2-owned.
 export { urgencyLevel, urgencyDays, approvalLevel, approvalThresholds, urgencyLabel, URGENCY } from '../display/urgency';
