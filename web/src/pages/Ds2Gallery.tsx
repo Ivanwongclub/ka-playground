@@ -11,7 +11,19 @@ import {
   SubPanel, ZoneStack, StatCard, Attest, ZebraTable, WizardRail, FormLanguageSwitcher,
   PageCard, AuthCard, HeroBanner, TaskCard, EmptyState, UrgencyChip,
   Ds2SegBar, GlanceCard, ProgrammeBandHeader, JourneyStepper,
+  Board, ActionRequiredList, OverviewTabs, ElasticSearch, BottomSheet,
 } from '@/ds2';
+import type { SearchGroup } from '@/ds2';
+
+const SEARCH_DATA: SearchGroup[] = [
+  { kind: 'Programmes', results: [
+    { id: 'p1', label: 'Summer STEM 2026', meta: 'STEM', onOpen: () => alert('open p1') },
+    { id: 'p2', label: 'Autumn Arts', meta: 'Arts', onOpen: () => alert('open p2') },
+  ] },
+  { kind: 'Students', results: [
+    { id: 's1', label: 'Chan Sum-yu', meta: 'Family A', onOpen: () => alert('open s1') },
+  ] },
+];
 import type { Ds2Lang } from '@/ds2';
 import { asset } from '../assets';
 
@@ -49,6 +61,12 @@ export function Ds2Gallery() {
   const { i18n } = useTranslation();
   const locale = i18n.language;
   const [lang, setLang] = useState<Ds2Lang>('en');
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  // ElasticSearch is data-agnostic: the CALLER filters (here, in-memory) — the primitive renders what it's given.
+  const searchGroups: SearchGroup[] = query.trim()
+    ? SEARCH_DATA.map((g) => ({ kind: g.kind, results: g.results.filter((r) => String(r.label).toLowerCase().includes(query.toLowerCase())) }))
+    : [];
   return (
     <div style={S.page}>
       <div style={S.h1}>DS2 Atom Kit</div>
@@ -297,6 +315,69 @@ export function Ds2Gallery() {
             whatNext="Your team pitches on 2 Aug; the mentor confirms attendance after each session."
           />
         </div>
+      </Section>
+
+      <div style={{ ...S.h1, fontSize: 20, marginTop: 12 }}>DS2 v3 interaction primitives (P0-3b)</div>
+
+      <Section label="Board (§3.8) — read-only occupancy (monogram · 5-dot meter · attention pill · NO drag API)">
+        <div style={{ width: '100%' }}>
+          <Board columns={[
+            { title: 'Forming', count: 2, items: [
+              { id: 't1', label: 'Team Alpha', members: { filled: 3, total: 5 }, status: <StatusTag domain="teamStatus" value="forming" /> },
+              { id: 't2', label: 'Team Beta', members: { filled: 5, total: 5 } },
+            ] },
+            { title: 'Submitted', count: 1, items: [
+              { id: 't3', label: 'Team Gamma', members: { filled: 4, total: 5 }, status: <StatusTag domain="teamStatus" value="submitted" />, onClick: () => alert('open team') },
+            ] },
+            { title: 'Confirmed', count: 1, items: [
+              { id: 'p1', label: 'Chan Sum-yu', monogram: 'CS', status: <StatusTag domain="enrolmentStatus" value="confirmed" /> },
+            ] },
+          ]} />
+        </div>
+      </Section>
+
+      <Section label="ActionRequiredList (§3.5) — warning bar + count; deadline is the loudest element; whole row navigates">
+        <div style={{ width: '100%', maxWidth: 560 }}>
+          <ActionRequiredList
+            heading="Action required"
+            count={2}
+            items={[
+              { id: 'a1', icon: <FileSignature size={20} />, title: 'Sign STEM consent', who: 'Chan Sum-yu · Summer STEM', deadlineLevel: 'due', deadlineLabel: 'Due in 2 days', deadlineSubLabel: 'consent', onClick: () => alert('sign') },
+              { id: 'a2', icon: <CalendarClock size={20} />, title: 'Confirm attendance', who: 'You are the mentor', deadlineLevel: 'overdue', deadlineLabel: 'Overdue 1 day', deadlineSubLabel: 'attendance', onClick: () => alert('attendance') },
+            ]}
+          />
+        </div>
+      </Section>
+
+      <Section label="OverviewTabs (§3.6) — overview-first: 'All' summary (plain counts, ≤1 pill, name drills) + per-item tabs">
+        <div style={{ width: '100%' }}>
+          <OverviewTabs
+            allLabel="All programmes"
+            columns={[{ key: 'enrolled', title: 'Enrolled' }, { key: 'teamed', title: 'Teamed' }, { key: 'confirmed', title: 'Confirmed' }]}
+            rows={[
+              { key: 'r1', name: 'Summer STEM 2026', onOpen: () => alert('drill STEM'), counts: { enrolled: 24, teamed: 18, confirmed: 12 }, window: 'Open', attention: <StatusTag domain="sessionStatus" value="in_progress" /> },
+              { key: 'r2', name: 'Autumn Arts', onOpen: () => alert('drill Arts'), counts: { enrolled: 9, teamed: 0, confirmed: 0 }, window: 'Closed' },
+            ]}
+            tabs={[{ key: 'stem', label: 'Summer STEM 2026', children: <div style={{ padding: 12, color: 'var(--ka-muted-fg)' }}>Per-programme detail goes here.</div> }]}
+          />
+        </div>
+      </Section>
+
+      <Section label="ElasticSearch (§3.12) — transparent typeahead grouped by kind (type to search; 'zzz' → empty state)">
+        <ElasticSearch
+          value={query}
+          onQuery={setQuery}
+          groups={searchGroups}
+          placeholder="Search programmes, students…"
+          emptyMessage="No matches in your entitled records"
+        />
+      </Section>
+
+      <Section label="BottomSheet (§3.11) — promoted into @/ds2 (re-export; StyleGuide's direct import unchanged)">
+        <Button onClick={() => setSheetOpen(true)}>Open bottom sheet</Button>
+        <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Programme details">
+          <div style={{ color: 'var(--ka-fg-soft)', fontSize: 13.5 }}>Grabber + drag-down-to-dismiss · velocity-aware · guarded=swipe-off. Logic unchanged from components/mobile.</div>
+        </BottomSheet>
       </Section>
     </div>
   );

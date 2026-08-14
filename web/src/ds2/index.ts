@@ -28,6 +28,15 @@ export type { PageCardWidth, Ds2Cta } from './surfaces';
 export { Ds2SegBar, GlanceCard, ProgrammeBandHeader, JourneyStepper } from './records';
 export type { SegState, SegItem, GlanceValue, GlanceRow, JourneyStep, JourneyTile } from './records';
 
+// DS2 v3 interaction primitives (P0-3b) — pure/presentational, data-agnostic (take props, never fetch).
+export { Board, ActionRequiredList, OverviewTabs, ElasticSearch } from './interactions';
+export type {
+  BoardColumn, BoardItem, ActionItem, OverviewCol, OverviewRow, OverviewItemTab, SearchGroup, SearchResult,
+} from './interactions';
+// BottomSheet (§3.11) — PROMOTED into the barrel from components/mobile (re-export only; file/logic unchanged,
+// so StyleGuide's existing direct import stays byte-identical). Matches how the barrel re-exports StatusTag etc.
+export { BottomSheet } from '../components/mobile/BottomSheet';
+
 // The pure urgency helpers + per-domain thresholds (§3) — a level from a deadline (or from approvals'
 // age/threshold integers), the signed day-count, and the ONE shared countdown label; treatment is DS2-owned.
 export { urgencyLevel, urgencyDays, approvalLevel, approvalThresholds, urgencyLabel, URGENCY } from '../display/urgency';
