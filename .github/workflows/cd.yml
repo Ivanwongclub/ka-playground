@@ -226,6 +226,8 @@ jobs:
           OUT=$(gcloud run jobs execute kap-seed --region=$GCP_REGION --wait --format='value(status.latestCreatedExecution.name)')
           FIX=$(gcloud logging read "resource.type=cloud_run_job AND textPayload:RLS-PROOF-FIXTURES" \
                   --limit=1 --format='value(textPayload)' | grep -o 'RLS-PROOF-FIXTURES=.*' | cut -d= -f2)
+          # CD-FIX-1: fail loud HERE if the seed never emitted the fixtures, not cryptically at rls-proof.sh:29.
+          test -n "$FIX" || { echo "FATAL: RLS-PROOF-FIXTURES not found in seed log"; exit 1; }
           echo "guardian_a=$(echo $FIX | cut -d, -f1)" >> "$GITHUB_OUTPUT"
           echo "guardian_b=$(echo $FIX | cut -d, -f2)" >> "$GITHUB_OUTPUT"
           echo "child_b=$(echo $FIX | cut -d, -f3)"    >> "$GITHUB_OUTPUT"

@@ -160,14 +160,24 @@ class DemoSeeder extends Seeder
         $this->seedAdminQueues($guardianA, $a['a2']);                                         // Withdrawals + onboarding/Approvals queue
         app(\App\Services\Enrolments\EnrolmentActivationService::class)->run();               // activate the session cohort (confirmed → active)
         $this->seedAssessments($programme, $ops, $a['a3']);                                   // R2-ASSESS: one Released (scored) + one mid-flight
-        $this->seedBanner($programme, $ops);                                                  // KAP-MKT-1: storefront banner via the REAL intake+scan path
 
         // ── Machine-readable fixtures for deploy/gcp/rls-proof.sh ──
+        // CD-FIX-1: emitted BEFORE seedBanner() (below). The RLS-proof fixtures are the deploy gate's
+        // only required output; a later cosmetic step (banner scan) must never gate their emission.
         $this->command->info('');
         $this->command->info('════ DEMO SEED READY (synthetic; @example.com; strong creds) ════');
         $this->command->line("RLS-PROOF-FIXTURES={$guardianA->id},{$guardianB->id},{$childB->id}");
         $this->command->info('Family A: guardianA (6 children, varied states) · Family B: guardianB (B1 in-pool = RLS fixture + 3 session-cohort kids)');
         $this->command->info('Populated: sessions/attendance (2 sessions + marked roster) · member (2 events, 3 directory profiles, RSVPs) · withdrawals + approvals queue');
+
+        // KAP-MKT-1 storefront banner via the REAL intake+scan path — demo polish only. CD-FIX-1: a
+        // scan-unavailable environment (e.g. the kap-seed Cloud Run job, no ClamAV) must degrade to
+        // "no banner", never abort the seed. Wrap ONLY this call; every other seed step still fails loud.
+        try {
+            $this->seedBanner($programme, $ops);
+        } catch (\Throwable $e) {
+            $this->command->warn("banner seed skipped: {$e->getMessage()}");
+        }
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
