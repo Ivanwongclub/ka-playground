@@ -28,6 +28,12 @@ export type { PageCardWidth, Ds2Cta } from './surfaces';
 export { Ds2SegBar, GlanceCard, ProgrammeBandHeader, JourneyStepper } from './records';
 export type { SegState, SegItem, GlanceValue, GlanceRow, JourneyStep, JourneyTile } from './records';
 
+// DS2 v3 record-SHELL primitive (P0-4) — the §C1 record anatomy (KAP-UIUX-Proposal.md Part C), grammar-flexible:
+// family single-column = header+main subset (§C2); staff two-column = header+highlights+main+rail+history
+// (§C3/§C4). Presentational; a zone with no content is absent, not an empty frame. Invisible until adopted.
+export { RecordShell, RecordHeaderBand } from './shell';
+export type { HighlightItem, HighlightValue, RecordAction } from './shell';
+
 // DS2 v3 interaction primitives (P0-3b) — pure/presentational, data-agnostic (take props, never fetch).
 export { Board, ActionRequiredList, OverviewTabs, ElasticSearch } from './interactions';
 export type {

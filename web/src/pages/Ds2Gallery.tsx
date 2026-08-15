@@ -11,6 +11,7 @@ import {
   SubPanel, ZoneStack, StatCard, Attest, ZebraTable, WizardRail, FormLanguageSwitcher,
   PageCard, AuthCard, HeroBanner, TaskCard, EmptyState, UrgencyChip,
   Ds2SegBar, GlanceCard, ProgrammeBandHeader, JourneyStepper,
+  RecordShell, RecordHeaderBand,
   Board, ActionRequiredList, OverviewTabs, ElasticSearch, BottomSheet,
 } from '@/ds2';
 import type { SearchGroup } from '@/ds2';
@@ -316,6 +317,98 @@ export function Ds2Gallery() {
           />
         </div>
       </Section>
+
+      <div style={{ ...S.h1, fontSize: 20, marginTop: 12 }}>DS2 v3 record-shell primitive (P0-4)</div>
+
+      <div style={S.card}>
+        <div style={S.eyebrow}>RecordShell (§C1) — the SAME primitive, both grammars side by side · omitted zones are ABSENT, not empty frames</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
+          {/* FAMILY (§C2) — header + main ONLY; highlights/rail/history undefined → single full-width column, no empty frames */}
+          <div>
+            <div style={{ ...S.eyebrow, color: 'var(--ka-fg-muted)', marginBottom: 12 }}>Family grammar (§C2) — header + main only (no highlights, no rail, no history)</div>
+            <RecordShell
+              header={(
+                <RecordHeaderBand
+                  eyebrow="Student"
+                  name="Chan Sum-yu"
+                  state={<StatusTag domain="enrolmentStatus" value="active" />}
+                  identifiers={["King's College"]}
+                />
+              )}
+              main={(
+                <>
+                  <GlanceCard
+                    image={{ src: asset('auth/featured-sc5.jpg'), alt: 'Summer STEM' }}
+                    imageFallback={<div />}
+                    title="Summer STEM 2026"
+                    status={<StatusTag domain="sessionStatus" value="in_progress" />}
+                    segments={[
+                      { label: 'Plan', state: 'done' }, { label: 'Design', state: 'done' },
+                      { label: 'Learn', state: 'current' }, { label: 'Pitch', state: 'todo' }, { label: 'Launch', state: 'todo' },
+                    ]}
+                    rows={[
+                      { label: 'Next session', value: { text: 'Mon 16:00 · Kowloon studio' } },
+                      { label: 'Team', value: { text: 'Team Alpha' } },
+                    ]}
+                    onClick={() => alert('drill into the enrolment')}
+                  />
+                  <GlanceCard
+                    imageFallback={<div />}
+                    title="Autumn Arts"
+                    status={<StatusTag domain="enrolmentStatus" value="pending_consent" />}
+                    rows={[{ label: 'Consent', value: { tag: <UrgencyChip level="due" label="Sign by tomorrow" /> } }]}
+                  />
+                </>
+              )}
+            />
+          </div>
+          {/* STAFF (§C3) — all five zones → header + highlights strip + main + rail + history (two-column) */}
+          <div>
+            <div style={{ ...S.eyebrow, color: 'var(--ka-fg-muted)', marginBottom: 12 }}>Staff grammar (§C3) — header + highlights + main + rail + history (all zones)</div>
+            <RecordShell
+              header={(
+                <RecordHeaderBand
+                  eyebrow="Student"
+                  name="Chan Sum-yu"
+                  state={<StatusTag domain="enrolmentStatus" value="active" />}
+                  identifiers={['SID-00417', "King's College"]}
+                  actions={[{ label: 'Record note', onRequest: () => alert('request: record note') }]}
+                  primaryAction={{ label: 'Issue consent', onRequest: () => alert('request: issue consent') }}
+                />
+              )}
+              highlights={[
+                { label: 'Active enrolments', value: { text: '2' } },
+                { label: 'Guardian link', value: { tag: <StatusTag domain="enrolmentStatus" value="confirmed" /> } },
+                { label: 'Next session', value: { text: 'Mon 16:00' } },
+                { label: 'Consent expires', value: { chip: <UrgencyChip level="soon" label="In 5 days" /> } },
+              ]}
+              main={(
+                <GlanceCard
+                  image={{ src: asset('auth/featured-sc5.jpg'), alt: 'Summer STEM' }}
+                  imageFallback={<div />}
+                  title="Summer STEM 2026"
+                  status={<StatusTag domain="sessionStatus" value="in_progress" />}
+                  segments={[
+                    { label: 'Plan', state: 'done' }, { label: 'Design', state: 'done' },
+                    { label: 'Learn', state: 'current' }, { label: 'Pitch', state: 'todo' }, { label: 'Launch', state: 'todo' },
+                  ]}
+                  rows={[
+                    { label: 'Team', value: { text: 'Team Alpha' } },
+                    { label: 'Consent', value: { tag: <StatusTag domain="enrolmentStatus" value="confirmed" /> } },
+                  ]}
+                />
+              )}
+              rail={(
+                <>
+                  <SubPanel tone="neutral"><div style={{ fontSize: 13 }}>Guardians — Wong Mei-ling (verified 2026-05-01)</div></SubPanel>
+                  <SubPanel tone="neutral"><div style={{ fontSize: 13 }}>School — King's College</div></SubPanel>
+                </>
+              )}
+              history={<SubPanel tone="neutral"><div style={{ fontSize: 13, color: 'var(--ka-fg-muted)' }}>History — rendered iff audit_read (caller-gated)</div></SubPanel>}
+            />
+          </div>
+        </div>
+      </div>
 
       <div style={{ ...S.h1, fontSize: 20, marginTop: 12 }}>DS2 v3 interaction primitives (P0-3b)</div>
 

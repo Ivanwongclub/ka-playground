@@ -1,0 +1,40 @@
+/* P0-4 record-shell primitive — §C1 anatomy (KAP-UIUX-Proposal.md Part C) on the --ka-* tokens, `.ds2-`
+ * prefixed. Loads with @/ds2 (invisible until a surface adopts it). Zero outlines: elevation + single-edge
+ * hairlines only (kit §2.3). The zone-absent rule is STRUCTURAL — React omits the node — so the CSS only lays
+ * out what actually renders; there are no :empty fallbacks and no empty frames to hide. */
+
+/* ── RecordShell (§C1) — header / highlights / body(main+rail) / history stacked with zone gaps ── */
+.ds2-record { display: flex; flex-direction: column; gap: var(--ka-zone-gap); }
+
+/* highlights strip — 3–5 facts on Surface 1; wraps rather than scrolls (the page body never scrolls sideways) */
+.ds2-record__highlights { display: flex; flex-wrap: wrap; gap: 12px; background: var(--ka-card); border-radius: var(--ka-r-lg); box-shadow: var(--ka-shadow-md); padding: 16px 20px; }
+.ds2-record__hl { display: flex; flex-direction: column; gap: 5px; min-width: 128px; flex: 1 1 auto; }
+/* single-edge hairline between facts (kit §2.3 sanctioned exception) — first fact has none */
+.ds2-record__hl + .ds2-record__hl { border-left: 1px solid var(--ka-border); padding-left: 16px; }
+.ds2-hl__lbl { font-family: var(--ka-font-mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ka-muted-fg); }
+.ds2-hl__val { display: inline-flex; align-items: center; gap: 8px; min-height: 24px; }
+.ds2-hl__val-text { font-size: 14px; color: var(--ka-fg); font-variant-numeric: tabular-nums; }
+
+/* body — single column (family §C2) OR main + rail two-column (staff §C3/§C4) */
+.ds2-record__body { display: block; }
+.ds2-record__body--railed { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--ka-zone-gap); align-items: start; }
+.ds2-record__main { min-width: 0; display: flex; flex-direction: column; gap: var(--ka-card-gap); }
+.ds2-record__rail { min-width: 0; display: flex; flex-direction: column; gap: var(--ka-card-gap); }
+
+@media (max-width: 1023px) {
+  .ds2-record__body--railed { grid-template-columns: 1fr; }  /* rail drops beneath main */
+}
+@media (max-width: 767px) {
+  .ds2-record__hl + .ds2-record__hl { border-left: none; padding-left: 0; }  /* facts stack, no seam */
+}
+
+/* ── RecordHeaderBand (§C1) — text header: eyebrow / name+state / identifiers / actions cluster ── */
+.ds2-rhdr { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; background: var(--ka-card); border-radius: var(--ka-r-lg); box-shadow: var(--ka-shadow-md); padding: 20px 24px; }
+.ds2-rhdr__id { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ds2-rhdr__eyebrow { font-family: var(--ka-font-mono); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ka-muted-fg); }
+.ds2-rhdr__nameline { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-width: 0; }
+.ds2-rhdr__name { font-family: var(--ka-font-display); font-weight: 700; font-size: 24px; color: var(--ka-fg); line-height: 1.2; }
+.ds2-rhdr__ids { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ds2-rhdr__id-item { font-size: 13px; color: var(--ka-muted-fg); }
+.ds2-rhdr__id-item + .ds2-rhdr__id-item::before { content: '·'; margin-right: 8px; color: var(--ka-border-strong); }
+.ds2-rhdr__actions { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; flex-wrap: wrap; }
