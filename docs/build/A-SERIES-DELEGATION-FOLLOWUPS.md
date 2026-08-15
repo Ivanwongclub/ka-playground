@@ -24,6 +24,11 @@ invariant already holds de-facto via service-gating, and making it structural ne
 highest-stakes deploy file, which belongs with the edge write path (C-1) it constrains. See A-5-deferred below —
 it is a **hard precondition on C-1**, not a floating TODO.
 
+**A-6 (migrate `mentor_team_access` → override row) was assessed and FOLDED into A-8 — no migration, no policy
+touch.** A-4 proved the mentor flag (link+flag, per-team) and the delegation map (cap+school, per-programme) are
+different mechanisms at different granularity, both correct; migrating one into the other would change runtime
+behaviour in a privacy-expanding direction. See A-6-folded below.
+
 ## Deferred cards
 
 ### A-5-deferred — formed-team structural membership lock (⚠ MUST bundle with C-1)
@@ -51,6 +56,34 @@ membership — at that point the structural lock becomes load-bearing and **MUST
 **C-1's edge write path MUST NOT open a team-membership write without (a)+(b) landing in the same commit** —
 otherwise C-1 could open a confirmed-team write the RLS does not forbid. Reviewer sees the lock and the thing
 it locks in one diff.
+
+### A-6-folded — `mentor_team_access` stays; folded into A-8, NOT migrated
+**DECISION: do NOT migrate `mentor_team_access` into `programme_authority_overrides`. No migration, no policy
+touch.** The plan's mechanical "generalize the per-programme mentor flag into an override row, deprecate the
+column" **predated A-4** — which proved the mentor flag and the delegation map are two legitimately-coexisting
+mechanisms, different relationships at different granularity, both correct and additive:
+
+| mechanism | keyed on | granularity | opens |
+|---|---|---|---|
+| `teamsMentor` (S-MENTOR-1, `mentor_team_access`) | `team_teacher_links` (link) + programme flag | per-**TEAM** | only the mentor's **assigned** teams |
+| A-4 delegated arm | `programme_authority_overrides` (cap + school) | per-**PROGRAMME** | **all** teams in the programme |
+
+The override map has **no per-team notion**. Migrating the flag into it would therefore either broaden
+"my assigned teams" → "every team in the programme" (an **unrequested privacy expansion on child data**) or
+force team-link semantics into a map that deliberately does not carry them. That is the ONE option that changes
+runtime behaviour — rejected. link+flag (mentor sees own assigned teams) and cap+school (delegated school sees
+the programme's teams) coexist correctly; A-4's own tests exercise both (assigned-mentor arm unchanged; delegated
+un-linked teacher reads via the school grant).
+
+**⚠ CONDITION ON A-8 (named so no future reader folds it silently):** the ONLY place mentor access may fold into
+the cap model is A-8 (re-base structural access onto capabilities), and ONLY if **A-8's ruling EXPLICITLY accepts
+the per-team → per-programme granularity change as a deliberate design decision on child-data visibility** — never
+as a mechanical migration. Absent that explicit ruling, `mentor_team_access` stays exactly as-is. A-8 must not
+drop the `mentor_team_access` column or its three policy arms (teams, team_members, stage_gates) without making
+this granularity trade the explicit subject of its ruling.
+
+**Do not re-raise "why two mechanisms for teacher team-read?" and mechanically migrate the flag — that question is
+already answered here (different granularity, deliberate). See this entry before touching `mentor_team_access`.**
 
 ### A-3-follow — deny-wins canonical for the multi-school edge
 The per-programme resolution of **conflicting same-level (school-specific) overrides**, for an actor active at
