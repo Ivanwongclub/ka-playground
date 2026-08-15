@@ -18,8 +18,8 @@ import { useResource, DataBoundary } from '../api/useResource';
 import { personName, programmeName } from '../display/names';
 import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
-import { SubPanel, EmptyState, WizardRail } from '@/ds2';
-import type { StepState } from '@/ds2';
+import { SubPanel, EmptyState, WizardRail, RecordShell, RecordHeaderBand, GlanceCard, JourneyStepper } from '@/ds2';
+import type { StepState, SegItem, GlanceRow } from '@/ds2';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -99,6 +99,17 @@ function EnrolmentJourney({ status }: { status: string }) {
   );
 }
 
+// V3-STUDENT360 — the FAMILY (§C2) journey: the SAME 7-state display-only journey as EnrolmentJourney (identical
+// JOURNEY / TERMINAL_BAD / indexOf logic), rendered via the P0-4-era JourneyStepper (bare — no tiles/whatNext)
+// instead of WizardRail. NEW component: EnrolmentJourney (above) stays untouched for the admin branch. antd Steps
+// `current={cur}` yields the same done(<cur)/current(===cur)/todo(>cur) semantics the WizardRail mapped by hand.
+function EnrolmentJourneyStepper({ status, locale }: { status: string; locale: KaLocale }) {
+  const { t } = useTranslation();
+  if (TERMINAL_BAD.includes(status)) return <StatusTag domain="enrolmentStatus" value={status} />;
+  const cur = JOURNEY.indexOf(status);
+  return <JourneyStepper current={cur} locale={locale} steps={JOURNEY.map((s) => ({ title: t(`enrol.status.${s}`) }))} />;
+}
+
 /** The composition. `studentId` selects the subject; `displayName` overrides the name shown (the self-view
  *  passes it from /api/me; the child-view derives it from the enrolment rows). */
 export function Profile360({ studentId, displayName, density = 'product' }: { studentId: number; displayName?: string; density?: 'product' | 'admin' }) {
@@ -147,6 +158,78 @@ export function Profile360({ studentId, displayName, density = 'product' }: { st
     for (const p of role.past) if (p.student_id === studentId) myRoles.push({ role, tenure: p, current: false });
   }
 
+  // ── FAMILY grammar (§C2 · V3-STUDENT360) — RecordShell single-column: header + main, NO highlights/rail/
+  // history (those are staff §C3, deferred to V3-STUDENT360-STAFF). The shared fetch/derivation block above is
+  // UNCHANGED; only this product-density render is new. Enrolment GlanceCards are DISPLAY-ONLY (no drill):
+  // Profile360 has no nav today and nav.tsx bars the student from /enrolments (R1-S2), so routing out would be a
+  // regression disguised as adoption — the journey + released results render inline. Avatar dropped (§C1/§C2
+  // headers carry none; it was decorative). ──
+  if (density === 'product') {
+    return (
+      <div style={{ maxWidth: 900 }} data-density={density}>
+        <RecordShell
+          header={<RecordHeaderBand eyebrow={t('profile360.subtitle')} name={personName(name)} />}
+          main={(
+            <>
+              <div>
+                <Title level={5} style={{ marginBottom: 8 }}>{t('profile360.programmeRecord')}</Title>
+                <DataBoundary loading={enrolments.loading} error={enrolments.error} empty={myEnrolments.length === 0} emptySize="inline">
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {myEnrolments.map((e) => (
+                      <div key={e.id} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <GlanceCard
+                          imageFallback={<div />}
+                          title={programmeName(e, locale)}
+                          status={<StatusTag domain="enrolmentStatus" value={e.status} />}
+                        />
+                        <EnrolmentJourneyStepper status={e.status} locale={locale} />
+                        <ReleasedResults studentId={studentId} programmeId={e.programme_id} />
+                      </div>
+                    ))}
+                  </div>
+                </DataBoundary>
+              </div>
+
+              <div>
+                <Title level={5} style={{ marginBottom: 8 }}>{t('profile360.teamRoles')}</Title>
+                {!teamResolved || teams.loading ? (
+                  <Skeleton active paragraph={{ rows: 3 }} />
+                ) : !team ? (
+                  <SubPanel tone="neutral"><EmptyState size="inline" message={t('profile360.noTeam')} /></SubPanel>
+                ) : (
+                  <GlanceCard
+                    imageFallback={<div />}
+                    title={team.name}
+                    status={<StatusTag domain="teamStatus" value={team.status} />}
+                    // tracker → segbar: SAME truth the admin WizardRail maps (line: g.passed ? 'done' : 'todo') —
+                    // completed stage = done segment, else todo. No 'current' re-interpretation.
+                    segments={(tracker.data?.stages ?? []).map((g): SegItem => ({
+                      label: t(`tracker.stage${g.stage}`),
+                      state: g.passed ? 'done' : 'todo',
+                    }))}
+                    rows={
+                      roles.loading
+                        ? []
+                        : myRoles.length === 0
+                          ? [{ label: t('profile360.roleHistory'), value: { text: t('profile360.noRoles') } }]
+                          : myRoles.map(({ role, tenure, current }): GlanceRow => ({
+                              label: roleName(role, locale),
+                              value: current
+                                ? { tag: <Tag color="gold">{t('profile360.roleCurrent')}</Tag> }
+                                : { text: `${formatHkt(tenure.started_at, locale)} → ${tenure.ended_at ? formatHkt(tenure.ended_at, locale) : ''}` },
+                            }))
+                    }
+                  />
+                )}
+              </div>
+            </>
+          )}
+        />
+      </div>
+    );
+  }
+
+  // ── ADMIN grammar (density==='admin') — the pre-V3 composition, UNCHANGED (deferred to V3-STUDENT360-STAFF). ──
   return (
     <div style={{ maxWidth: 900 }} data-density={density}>
       {/* IDENTITY HEADER — initials + display name. No school: /api/me carries none and no student-own read

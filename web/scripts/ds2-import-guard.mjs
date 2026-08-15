@@ -23,7 +23,7 @@ const ALLOWED = [
   // ── R1-G (guardian persona home) — HeroBanner/TaskCard/StatCard/EmptyState composition (reads only) ──
   'src/pages/GuardianHome.tsx', // R1-G — the action-first guardian home (the paying persona; routed by Dashboard)
   // ── R1-P360 (My Profile / Student 360) — WizardRail/SubPanel/EmptyState composition (reads only) ──
-  'src/pages/Profile360.tsx', // R1-P360 — the 360 record view (self + guardian child-view; reused by staff in R1-F2)
+  'src/pages/Profile360.tsx', // R1-P360 → V3-STUDENT360 — the 360 record view; family (product) density re-composed onto RecordShell/GlanceCard/JourneyStepper (staff/admin density deferred to V3-STUDENT360-STAFF)
   // ── R1-F2 (Programme 360) — SubPanel/EmptyState composition (reads only) ──
   'src/pages/Programme360.tsx', // R1-F2 — the programme entity page (header + funnel/sessions/teams, capability-honest)
   // ── KAP-MKT-1 (Marketplace) — SubPanel/EmptyState card grid over the anonymous-safe catalogue ──
