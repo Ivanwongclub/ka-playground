@@ -254,6 +254,7 @@
     "listTitle": "同意書請求",
     "listCaption": "等待您簽署的文件",
     "open": "開啟",
+    "awaitingSignature": "等待家長簽署",
     "loadError": "無法載入此文件",
     "status": {
       "sent": "待簽署",

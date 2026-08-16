@@ -14,6 +14,7 @@ import { kaColors } from '../theme/theme';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
 import { useIdentity } from '../auth/identity';
+import { isStudentActor } from '../nav';
 import { programmeName, personName } from '../display/names';
 import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
@@ -68,7 +69,11 @@ export function ConsentList() {
   const { has } = useIdentity();
   // R1-S2 B4: the STUDENT sees their consents as WAITING ON THE GUARDIAN (they cannot sign — the ceremony
   // 403s a student). The GUARDIAN view is byte-identical (the actionable "Open" link). Verified student-only.
-  const isStudent = has('enrolment.view') && has('events.rsvp') && !has('operations.manage');
+  const isStudent = isStudentActor(has);
+  // P0-SAFE-1 — the actionable "Open" link is the SIGNER'S affordance. consent.sign is guardian-only
+  // (capability_forbidden + A-1 never-set), so a school/ops CHASES (keeps the read) but never signs — a
+  // non-signer sees a non-actionable label, not a route INTO the ceremony (which the server would 403).
+  const canSign = has('consent.sign');
   const { data, loading, error } = useResource<{ data: RequestRow[] }>('/api/consent-requests');
   const rows = data?.data ?? [];
 
@@ -106,9 +111,11 @@ export function ConsentList() {
               title: t('common.actions'), dataIndex: 'id',
               render: (id: string, row) =>
                 ['sent', 'viewed'].includes(row.status)
-                  ? (isStudent
-                      ? <Text type="secondary">{t('studentHome.consentWaiting')}</Text>
-                      : <Link to={`/consents/${id}`}>{t('consent.open')}</Link>)
+                  ? (canSign
+                      ? <Link to={`/consents/${id}`}>{t('consent.open')}</Link>
+                      : isStudent
+                        ? <Text type="secondary">{t('studentHome.consentWaiting')}</Text>
+                        : <Text type="secondary">{t('consent.awaitingSignature')}</Text>)
                   : null,
             },
           ]}

@@ -39,6 +39,15 @@ import type { ReactNode } from 'react';
 
 export type Has = (permission: string) => boolean;
 
+// THE student-actor signature — ONE definition (P0-SAFE-1). enrolment.view ∧ events.rsvp uniquely mark a student
+// across the seeded roles EXCEPT super_admin (holds both via '*'); ¬operations.manage excludes super. Consumed by
+// the /my/team nav gate below, StudentTeam.tsx's deep-link guard, and Consents/Dashboard/Enrolments — inlining
+// the 3-term expression in more than one place is the exact drift class this card fixes, so it lives here beside
+// `Has` (its parameter type) and every caller imports it: the literal appears exactly once, in this function.
+export function isStudentActor(has: Has): boolean {
+  return has('enrolment.view') && has('events.rsvp') && !has('operations.manage');
+}
+
 export interface NavLeaf {
   path: string;
   i18nKey: string; // nav.*
@@ -64,12 +73,14 @@ export const NAV: NavGroup[] = [
     i18nKey: 'navGroup.programme',
     items: [
       {
-        // S-UX3-3b — the student team-formation surface. teams.view is the student role default; hidden
-        // from academy ops (operations.manage) who use the ops /team instead — shown-not-hidden, no dual nav.
+        // S-UX3-3b — the student Team Formation surface. GATED on isStudentActor (P0-SAFE-1): teams.view alone
+        // was too broad — teacher AND school_admin also hold it, so both saw this STUDENT create/join/submit
+        // surface. The student signature (enrolment.view ∧ events.rsvp ∧ ¬operations.manage) is student-only;
+        // ops/super are excluded by ¬operations.manage and use the ops /team instead (shown-not-hidden).
         path: '/my/team',
         i18nKey: 'nav.myTeam',
         icon: <UserPlus size={16} aria-hidden />,
-        visible: (h) => h('teams.view') && !h('operations.manage'),
+        visible: isStudentActor,
       },
       {
         // S-UX3-4 — student "My Sessions" (book/cancel + own attendance). enrolment.view ∩ events.rsvp

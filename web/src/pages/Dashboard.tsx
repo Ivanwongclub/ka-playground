@@ -8,6 +8,7 @@ import { CalendarCheck, CircleAlert, FileSignature, GraduationCap, Link2, Scale,
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '../auth/session';
 import { useIdentity } from '../auth/identity';
+import { isStudentActor } from '../nav';
 import { StatCard } from '@/ds2'; // DS2 — migrated to the shared StatCard primitive (was a local tile)
 import { StudentHome } from './StudentHome';
 import { GuardianHome } from './GuardianHome';
@@ -44,7 +45,7 @@ function upcomingSessionCount(sessions: { starts_at: string; status: string }[])
 // is byte-identical to before.
 export function Dashboard() {
   const { has } = useIdentity();
-  if (has('enrolment.view') && has('events.rsvp') && !has('operations.manage')) return <StudentHome />;
+  if (isStudentActor(has)) return <StudentHome />;
   // R1-G — the GUARDIAN persona home. consent.sign is guardian-EXCLUSIVE: it is a guardian-role-only
   // permission AND listed in capability_forbidden, so no capability group (not even super_admin's '*')
   // can carry it (guarded by the authz.consent_sign_exclusive nightly assertion). Every non-guardian,

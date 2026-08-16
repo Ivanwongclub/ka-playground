@@ -254,6 +254,7 @@
     "listTitle": "同意书请求",
     "listCaption": "等待您签署的文件",
     "open": "打开",
+    "awaitingSignature": "等待家长签署",
     "loadError": "无法加载此文件",
     "status": {
       "sent": "待签署",

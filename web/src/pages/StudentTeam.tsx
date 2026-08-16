@@ -18,6 +18,9 @@ import { programmeName, personName } from '../display/names';
 // DS2 (restyle rollout C4 — child-data tier). StudentTeam.tsx joins the ALLOWED @/ds2 adopters
 // (import-guard). Container-framing only (Card→SubPanel); formation/join/submit handlers byte-identical.
 import { SubPanel, EmptyState, WizardRail } from '@/ds2';
+import { useIdentity } from '../auth/identity';
+import { isStudentActor } from '../nav';
+import { NotFound } from './NotFound';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -42,7 +45,17 @@ function tri(o: { name_en: string; name_tc: string; name_sc: string } | null, lo
   return (locale === 'zh-TC' ? o.name_tc : locale === 'zh-SC' ? o.name_sc : o.name_en) || o.name_en;
 }
 
+// P0-SAFE-1 — deep-link corollary (Proposal A1): /my/team is the STUDENT create/join/submit WRITE surface. The
+// nav item is student-gated (isStudentActor), but a deep-linked teacher/school_admin would otherwise render it
+// (writes 403 server-side). An unentitled URL must resolve NOT FOUND — this is the render half, using the SAME
+// isStudentActor as the nav gate. Hooks live in StudentTeamInner, so none run for a non-student (Rules of Hooks).
 export function StudentTeam() {
+  const { has } = useIdentity();
+  if (!isStudentActor(has)) return <NotFound />;
+  return <StudentTeamInner />;
+}
+
+function StudentTeamInner() {
   const { t } = useTranslation();
   const teams = useResource<{ data: TeamRow[] }>('/api/teams');
   const enrolments = useResource<{ data: EnrolRow[] }>('/api/enrolments');

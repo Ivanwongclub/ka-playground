@@ -254,6 +254,7 @@
     "listTitle": "Consent requests",
     "listCaption": "Documents awaiting your signature",
     "open": "Open",
+    "awaitingSignature": "Awaiting guardian signature",
     "loadError": "Could not load this document",
     "status": {
       "sent": "Awaiting signature",
