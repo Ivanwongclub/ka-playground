@@ -463,7 +463,16 @@ h3 {
    fill and read fine over the glow. Base = opaque --ka-card (readable fallback); glass added under @supports. */
 /* Root + content transparent so the html ambient shows through. NOT .ant-pro-sider — the sider aside
    carries BOTH ant-layout-sider AND ant-pro-sider, so transparent!important there would wipe its glass tint. */
-.ant-pro-layout,
+/* W1-GROUND-FIX: the ambient ground moves off the html canvas onto the app ROOT container. antd core Layout
+   paints an opaque colorBgLayout (#0F0D14) across the inner .ant-layout stack, which occluded the html ground;
+   the root .ant-pro-layout is the top container (not occluded), so carrying --ka-ambient here paints reliably and
+   the transparent inner layers below let it show through. !important beats antd's runtime layout bg, matching
+   this block's established pattern. (html keeps the ground for the auth screens, which have no ProLayout.) */
+.ant-pro-layout {
+  background-image: var(--ka-ambient) !important;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
 .ant-pro-layout .ant-layout,
 .ant-pro-layout .ant-pro-layout-content,
 .ant-pro-layout .ant-layout-content {
