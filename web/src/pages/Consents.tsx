@@ -16,7 +16,7 @@ import { useResource, DataBoundary } from '../api/useResource';
 import { useIdentity } from '../auth/identity';
 import { isStudentActor } from '../nav';
 import { programmeName, personName } from '../display/names';
-import { formatHkt } from '../display/date';
+import { formatHkt, tsSort } from '../display/date';
 import { StatusTag } from '../display/status';
 import { SubPanel, UrgencyChip, urgencyLevel, urgencyDays, urgencyLabel, URGENCY } from '@/ds2';
 // DS2 rollout C1 — markup-only framing (Card→SubPanel). The BI-6 signing flow (scroll-gate, affirmation,
@@ -76,6 +76,14 @@ export function ConsentList() {
   const canSign = has('consent.sign');
   const { data, loading, error } = useResource<{ data: RequestRow[] }>('/api/consent-requests');
   const rows = data?.data ?? [];
+  // P0-SAFE-2 (Part D-b) — decision-evidence sort: actionable (sent/viewed) first, then soonest expires_at
+  // (nulls last via tsSort); settled rows trail in stable order. Copy-first, stable, display-only — no filter,
+  // no row hidden, count unchanged (rows.length still gates the empty state).
+  const sortedRows = [...rows].sort(
+    (a, b) =>
+      (['sent', 'viewed'].includes(a.status) ? 0 : 1) - (['sent', 'viewed'].includes(b.status) ? 0 : 1)
+      || tsSort(a.expires_at) - tsSort(b.expires_at),
+  );
 
   // Urgency applies ONLY to a live (awaiting-action) consent — a signed/declined/expired row has no
   // actionable deadline, so it carries no chip or emphasis. Not a proxy: the deadline is expires_at.
@@ -89,7 +97,7 @@ export function ConsentList() {
       <DataBoundary loading={loading} error={error} empty={rows.length === 0}>
         <Table<RequestRow>
           rowKey="id"
-          dataSource={rows}
+          dataSource={sortedRows}
           pagination={false}
           rowClassName={(row) => { const lvl = rowLevel(row); return lvl !== 'none' ? `ds2-urgent--${lvl}` : ''; }}
           columns={[

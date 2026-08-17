@@ -11,7 +11,7 @@ import { mutate, type MutateResult } from '../api/mutate';
 import { ReasonModal } from '../components/ReasonModal';
 import { StatusTag } from '../display/status';
 import { programmeName } from '../display/names';
-import { formatHkt } from '../display/date';
+import { formatHkt, tsSort } from '../display/date';
 // DS2 (restyle rollout M3 — money tier). ALLOWED adopter (import-guard). Appearance only:
 // Card→SubPanel framing; the table, BI-7 decision buttons and status pill are byte-identical.
 import { SubPanel } from '@/ds2';
@@ -63,6 +63,9 @@ export function Withdrawals() {
   const { data, loading, error, reload } = useResource<{ data: Row[] }>('/api/withdrawal-requests');
   const [rejectId, setRejectId] = useState<string | null>(null);
   const rows = data?.data ?? [];
+  // P0-SAFE-2 (Part D-b) — closing refund window first: full_refund_before asc, nulls last (tsSort). Copy-first,
+  // stable, display-only; count unchanged. (Local parseTs:42 feeds refundWindow and is left byte-identical.)
+  const sortedRows = [...rows].sort((a, b) => tsSort(a.full_refund_before) - tsSort(b.full_refund_before));
 
   const surface = (r: MutateResult) => {
     if (r.ok) {
@@ -126,7 +129,7 @@ export function Withdrawals() {
           <Table<Row>
             rowKey="id"
             size="small"
-            dataSource={rows}
+            dataSource={sortedRows}
             pagination={false}
             expandable={{ expandedRowRender: renderDetail }}
             columns={[

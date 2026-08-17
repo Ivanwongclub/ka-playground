@@ -46,3 +46,15 @@ export function formatHktDate(v: string | null | undefined, locale: string): str
     dateOnly ? { dateStyle: 'medium' } : { timeZone: 'Asia/Hong_Kong', dateStyle: 'medium' },
   ).format(d);
 }
+
+/**
+ * Sort key for a pg timestamptz or bare date (ms since epoch), reusing the same `parse` normaliser as the
+ * formatters above (NOT a hand-rolled Date.parse). null / undefined / unparseable → +Infinity so a missing
+ * deadline sorts LAST under ascending order. Display-only ordering (P0-SAFE-2, Proposal Part D-b) — never
+ * rendered; use formatHkt* for display. The +Infinity-on-NaN guard keeps it safe inside a comparator.
+ */
+export function tsSort(s: string | null | undefined): number {
+  if (!s) return Number.POSITIVE_INFINITY;
+  const t = parse(s).getTime();
+  return Number.isNaN(t) ? Number.POSITIVE_INFINITY : t;
+}

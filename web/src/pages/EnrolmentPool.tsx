@@ -4,7 +4,7 @@ import { Alert, Space, Table, Typography } from 'antd';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '../auth/session';
-import { formatHktDate } from '../display/date';
+import { formatHktDate, tsSort } from '../display/date';
 import { StatusTag } from '../display/status';
 import { SubPanel, StateBadge } from '@/ds2'; // DS2 rollout D2 — markup-only restyle (read-only audit report)
 
@@ -67,7 +67,7 @@ export function EnrolmentPool() {
         <Table<PoolRow>
           rowKey="programme_id"
           size="small"
-          dataSource={report?.pool_by_programme ?? []}
+          dataSource={[...(report?.pool_by_programme ?? [])].sort((a, b) => tsSort(a.formation_deadline_on) - tsSort(b.formation_deadline_on))}
           pagination={false}
           columns={[
             // R1-F2: the programme code links to Programme 360.

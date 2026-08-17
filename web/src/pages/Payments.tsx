@@ -16,6 +16,7 @@ import { ReasonModal } from '../components/ReasonModal';
 import { formatMoney } from '../display/money';
 import { StatusTag } from '../display/status';
 import { programmeName, personName } from '../display/names';
+import { tsSort } from '../display/date';
 import { useIdentity } from '../auth/identity';
 import { ZebraTable, StatCard } from '@/ds2';
 
@@ -29,6 +30,7 @@ interface OrderRow {
   status: string;
   total_amount_minor: number;
   currency: string;
+  payment_due_at: string | null; // P0-SAFE-2: /api/orders already returns it (SelfService's Order carries it); local type only, no server change
   student_name: string | null;
   programme_name_en: string | null;
   programme_name_tc: string | null;
@@ -127,7 +129,12 @@ export function Payments() {
   const allPayments = payments.data?.data ?? [];
   // Awaiting = an issued order with no recorded payment yet (a pending/confirmed payment moves it off the list).
   const settledOrders = new Set(allPayments.filter((p) => p.status !== 'rejected').map((p) => p.order_id));
-  const awaiting = (orders.data?.data ?? []).filter((o) => o.status === 'issued' && !settledOrders.has(o.id));
+  // P0-SAFE-2 (Part D-b) — soonest payment_due_at first (nulls last via tsSort). filter() already returns a
+  // fresh array, so .sort() does not mutate orders.data; display-only, count unchanged. The pending-confirmation
+  // table below stays in API order — PaymentRow carries no timestamp to sort on (recorded/served-side gap, AUDIT.md).
+  const awaiting = (orders.data?.data ?? [])
+    .filter((o) => o.status === 'issued' && !settledOrders.has(o.id))
+    .sort((a, b) => tsSort(a.payment_due_at) - tsSort(b.payment_due_at));
   const pending = allPayments.filter((p) => p.status === 'pending_confirmation');
   const confirmed = allPayments.filter((p) => p.status === 'confirmed');
   // Summary stat-cards — ALL frontend-computed from the reads already fetched (/orders + /payments); NO new

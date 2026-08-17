@@ -61,9 +61,11 @@ export function Approvals() {
       onOk: async () => surface(await mutate(url)),
     });
 
-  const accounts = data?.accounts ?? [];
-  const links = data?.links ?? [];
-  const held = data?.held ?? [];
+  // P0-SAFE-2 (Part D-b) — oldest-first: age_days DESC (matches approvalLevel — oldest = most urgent).
+  // Copy-first, stable, display-only; counts/render unchanged. age_days is numeric (always present) — no date helper.
+  const accounts = [...(data?.accounts ?? [])].sort((a, b) => b.age_days - a.age_days);
+  const links = [...(data?.links ?? [])].sort((a, b) => b.age_days - a.age_days);
+  const held = [...(data?.held ?? [])].sort((a, b) => b.age_days - a.age_days);
 
   // R0-B4: approvals urgency from age_days vs the queue's threshold_days (no raw deadline in the payload) —
   // approvalLevel windows match approvalThresholds (overdue past threshold, due at it, soon within 2d).
