@@ -57,7 +57,18 @@
     "myChildren": "我的子女",
     "myPayments": "我的付款",
     "myStudents": "我的學生",
-    "myProfile": "我的檔案"
+    "myProfile": "我的檔案",
+    "myProgrammes": "課程",
+    "me": "我"
+  },
+  "enrolSpace": {
+    "tab": {
+      "journey": "歷程",
+      "team": "團隊",
+      "sessions": "課節",
+      "tracker": "活動進度",
+      "results": "成績"
+    }
   },
   "shell": {
     "openNavigation": "開啟導覽",

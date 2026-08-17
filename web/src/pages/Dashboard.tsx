@@ -8,7 +8,7 @@ import { CalendarCheck, CircleAlert, FileSignature, GraduationCap, Link2, Scale,
 import { useTranslation } from 'react-i18next';
 import { authFetch } from '../auth/session';
 import { useIdentity } from '../auth/identity';
-import { isStudentActor } from '../nav';
+import { isStudentActor, isGuardianActor } from '../nav';
 import { StatCard } from '@/ds2'; // DS2 — migrated to the shared StatCard primitive (was a local tile)
 import { StudentHome } from './StudentHome';
 import { GuardianHome } from './GuardianHome';
@@ -50,7 +50,7 @@ export function Dashboard() {
   // permission AND listed in capability_forbidden, so no capability group (not even super_admin's '*')
   // can carry it (guarded by the authz.consent_sign_exclusive nightly assertion). Every non-guardian,
   // non-student still renders PersonaMetrics — byte-identical.
-  if (has('consent.sign')) return <GuardianHome />;
+  if (isGuardianActor(has)) return <GuardianHome />;
   return <PersonaMetrics />;
 }
 

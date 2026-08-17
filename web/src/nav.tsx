@@ -23,11 +23,9 @@ import {
   Undo2,
   Users,
   Users2,
-  UserPlus,
   CalendarDays,
   Contact,
   IdCard,
-  CalendarClock,
   CalendarCheck,
   NotebookPen,
   Baby,
@@ -46,6 +44,15 @@ export type Has = (permission: string) => boolean;
 // `Has` (its parameter type) and every caller imports it: the literal appears exactly once, in this function.
 export function isStudentActor(has: Has): boolean {
   return has('enrolment.view') && has('events.rsvp') && !has('operations.manage');
+}
+
+// THE guardian-actor signature — ONE definition (C1-SHELL). consent.sign is GUARDIAN-UNIQUE: it is a guardian-role
+// permission AND listed in capability_forbidden, so no capability group (not even super_admin's '*') can carry it.
+// So `has('consent.sign')` alone identifies a guardian — no ¬super qualifier needed, unlike isStudentActor. Read
+// it as "IS the guardian", not "can sign": every guardian-identifying caller imports it (the nav gates, the
+// /enrolments ¬guardian demotion, and Dashboard/Enrolments/Marketplace/Consents) so the literal appears once.
+export function isGuardianActor(has: Has): boolean {
+  return has('consent.sign');
 }
 
 export interface NavLeaf {
@@ -73,95 +80,76 @@ export const NAV: NavGroup[] = [
     i18nKey: 'navGroup.programme',
     items: [
       {
-        // S-UX3-3b — the student Team Formation surface. GATED on isStudentActor (P0-SAFE-1): teams.view alone
-        // was too broad — teacher AND school_admin also hold it, so both saw this STUDENT create/join/submit
-        // surface. The student signature (enrolment.view ∧ events.rsvp ∧ ¬operations.manage) is student-only;
-        // ops/super are excluded by ¬operations.manage and use the ops /team instead (shown-not-hidden).
-        path: '/my/team',
-        i18nKey: 'nav.myTeam',
-        icon: <UserPlus size={16} aria-hidden />,
+        // C1-SHELL — the STUDENT "Programmes" list: the enrolment-card front door to the scoped programme space
+        // (/enrolments/:enrolmentId, D-1 keyed on enrolment_id). Route is an EMPTY Placeholder skeleton this card;
+        // the enrolment-card list is the next card. Student-only via isStudentActor. (Was: My Team · My Sessions,
+        // both DEMOTED out of nav — routes stay reachable — per B1's 4-slot student nav.)
+        path: '/programmes',
+        i18nKey: 'nav.myProgrammes',
+        icon: <BookOpen size={16} aria-hidden />,
         visible: isStudentActor,
       },
       {
-        // S-UX3-4 — student "My Sessions" (book/cancel + own attendance). enrolment.view ∩ events.rsvp
-        // uniquely identifies a student: a member lacks enrolment.view; a guardian/teacher/ops lacks
-        // events.rsvp. Matches the role:student gate on /my/sessions.
-        path: '/my/sessions',
-        i18nKey: 'nav.mySessions',
-        icon: <CalendarClock size={16} aria-hidden />,
-        visible: (h) => h('enrolment.view') && h('events.rsvp'),
-      },
-      {
-        // KAP-MKT-1 — the STUDENT marketplace entry (browse + R-2 status; enrolment is guardian-led, so a
-        // student sees status, not an Enroll press). events.rsvp is the student signature (a member lacks
-        // enrolment.view; a guardian/teacher/ops lacks events.rsvp) — same predicate as My Sessions/Profile.
+        // KAP-MKT-1 — the STUDENT Market Place (browse + R-2 status; enrolment is guardian-led). events.rsvp is
+        // the student signature (a member lacks enrolment.view; a guardian/teacher/ops lacks events.rsvp).
         path: '/marketplace',
         i18nKey: 'nav.marketplace',
         icon: <Store size={16} aria-hidden />,
         visible: (h) => h('enrolment.view') && h('events.rsvp'),
       },
       {
-        // R1-P360 — student "My Profile" (the 360 record view: programme record incl. terminal states,
-        // team/roles/tracker, role history). events.rsvp is the STUDENT SIGNATURE (a member lacks
-        // enrolment.view; a guardian/teacher/ops lacks events.rsvp) — same predicate as My Sessions, so
-        // the record lens is student-only. The guardian reads the SAME Profile360 per child via My Children.
+        // C1-SHELL — the STUDENT "Me" (B1 slot name; relabelled nav.myProfile → nav.me — "My Profile" was the
+        // record-page framing that made the student's Me wrong, S2 G-9). Still /my/profile → Profile360 self-view;
+        // student-only via events.rsvp. (The guardian's "Me" is /me below — a different route, same slot.)
         path: '/my/profile',
-        i18nKey: 'nav.myProfile',
+        i18nKey: 'nav.me',
         icon: <IdCard size={16} aria-hidden />,
         visible: (h) => h('enrolment.view') && h('events.rsvp'),
       },
       {
-        // S-UX3-9 — guardian "My Children". consent.sign is guardian-unique (capability_forbidden bars
-        // ops; students hold consent.view, not .sign).
+        // S-UX3-9 — GUARDIAN "Children". isGuardianActor (consent.sign is guardian-unique — capability_forbidden
+        // bars every capability group incl. super's '*'; students hold consent.view, not .sign).
         path: '/my/children',
         i18nKey: 'nav.myChildren',
         icon: <Baby size={16} aria-hidden />,
-        visible: (h) => h('consent.sign'),
+        visible: isGuardianActor,
       },
       {
-        // KAP-MKT-1 — the GUARDIAN marketplace entry (browse + Enroll a child → the existing /my/enrolments
-        // path). consent.sign is guardian-exclusive (capability_forbidden bars every capability group).
-        path: '/marketplace',
-        i18nKey: 'nav.marketplace',
-        icon: <Store size={16} aria-hidden />,
-        visible: (h) => h('consent.sign'),
-      },
-      {
-        // R1-P360 — Consent is the GUARDIAN'S act (they hold consent.sign). events.rsvp is the student
-        // signature; excluding it moves consent OUT of the student menu (the student's consent-waiting
-        // card on the home already carries awareness, and /consents stays route-reachable from it). The
-        // guardian and school_admin (both ¬events.rsvp) keep the item.
+        // R1-P360 — Consent is the GUARDIAN'S act. ¬events.rsvp keeps it off the student menu; guardian and
+        // school_admin/ops (all ¬events.rsvp, all hold consent.view) keep it.
         path: '/consents',
         i18nKey: 'nav.consents',
         icon: <FileSignature size={16} aria-hidden />,
         visible: (h) => h('consent.view') && !h('events.rsvp'),
       },
       {
-        // S-UX3-9 — guardian "My Payments" (read-only obligations/receipts + get-payment-link). Guardian-
-        // scoped via consent.sign (a guardian's finance.view is "their own money"; consent.sign keeps it
-        // guardian-only, not school_admin/ops).
+        // S-UX3-9 — GUARDIAN "Payments" (read-only obligations/receipts + get-payment-link). isGuardianActor
+        // keeps it guardian-only (a guardian's finance.view is "their own money"), not school_admin/ops.
         path: '/my/payments',
         i18nKey: 'nav.myPayments',
         icon: <Wallet size={16} aria-hidden />,
-        visible: (h) => h('consent.sign'),
+        visible: isGuardianActor,
       },
       {
-        // R1-P360 — Enrolments is the ACTIVE lens (the clickable journey WizardRail). events.rsvp is the
-        // student signature; excluding it moves the enrolments MENU item off the student (their record lens
-        // is My Profile — display-only), while the guardian/teacher/school keep it. /enrolments stays
-        // route-reachable for a student via the StudentHome Enrolments StatCard (which correctly targets it).
+        // C1-SHELL — the GUARDIAN "Me" (B2's 5th slot). NO correct target exists yet: Profile360 is the STUDENT
+        // grammar (S2 G-9). So this is an EMPTY Placeholder skeleton, present so the slot RENDERS in the mobile
+        // tab bar — fixing S2 G-2 (guardian Me never rendered: it was the 6th of 7 leaves, cut by slice(0,5)).
+        // The real guardian-account surface (identity · language · notification prefs · "Link another child",
+        // prototype gua-me) is a later card. isGuardianActor.
+        path: '/me',
+        i18nKey: 'nav.me',
+        icon: <IdCard size={16} aria-hidden />,
+        visible: isGuardianActor,
+      },
+      {
+        // R1-P360 — Enrolments (the flat operational table). C1-SHELL DEMOTES it out of the GUARDIAN nav (the
+        // guardian's enrolments live in the scoped space via Children, not this table). `¬isGuardianActor` drops
+        // EXACTLY the guardian (consent.sign is guardian-unique) and KEEPS teacher + school_admin, who use the
+        // operational table. Route stays reachable. (¬events.rsvp already excludes student/super.)
         path: '/enrolments',
         i18nKey: 'nav.enrolments',
         icon: <GraduationCap size={16} aria-hidden />,
-        visible: (h) => h('enrolment.view') && !h('events.rsvp'),
-      },
-      {
-        // S-UX3-4 — guardian "My Child's Sessions" (read-only). consent.sign is guardian-unique
-        // (capability_forbidden bars academy admins; students hold consent.view, not .sign).
-        path: '/family/sessions',
-        i18nKey: 'nav.childSessions',
-        icon: <CalendarDays size={16} aria-hidden />,
-        visible: (h) => h('consent.sign'),
+        visible: (h) => h('enrolment.view') && !h('events.rsvp') && !isGuardianActor(h),
       },
       {
         // S-UX3-4 — teacher (mentor) "Attendance" (roster → mark). teams.approve is held by teacher + ops;

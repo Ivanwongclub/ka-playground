@@ -57,7 +57,18 @@
     "myChildren": "My Children",
     "myPayments": "My Payments",
     "myStudents": "My Students",
-    "myProfile": "My Profile"
+    "myProfile": "My Profile",
+    "myProgrammes": "Programmes",
+    "me": "Me"
+  },
+  "enrolSpace": {
+    "tab": {
+      "journey": "Journey",
+      "team": "Team",
+      "sessions": "Sessions",
+      "tracker": "Tracker",
+      "results": "Results"
+    }
   },
   "shell": {
     "openNavigation": "Open navigation",

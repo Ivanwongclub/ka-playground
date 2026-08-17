@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
 import { useIdentity } from '../auth/identity';
-import { isStudentActor } from '../nav';
+import { isStudentActor, isGuardianActor } from '../nav';
 import { programmeName, personName } from '../display/names';
 import { SubPanel, StateBadge, WizardRail } from '@/ds2'; // DS2 rollout D1 + R1-S2 B1 (journey → WizardRail)
 
@@ -49,7 +49,7 @@ export function Enrolments() {
   // The R1-S student predicate (verified student-only in R1-S). onStep deep-links are gated to students.
   const isStudent = isStudentActor(has);
   // R1-G: guardian is consent.sign-exclusive (capability_forbidden bars it from every capability group).
-  const isGuardian = has('consent.sign');
+  const isGuardian = isGuardianActor(has);
   const { data, loading, error } = useResource<{ data: Row[] }>('/api/enrolments');
   const rows = data?.data ?? [];
 

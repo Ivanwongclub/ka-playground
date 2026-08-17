@@ -14,7 +14,7 @@ import { kaColors } from '../theme/theme';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
 import { useIdentity } from '../auth/identity';
-import { isStudentActor } from '../nav';
+import { isStudentActor, isGuardianActor } from '../nav';
 import { programmeName, personName } from '../display/names';
 import { formatHkt, tsSort } from '../display/date';
 import { StatusTag } from '../display/status';
@@ -73,7 +73,7 @@ export function ConsentList() {
   // P0-SAFE-1 — the actionable "Open" link is the SIGNER'S affordance. consent.sign is guardian-only
   // (capability_forbidden + A-1 never-set), so a school/ops CHASES (keeps the read) but never signs — a
   // non-signer sees a non-actionable label, not a route INTO the ceremony (which the server would 403).
-  const canSign = has('consent.sign');
+  const canSign = isGuardianActor(has);
   const { data, loading, error } = useResource<{ data: RequestRow[] }>('/api/consent-requests');
   const rows = data?.data ?? [];
   // P0-SAFE-2 (Part D-b) — decision-evidence sort: actionable (sent/viewed) first, then soonest expires_at

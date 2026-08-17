@@ -10,6 +10,7 @@ import { App, Button, Col, Modal, Row, Select, Tag, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useIdentity } from '../auth/identity';
+import { isGuardianActor } from '../nav';
 import { useResource, DataBoundary } from '../api/useResource';
 import { mutate } from '../api/mutate';
 import { personName } from '../display/names';
@@ -40,7 +41,7 @@ export function Marketplace() {
   const locale = i18n.language as KaLocale;
   const { has } = useIdentity();
   const { message } = App.useApp();
-  const isGuardian = has('consent.sign'); // guardian-exclusive (capability_forbidden bars every cap group)
+  const isGuardian = isGuardianActor(has); // guardian-exclusive (capability_forbidden bars every cap group)
 
   const catalogue = useResource<{ data: ProgrammeCard[] }>('/api/programmes');
   const enrolments = useResource<{ data: EnrolRow[] }>('/api/enrolments'); // the caller's OWN (R-2/R-4)

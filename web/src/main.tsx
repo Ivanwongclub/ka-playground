@@ -52,6 +52,7 @@ const ConsentSign = lazy(() => import('./pages/Consents').then((m) => ({ default
 const ConsentEvidence = lazy(() => import('./pages/ConsentEvidence').then((m) => ({ default: m.ConsentEvidence })));
 const AdminConsentTemplates = lazy(() => import('./pages/AdminConsentTemplates').then((m) => ({ default: m.AdminConsentTemplates })));
 const Enrolments = lazy(() => import('./pages/Enrolments').then((m) => ({ default: m.Enrolments })));
+const EnrolmentSpace = lazy(() => import('./pages/EnrolmentSpace').then((m) => ({ default: m.EnrolmentSpace })));
 const EnrolmentPool = lazy(() => import('./pages/EnrolmentPool').then((m) => ({ default: m.EnrolmentPool })));
 const FinancialIntegrity = lazy(() => import('./pages/FinancialIntegrity').then((m) => ({ default: m.FinancialIntegrity })));
 const Approvals = lazy(() => import('./pages/Approvals').then((m) => ({ default: m.Approvals })));
@@ -126,6 +127,10 @@ function Root() {
               <Route path="/my/children" element={<MyChildren />} />
               {/* R1-P360 — the student 360 (self) + the guardian child-view (same Profile360 per child). */}
               <Route path="/marketplace" element={<Marketplace />} />
+              {/* C1-SHELL — the STUDENT "Programmes" front door + the GUARDIAN "Me": empty Placeholder skeletons
+                  this card (nav slots exist so the bars render 4/5; content is a later card). */}
+              <Route path="/programmes" element={<Placeholder titleKey="empty.title" />} />
+              <Route path="/me" element={<Placeholder titleKey="empty.title" />} />
               <Route path="/my/profile" element={<MyProfile />} />
               <Route path="/my/children/:studentId" element={<ChildProfile />} />
               <Route path="/my/payments" element={<MyPayments />} />
@@ -149,6 +154,9 @@ function Root() {
               <Route path="/admin/consent-evidence" element={<ConsentEvidence />} />
               <Route path="/admin/consent-templates" element={<AdminConsentTemplates />} />
               <Route path="/enrolments" element={<Enrolments />} />
+              {/* C1-SHELL — the family scoped programme space (D-1: enrolment_id). Skeleton only (band + empty
+                  tab strip); NotFound if the enrolment is absent from the viewer's RLS-scoped list. */}
+              <Route path="/enrolments/:enrolmentId" element={<EnrolmentSpace />} />
               <Route path="/admin/enrolment-pool" element={<EnrolmentPool />} />
               <Route path="/admin/financial-integrity" element={<FinancialIntegrity />} />
               <Route path="/admin/approvals" element={<Approvals />} />

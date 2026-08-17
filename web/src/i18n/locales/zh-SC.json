@@ -57,7 +57,18 @@
     "myChildren": "我的子女",
     "myPayments": "我的付款",
     "myStudents": "我的学生",
-    "myProfile": "我的档案"
+    "myProfile": "我的档案",
+    "myProgrammes": "课程",
+    "me": "我"
+  },
+  "enrolSpace": {
+    "tab": {
+      "journey": "历程",
+      "team": "团队",
+      "sessions": "课节",
+      "tracker": "活动进度",
+      "results": "成绩"
+    }
   },
   "shell": {
     "openNavigation": "打开导航",
