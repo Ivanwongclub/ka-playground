@@ -11,7 +11,8 @@
     "i18n:check": "node scripts/i18n-check.mjs",
     "ds2:check": "node scripts/ds2-tokens-check.mjs && node scripts/ds2-import-guard.mjs",
     "emoji:check": "node scripts/emoji-ban.mjs",
-    "test:marketing-payload": "node scripts/marketing-payload.test.mjs"
+    "test:marketing-payload": "node scripts/marketing-payload.test.mjs",
+    "fidelity": "node scripts/fidelity.mjs"
   },
   "dependencies": {
     "@ant-design/charts": "^2.6.7",
@@ -36,6 +37,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "oxlint": "^1.71.0",
+    "playwright": "^1.62.1",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"
   }

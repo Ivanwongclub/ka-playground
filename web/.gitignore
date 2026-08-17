@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# W2-FIDELITY-RIG — local prototype-comparison artefacts (screenshots + tables); never committed
+fidelity/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
