@@ -106,15 +106,19 @@
    * DS2-owned, NOT drift-checked. No surface references these yet; P0-2 wires them onto the app-shell /
    * auth ground so the palette swap (P0-1) and the ambient land as separate, reviewable steps. */
 
-  /* four radial-glow layers — low-alpha violet/indigo (Kit §2.1); composite as one bg-image */
-  /* W1-GROUND-AMBIENT (D-2-a): radii are now %-OF-ELEMENT and OURS — so the composition holds at any window width
-   * instead of assuming a 2400px canvas (px radii on a ~1050px element left the ground present but imperceptible).
-   * Colours, alphas, positions and the `transparent 70%` stop are Kit CONTRACT — unchanged. Verified visible +
-   * directional at 1050px by pixel-sampling the composited ground (16/20 grid points violet, luminance var. 18). */
-  --ka-glow-1: radial-gradient(120% 90% at 24% -8%,  rgba(98, 66, 204, 0.30), transparent 70%);  /* #6242CC */
-  --ka-glow-2: radial-gradient(90% 80% at 100% 0%,   rgba(110, 68, 206, 0.20), transparent 70%); /* #6E44CE top-right */
-  --ka-glow-3: radial-gradient(90% 85% at 0% 100%,   rgba(66, 86, 206, 0.18), transparent 70%);  /* #4256CE bottom-left */
-  --ka-glow-4: radial-gradient(110% 70% at 50% 120%, rgba(124, 140, 248, 0.09), transparent 70%);/* #7C8CF8 bottom */
+  /* four radial-glow layers — violet/indigo directional ground (composite as one bg-image) */
+  /* W1-GROUND-AMBIENT: radii are %-OF-ELEMENT (D-2-a) AND alphas are RAISED above Kit §2.1 (D-2-b) — both OURS,
+   * both by OWNER RULING, deliberately diverging from the Kit NUMBERS to honour the Kit INTENT (the prototype's
+   * look is the contract). WHY: the Kit's alphas assume a ~2400px canvas where each glow owns its own region; at
+   * the real ~1050px element the four overlap into one flat wash and read as near-black even though they composite
+   * to a measurable violet (rgba(98,66,204,0.30) over #0F0D14 ≈ #231A33 — a sampler sees violet, an eye sees black).
+   * Relative proportions preserved (0.30:0.20:0.18:0.09 → 0.55:0.37:0.33:0.17). Colours, positions and the
+   * `transparent 70%` stop are still Kit CONTRACT — unchanged. A later reader must NOT "correct" the alphas back
+   * down to Kit §2.1: that reproduces the invisible ground this ruling exists to fix. */
+  --ka-glow-1: radial-gradient(120% 90% at 24% -8%,  rgba(98, 66, 204, 0.55), transparent 70%);  /* #6242CC */
+  --ka-glow-2: radial-gradient(90% 80% at 100% 0%,   rgba(110, 68, 206, 0.37), transparent 70%); /* #6E44CE top-right */
+  --ka-glow-3: radial-gradient(90% 85% at 0% 100%,   rgba(66, 86, 206, 0.33), transparent 70%);  /* #4256CE bottom-left */
+  --ka-glow-4: radial-gradient(110% 70% at 50% 120%, rgba(124, 140, 248, 0.17), transparent 70%);/* #7C8CF8 bottom */
   --ka-ambient: var(--ka-glow-1), var(--ka-glow-2), var(--ka-glow-3), var(--ka-glow-4);         /* → background-image */
 
   /* glass recipe — transparent fill + backdrop blur + hairline divider; apply the three together */
