@@ -14,7 +14,7 @@
 /* ── GlanceCard (§3.2) — image band → status row → segbar → label/value rows ── */
 .ds2-glance { background: var(--ka-card); border-radius: var(--ka-r-lg); overflow: hidden; box-shadow: var(--ka-shadow-md); display: flex; flex-direction: column; }
 .ds2-glance--clickable { cursor: pointer; transition: transform 150ms ease, box-shadow 150ms ease; }
-.ds2-glance--clickable:hover { transform: translateY(-2px); box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45); }
+.ds2-glance--clickable:hover { transform: translateY(-2px); box-shadow: var(--ka-sh-2); } /* W1-GROUND (Kit §2.3): hover-lift points at the sh-2 token, not the inline literal */
 .ds2-glance--clickable:focus-visible { outline: 2px solid var(--ka-border-strong); outline-offset: 2px; }
 .ds2-glance__band .ds2-hero { border-radius: 0; }
 .ds2-glance__body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }

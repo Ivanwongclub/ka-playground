@@ -59,11 +59,13 @@ export const kaTheme: ThemeConfig = {
     colorText: kaColors.foregroundSoft,
     colorTextHeading: kaColors.foreground,
     colorTextSecondary: kaColors.mutedForeground, // §3.1 mapping — one source of truth
-    // 1.4.11 split (design review, 23 Jul 2026): controls get the 3.0-compliant
-    // boundary; decorative separators keep the quiet aubergine line
-    colorBorder: kaColors.borderStrong,
-    colorBorderSecondary: kaColors.border,
-    controlOutline: kaColors.gold, // solid — 8.01:1 on card; 0.35 alpha blended to 2.06
+    // W1-GROUND (Kit §2.1): outline ban at the token layer. The 23 Jul resting border is superseded by the
+    // Kit — resting containers/inputs carry NO border; legibility comes from the muted fill delta + the
+    // MANDATORY :focus-visible border/ring (Kit §2.4, wired below via activeBorderColor + controlOutline +
+    // the global :focus-visible rule in index.css). borderStrong is retained for that focus path only.
+    colorBorder: 'transparent',
+    colorBorderSecondary: kaColors.border, // decorative single-edge dividers/table lines keep the quiet aubergine
+    controlOutline: kaColors.borderStrong, // W1-GROUND (Kit §2.4): focus ring is borderStrong, no longer gold (gold = action only)
     fontFamilyCode: "'JetBrains Mono', monospace",
   },
   components: {
@@ -74,8 +76,10 @@ export const kaTheme: ThemeConfig = {
     Button: { primaryColor: kaColors.background }, // dark text on gold
     Badge: { colorError: kaColors.warning }, // v3: numeric count badge uses warning (amber), not danger red
     Tabs: { inkBarColor: kaColors.gold, itemSelectedColor: kaColors.gold },
-    Table: { headerBg: kaColors.card, headerColor: kaColors.gold, rowHoverBg: kaColors.muted },
-    Modal: { headerBg: kaColors.card, titleColor: kaColors.gold },
+    // W1-GROUND (Kit §1/§2.2): gold out of the token layer — a table header + modal title are chrome, not
+    // action. Header text → muted, header bg → transparent (the ambient/card reads through); modal title → white.
+    Table: { headerBg: 'transparent', headerColor: kaColors.mutedForeground, rowHoverBg: kaColors.muted },
+    Modal: { headerBg: kaColors.card, titleColor: kaColors.foreground },
     Steps: { colorPrimary: kaColors.gold },
     // v3: control fill is the muted tone; the focus/active edge is the 1.4.11 borderStrong (no longer gold)
     Input: { colorBgContainer: kaColors.muted, activeBorderColor: kaColors.borderStrong },

@@ -47,6 +47,26 @@ body,
   background: transparent;
 }
 
+/* ═══ W1-GROUND — the two companions of the token-layer outline ban (Kit §2.1/§2.4) ═══ */
+
+/* FLAG-1 — colorBorder:transparent removes DECORATIVE container/input outlines, but a checkbox box / radio dot
+   is a FUNCTIONAL STATE INDICATOR — it IS the control, not a frame around one. Restore its boundary so the
+   unchecked state stays visible (the consent affirmation is a Checkbox on a legal ceremony — an invisible box
+   there would be a defect on the highest-stakes surface). This is NOT a decorative outline. */
+.ant-checkbox-inner,
+.ant-radio-inner {
+  border-color: var(--ka-border-strong);
+}
+
+/* FLAG-2 — Kit §2.4 makes the :focus-visible path MANDATORY, and D-2 was ruled on the premise it is real. A
+   deterministic ring beats trusting antd per-control defaults we cannot verify — a control must never be
+   focusable-and-invisible. Same treatment the existing custom :focus-visible rules already use, so it is
+   consistent with (never fights) the nav/table chrome, whose own more-specific rules still win. */
+:focus-visible {
+  outline: 2px solid var(--ka-border-strong);
+  outline-offset: 2px;
+}
+
 h1,
 h2,
 h3 {

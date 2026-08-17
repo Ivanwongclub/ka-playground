@@ -70,11 +70,12 @@
   white-space: nowrap;
 }
 .ds2-uchip__i { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.ds2-uchip--soon    { color: var(--ka-gold);    background: var(--ka-gold-tint);    border-color: var(--ka-gold-line); }
+/* W1-GROUND (Kit §1, Part D/A5): 'soon' = pending BLUE, never gold — urgency is never gold. due/overdue unchanged. */
+.ds2-uchip--soon    { color: var(--ka-pending); background: var(--ka-pending-tint); border-color: var(--ka-pending-line); }
 .ds2-uchip--due     { color: var(--ka-warning); background: var(--ka-warning-tint); border-color: var(--ka-warning-line); }
 .ds2-uchip--overdue { color: var(--ka-danger);  background: var(--ka-danger-tint);  border-color: var(--ka-danger-line); }
 /* row emphasis — only 'overdue' tints the whole row (spec R-U3) */
-.ds2-urgent--soon    { box-shadow: inset 3px 0 0 var(--ka-gold-line); }
+.ds2-urgent--soon    { box-shadow: inset 3px 0 0 var(--ka-pending-line); } /* W1-GROUND: row tint 'soon' → pending, matching the chip (was gold) */
 .ds2-urgent--due     { box-shadow: inset 3px 0 0 var(--ka-warning-line); }
 .ds2-urgent--overdue { box-shadow: inset 3px 0 0 var(--ka-danger-line); background: var(--ka-danger-tint); }
 
