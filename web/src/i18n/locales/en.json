@@ -739,6 +739,8 @@
     "amount": "Amount",
     "destination": "To",
     "approvedBy": "Approved by",
+    "you": "You",
+    "biNineYou": "You approved this — a second officer must confirm",
     "approve": "Approve",
     "confirm": "Confirm",
     "reject": "Reject",

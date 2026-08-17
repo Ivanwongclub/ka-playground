@@ -12,6 +12,7 @@ import { ReasonModal } from '../components/ReasonModal';
 import { formatMoney } from '../display/money';
 import { StatusTag } from '../display/status';
 import { personName } from '../display/names';
+import { useIdentity } from '../auth/identity';
 // DS2 (restyle rollout M1 — money tier). ALLOWED adopter (import-guard). Appearance only:
 // Card→SubPanel framing; the table, BI-9 buttons, amounts and status pills are byte-identical.
 import { SubPanel } from '@/ds2';
@@ -46,6 +47,8 @@ export function Refunds() {
   const { data, loading, error, reload } = useResource<{ data: RefundRow[] }>('/api/refunds');
   const [reasoned, setReasoned] = useState<Reasoned>(null);
   const rows = data?.data ?? [];
+  const { identity } = useIdentity();
+  const meId = identity?.id; // P0-SAFE-3 BI-9 cue: the current finance officer's id (the server stays the authority)
 
   const surface = (r: MutateResult) => {
     if (r.ok) {
@@ -99,8 +102,13 @@ export function Refunds() {
               { title: t('refund.amount'), render: (_, r) => <Text strong>{formatMoney(r.amount_minor, r.currency, locale)}</Text> },
               { title: t('refund.destination'), dataIndex: 'destination_party', render: (v: string) => <StatusTag domain="refundDestination" value={v} /> },
               { title: t('common.status'), dataIndex: 'status', render: (s: string) => <StatusTag domain="refundStatus" value={s} /> },
-              // BI-9: the confirmer SEES who approved it.
-              { title: t('refund.approvedBy'), render: (_, r) => personName(r.approved_by_name) },
+              // BI-9: the confirmer SEES who approved it; when it is themselves the row shows "You".
+              // Uses the DERIVED v3 warning tokens (NOT Payments' stale rgba(251,191,36,.12) v2-amber literal —
+              // that is a separate stale-literal follow-up, AUDIT.md; no token is redefined here, D-2 untouched).
+              { title: t('refund.approvedBy'),
+                render: (_, r) => r.approved_by === meId
+                  ? <span style={{ color: 'var(--ka-warning)', background: 'var(--ka-warning-tint)', fontSize: 12, fontWeight: 600, padding: '2px 9px', borderRadius: 6 }}>{t('refund.you')}</span>
+                  : personName(r.approved_by_name) },
               {
                 title: t('common.actions'), key: 'act',
                 render: (_, r) =>
@@ -110,8 +118,15 @@ export function Refunds() {
                       <Button size="small" danger onClick={() => setReasoned({ url: `/api/admin/refunds/${r.id}/reject`, title: t('refund.rejectTitle'), okText: t('refund.reject'), minLen: 5, field: 'reason' })}>{t('refund.reject')}</Button>
                     </Space>
                   ) : r.status === 'approved' ? (
+                    // P0-SAFE-3 BI-9 shown-not-hidden: the APPROVER's own Confirm is SHOWN but DISABLED with the
+                    // reason — RefundService::confirm 403s a same-person confirm (and rf_update WITH CHECK does too).
+                    // INTENTIONAL DIVERGENCE from Payments (which disables BOTH): Reject stays ENABLED here because
+                    // NEITHER layer guards a self-reject — RefundService::reject has no same-person check and
+                    // rf_update's `status='rejected'` arm is unguarded, so an approver rejecting their own approved
+                    // refund is permitted. Do NOT "fix" this into symmetry: pre-disabling Reject would hide a
+                    // control the server accepts. The server stays the authority.
                     <Space>
-                      <Button size="small" type="primary" danger onClick={() => confirmRefund(r)}>{t('refund.confirm')}</Button>
+                      <Button size="small" type="primary" danger disabled={r.approved_by === meId} title={r.approved_by === meId ? t('refund.biNineYou') : undefined} onClick={() => confirmRefund(r)}>{t('refund.confirm')}</Button>
                       <Button size="small" danger onClick={() => setReasoned({ url: `/api/admin/refunds/${r.id}/reject`, title: t('refund.rejectTitle'), okText: t('refund.reject'), minLen: 5, field: 'reason' })}>{t('refund.reject')}</Button>
                     </Space>
                   ) : null,
