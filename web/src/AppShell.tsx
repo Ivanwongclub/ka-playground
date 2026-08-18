@@ -128,7 +128,10 @@ function ShellInner() {
       layout="mix"
       fixSiderbar
       fixedHeader
-      siderWidth={240}
+      // C3-CHROME: prototype sider measurements — 250px expanded (siderWidth), 58px collapsed. ProLayout
+      // HARDCODES the collapsed width to 64 (SiderMenu.js, not a prop), so the 58px collapse is forced in CSS
+      // (index.css, .ant-layout-sider-collapsed override). The brand cell in headerRender mirrors both widths.
+      siderWidth={250}
       location={{ pathname }}
       route={{ path: '/', routes }}
       menu={{ defaultOpenAll: true }}
