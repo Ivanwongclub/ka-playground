@@ -70,7 +70,7 @@ export interface NavGroup {
 export const NAV: NavGroup[] = [
   {
     i18nKey: 'navGroup.overview',
-    items: [{ path: '/', i18nKey: 'nav.dashboard', icon: <LayoutDashboard size={16} aria-hidden /> }],
+    items: [{ path: '/', i18nKey: 'nav.dashboard', icon: <LayoutDashboard size={19} strokeWidth={1.9} aria-hidden /> }],
   },
   {
     // R1-P360 — order carries each role's ACTIVE lens (records live in Profile / My Children).
@@ -86,7 +86,7 @@ export const NAV: NavGroup[] = [
         // both DEMOTED out of nav — routes stay reachable — per B1's 4-slot student nav.)
         path: '/programmes',
         i18nKey: 'nav.myProgrammes',
-        icon: <BookOpen size={16} aria-hidden />,
+        icon: <BookOpen size={19} strokeWidth={1.9} aria-hidden />,
         visible: isStudentActor,
       },
       {
@@ -94,7 +94,7 @@ export const NAV: NavGroup[] = [
         // the student signature (a member lacks enrolment.view; a guardian/teacher/ops lacks events.rsvp).
         path: '/marketplace',
         i18nKey: 'nav.marketplace',
-        icon: <Store size={16} aria-hidden />,
+        icon: <Store size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('enrolment.view') && h('events.rsvp'),
       },
       {
@@ -103,7 +103,7 @@ export const NAV: NavGroup[] = [
         // student-only via events.rsvp. (The guardian's "Me" is /me below — a different route, same slot.)
         path: '/my/profile',
         i18nKey: 'nav.me',
-        icon: <IdCard size={16} aria-hidden />,
+        icon: <IdCard size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('enrolment.view') && h('events.rsvp'),
       },
       {
@@ -111,7 +111,7 @@ export const NAV: NavGroup[] = [
         // bars every capability group incl. super's '*'; students hold consent.view, not .sign).
         path: '/my/children',
         i18nKey: 'nav.myChildren',
-        icon: <Baby size={16} aria-hidden />,
+        icon: <Baby size={19} strokeWidth={1.9} aria-hidden />,
         visible: isGuardianActor,
       },
       {
@@ -119,7 +119,7 @@ export const NAV: NavGroup[] = [
         // school_admin/ops (all ¬events.rsvp, all hold consent.view) keep it.
         path: '/consents',
         i18nKey: 'nav.consents',
-        icon: <FileSignature size={16} aria-hidden />,
+        icon: <FileSignature size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('consent.view') && !h('events.rsvp'),
       },
       {
@@ -127,7 +127,7 @@ export const NAV: NavGroup[] = [
         // keeps it guardian-only (a guardian's finance.view is "their own money"), not school_admin/ops.
         path: '/my/payments',
         i18nKey: 'nav.myPayments',
-        icon: <Wallet size={16} aria-hidden />,
+        icon: <Wallet size={19} strokeWidth={1.9} aria-hidden />,
         visible: isGuardianActor,
       },
       {
@@ -138,7 +138,7 @@ export const NAV: NavGroup[] = [
         // prototype gua-me) is a later card. isGuardianActor.
         path: '/me',
         i18nKey: 'nav.me',
-        icon: <IdCard size={16} aria-hidden />,
+        icon: <IdCard size={19} strokeWidth={1.9} aria-hidden />,
         visible: isGuardianActor,
       },
       {
@@ -148,7 +148,7 @@ export const NAV: NavGroup[] = [
         // operational table. Route stays reachable. (¬events.rsvp already excludes student/super.)
         path: '/enrolments',
         i18nKey: 'nav.enrolments',
-        icon: <GraduationCap size={16} aria-hidden />,
+        icon: <GraduationCap size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('enrolment.view') && !h('events.rsvp') && !isGuardianActor(h),
       },
       {
@@ -156,7 +156,7 @@ export const NAV: NavGroup[] = [
         // excluding operations.manage leaves the teacher. Matches the role:teacher gate on /my/mentor/sessions.
         path: '/attendance',
         i18nKey: 'nav.attendance',
-        icon: <CalendarCheck size={16} aria-hidden />,
+        icon: <CalendarCheck size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('teams.approve') && !h('operations.manage'),
       },
       {
@@ -164,7 +164,7 @@ export const NAV: NavGroup[] = [
         // (matches the S-UX3-4 mentor gate; both are teacher surfaces).
         path: '/my/students',
         i18nKey: 'nav.myStudents',
-        icon: <UsersRound size={16} aria-hidden />,
+        icon: <UsersRound size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('teams.approve') && !h('operations.manage'),
       },
     ],
@@ -175,9 +175,9 @@ export const NAV: NavGroup[] = [
     // state rather than another member's data.
     i18nKey: 'navGroup.community',
     items: [
-      { path: '/events', i18nKey: 'nav.events', icon: <CalendarDays size={16} aria-hidden />, visible: (h) => h('member_directory.view') },
-      { path: '/directory', i18nKey: 'nav.directory', icon: <Contact size={16} aria-hidden />, visible: (h) => h('member_directory.view') },
-      { path: '/profile', i18nKey: 'nav.profile', icon: <IdCard size={16} aria-hidden />, visible: (h) => h('member_directory.view') },
+      { path: '/events', i18nKey: 'nav.events', icon: <CalendarDays size={19} strokeWidth={1.9} aria-hidden />, visible: (h) => h('member_directory.view') },
+      { path: '/directory', i18nKey: 'nav.directory', icon: <Contact size={19} strokeWidth={1.9} aria-hidden />, visible: (h) => h('member_directory.view') },
+      { path: '/profile', i18nKey: 'nav.profile', icon: <IdCard size={19} strokeWidth={1.9} aria-hidden />, visible: (h) => h('member_directory.view') },
     ],
   },
   {
@@ -189,7 +189,7 @@ export const NAV: NavGroup[] = [
       {
         path: '/admin/approvals',
         i18nKey: 'nav.approvals',
-        icon: <ClipboardCheck size={16} aria-hidden />,
+        icon: <ClipboardCheck size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('operations.manage'),
       },
       {
@@ -197,7 +197,7 @@ export const NAV: NavGroup[] = [
         // lobby school-admins retain direct server access (OD-39) under shown-not-hidden.
         path: '/team',
         i18nKey: 'nav.team',
-        icon: <Users2 size={16} aria-hidden />,
+        icon: <Users2 size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('operations.manage'),
       },
       {
@@ -207,67 +207,67 @@ export const NAV: NavGroup[] = [
         // route, so an operations-only admin has a programme-list source.
         path: '/admin/attendance',
         i18nKey: 'nav.attendanceOversight',
-        icon: <NotebookPen size={16} aria-hidden />,
+        icon: <NotebookPen size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('operations.manage'),
       },
       {
         path: '/admin/withdrawals',
         i18nKey: 'nav.withdrawals',
-        icon: <LogOut size={16} aria-hidden />,
+        icon: <LogOut size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('operations.manage'),
       },
       {
         path: '/admin/programmes',
         i18nKey: 'nav.programmes',
-        icon: <BookOpen size={16} aria-hidden />,
+        icon: <BookOpen size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('configuration.manage'),
       },
       {
         path: '/admin/consent-templates',
         i18nKey: 'nav.consentTemplates',
-        icon: <FileText size={16} aria-hidden />,
+        icon: <FileText size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('configuration.manage'),
       },
       {
         path: '/admin/enrolment-pool',
         i18nKey: 'nav.enrolmentPool',
-        icon: <Users size={16} aria-hidden />,
+        icon: <Users size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('audit.read'),
       },
       {
         path: '/admin/payments',
         i18nKey: 'nav.payments',
-        icon: <CreditCard size={16} aria-hidden />,
+        icon: <CreditCard size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('finance.record') || h('finance.confirm'),
       },
       {
         path: '/admin/refunds',
         i18nKey: 'nav.refunds',
-        icon: <Undo2 size={16} aria-hidden />,
+        icon: <Undo2 size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('finance.record') || h('finance.confirm'),
       },
       {
         path: '/admin/financial-integrity',
         i18nKey: 'nav.financialIntegrity',
-        icon: <FileCheck size={16} aria-hidden />,
+        icon: <FileCheck size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('finance.record') || h('audit.read'),
       },
       {
         path: '/admin/access-identity',
         i18nKey: 'nav.accessIdentity',
-        icon: <Users size={16} aria-hidden />,
+        icon: <Users size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('audit.read'),
       },
       {
         path: '/admin/audit',
         i18nKey: 'nav.audit',
-        icon: <ShieldCheck size={16} aria-hidden />,
+        icon: <ShieldCheck size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('audit.read'),
       },
       {
         path: '/admin/consent-evidence',
         i18nKey: 'nav.consentEvidence',
-        icon: <FileCheck size={16} aria-hidden />,
+        icon: <FileCheck size={19} strokeWidth={1.9} aria-hidden />,
         visible: (h) => h('audit.read'),
       },
     ],

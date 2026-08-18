@@ -976,6 +976,13 @@
     "pickProgramme": "选择课程",
     "open": "打开"
   },
+  "chrome": {
+    "searchPlaceholder": "搜索…",
+    "searchEmpty": "没有匹配项",
+    "profile": "个人档案",
+    "settings": "设置",
+    "lastSignIn": "上次登录 {{when}}"
+  },
   "enrolCard": {
     "title": "我的课程",
     "consent": "同意书",

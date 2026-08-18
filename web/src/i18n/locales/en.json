@@ -978,6 +978,13 @@
     "pickProgramme": "Choose a programme",
     "open": "Open"
   },
+  "chrome": {
+    "searchPlaceholder": "Search…",
+    "searchEmpty": "No matches",
+    "profile": "Profile",
+    "settings": "Settings",
+    "lastSignIn": "Last sign-in {{when}}"
+  },
   "enrolCard": {
     "title": "My programmes",
     "consent": "Consent",

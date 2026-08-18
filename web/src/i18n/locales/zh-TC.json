@@ -976,6 +976,13 @@
     "pickProgramme": "選擇課程",
     "open": "開啟"
   },
+  "chrome": {
+    "searchPlaceholder": "搜尋…",
+    "searchEmpty": "沒有符合項目",
+    "profile": "個人檔案",
+    "settings": "設定",
+    "lastSignIn": "上次登入 {{when}}"
+  },
   "enrolCard": {
     "title": "我的課程",
     "consent": "同意書",
