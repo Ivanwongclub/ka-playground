@@ -20,6 +20,12 @@
 // CREDENTIALS: the demo password is read from env FIDELITY_PASSWORD ONLY — never hardcoded, never committed,
 //   never the GCP secret. The local demo accounts were reset to a local-only password. Export it before running.
 //
+// PROTOTYPE SCREEN ANCHOR — HEADS UP: `[data-p]` is NOT the screen anchor for every prototype screen. Some
+//   screens (e.g. #stu-progs, #gua-children — C2-LIST) are anchored by section `id=`/`data-nav=`, and the
+//   `data-p` attribute sits on their NAV BUTTON, not the section. Isolating such a screen by `[data-p]` would
+//   grab the button. For those, target the section `id` (e.g. `#stu-progs`) instead — a one-off in the run
+//   invocation, not a rig edit. Check the prototype markup for the screen you are shooting before trusting data-p.
+//
 // VIEWPORT: desktop 1440×900 for STAFF screens, mobile 390×844 for FAMILY screens — matching the prototype's own
 //   framing on BOTH sides. This is load-bearing: a guardian-home comparison run desktop-on-both would compare the
 //   wrong grammar entirely (the prototype frames family as a phone; the built family surface is .ka-mobile-shell).

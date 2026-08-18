@@ -53,6 +53,7 @@ const ConsentEvidence = lazy(() => import('./pages/ConsentEvidence').then((m) =>
 const AdminConsentTemplates = lazy(() => import('./pages/AdminConsentTemplates').then((m) => ({ default: m.AdminConsentTemplates })));
 const Enrolments = lazy(() => import('./pages/Enrolments').then((m) => ({ default: m.Enrolments })));
 const EnrolmentSpace = lazy(() => import('./pages/EnrolmentSpace').then((m) => ({ default: m.EnrolmentSpace })));
+const StudentProgrammes = lazy(() => import('./pages/StudentProgrammes').then((m) => ({ default: m.StudentProgrammes })));
 const EnrolmentPool = lazy(() => import('./pages/EnrolmentPool').then((m) => ({ default: m.EnrolmentPool })));
 const FinancialIntegrity = lazy(() => import('./pages/FinancialIntegrity').then((m) => ({ default: m.FinancialIntegrity })));
 const Approvals = lazy(() => import('./pages/Approvals').then((m) => ({ default: m.Approvals })));
@@ -127,9 +128,9 @@ function Root() {
               <Route path="/my/children" element={<MyChildren />} />
               {/* R1-P360 — the student 360 (self) + the guardian child-view (same Profile360 per child). */}
               <Route path="/marketplace" element={<Marketplace />} />
-              {/* C1-SHELL — the STUDENT "Programmes" front door + the GUARDIAN "Me": empty Placeholder skeletons
-                  this card (nav slots exist so the bars render 4/5; content is a later card). */}
-              <Route path="/programmes" element={<Placeholder titleKey="empty.title" />} />
+              {/* C2-LIST — the STUDENT "Programmes" list (GlanceCard per enrolment, drills into /enrolments/:id).
+                  The GUARDIAN "Me" stays an empty Placeholder skeleton (a later card). */}
+              <Route path="/programmes" element={<StudentProgrammes />} />
               <Route path="/me" element={<Placeholder titleKey="empty.title" />} />
               <Route path="/my/profile" element={<MyProfile />} />
               <Route path="/my/children/:studentId" element={<ChildProfile />} />

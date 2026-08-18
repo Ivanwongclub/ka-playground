@@ -29,6 +29,7 @@ const ALLOWED = [
   // ── KAP-MKT-1 (Marketplace) — SubPanel/EmptyState card grid over the anonymous-safe catalogue ──
   'src/pages/Marketplace.tsx', // KAP-MKT-1 — the programme storefront (catalogue + guardian-led enrolment)
   'src/pages/EnrolmentSpace.tsx', // C1-SHELL — the family scoped programme space skeleton (ProgrammeBandHeader + EmptyState; band + empty tab strip, no content)
+  'src/pages/StudentProgrammes.tsx', // C2-LIST — the STUDENT /programmes enrolment-card list (GlanceCard per enrolment; drills into EnrolmentSpace)
   // ── restyle rollout: each surface is a deliberate adoption in its own gated card ──
   'src/pages/SelfService.tsx', // ANCHORS STEP 1 — My Children (MyPayments/MyStudents in-file are untouched)
   'src/pages/AdminProgrammes.tsx', // ANCHORS STEP 2 — the wizard

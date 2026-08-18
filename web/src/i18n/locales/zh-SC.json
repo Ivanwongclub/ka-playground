@@ -976,6 +976,13 @@
     "pickProgramme": "选择课程",
     "open": "打开"
   },
+  "enrolCard": {
+    "title": "我的课程",
+    "consent": "同意书",
+    "fees": "费用",
+    "feeDue": "到期",
+    "seg": { "submitted": "已提交", "pool": "待组队", "teamed": "已组队", "confirmed": "已确认", "active": "进行中" }
+  },
   "selfService": {
     "childrenTitle": "我的子女",
     "childrenSubtitle": "你子女的报名与同意状况。",

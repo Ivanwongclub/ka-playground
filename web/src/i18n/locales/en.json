@@ -978,6 +978,13 @@
     "pickProgramme": "Choose a programme",
     "open": "Open"
   },
+  "enrolCard": {
+    "title": "My programmes",
+    "consent": "Consent",
+    "fees": "Fees",
+    "feeDue": "Due",
+    "seg": { "submitted": "Submitted", "pool": "Pool", "teamed": "Teamed", "confirmed": "Confirmed", "active": "Active" }
+  },
   "selfService": {
     "childrenTitle": "My Children",
     "childrenSubtitle": "Your children's enrolments and consent.",
