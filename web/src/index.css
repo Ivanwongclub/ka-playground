@@ -463,20 +463,22 @@ h3 {
    fill and read fine over the glow. Base = opaque --ka-card (readable fallback); glass added under @supports. */
 /* Root + content transparent so the html ambient shows through. NOT .ant-pro-sider — the sider aside
    carries BOTH ant-layout-sider AND ant-pro-sider, so transparent!important there would wipe its glass tint. */
-/* W1-GROUND-FIX: the ambient ground moves off the html canvas onto the app ROOT container. antd core Layout
-   paints an opaque colorBgLayout (#0F0D14) across the inner .ant-layout stack, which occluded the html ground;
-   the root .ant-pro-layout is the top container (not occluded), so carrying --ka-ambient here paints reliably and
-   the transparent inner layers below let it show through. !important beats antd's runtime layout bg, matching
-   this block's established pattern. (html keeps the ground for the auth screens, which have no ProLayout.) */
-.ant-pro-layout {
+/* W1-GROUND-PAINT: the ambient must sit on the element that ACTUALLY PAINTS the content region. ProLayout nests
+   .ant-pro-layout → .ant-layout.ant-layout-has-sider → .ant-pro-layout-container → .ant-pro-layout-content; the
+   has-sider flex wrapper blocks the grandparent's background from reaching the content column (PIXEL-PROVEN:
+   forcing .ant-pro-layout opaque paints nothing at content points — 23,22,28 flat), so the ambient on
+   .ant-pro-layout was "declared but never painted". So the root + inner layouts stay transparent, and the ground
+   lives on the content <main> (.ant-pro-layout-content, which DOES paint → 38,30,61 violet) AND the sider aside
+   (below). background-attachment: fixed on both → the two slices share ONE viewport-positioned gradient and read
+   as a single continuous ground. (html keeps the ground for the auth screens, which have no ProLayout.) */
+.ant-pro-layout,
+.ant-pro-layout .ant-layout {
+  background: transparent !important;
+}
+.ant-pro-layout .ant-pro-layout-content {
   background-image: var(--ka-ambient) !important;
   background-attachment: fixed;
   background-repeat: no-repeat;
-}
-.ant-pro-layout .ant-layout,
-.ant-pro-layout .ant-pro-layout-content,
-.ant-pro-layout .ant-layout-content {
-  background: transparent !important;
 }
 /* The sider aside IS the glass (position:fixed via fixSiderbar → safe to carry backdrop-filter). Its inner
    .ant-layout-sider-children is transparent by default, so the aside's tint reads through. */
@@ -509,6 +511,18 @@ h3 {
   .ant-pro-layout .ant-layout-header {
     background: var(--ka-card);
   }
+}
+
+/* W1-GROUND-PAINT: the sider aside gets the SAME ambient so the glass has a GROUND to blur — transparent +
+   backdrop-filter over nothing reads as a flat panel (the second half of the reported defect). Placed AFTER the
+   glass `background:` shorthands so this background-IMAGE longhand wins the cascade (both !important, same
+   specificity, later source order) while the glass background-COLOR (glass-fill / --ka-card fallback) and the
+   backdrop-filter stay intact. fixed → shares the content's viewport-positioned ground (continuous across the
+   x=240 seam). PIXEL-PROVEN: sider 17,15,23 flat → 38,28,69 violet. */
+.ant-pro-layout aside.ant-layout-sider {
+  background-image: var(--ka-ambient) !important;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
 
 /* ═══ P0-2b NAV CHROME (presentational only) — chevron/indicator column · 36px collapse handle · mini-rail
