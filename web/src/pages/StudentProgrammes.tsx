@@ -10,7 +10,8 @@
 //     1. GET /api/enrolments        — the caller's own enrolments (identity · status · segbar)
 //     2. GET /api/programmes        — catalogue banner_url for the image band (§c interim; brand-gradient fallback)
 //     3. GET /api/consent-requests  — consent status per programme (INFORMATIVE for the student — the guardian signs)
-//     4. GET /api/orders            — fee status per programme (rendered IFF the student's RLS returns a match)
+// NO Fees row on the student card: the prototype's stu-progs has none — fees are the GUARDIAN's object (owner
+// ruling, correcting the C2-LIST "four rows on both surfaces" call). The /api/orders read is gone with it.
 // DEFERRED (C2-LIST ruling #4, entitlement-iff): Team needs an N+1 roster-probe (/api/teams lists all lobby
 // teams, not the student's); Next-session's read returns team_id not programme_id, so per-enrolment attribution
 // needs a server change. Tracker/Results are deferred to their own card. Omitted rows are never placeholdered.
@@ -22,7 +23,6 @@ import { GlanceCard, StatusTag, useResource, DataBoundary } from '@/ds2';
 import type { GlanceRow } from '@/ds2';
 import { segItems } from '../display/enrolmentJourney';
 import { programmeName } from '../display/names';
-import { formatHkt } from '../display/date';
 
 const { Title } = Typography;
 
@@ -31,30 +31,21 @@ interface Catalogue { id: number; banner_url: string | null }
 interface ConsentReq { programme_id: number; status: string }
 // Student read: status + due only — the amount fields (total_amount_minor/currency) are DELIBERATELY not typed
 // here so the figure cannot be rendered on this surface (P-3 / B-18; see rowsFor).
-interface Order { programme_id: number; status: string; payment_due_at: string | null }
 
 // 7 real enrolment states → 5 display segments (C2-LIST ruling #1): pending_consent folds under Submitted,
 // completed under Active (the terminal end); withdrawn/released carry NO segbar (the status pill says it).
 // The 7→5 fold + terminal states live in ONE place now (C5-CONSUME): ../display/enrolmentJourney (segItems).
 
-// The student's consent + fee rows are INFORMATIVE — a student neither signs their own consent (the guardian
-// does) nor pays (§3.1: informative values are right-aligned plain text, never a pill and never an action).
-function rowsFor(consent: ConsentReq | undefined, order: Order | undefined, locale: KaLocale, t: (k: string) => string): GlanceRow[] {
+// The student's Consent row is INFORMATIVE — a student neither signs their own consent (the guardian does);
+// §3.1: informative values are right-aligned plain text, never a pill and never an action. (No Fees row — see
+// the header note; fees are the guardian's object.)
+function rowsFor(consent: ConsentReq | undefined, t: (k: string) => string): GlanceRow[] {
   const rows: GlanceRow[] = [];
   if (consent) {
     const txt = ['sent', 'viewed'].includes(consent.status) ? t('studentHome.consentWaiting')
       : consent.status === 'signed' ? t('selfService.consentMet')
       : t(`consent.status.${consent.status}`);
     rows.push({ label: t('enrolCard.consent'), value: { text: txt } });
-  }
-  if (order) {
-    // STATUS ONLY — a student never sees the fee FIGURE or currency (owner answer 11; backlog P-3; audit S1
-    // DM-5). orders_read still exposes amounts server-side, so this UI restraint is the sole thing preserving
-    // the rule until the B-18 orders-read narrowing lands. DO NOT re-add formatMoney/total_amount_minor here.
-    const txt = order.status === 'issued'
-      ? (order.payment_due_at ? `${t('enrolCard.feeDue')} ${formatHkt(order.payment_due_at, locale)}` : t('enrolCard.feeDue'))
-      : t(`status.order.${order.status}`);
-    rows.push({ label: t('enrolCard.fees'), value: { text: txt } });
   }
   return rows;
 }
@@ -66,12 +57,9 @@ export function StudentProgrammes() {
   const enr = useResource<{ data: Enrolment[] }>('/api/enrolments');
   const cat = useResource<{ data: Catalogue[] }>('/api/programmes');
   const con = useResource<{ data: ConsentReq[] }>('/api/consent-requests');
-  const ord = useResource<{ data: Order[] }>('/api/orders');
-
   const enrolments = enr.data?.data ?? [];
   const bannerBy = new Map((cat.data?.data ?? []).map((c) => [c.id, c.banner_url]));
   const consentBy = new Map((con.data?.data ?? []).map((c) => [c.programme_id, c]));
-  const orderBy = new Map((ord.data?.data ?? []).map((o) => [o.programme_id, o]));
 
   return (
     <div data-density="product">
@@ -92,7 +80,7 @@ export function StudentProgrammes() {
                   title={name}
                   status={<StatusTag domain="enrolmentStatus" value={e.status} />}
                   segments={segItems(e.status, t)}
-                  rows={rowsFor(consentBy.get(e.programme_id), orderBy.get(e.programme_id), locale, t)}
+                  rows={rowsFor(consentBy.get(e.programme_id), t)}
                   onClick={() => navigate(`/enrolments/${e.id}`)}
                 />
               );

@@ -455,6 +455,13 @@ h3 {
   top: var(--ka-demo-banner-h) !important;
   height: calc(100dvh - var(--ka-demo-banner-h)) !important;
 }
+/* C3-CHROME's layout="mix" added a position:fixed header at top:0; #root padding can't move a viewport-fixed
+   element, and the offset set above (written for layout="side", sider-only) never covered it — so the header
+   sat under the z-2000 banner. Offset it the same as the sider. (The mobile header is position:sticky, so it
+   flows inside the padded #root and needs no offset.) */
+.ka-demo-banner-on .ant-pro-layout-header {
+  top: var(--ka-demo-banner-h) !important;
+}
 
 /* ═══ P0-2 GLASS CHROME (desktop ProLayout) — consumes P0-1 --ka-glass-* / ambient tokens ═══
    Root + content transparent so the html ambient ground (--ka-ambient) shows through; the sider (itself

@@ -1003,7 +1003,6 @@
     "title": "My programmes",
     "consent": "Consent",
     "fees": "Fees",
-    "feeDue": "Due",
     "seg": { "submitted": "Submitted", "pool": "Pool", "teamed": "Teamed", "confirmed": "Confirmed", "active": "Active" }
   },
   "selfService": {
