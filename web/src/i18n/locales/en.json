@@ -983,7 +983,10 @@
     "searchEmpty": "No matches",
     "profile": "Profile",
     "settings": "Settings",
-    "lastSignIn": "Last sign-in {{when}}"
+    "lastSignIn": "Last sign-in {{when}}",
+    "notifications": "Notifications",
+    "pending": "{{count}} pending",
+    "menuTip": "Collapse / expand menu"
   },
   "enrolCard": {
     "title": "My programmes",

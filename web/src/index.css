@@ -525,6 +525,28 @@ h3 {
   background-repeat: no-repeat;
 }
 
+/* C3-CHROME-FIX-2 — the HEADER is glass too, but layout="mix" added it AFTER W1-GROUND-PAINT, which painted the
+   ambient on the sider + content only. With no ground, the header's backdrop-blur blurs the dark root and reads
+   opaque. Paint the SAME ambient on the header (background-attachment:fixed → continuous with the sider/content
+   ground across the seam) and FORCE our blur(18px) over antd's cssinjs blur(8px). Height to the prototype's 58.
+   PIXEL-PROVEN in STEP 1: header own-surface 30,25,39 (dark) must become violet, matching the 47,33,85 content
+   one row below. */
+.ant-pro-layout .ant-pro-layout-header {
+  background-image: var(--ka-ambient) !important;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  height: 58px !important;      /* prototype .hdr height (was antd's 56); headerHeight is not a ProLayout prop */
+  line-height: 58px !important;
+}
+/* antd's mix header sets blur(8px); its cssinjs rule ties a 4-class selector AND injects at runtime (after this
+   file), so an equal-specificity !important loses the tie. Prefix `html` (→ 0,4,1) to out-specify it outright.
+   NB: this is NOT wrapped in @supports and writes only the STANDARD property — lightningcss auto-prefixes it;
+   the earlier @supports+manual -webkit form was split by the minifier, dropping the unprefixed backdrop-filter
+   (so Chromium kept antd's 8px). Value is the prototype's blur(18px). Verified live. */
+html .ant-pro-layout .ant-pro-layout-header.ant-pro-layout-header-mix.ant-pro-layout-header-fixed-header {
+  backdrop-filter: blur(18px) !important;
+}
+
 /* ═══ P0-2b NAV CHROME (presentational only) — chevron/indicator column · 36px collapse handle · mini-rail
    a11y · sider footer scaffold. Data-backed queue badges + session/last-sign-in timers are DEFERRED (no data
    source yet); their slots render ABSENT. No nav logic touched. ═══ */
@@ -539,9 +561,13 @@ h3 {
    .ant-layout-sider-children (no wrapper class), so we position the handle itself: absolute, top-right edge of
    the fixed sider (straddling the divider). z-index keeps it above the menu. */
 .ant-layout-sider-children { position: relative; overflow: visible; }
-.ka-rail-collapse { position: absolute; top: 12px; inset-inline-end: -16px; z-index: 6; display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 50%; background: var(--ka-card); color: var(--ka-fg-soft); box-shadow: var(--ka-shadow-md); border: 1px solid var(--ka-border); cursor: pointer; }
+/* C3-CHROME-FIX-2 — prototype .scol: a 36px circle floating on the sider's RIGHT EDGE (position:fixed, half-on
+   at left = sider-width − 18px, fed inline 232/40 so it tracks the 250→58 collapse; top just below the 58 header),
+   with a hover tooltip via ::after(data-tip). Chevron 17px/2.2 set in the button. */
+.ka-rail-collapse { position: fixed; top: 72px; left: 232px; z-index: 70; display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 50%; background: var(--ka-card); color: var(--ka-fg-soft); box-shadow: var(--ka-shadow-md); border: 1px solid var(--ka-border); cursor: pointer; transition: left .18s ease; }
 .ka-rail-collapse:hover { color: var(--ka-gold); }
 .ka-rail-collapse:focus-visible { outline: 2px solid var(--ka-border-strong); outline-offset: 2px; }
+.ka-rail-collapse:hover::after { content: attr(data-tip); position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); background: var(--ka-card); color: var(--ka-fg); font-size: 12px; font-weight: 600; padding: 6px 11px; border-radius: 8px; white-space: nowrap; box-shadow: var(--ka-shadow-md); border: 1px solid var(--ka-border); z-index: 120; }
 
 /* C3-CHROME — header search (no fill; wraps the §3.12 ElasticSearch primitive) + user chip. Glass, layout and
    sizes follow the prototype; every colour/radius/font comes from our tokens (Kit wins the six stale prototype
@@ -566,7 +592,24 @@ h3 {
 
 
 .ka-hdr-search { position: relative; display: flex; align-items: center; width: 360px; max-width: 36vw; }
-.ka-hdr-search > * { width: 100%; }
+.ka-hdr-search .ds2-search { width: 100%; } /* fill the wrapper — NOT the magnifier (it keeps its 19px size) */
+/* leading magnifier (prototype .hsico) — a sibling over the ElasticSearch input (the primitive is not edited);
+   the input is padded to clear it. */
+.ka-hdr-search__ico { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); color: var(--ka-fg-soft); pointer-events: none; z-index: 1; }
+.ka-hdr-search .ds2-search__input { padding-left: 30px; }
+
+/* bell (prototype .hico) + count badge (.badge, warn bg, hidden at zero — visibility is JS-gated) + the 1px
+   divider (.hdr-sep) between bell and user chip. */
+.ka-hico { position: relative; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: var(--ka-fg-soft); background: none; border: none; cursor: pointer; flex: none; }
+.ka-hico:hover { background: var(--ka-card); color: var(--ka-fg); }
+.ka-badge { position: absolute; top: 1px; right: 1px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: var(--ka-warning); color: #151318; font-size: 10.5px; font-weight: 800; display: grid; place-items: center; line-height: 1; }
+.ka-hdr-sep { width: 1px; height: 26px; background: var(--ka-border-strong); margin: 0 2px; flex: none; }
+
+/* sider item count badge (prototype .nbadge) — queue items only (Kit §3.13). margin-left:auto pill expanded;
+   collapsed rail → an 8px dot at the item's top-right, number hidden. */
+.ka-navitem { display: flex; align-items: center; width: 100%; position: relative; }
+.ka-nbadge { margin-left: auto; background: rgba(232, 134, 60, 0.18); color: var(--ka-warning); font-size: 11px; font-weight: 700; padding: 1.5px 8px; border-radius: 999px; flex: none; }
+.ant-menu-inline-collapsed .ka-navitem .ka-nbadge { position: absolute; top: 5px; right: 7px; width: 8px; height: 8px; padding: 0; margin: 0; color: transparent; overflow: hidden; }
 
 .ka-userchip { display: flex; align-items: center; gap: 10px; padding: 5px 10px 5px 5px; border-radius: 10px; background: none; border: none; cursor: pointer; max-width: 210px; }
 .ka-userchip:hover { background: var(--ka-card); }

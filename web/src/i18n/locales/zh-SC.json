@@ -981,7 +981,10 @@
     "searchEmpty": "没有匹配项",
     "profile": "个人档案",
     "settings": "设置",
-    "lastSignIn": "上次登录 {{when}}"
+    "lastSignIn": "上次登录 {{when}}",
+    "notifications": "通知",
+    "pending": "{{count}} 项待处理",
+    "menuTip": "收合 / 展开菜单"
   },
   "enrolCard": {
     "title": "我的课程",

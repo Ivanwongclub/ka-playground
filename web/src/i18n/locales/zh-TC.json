@@ -981,7 +981,10 @@
     "searchEmpty": "沒有符合項目",
     "profile": "個人檔案",
     "settings": "設定",
-    "lastSignIn": "上次登入 {{when}}"
+    "lastSignIn": "上次登入 {{when}}",
+    "notifications": "通知",
+    "pending": "{{count}} 項待處理",
+    "menuTip": "收合 / 展開選單"
   },
   "enrolCard": {
     "title": "我的課程",

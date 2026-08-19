@@ -3,12 +3,13 @@
 // S-UX1: role-aware grouped nav (visibleGroups), real logo, user menu + logout, breadcrumbs.
 import { useCallback, useEffect, useState } from 'react';
 import { ProLayout, type MenuDataItem } from '@ant-design/pro-components';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { asset } from './assets';
 import { IdentityProvider, useIdentity } from './auth/identity';
-import { visibleGroups, visibleLeaves } from './nav';
+import { useResource } from './api/useResource';
+import { visibleGroups, visibleLeaves, isGuardianActor } from './nav';
 import { LocaleSwitcher } from './components/LocaleSwitcher';
 import { UserMenu } from './components/UserMenu';
 import { NavFooter } from './components/NavFooter';
@@ -25,13 +26,17 @@ import { ElasticSearch } from '@/ds2';
 // staff = teacher/school_admin/academy_admin (ops/finance/audit/super are academy_admin + capability groups,
 // OD-17). Default to family (no sha) for any unrecognised role — never leak the build sha to a non-staff view.
 const STAFF_ROLES = ['teacher', 'school_admin', 'academy_admin'];
+const OPEN_CONSENT = new Set(['sent', 'viewed']); // consent-request states awaiting a signature (matches GuardianHome/Dashboard)
 
-// The header typeahead — a thin controlled wrapper around ElasticSearch, mounted in the header content slot.
+// The header typeahead — a thin controlled wrapper around ElasticSearch, with a leading magnifier (prototype
+// .hdr-search: .hsico + input). The icon is a sibling (the DS2 primitive is not edited); the input is padded in
+// CSS to clear it. Behaviour stays INERT — no /search endpoint (FLAG).
 function HeaderSearch() {
   const { t } = useTranslation();
   const [value, setValue] = useState('');
   return (
     <div className="ka-hdr-search">
+      <Search className="ka-hdr-search__ico" size={19} strokeWidth={1.9} aria-hidden />
       <ElasticSearch
         value={value}
         onQuery={setValue}
@@ -76,6 +81,27 @@ function ShellInner() {
 
   const openDrawer = useCallback(() => setDrawerOpen(true), []);
   useEdgeSwipe(openDrawer);
+
+  // C3-CHROME-FIX-2 — chrome badge counts. Fetched ONCE: ShellInner stays mounted across route changes (it wraps
+  // the Outlet), and useResource keys on a CONSTANT url, so a navigation never refetches; the read fires once when
+  // identity resolves (null → url) and then holds. Role-gated (null url = no fetch), from EXISTING entitled reads
+  // only. Never blocks — the shell renders immediately and badges appear when data arrives. Counts DEGRADE
+  // SILENTLY: a failed/absent read leaves no entry → no badge (never a 0, never an error). Zero also renders no
+  // badge. Sources per role: /consents←consent-requests, /my/payments←orders, /admin/approvals←onboarding-queue,
+  // /admin/withdrawals←withdrawal-requests. Student/teacher/member get none (no queue task; §3.13).
+  const seesConsents = has('consent.view') && !has('events.rsvp');
+  const isGuardian = isGuardianActor(has);
+  const isOps = has('operations.manage');
+  const consentRes = useResource<{ data: { status: string }[] }>(seesConsents ? '/api/consent-requests' : null);
+  const orderRes = useResource<{ data: { status: string; payer_party: string }[] }>(isGuardian ? '/api/orders' : null);
+  const queueRes = useResource<{ accounts?: unknown[]; links?: unknown[] }>(isOps ? '/api/admin/onboarding-queue' : null);
+  const wdRes = useResource<{ data: { status: string }[] }>(isOps ? '/api/withdrawal-requests' : null);
+  const navCounts: Record<string, number> = {};
+  if (seesConsents && consentRes.data && !consentRes.error) navCounts['/consents'] = consentRes.data.data.filter((c) => OPEN_CONSENT.has(c.status)).length;
+  if (isGuardian && orderRes.data && !orderRes.error) navCounts['/my/payments'] = orderRes.data.data.filter((o) => o.status === 'issued' && (o.payer_party === 'guardian' || o.payer_party === 'student')).length;
+  if (isOps && queueRes.data && !queueRes.error) navCounts['/admin/approvals'] = (queueRes.data.accounts?.length ?? 0) + (queueRes.data.links?.length ?? 0);
+  if (isOps && wdRes.data && !wdRes.error) navCounts['/admin/withdrawals'] = wdRes.data.data.filter((w) => w.status === 'pending').length;
+  const bellCount = Object.values(navCounts).reduce((a, b) => a + b, 0);
 
   // Hold the chrome until we know who is signed in — never flash the wrong nav.
   if (loading) return <div className="ka-route-loading" aria-hidden />;
@@ -140,23 +166,27 @@ function ShellInner() {
       // Brand lives in the HEADER (headerRender below), not the sider top — remove ProLayout's sider brand.
       menuHeaderRender={false}
       collapsedButtonRender={(isCollapsed) => (
-        // ProLayout renders this content but does NOT wire the toggle in this version — wire it ourselves via
-        // the controlled `collapsed` state (we own it). A real button element for keyboard/focus.
+        // C3-CHROME-FIX-2 — prototype .scol: a 36px circle floating on the sider's RIGHT EDGE (position:fixed at
+        // left = sider-width − 18px, so half-on the edge), chevron 17px stroke 2.2, --card bg + shadow, and a
+        // hover tooltip via ::after (data-tip). We own the toggle via the controlled `collapsed` state. The left
+        // offset flips with the sider width (250→58) inline; CSS transitions it. A real button for keyboard/focus.
         <button
           type="button"
           className="ka-rail-collapse"
+          data-tip={t('chrome.menuTip')}
+          style={{ left: isCollapsed ? 40 : 232 }}
           aria-label={t(isCollapsed ? 'nav.expand' : 'nav.collapse')}
           onClick={() => setCollapsed(!isCollapsed)}
         >
-          {isCollapsed ? <ChevronRight size={19} strokeWidth={1.9} aria-hidden /> : <ChevronLeft size={19} strokeWidth={1.9} aria-hidden />}
+          {isCollapsed ? <ChevronRight size={17} strokeWidth={2.2} aria-hidden /> : <ChevronLeft size={17} strokeWidth={2.2} aria-hidden />}
         </button>
       )}
       menuFooterRender={() => <NavFooter collapsed={collapsed} staff={staff} />}
-      // C3-CHROME — HEADER via headerRender (the FALLBACK the ruling named). headerContentRender could not
-      // produce the prototype chrome: layout="side" renders no header, so it never appeared. headerRender owns
-      // the FULL header content — the brand CELL (width = sider width, own hairline right, collapse-aware), the
-      // search (inert ElasticSearch — no endpoint, FLAG), a spacer, the locale switcher and the user chip. The
-      // BELL is OMITTED (notifications unbuilt D6/B-19 — an inert bell is a dead affordance; ruling #1).
+      // C3-CHROME — HEADER via headerRender (the ruling's fallback): brand CELL (= sider width, hairline right,
+      // collapse-aware) · search (magnifier + inert ElasticSearch, FLAG) · spacer · BELL + badge · hdr-sep · user
+      // chip. The bell's badge is the role's TOTAL pending count from existing reads; the DRAWER is deferred
+      // (D6/B-19) — clicking opens nothing yet (FLAG). The language switcher moved INTO the user menu (an account
+      // preference, not chrome — C3-CHROME-FIX-2 item 6).
       headerRender={() => (
         <div className="ka-hdr">
           <div className="ka-hdr-brand" data-collapsed={collapsed || undefined}>
@@ -165,25 +195,37 @@ function ShellInner() {
           </div>
           <HeaderSearch />
           <span className="ka-hdr__grow" />
-          <LocaleSwitcher />
+          {/* Bell: real badge from existing reads; drawer DEFERRED (D6/B-19) — no onClick target yet (FLAG). No
+              badge at zero, and no badge when the count read failed (silent degradation). */}
+          <button type="button" className="ka-hico" aria-label={t('chrome.notifications')}>
+            <Bell size={19} strokeWidth={1.9} aria-hidden />
+            {bellCount > 0 && <span className="ka-badge" aria-label={t('chrome.pending', { count: bellCount })}>{bellCount}</span>}
+          </button>
+          <span className="ka-hdr-sep" aria-hidden />
           <UserMenu />
         </div>
       )}
-      menuItemRender={(item, dom) =>
-        item.path && !item.routes ? (
+      menuItemRender={(item, dom) => {
+        // C3-CHROME-FIX-2 — .nbadge: a queue count on the item (Kit §3.13, queue items only). Present iff the
+        // role's existing read returned a positive count; margin-left:auto pill expanded, an 8px dot collapsed.
+        const n = item.path ? navCounts[item.path] : undefined;
+        const badge = n && n > 0 ? <span className="ka-nbadge" aria-label={t('chrome.pending', { count: n })}>{n}</span> : null;
+        return item.path && !item.routes ? (
           // P0-2b — aria-label makes the collapsed mini-rail readable (antd's hover tooltip is visual-only).
           <a
+            className="ka-navitem"
             aria-label={typeof item.name === 'string' ? item.name : undefined}
             onClick={(e) => {
               e.preventDefault();
               void navigate(item.path!);
             }}
           >
-            {dom}
+            {dom}{badge}
           </a>
         ) : (
           dom
-        )
+        );
+      }
       }
       contentStyle={{ padding: 24 }}
     >

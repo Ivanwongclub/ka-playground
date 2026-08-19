@@ -1,14 +1,17 @@
-// C3-CHROME — the header user chip: avatar + name + role + caret → a click-menu (prototype .userchip +
-// .usermenu). The chip surfaces who is signed in; the menu carries Log out (existing sign-out). Profile /
-// Settings are OMITTED — no route target yet, and a disabled item is the same dead affordance as the bell
-// (C3 ruling #3). Desktop chrome only (the mobile shell has its own header).
+// C3-CHROME — the header user chip: avatar + name + role + caret → a click-menu. The menu carries the LANGUAGE
+// switcher (moved out of the header — an account preference, not chrome; C3-CHROME-FIX-2 item 6) above the
+// divider, then Log out (danger-coloured). Profile / Settings are OMITTED — no route target yet, and a "not
+// available" toast is instructional copy on a dead affordance (ruling); they return with the Profile screen
+// (S-UX3). The language capability is not dropped, only relocated. Desktop chrome only.
 import { Avatar, Dropdown, Typography } from 'antd';
-import { ChevronDown, LogOut } from 'lucide-react';
+import { Check, ChevronDown, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { kaColors } from '../theme/theme';
 import { useIdentity } from '../auth/identity';
 import { logout } from '../auth/session';
+import { LOCALES, persistLocale } from '../i18n';
+import type { KaLocale } from '../i18n';
 
 function initialsOf(name: string): string {
   return (
@@ -23,21 +26,36 @@ function initialsOf(name: string): string {
 }
 
 export function UserMenu() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { identity } = useIdentity();
   const name = identity?.name ?? t('app.academy');
   const roleLabel = identity ? t(`role.${identity.role}`) : '';
+  const current = i18n.language as KaLocale;
 
   return (
     <Dropdown
       trigger={['click']}
       placement="bottomRight"
       menu={{
-        // Log out only — Profile/Settings omitted (C3 ruling #3). Name + role live in the chip, not the menu.
-        items: [{ key: 'logout', icon: <LogOut size={19} strokeWidth={1.9} aria-hidden />, label: t('nav.signOut') }],
+        // Language switcher (checkmark on the active locale) → divider → Log out (danger). Profile/Settings omitted.
+        items: [
+          ...LOCALES.map((l) => ({
+            key: `lang:${l}`,
+            icon: l === current ? <Check size={16} aria-hidden /> : <span style={{ display: 'inline-block', width: 16 }} />,
+            label: t(`locale.${l}`),
+          })),
+          { type: 'divider' as const },
+          { key: 'logout', danger: true, icon: <LogOut size={19} strokeWidth={1.9} aria-hidden />, label: t('nav.signOut') },
+        ],
         onClick: ({ key }) => {
-          if (key === 'logout') void logout().finally(() => navigate('/login'));
+          if (key.startsWith('lang:')) {
+            const l = key.slice(5) as KaLocale;
+            void i18n.changeLanguage(l);
+            persistLocale(l);
+          } else if (key === 'logout') {
+            void logout().finally(() => navigate('/login'));
+          }
         },
       }}
     >
