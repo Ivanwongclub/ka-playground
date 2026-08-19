@@ -1,51 +1,60 @@
-// C2-LIST — the STUDENT "Programmes" list: one GlanceCard per enrolment (§3.2 image band → status pill →
-// segbar → label/value rows). The card is the front door — the whole card DRILLS into the scoped programme
-// space /enrolments/:enrolmentId (C1-SHELL, D-1 keyed on enrolment_id).
+// C2-LIST / C6-CONSUME — the STUDENT "Programmes" list: one GlanceCard per enrolment (§3.2 image band →
+// status pill → segbar → label/value rows), the front door that DRILLS into /enrolments/:enrolmentId.
 //
-// INTERIM COMPOSITION — the target shape is a SINGLE enrolment-list read that carries banner + consent + fee
-// fields (audit C4, the missing enrolment-detail endpoint). No such endpoint exists, so this surface merges
-// three more RLS-shaped reads CLIENT-SIDE by programme_id. This fan-out is the interim by construction; when
-// the enrolment read carries these fields, delete the extra reads. Do not mistake this for the target shape.
-//   Requests (all parallel, matched client-side by programme_id):
-//     1. GET /api/enrolments        — the caller's own enrolments (identity · status · segbar)
-//     2. GET /api/programmes        — catalogue banner_url for the image band (§c interim; brand-gradient fallback)
-//     3. GET /api/consent-requests  — consent status per programme (INFORMATIVE for the student — the guardian signs)
-// NO Fees row on the student card: the prototype's stu-progs has none — fees are the GUARDIAN's object (owner
-// ruling, correcting the C2-LIST "four rows on both surfaces" call). The /api/orders read is gone with it.
-// DEFERRED (C2-LIST ruling #4, entitlement-iff): Team needs an N+1 roster-probe (/api/teams lists all lobby
-// teams, not the student's); Next-session's read returns team_id not programme_id, so per-enrolment attribution
-// needs a server change. Tracker/Results are deferred to their own card. Omitted rows are never placeholdered.
-import { Space, Typography } from 'antd';
+// ONE read now (C6-CONSUME): GET /api/enrolments — WIDENED (S-READ-2) to carry banner_url · team_name ·
+// consent_status · next_session · … . The catalogue-merge fetch AND the separate consent-requests fetch are
+// GONE (3 reads → 1). No Fees row: fees are the GUARDIAN's object; a student never receives an amount (P-3/B-18).
+//
+// THE ROW SET IS EMERGENT, NOT A TABLE OF STATES (C6 ruling): each row renders IFF its computed value is
+// non-empty — entitlement-iff, one level down. Do NOT convert this into per-state branches; the confirmed vs
+// in-pool difference FALLS OUT of which values exist (signed consent → no Consent row; teamed → team name;
+// in-pool → "Not yet" + Find-a-team; no session → no Next-session row). Tracker/Results have no read → their
+// value is always empty → they never render (DEFERRED — no tracker/assessment read; not faked). Programme term
+// ("Sep – Dec 2026") is unmodelled (MODEL-LACKS-THE-FIELD) → no dates row.
+import { Button, Space, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import type { MouseEvent } from 'react';
 import type { KaLocale } from '../i18n';
 import { GlanceCard, StatusTag, useResource, DataBoundary } from '@/ds2';
 import type { GlanceRow } from '@/ds2';
 import { segItems } from '../display/enrolmentJourney';
 import { programmeName } from '../display/names';
+import { formatHkt } from '../display/date';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
-interface Enrolment { id: string; programme_id: number; status: string; programme_name_en: string | null; programme_name_tc: string | null; programme_name_sc: string | null }
-interface Catalogue { id: number; banner_url: string | null }
-interface ConsentReq { programme_id: number; status: string }
-// Student read: status + due only — the amount fields (total_amount_minor/currency) are DELIBERATELY not typed
-// here so the figure cannot be rendered on this surface (P-3 / B-18; see rowsFor).
+interface Enrolment {
+  id: string; programme_id: number; status: string;
+  programme_name_en: string | null; programme_name_tc: string | null; programme_name_sc: string | null;
+  banner_url: string | null; team_name: string | null;
+  consent_status: string | null; consent_expires_at: string | null;
+  next_session_title: string | null; next_session_starts_at: string | null;
+  // NB: no amount field is typed here — a student must never receive one (P-3/B-18).
+}
 
-// 7 real enrolment states → 5 display segments (C2-LIST ruling #1): pending_consent folds under Submitted,
-// completed under Active (the terminal end); withdrawn/released carry NO segbar (the status pill says it).
-// The 7→5 fold + terminal states live in ONE place now (C5-CONSUME): ../display/enrolmentJourney (segItems).
-
-// The student's Consent row is INFORMATIVE — a student neither signs their own consent (the guardian does);
-// §3.1: informative values are right-aligned plain text, never a pill and never an action. (No Fees row — see
-// the header note; fees are the guardian's object.)
-function rowsFor(consent: ConsentReq | undefined, t: (k: string) => string): GlanceRow[] {
+function rowsFor(e: Enrolment, locale: KaLocale, t: (k: string) => string, stop: (ev: MouseEvent) => void): GlanceRow[] {
   const rows: GlanceRow[] = [];
-  if (consent) {
-    const txt = ['sent', 'viewed'].includes(consent.status) ? t('studentHome.consentWaiting')
-      : consent.status === 'signed' ? t('selfService.consentMet')
-      : t(`consent.status.${consent.status}`);
-    rows.push({ label: t('enrolCard.consent'), value: { text: txt } });
+  // Consent — INFORMATIVE only: the student cannot sign (the guardian does). Renders while unresolved; a signed
+  // consent leaves nothing to say → no row. "Remind" is DOMAIN-UNBUILT (D6/B-19) — omitted.
+  if (e.consent_status === 'sent' || e.consent_status === 'viewed') {
+    rows.push({ label: t('enrolCard.consent'), value: { text: t('studentHome.consentWaiting') } });
+  }
+  // Team — the name once teamed/confirmed; "Not yet" + the card's ONE gold "Find a team" while in the pool;
+  // nothing before the pool. member_count is D-7 PROTOTYPE-WRONG (a new visibility path) — never rendered.
+  if (e.team_name) {
+    rows.push({ label: t('enrolCard.team'), value: { text: e.team_name } });
+  } else if (e.status === 'in_pool') {
+    rows.push({ label: t('enrolCard.team'), value: { action: (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        <Text type="secondary">{t('enrolCard.notYet')}</Text>
+        <Link to="/my/team" onClick={stop}><Button type="primary" size="small" className="ka-cta">{t('enrolCard.findTeam')}</Button></Link>
+      </span>
+    ) } });
+  }
+  // Next session — title + start.
+  if (e.next_session_title) {
+    rows.push({ label: t('enrolCard.nextSession'), value: { text: `${e.next_session_title} · ${formatHkt(e.next_session_starts_at ?? '', locale)}` } });
   }
   return rows;
 }
@@ -55,11 +64,8 @@ export function StudentProgrammes() {
   const locale = i18n.language as KaLocale;
   const navigate = useNavigate();
   const enr = useResource<{ data: Enrolment[] }>('/api/enrolments');
-  const cat = useResource<{ data: Catalogue[] }>('/api/programmes');
-  const con = useResource<{ data: ConsentReq[] }>('/api/consent-requests');
   const enrolments = enr.data?.data ?? [];
-  const bannerBy = new Map((cat.data?.data ?? []).map((c) => [c.id, c.banner_url]));
-  const consentBy = new Map((con.data?.data ?? []).map((c) => [c.programme_id, c]));
+  const stop = (ev: MouseEvent) => ev.stopPropagation();
 
   return (
     <div data-density="product">
@@ -69,18 +75,17 @@ export function StudentProgrammes() {
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             {enrolments.map((e) => {
               const name = programmeName(e, locale);
-              const banner = bannerBy.get(e.programme_id) ?? null;
               return (
                 <GlanceCard
                   key={e.id}
-                  // banner_url from the catalogue merge when present; else a deterministically-failing src makes
-                  // HeroBanner fall back to the §3.2 brand gradient — no broken image, no new fetch (§c interim).
-                  image={{ src: banner || 'data:,', alt: name }}
+                  // banner_url now comes from the enrolment read itself (S-READ-2); null → a deterministically-
+                  // failing src makes HeroBanner fall back to the §3.2 brand gradient. The catalogue hack is gone.
+                  image={{ src: e.banner_url || 'data:,', alt: name }}
                   imageFallback={<div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, var(--ka-cat-stem), var(--ka-card))' }} />}
                   title={name}
                   status={<StatusTag domain="enrolmentStatus" value={e.status} />}
                   segments={segItems(e.status, t)}
-                  rows={rowsFor(consentBy.get(e.programme_id), t)}
+                  rows={rowsFor(e, locale, t, stop)}
                   onClick={() => navigate(`/enrolments/${e.id}`)}
                 />
               );

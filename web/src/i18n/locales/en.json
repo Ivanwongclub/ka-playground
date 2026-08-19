@@ -1003,6 +1003,10 @@
     "title": "My programmes",
     "consent": "Consent",
     "fees": "Fees",
+    "team": "Team",
+    "nextSession": "Next session",
+    "notYet": "Not yet",
+    "findTeam": "Find a team",
     "seg": { "submitted": "Submitted", "pool": "Pool", "teamed": "Teamed", "confirmed": "Confirmed", "active": "Active" }
   },
   "selfService": {

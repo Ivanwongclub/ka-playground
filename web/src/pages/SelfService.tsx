@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
 import { mutate } from '../api/mutate';
-import { personName } from '../display/names';
+import { personName, schoolName } from '../display/names';
 import { formatMoney } from '../display/money';
 import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
@@ -20,13 +20,16 @@ import { SubPanel, ZoneStack, StatChip, EmptyState, UrgencyChip, urgencyLevel, u
 
 const { Title, Paragraph, Text } = Typography;
 
-interface Enrolment { id: string; programme_id: number; student_id: number; status: string; student_name: string | null; programme_name_en: string; programme_name_tc: string; programme_name_sc: string }
+interface Enrolment { id: string; programme_id: number; student_id: number; status: string; student_name: string | null; programme_name_en: string; programme_name_tc: string; programme_name_sc: string;
+  // C6 — the WIDENED /api/enrolments columns (S-READ-2). Consent status/expiry come from the enrolment read now,
+  // NOT a second /api/consent-requests fetch. NB there is deliberately NO amount field: the fee amount stays on
+  // the guardian-gated /api/orders read (P-3/B-18 — never on a read a student also receives).
+  team_name: string | null; consent_status: string | null; consent_expires_at: string | null;
+  school_name_en: string | null; school_name_tc: string | null; school_name_sc: string | null;
+  next_session_title: string | null; next_session_starts_at: string | null }
 interface Order { id: string; programme_id: number; student_id: number; payer_party: string; status: string; total_amount_minor: number; currency: string; payment_due_at: string | null; student_name: string | null; programme_name_en: string; programme_name_tc: string; programme_name_sc: string }
 interface Receipt { id: string; order_id: string; receipt_number: number; amount_minor: number; currency: string; issued_at: string }
 interface StudentRow { student_id: number; student_name: string | null }
-// C2-LIST — consent status per (student, programme), from the single RLS-shaped /api/consent-requests read
-// (replaces the per-enrolment /consent-status probe: one fetch for the whole surface, not N).
-interface ConsentReq { programme_id: number; student_id: number; status: string }
 interface OrderLine { id: string; name_en: string; name_tc: string; name_sc: string; amount_minor: number; currency: string }
 
 function progName(r: { programme_name_en: string; programme_name_tc: string; programme_name_sc: string }, locale: KaLocale): string {
@@ -97,28 +100,33 @@ function childInitials(name: string | null): string {
   return (parts.length >= 2 ? parts[0][0] + parts[1][0] : n.slice(0, 2)).toUpperCase();
 }
 
-// ── Guardian: one child's enrolment as a DRILL row (C2-LIST). The row's object is the ENROLMENT, so the whole
-// row navigates to the scoped space /enrolments/:enrolmentId (ruling #5); the action button stops propagation
-// so it fires its own destination, not the drill. Consent + Fees are the two entitlement-filtered status rows —
-// each renders IFF the guardian's RLS read returns a match (Team · Next-session DEFERRED, ruling #4). An
-// enrolment with neither shows its status so it is never invisible. §3.1: informative values are plain text;
-// only an ACTIONABLE state (sign / get-link) is a button. goldKey carries the child card's SINGLE gold (ruling
-// #2) — the button is gold only when it is the child's one gold target. ──
+// ── Guardian: one child's enrolment as a DRILL row (C2-LIST / C6). The row's object is the ENROLMENT, so the
+// whole row navigates to the scoped space /enrolments/:enrolmentId (ruling #5); the action button stops
+// propagation so it fires its own destination, not the drill. §3.1: informative values are plain text; only an
+// ACTIONABLE state (sign / get-link) is a button. goldKey carries the child card's SINGLE gold (ruling #2) — the
+// button is gold only when it is the child's one gold target.
+//
+// THE ROW SET IS EMERGENT, NOT A TABLE OF STATES (C6 ruling #2): each row renders IFF its computed value is
+// non-empty. Consent comes from the enrolment read's consent_status/expires now (no second fetch); Fees still
+// come from the guardian's own /api/orders (the amount is not — must not be — on the shared list read, P-3/B-18);
+// the Status row always renders (a status is always present) and carries the team name once teamed; Next-session
+// renders only when a future session exists. Do NOT refactor into per-state branches — the shape falls out of
+// which values exist. ──
 function ckey(studentId: number, programmeId: number): string { return `${studentId}:${programmeId}`; }
 
 // The child card's one gold target: the first actionable row in enrolment order (consent before fees). null when
-// the child has no action — that card then carries NO gold (ruling #2).
-function goldTarget(enrolments: Enrolment[], consentBy: Map<string, ConsentReq>, orderBy: Map<string, Order>): string | null {
+// the child has no action — that card then carries NO gold (ruling #2). Consent-actionable is now read straight
+// off the enrolment's consent_status; fees-actionable off the guardian's order.
+function goldTarget(enrolments: Enrolment[], orderBy: Map<string, Order>): string | null {
   for (const e of enrolments) {
-    const c = consentBy.get(ckey(e.student_id, e.programme_id));
-    if (c && ['sent', 'viewed'].includes(c.status)) return `${e.id}:consent`;
+    if (e.consent_status && ['sent', 'viewed'].includes(e.consent_status)) return `${e.id}:consent`;
     const o = orderBy.get(ckey(e.student_id, e.programme_id));
     if (o && o.status === 'issued') return `${e.id}:fees`;
   }
   return null;
 }
 
-function ChildEnrolmentRow({ e, consent, order, goldKey }: { e: Enrolment; consent?: ConsentReq; order?: Order; goldKey: string | null }) {
+function ChildEnrolmentRow({ e, order, goldKey }: { e: Enrolment; order?: Order; goldKey: string | null }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language as KaLocale;
   const navigate = useNavigate();
@@ -126,17 +134,21 @@ function ChildEnrolmentRow({ e, consent, order, goldKey }: { e: Enrolment; conse
   const stop = (ev: MouseEvent) => ev.stopPropagation();
   const rows: { label: string; node: ReactNode }[] = [];
 
-  if (consent) {
-    if (['sent', 'viewed'].includes(consent.status)) {
-      const gold = goldKey === `${e.id}:consent`;
-      rows.push({ label: `${t('enrolCard.consent')} · ${prog}`, node: (
+  // Consent — the guardian CAN sign, so an actionable consent is a gold-eligible button plus an expiry countdown
+  // driven by the real consent_expires_at now on the read.
+  if (e.consent_status && ['sent', 'viewed'].includes(e.consent_status)) {
+    const gold = goldKey === `${e.id}:consent`;
+    const lvl = urgencyLevel(e.consent_expires_at, URGENCY.consent);
+    rows.push({ label: `${t('enrolCard.consent')} · ${prog}`, node: (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        {lvl !== 'none' && <UrgencyChip level={lvl} label={urgencyLabel(lvl, urgencyDays(e.consent_expires_at), t)} />}
         <Link to="/consents" onClick={stop}><Button type={gold ? 'primary' : 'default'} size="small" className={gold ? 'ka-cta' : undefined}>{t('selfService.reviewSign')}</Button></Link>
-      ) });
-    } else {
-      rows.push({ label: `${t('enrolCard.consent')} · ${prog}`, node: (
-        <Text type="secondary">{consent.status === 'signed' ? t('selfService.consentMet') : t(`consent.status.${consent.status}`)}</Text>
-      ) });
-    }
+      </span>
+    ) });
+  } else if (e.consent_status) {
+    rows.push({ label: `${t('enrolCard.consent')} · ${prog}`, node: (
+      <Text type="secondary">{e.consent_status === 'signed' ? t('selfService.consentMet') : t(`consent.status.${e.consent_status}`)}</Text>
+    ) });
   }
   if (order) {
     if (order.status === 'issued') {
@@ -152,8 +164,16 @@ function ChildEnrolmentRow({ e, consent, order, goldKey }: { e: Enrolment; conse
       rows.push({ label: `${t('enrolCard.fees')} · ${prog}`, node: <Text type="secondary">{formatMoney(order.total_amount_minor, order.currency, locale)}</Text> });
     }
   }
-  if (rows.length === 0) {
-    rows.push({ label: prog, node: <Text type="secondary">{t(`enrol.status.${e.status}`)}</Text> });
+  // Status — always present, so this row always renders (the card is never invisible). Carries the team name once
+  // teamed; before a team there is simply no "· team" suffix. member_count is D-7 PROTOTYPE-WRONG — never shown.
+  rows.push({ label: prog, node: (
+    <Text type="secondary">{t(`enrol.status.${e.status}`)}{e.team_name ? ` · ${e.team_name}` : ''}</Text>
+  ) });
+  // Next session — title + start, when a future session exists.
+  if (e.next_session_title) {
+    rows.push({ label: `${t('enrolCard.nextSession')} · ${prog}`, node: (
+      <Text type="secondary">{`${e.next_session_title} · ${formatHkt(e.next_session_starts_at ?? '', locale)}`}</Text>
+    ) });
   }
 
   return (
@@ -176,18 +196,17 @@ function ChildEnrolmentRow({ e, consent, order, goldKey }: { e: Enrolment; conse
   );
 }
 
-// ── Guardian: My Children (C2-LIST — each child card's rows are the Consent · Fees drill rows). Three FIXED,
-// PARALLEL reads, matched client-side by (student, programme) — no per-item fan-out: /api/enrolments (grouped
-// by child) + /api/consent-requests + /api/orders. This replaces the former per-enrolment /consent-status
-// probe (N fetches → 1), a net request REDUCTION. INTERIM composition — the target is one enrolment read that
-// carries consent + fee fields (audit C4); until that endpoint exists, this merge stands in. Product density. ──
+// ── Guardian: My Children (C2-LIST / C6 — each child card's rows are the Consent · Fees · Status · Next-session
+// drill rows). Now TWO reads, matched client-side by (student, programme): /api/enrolments (WIDENED by S-READ-2 to
+// carry consent_status/expires + school + team + next-session) grouped by child, and /api/orders (KEPT — the fee
+// AMOUNT is guardian-only and must never ride the shared enrolment read, P-3/B-18). The separate
+// /api/consent-requests fetch is GONE (3 reads → 2); consent state comes off the enrolment read. Product density. ──
 export function MyChildren() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language as KaLocale;
   const res = useResource<{ data: Enrolment[] }>('/api/enrolments');
-  const con = useResource<{ data: ConsentReq[] }>('/api/consent-requests');
   const ord = useResource<{ data: Order[] }>('/api/orders');
 
-  const consentBy = new Map((con.data?.data ?? []).map((c) => [ckey(c.student_id, c.programme_id), c]));
   const orderBy = new Map((ord.data?.data ?? []).map((o) => [ckey(o.student_id, o.programme_id), o]));
 
   // group the guardian's children's enrolments by child (RLS already scopes to own children)
@@ -207,7 +226,10 @@ export function MyChildren() {
         <DataBoundary loading={res.loading} error={res.error} empty={children.length === 0}>
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             {children.map(([studentId, { name, enrolments }]) => {
-              const goldKey = goldTarget(enrolments, consentBy, orderBy); // ruling #2: ≤1 gold per child card
+              const goldKey = goldTarget(enrolments, orderBy); // ruling #2: ≤1 gold per child card
+              // A child sits on one active school link (or none — a direct-to-academy student), so the school is a
+              // per-child fact: take it off any enrolment. null → omit the line (never render "—").
+              const school = schoolName(enrolments.find((e) => schoolName(e, locale)) ?? enrolments[0], locale);
               return (
               <Card key={studentId}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
@@ -216,10 +238,12 @@ export function MyChildren() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <Title level={5} style={{ margin: 0 }}>{personName(name)}</Title>
-                    {/* Counts ENROLMENTS (per the prototype's "· 2 enrolments"), pluralised via CLDR (_one/_other).
-                        The child's SCHOOL is DEFERRED — the enrolment read carries no school field (a list-read
-                        server field). */}
-                    <div style={{ marginTop: 6 }}><StatChip value={enrolments.length} label={t('selfService.enrolments', { count: enrolments.length })} /></div>
+                    {/* Subtitle: the child's SCHOOL (now served — school_name_{en,tc,sc}, S-READ-2), then an
+                        enrolment count pluralised via CLDR (_one/_other). School omitted for a direct student. */}
+                    <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                      {school && <Text type="secondary">{school}</Text>}
+                      <StatChip value={enrolments.length} label={t('selfService.enrolments', { count: enrolments.length })} />
+                    </div>
                   </div>
                   {/* DELIBERATE, DOCUMENTED DIVERGENCE (a11y) from the prototype's whole-card drill → the child
                       record. Any one ground is sufficient: (1) the rows are role=button drills to /enrolments/:id
@@ -239,7 +263,6 @@ export function MyChildren() {
                     <ChildEnrolmentRow
                       key={e.id}
                       e={e}
-                      consent={consentBy.get(ckey(e.student_id, e.programme_id))}
                       order={orderBy.get(ckey(e.student_id, e.programme_id))}
                       goldKey={goldKey}
                     />

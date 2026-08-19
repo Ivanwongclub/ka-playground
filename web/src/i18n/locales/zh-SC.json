@@ -1001,6 +1001,10 @@
     "title": "我的课程",
     "consent": "同意书",
     "fees": "费用",
+    "team": "团队",
+    "nextSession": "下节课",
+    "notYet": "尚未",
+    "findTeam": "寻找团队",
     "seg": { "submitted": "已提交", "pool": "待组队", "teamed": "已组队", "confirmed": "已确认", "active": "进行中" }
   },
   "selfService": {
