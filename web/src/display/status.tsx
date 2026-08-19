@@ -89,6 +89,14 @@ const REGISTRY: Record<string, Record<string, Entry>> = {
     withdrawn: { labelKey: 'status.enrolment.withdrawn', color: 'default' },
     released: { labelKey: 'status.enrolment.released', color: 'default' },
   },
+  // C7-RESULTS — the assessment result COARSENING (E1 embargo). Deliberately only two values: the raw assessment
+  // status (draft|published|open|closed|graded|cancelled|released) is collapsed to `pending`/`released` BEFORE it
+  // reaches this pill. The raw status must NEVER be a domain here — a family seeing `graded` would learn the
+  // result exists and is being withheld, which is the embargo leaking one bit.
+  assessmentRelease: {
+    pending: { labelKey: 'enrolSpace.results.pending', color: 'processing' },
+    released: { labelKey: 'enrolSpace.results.released', color: 'success' },
+  },
 };
 
 /** code → readable ("enrolment.submitted" → "Enrolment submitted"). Never i18n'd (open set). */

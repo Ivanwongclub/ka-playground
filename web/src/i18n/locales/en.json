@@ -79,7 +79,8 @@
       "completed": "The programme is complete. Results appear under Results when released."
     },
     "tile": { "team": "Team", "nextSession": "Next session", "noTeam": "Not yet", "noSession": "None scheduled" },
-    "sessions": { "book": "Book", "cancel": "Cancel booking" }
+    "sessions": { "book": "Book", "cancel": "Cancel booking" },
+    "results": { "pending": "In progress — results not yet released", "released": "Released" }
   },
   "shell": {
     "openNavigation": "Open navigation",

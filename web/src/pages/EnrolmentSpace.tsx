@@ -5,15 +5,18 @@
 // programme_id; book/cancel are student-only). The band image is the detail read's banner_url (the data:, hack
 // is gone). Both personas reach it: student → /my/sessions, guardian → /my/students/{id}/sessions.
 //
-// STILL BLOCKED, each with a named blocker: Team/Tracker/Results tabs (need team-roster/tracker/assessment reads);
+// C7-RESULTS fills the Results tab: the existing embargoed assessment reads, coarsened to a released? bit (see
+// ResultsPanel). STILL BLOCKED, each with a named blocker: Team/Tracker tabs (need team-roster/tracker reads);
 // stepper per-knot DATES (per-transition timestamps live only in audit_events); the tile .ev sub-line (JourneyTile
 // has no sub slot + no signature-detail read); member_count (tm_read admits only the viewer's own row); session
 // LOCATION + MATERIALS (not in the session read). A 404 from the detail endpoint (out-of-scope) → NotFound (A1).
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { App, Button, Skeleton, Space, Tabs, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource } from '../api/useResource';
+import { authFetch } from '../auth/session';
 import { mutate } from '../api/mutate';
 import { useIdentity } from '../auth/identity';
 import { programmeName } from '../display/names';
@@ -55,6 +58,77 @@ function SessionRow({ s, isStudent, locale, onAct }: { s: Session; isStudent: bo
         </Space>
       </div>
     </SubPanel>
+  );
+}
+
+interface Assessment { id: string; title: string; status: string }
+
+// ── C7-RESULTS — the Results tab (E1). Lists ALL the programme's assessments for this enrolment (released and
+// not), both personas identically (the guardian's read entitlement mirrors the child's — assessments_read /
+// assessment_results_read both carry a guardian roster arm).
+//
+// THE EMBARGO IS THE POINT. Two properties, both structural, not cosmetic:
+//   1. COARSENING. The raw status (draft|published|open|closed|graded|released) is collapsed to a single
+//      released? bit BEFORE it reaches any pill. A `graded`-but-unreleased assessment renders IDENTICALLY to a
+//      `published` one — surfacing `graded` would tell the family the result EXISTS and is being withheld, which
+//      is the embargo leaking one bit. The pill only ever sees 'pending' | 'released'.
+//   2. NO SPECULATIVE PROBE. The score read fires ONLY for a released assessment, so no request pattern reveals a
+//      pending assessment's state (a pending one is never probed). The RLS would return null anyway, but not
+//      asking is the stronger guarantee.
+// Cancelled assessments are EXCLUDED (they never release → a "not yet released" chip would be a false promise;
+// the prototype's t-res has no cancelled state, so inventing one would be infidelity). No date and no denominator
+// on the released card: `assessments.released_at` and a `max_score` column do not exist — both FLAGGED for a
+// migration card, neither faked here (graded_at is the GRADER's timestamp — embargo-adjacent, not the family's).
+function ResultsPanel({ programmeId, studentId }: { programmeId: number; studentId: number }) {
+  // RLS list: title/status only — the score is NEVER here (it is embargoed in assessment_results_read).
+  const list = useResource<{ data: Assessment[] }>(`/api/programmes/${programmeId}/assessments`);
+  const listData = list.data?.data;
+  const assessments = (listData ?? []).filter((a) => a.status !== 'cancelled');
+
+  // Scores for RELEASED assessments only — one embargoed result read each (1 + R requests, R = released count).
+  const [scores, setScores] = useState<Record<string, number>>({});
+  useEffect(() => {
+    const released = (listData ?? []).filter((a) => a.status === 'released');
+    if (released.length === 0) { setScores({}); return; }
+    let alive = true;
+    void (async () => {
+      const out: Record<string, number> = {};
+      for (const a of released) {
+        try {
+          const r = await authFetch(`/api/assessments/${a.id}/results/${studentId}`);
+          if (!r.ok) continue;
+          const body = (await r.json()) as { result: { score: number | null } | null };
+          if (body.result && body.result.score !== null) out[a.id] = body.result.score;
+        } catch { /* embargoed / unreadable → simply no score, no leak */ }
+      }
+      if (alive) setScores(out);
+    })();
+    return () => { alive = false; };
+  }, [listData, studentId]);
+
+  if (list.loading) return <Skeleton active paragraph={{ rows: 2 }} />;
+  if (assessments.length === 0) return <EmptyState message={null} />; // entitlement-iff, no placeholder rows
+
+  return (
+    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+      {assessments.map((a) => {
+        const released = a.status === 'released'; // the ONLY status bit that crosses to the view
+        const score = scores[a.id];
+        return (
+          <SubPanel key={a.id} tone={released ? 'attested' : 'neutral'}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <Typography.Text strong>{a.title}</Typography.Text>
+              <StatusTag domain="assessmentRelease" value={released ? 'released' : 'pending'} />
+            </div>
+            {released && score !== undefined && (
+              // The panel's one VALUE-gold (ruling 2): gold here is a VALUE, not an action — do NOT apply the
+              // ≤1-action-gold rule to it. There is no action on this surface. No "/ 100" (max unmodelled).
+              <div style={{ fontSize: 34, color: 'var(--ka-gold)', fontWeight: 700, marginTop: 8 }}>{score}</div>
+            )}
+          </SubPanel>
+        );
+      })}
+    </Space>
   );
 }
 
@@ -134,8 +208,11 @@ export function EnrolmentSpace() {
         items={TABS.map((k) => ({
           key: k,
           label: t(`enrolSpace.tab.${k}`),
-          // Journey + Sessions are filled; Team/Tracker/Results stay icon-only empty (blocked — no gap copy).
-          children: k === 'journey' ? journey : k === 'sessions' ? sessions : <EmptyState message={null} />,
+          // Journey + Sessions + Results are filled; Team/Tracker stay icon-only empty (blocked — no gap copy).
+          children: k === 'journey' ? journey
+            : k === 'sessions' ? sessions
+            : k === 'results' ? <ResultsPanel programmeId={d.programme_id} studentId={d.student_id} />
+            : <EmptyState message={null} />,
         }))}
       />
     </div>

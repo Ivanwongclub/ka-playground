@@ -79,7 +79,8 @@
       "completed": "课程已完成，成绩公布后会显示在“成绩”。"
     },
     "tile": { "team": "团队", "nextSession": "下节课", "noTeam": "尚未", "noSession": "暂未安排" },
-    "sessions": { "book": "预约", "cancel": "取消预约" }
+    "sessions": { "book": "预约", "cancel": "取消预约" },
+    "results": { "pending": "进行中 — 成绩尚未公布", "released": "已公布" }
   },
   "shell": {
     "openNavigation": "打开导航",
