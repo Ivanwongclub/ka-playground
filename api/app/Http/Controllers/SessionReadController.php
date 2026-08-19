@@ -42,7 +42,10 @@ class SessionReadController extends Controller
                 $j->on('sb.session_id', '=', 'ps.id')->where('sb.student_id', '=', $uid);
             })
             ->orderBy('ps.starts_at')
-            ->get(['ps.id', 'ps.title', 'ps.starts_at', 'ps.ends_at', 'ps.status', 'ps.team_id', 'sb.status as booking_status']);
+            // S-READ-1: + ps.programme_id — a BARE column add. ps_read already scopes rows by programme_id (its
+            // roster arm joins enrolments on ps.programme_id), and the caller already reads this ps row, so this
+            // exposes nothing new. It lets the family scope this enrolment's sessions (audit S6 D-1).
+            ->get(['ps.id', 'ps.title', 'ps.starts_at', 'ps.ends_at', 'ps.status', 'ps.programme_id', 'ps.team_id', 'sb.status as booking_status']);
 
         return response()->json(['sessions' => $rows->map(fn ($s): array => [
             'id' => $s->id,
@@ -50,6 +53,7 @@ class SessionReadController extends Controller
             'starts_at' => $s->starts_at,
             'ends_at' => $s->ends_at,
             'status' => $s->status,
+            'programme_id' => $s->programme_id,
             'team_id' => $s->team_id,
             'booking_status' => $s->booking_status, // null = not booked; booked|waitlisted|attended|no_show|cancelled
         ])->all()]);
@@ -78,7 +82,8 @@ class SessionReadController extends Controller
             })
             ->distinct()
             ->orderBy('ps.starts_at')
-            ->get(['ps.id', 'ps.title', 'ps.starts_at', 'ps.ends_at', 'ps.status', 'ps.team_id', 'sb.status as booking_status']);
+            // S-READ-1: + ps.programme_id (bare column add; ps_read already scopes on it — nothing new exposed).
+            ->get(['ps.id', 'ps.title', 'ps.starts_at', 'ps.ends_at', 'ps.status', 'ps.programme_id', 'ps.team_id', 'sb.status as booking_status']);
 
         return response()->json(['student_id' => $studentId, 'sessions' => $rows->map(fn ($s): array => [
             'id' => $s->id,
@@ -86,6 +91,7 @@ class SessionReadController extends Controller
             'starts_at' => $s->starts_at,
             'ends_at' => $s->ends_at,
             'status' => $s->status,
+            'programme_id' => $s->programme_id,
             'team_id' => $s->team_id,
             'booking_status' => $s->booking_status,
         ])->all()]);

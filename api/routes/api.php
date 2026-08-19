@@ -43,6 +43,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/consents/sign', $notImplemented)->middleware('permission:consent.sign');
     Route::get('/enrolments', [\App\Http\Controllers\EnrolmentController::class, 'index'])
         ->middleware('permission:enrolment.view'); // S04A: RLS-shaped
+    Route::get('/enrolments/{id}', [\App\Http\Controllers\EnrolmentController::class, 'show'])
+        ->middleware('permission:enrolment.view'); // S-READ-1: DETAIL — index query narrowed by id, same enr_read RLS (404-not-403)
     Route::post('/my/enrolments', [\App\Http\Controllers\EnrolmentController::class, 'store'])
         ->middleware('role:guardian'); // S04A: creation records the acting guardian (2.22)
     // S04A step 4 — withdrawal workflow (BI-7 state only; OD-26 fixed approver)
