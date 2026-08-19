@@ -77,7 +77,9 @@
       "confirmed": "学院开课并发布课节，会显示在“课节”。",
       "active": "课程进行中，课节与进度会持续更新。",
       "completed": "课程已完成，成绩公布后会显示在“成绩”。"
-    }
+    },
+    "tile": { "team": "团队", "nextSession": "下节课", "noTeam": "尚未", "noSession": "暂未安排" },
+    "sessions": { "book": "预约", "cancel": "取消预约" }
   },
   "shell": {
     "openNavigation": "打开导航",

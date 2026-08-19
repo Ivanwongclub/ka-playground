@@ -9,6 +9,7 @@ import { useResource, DataBoundary } from '../api/useResource';
 import { useIdentity } from '../auth/identity';
 import { isStudentActor, isGuardianActor } from '../nav';
 import { programmeName, personName } from '../display/names';
+import { TERMINAL_BAD } from '../display/enrolmentJourney'; // C5-CONSUME: one definition of the terminal states
 import { SubPanel, StateBadge, WizardRail } from '@/ds2'; // DS2 rollout D1 + R1-S2 B1 (journey → WizardRail)
 
 const { Title, Paragraph } = Typography;
@@ -28,7 +29,6 @@ interface Row {
 }
 
 const JOURNEY = ['submitted', 'pending_consent', 'in_pool', 'teamed', 'confirmed', 'active', 'completed'];
-const TERMINAL_BAD = ['withdrawn', 'released'];
 // R1-S2 B1: per-stage deep-link targets (student context). A stage with no entry is not clickable.
 const DEEP: Record<string, string> = { pending_consent: '/consents', in_pool: '/my/team', teamed: '/my/team', confirmed: '/my/team' };
 // R1-G: per-stage deep-link targets (GUARDIAN context). pending_consent→the signing list, confirmed→the

@@ -77,7 +77,9 @@
       "confirmed": "學院開課並發佈課節，會顯示在「課節」。",
       "active": "課程進行中，課節與進度會持續更新。",
       "completed": "課程已完成，成績公佈後會顯示在「成績」。"
-    }
+    },
+    "tile": { "team": "團隊", "nextSession": "下節課", "noTeam": "尚未", "noSession": "暫未安排" },
+    "sessions": { "book": "預約", "cancel": "取消預約" }
   },
   "shell": {
     "openNavigation": "開啟導覽",

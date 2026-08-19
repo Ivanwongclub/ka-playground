@@ -19,7 +19,8 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import type { KaLocale } from '../i18n';
 import { GlanceCard, StatusTag, useResource, DataBoundary } from '@/ds2';
-import type { SegItem, GlanceRow } from '@/ds2';
+import type { GlanceRow } from '@/ds2';
+import { segItems } from '../display/enrolmentJourney';
 import { programmeName } from '../display/names';
 import { formatHkt } from '../display/date';
 
@@ -34,25 +35,7 @@ interface Order { programme_id: number; status: string; payment_due_at: string |
 
 // 7 real enrolment states → 5 display segments (C2-LIST ruling #1): pending_consent folds under Submitted,
 // completed under Active (the terminal end); withdrawn/released carry NO segbar (the status pill says it).
-const SEG: { key: string; lbl: string }[] = [
-  { key: 'submitted', lbl: 'submitted' },
-  { key: 'in_pool', lbl: 'pool' },
-  { key: 'teamed', lbl: 'teamed' },
-  { key: 'confirmed', lbl: 'confirmed' },
-  { key: 'active', lbl: 'active' },
-];
-const FOLD: Record<string, number> = { submitted: 0, pending_consent: 0, in_pool: 1, teamed: 2, confirmed: 3, active: 4, completed: 4 };
-const TERMINAL_BAD = ['withdrawn', 'released'];
-
-function segFor(status: string, t: (k: string) => string): SegItem[] | undefined {
-  if (TERMINAL_BAD.includes(status)) return undefined; // no segbar — the status pill carries a terminal-bad state
-  const cur = FOLD[status] ?? 0;
-  const done = status === 'completed'; // terminal end — the whole journey reads as done
-  return SEG.map((s, i) => ({
-    label: t(`enrolCard.seg.${s.lbl}`),
-    state: done || i < cur ? 'done' : i === cur ? 'current' : 'todo',
-  }));
-}
+// The 7→5 fold + terminal states live in ONE place now (C5-CONSUME): ../display/enrolmentJourney (segItems).
 
 // The student's consent + fee rows are INFORMATIVE — a student neither signs their own consent (the guardian
 // does) nor pays (§3.1: informative values are right-aligned plain text, never a pill and never an action).
@@ -108,7 +91,7 @@ export function StudentProgrammes() {
                   imageFallback={<div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, var(--ka-cat-stem), var(--ka-card))' }} />}
                   title={name}
                   status={<StatusTag domain="enrolmentStatus" value={e.status} />}
-                  segments={segFor(e.status, t)}
+                  segments={segItems(e.status, t)}
                   rows={rowsFor(consentBy.get(e.programme_id), orderBy.get(e.programme_id), locale, t)}
                   onClick={() => navigate(`/enrolments/${e.id}`)}
                 />

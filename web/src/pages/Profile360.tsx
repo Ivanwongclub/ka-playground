@@ -18,6 +18,7 @@ import { useResource, DataBoundary } from '../api/useResource';
 import { personName, programmeName } from '../display/names';
 import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
+import { TERMINAL_BAD } from '../display/enrolmentJourney'; // C5-CONSUME: one definition of the terminal states
 import { SubPanel, EmptyState, WizardRail, RecordShell, RecordHeaderBand, GlanceCard, JourneyStepper } from '@/ds2';
 import type { StepState, SegItem, GlanceRow } from '@/ds2';
 
@@ -32,7 +33,6 @@ interface RoleRow { role_id: string; name_en: string; name_tc: string; name_sc: 
 // The enrolment journey (same order as Enrolments' active lens) — rendered DISPLAY-ONLY here (no onStep):
 // the clickable journey stays on /enrolments. Terminal-bad states show their tag instead of a rail.
 const JOURNEY = ['submitted', 'pending_consent', 'in_pool', 'teamed', 'confirmed', 'active', 'completed'];
-const TERMINAL_BAD = ['withdrawn', 'released'];
 
 function initials(name: string): string {
   const parts = name.split(/\s+/).filter(Boolean);

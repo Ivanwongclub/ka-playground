@@ -77,7 +77,9 @@
       "confirmed": "The academy starts the programme and publishes sessions — they appear under Sessions.",
       "active": "The programme is running. Sessions and the tracker update as it progresses.",
       "completed": "The programme is complete. Results appear under Results when released."
-    }
+    },
+    "tile": { "team": "Team", "nextSession": "Next session", "noTeam": "Not yet", "noSession": "None scheduled" },
+    "sessions": { "book": "Book", "cancel": "Cancel booking" }
   },
   "shell": {
     "openNavigation": "Open navigation",
