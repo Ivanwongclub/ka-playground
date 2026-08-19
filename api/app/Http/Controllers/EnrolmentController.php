@@ -37,16 +37,58 @@ class EnrolmentController extends Controller
      */
     public function index(): JsonResponse
     {
+        // S-READ-2 — the enrolment LIST read, WIDENED. Same enr_read RLS, SAME ROWS (enr_read self-scopes to the
+        // viewer's own enrolments) — only COLUMNS added. Each added column is a SCALAR CORRELATED SUBQUERY, never
+        // a join: a join to team_members/consent_requests/school_links could match many and DUPLICATE the
+        // enrolment row (breaking behaviour-sha); a scalar subquery adds a column and cannot multiply rows. Every
+        // subquery reads under the viewer's OWN RLS (FORCE RLS on the source tables), so an out-of-scope value is
+        // simply null — no new visibility path (Step 6 §6.1). Read-only, additive: no migration, no policy, no
+        // elevation. The subqueries are per-row — the list self-scopes to ONE family, so N is bounded, but WATCH
+        // next_session (the heaviest) if a family ever grows large.
+        //
+        // NOT served — three DIFFERENT reasons, do not conflate:
+        //   • member_count — MODEL-FORBIDS (genuinely prototype-WRONG, D-7): tm_read admits only the viewer's own
+        //     row, so a count reads teammates' rows = a new visibility path. If ever wanted it is a SECURITY
+        //     DEFINER aggregate returning a NUMBER (never rows) — its own card.
+        //   • programme term ("Sep – Dec 2026") — MODEL-LACKS-THE-FIELD (prototype is RIGHT, schema is thin):
+        //     programmes carries enrolment_opens_at/closes_at (the enrolment window), not a run term. A migration
+        //     card, not a prototype correction.
+        //   • order amount — CORRECT in the prototype (a guardian surface) but the WRONG VEHICLE here: one shared
+        //     column, two viewers, and a student is one of them (P-3/B-18). Stays in orders_read, guardian-gated
+        //     by the UI. ("Remind" is DOMAIN-UNBUILT, D6/B-19 — not served either.)
+        $subTeam = "(SELECT t.name FROM teams t JOIN team_members tm ON tm.team_id = t.id
+            WHERE tm.student_id = e.student_id AND tm.status = 'active' AND t.programme_id = e.programme_id LIMIT 1)";
+        $subConsentStatus = "(SELECT cr.status FROM consent_requests cr
+            WHERE cr.student_id = e.student_id AND cr.programme_id = e.programme_id ORDER BY cr.created_at DESC LIMIT 1)";
+        $subConsentExpires = "(SELECT cr.expires_at FROM consent_requests cr
+            WHERE cr.student_id = e.student_id AND cr.programme_id = e.programme_id ORDER BY cr.created_at DESC LIMIT 1)";
+        $subSchool = static fn (string $col): string => "(SELECT sc.{$col} FROM school_links sl JOIN schools sc ON sc.id = sl.school_id
+            WHERE sl.student_id = e.student_id AND sl.status = 'active' LIMIT 1)";
+        // banner_url IFF the upload is scan-clean (uploads global, no PII) — the same URL the catalogue builds.
+        $subBanner = "(SELECT '/api/programmes/' || e.programme_id::text || '/banner' FROM uploads u
+            WHERE u.id = p.banner_upload_id AND u.status = 'clean' LIMIT 1)";
+        $nextWhere = "ps.programme_id = e.programme_id AND ps.starts_at > now() AND ps.status NOT IN ('cancelled','completed')";
+        $subNextTitle = "(SELECT ps.title FROM programme_sessions ps WHERE {$nextWhere} ORDER BY ps.starts_at ASC LIMIT 1)";
+        $subNextStarts = "(SELECT ps.starts_at FROM programme_sessions ps WHERE {$nextWhere} ORDER BY ps.starts_at ASC LIMIT 1)";
+
         return response()->json(['data' => DB::table('enrolments as e')
             ->leftJoin('programmes as p', 'p.id', '=', 'e.programme_id')
             ->leftJoin('users as s', 's.id', '=', 'e.student_id')
             ->leftJoin('users as g', 'g.id', '=', 'e.acting_guardian_id')
             ->orderBy('e.created_at')
-            ->get([
-                'e.id', 'e.programme_id', 'e.student_id', 'e.acting_guardian_id', 'e.status', 'e.created_at',
-                'p.name_en as programme_name_en', 'p.name_tc as programme_name_tc', 'p.name_sc as programme_name_sc',
-                's.name as student_name', 'g.name as acting_guardian',
-            ])]);
+            ->selectRaw("e.id, e.programme_id, e.student_id, e.acting_guardian_id, e.status, e.created_at,
+                p.name_en as programme_name_en, p.name_tc as programme_name_tc, p.name_sc as programme_name_sc,
+                s.name as student_name, g.name as acting_guardian,
+                {$subBanner} as banner_url,
+                {$subTeam} as team_name,
+                {$subConsentStatus} as consent_status,
+                {$subConsentExpires} as consent_expires_at,
+                {$subSchool('name_en')} as school_name_en,
+                {$subSchool('name_tc')} as school_name_tc,
+                {$subSchool('name_sc')} as school_name_sc,
+                {$subNextTitle} as next_session_title,
+                {$subNextStarts} as next_session_starts_at")
+            ->get()]);
     }
 
     /**

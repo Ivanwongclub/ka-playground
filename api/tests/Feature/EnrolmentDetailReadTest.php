@@ -186,14 +186,34 @@ class EnrolmentDetailReadTest extends TestCase
         $this->assertNull($r->json('team_id'));                          // studentA is in no team → null (not an error)
     }
 
-    // ── the list read is byte-identical: no detail-only field leaks into it ──
+    // ── S-READ-2: the list read is WIDENED — SAME ROWS, columns only, and NEVER an amount ──
 
-    public function test_list_read_is_unchanged_no_detail_fields_leak(): void
+    public function test_list_widened_same_rows_new_columns_no_amount(): void
     {
         Sanctum::actingAs($this->studentA);
-        $row = $this->getJson('/api/enrolments')->assertOk()->json('data.0');
-        $this->assertArrayHasKey('id', $row);
-        $this->assertArrayNotHasKey('team_id', $row, 'detail-only field leaked into the list read');
-        $this->assertArrayNotHasKey('banner_url', $row, 'detail-only field leaked into the list read');
+        $data = $this->getJson('/api/enrolments')->assertOk()->json('data');
+        // SAME ROWS (behaviour-sha): the student still sees only their own enrolment — enr_read scope unchanged,
+        // scalar subqueries cannot add/remove rows.
+        $this->assertSame([$this->enrolA], array_column($data, 'id'), 'the widened list changed which rows return');
+        $row = $data[0];
+        foreach (['banner_url', 'team_name', 'consent_status', 'consent_expires_at', 'school_name_en', 'school_name_tc', 'school_name_sc', 'next_session_title', 'next_session_starts_at'] as $col) {
+            $this->assertArrayHasKey($col, $row, "widened column {$col} is missing");
+        }
+        // A student must NEVER receive an order amount — least of all on a read shared with the guardian (P-3/B-18).
+        foreach (['amount', 'total_amount_minor', 'total', 'fee', 'order_amount', 'due_at'] as $amt) {
+            $this->assertArrayNotHasKey($amt, $row, "amount field {$amt} leaked into the shared list read");
+        }
+        $this->assertArrayNotHasKey('member_count', $row); // DROPPED — counting teammates is a new visibility path
+    }
+
+    public function test_list_cross_family_and_cross_school_unchanged(): void
+    {
+        // Guardian A → only their own child's enrolment, never guardian B's child (cross-family).
+        Sanctum::actingAs($this->guardianA);
+        $this->assertSame([$this->enrolA], array_column($this->getJson('/api/enrolments')->assertOk()->json('data'), 'id'));
+        $this->app['auth']->forgetGuards();
+        // School admin A → only school A's student, never school B's (cross-school).
+        Sanctum::actingAs($this->schoolAdminA);
+        $this->assertSame([$this->enrolA], array_column($this->getJson('/api/enrolments')->assertOk()->json('data'), 'id'));
     }
 }
