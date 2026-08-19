@@ -127,16 +127,38 @@ class EnrolmentDetailReadTest extends TestCase
         $this->getJson("/api/enrolments/{$this->enrolB}")->assertStatus(404);   // school B student — CROSS-SCHOOL
     }
 
-    // ── reach-all roles: no 404, by design (opsAudit arm) ──
+    // ── reach-all roles: no 404, by design (opsAudit RLS arm) ──
 
-    public function test_ops_audit_super_read_every_enrolment(): void
+    // operations + super_admin hold enrolment.view (permission matrix), so the middleware admits them and the
+    // enrolments RLS opsAudit arm reaches EVERY enrolment — no out-of-scope 404 for these two.
+    public function test_operations_and_super_read_every_enrolment(): void
     {
-        foreach (['operations', 'audit_read', 'super_admin'] as $cap) {
+        foreach (['operations', 'super_admin'] as $cap) {
             $u = $this->academyAdmin($cap);
             Sanctum::actingAs($u);
             $this->getJson("/api/enrolments/{$this->enrolA}")->assertOk();
             $this->getJson("/api/enrolments/{$this->enrolB}")->assertOk(); // reads all — no out-of-scope
             $this->app['auth']->forgetGuards();
+        }
+    }
+
+    // audit_read grants audit.read — the TRAIL, not the domain — so an audit-only academy_admin has NO
+    // enrolment.view and is DENIED at the permission:enrolment.view middleware BEFORE RLS, on BOTH endpoints.
+    // This is a CORRECT denial (a 403 gate), not a weakened one — asserted explicitly, not folded into
+    // assertDenied, precisely because the reason matters.
+    //
+    // VESTIGIAL ARM (pre-existing, NOT introduced here; a backlog policy-hygiene item, separate ruling): the
+    // enrolments RLS opsAudit arm includes `'audit_read' = ANY(caps)`, but the matrix never grants audit_read
+    // enrolment.view — so that arm is UNREACHABLE for an audit-only admin, on the list read exactly as on the
+    // detail read. Either the arm is dead code to remove, or audit is meant to reach enrolments and the matrix
+    // is missing a grant. Not resolved here.
+    public function test_audit_read_is_denied_at_the_permission_gate(): void
+    {
+        Sanctum::actingAs($this->academyAdmin('audit_read'));
+        foreach ([$this->enrolA, $this->enrolB] as $id) {
+            $r = $this->getJson("/api/enrolments/{$id}");
+            $r->assertStatus(403);              // permission:enrolment.view — audit.read is the trail, not the domain
+            $this->assertNull($r->json('id'));  // no body on a denial
         }
     }
 
