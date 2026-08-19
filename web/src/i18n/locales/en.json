@@ -68,6 +68,15 @@
       "sessions": "Sessions",
       "tracker": "Tracker",
       "results": "Results"
+    },
+    "whatNextLabel": "What happens next",
+    "whatNext": {
+      "submitted": "Your guardian signs the consent form, then this enrolment enters the team pool.",
+      "in_pool": "You join or form a team in your lobby, then it's submitted for the academy to confirm.",
+      "teamed": "The academy reviews your team and confirms the place.",
+      "confirmed": "The academy starts the programme and publishes sessions — they appear under Sessions.",
+      "active": "The programme is running. Sessions and the tracker update as it progresses.",
+      "completed": "The programme is complete. Results appear under Results when released."
     }
   },
   "shell": {

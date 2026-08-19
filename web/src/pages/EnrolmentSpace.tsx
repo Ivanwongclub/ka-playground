@@ -1,12 +1,21 @@
-// C1-SHELL — the family SCOPED PROGRAMME SPACE (D-1: keyed on ENROLMENT_ID; the guardian reuses it per
-// child × programme, and the staff Enrolment record C4 is the same object in the other grammar). SKELETON ONLY:
-// the programme band header + a LABELLED but EMPTY tab strip (Journey · Team · Sessions · Tracker · Results, the
-// fixed spec-C4 order). NO tab content — that is the next card.
+// C1-SHELL / C4-TABS-1 — the family SCOPED PROGRAMME SPACE (D-1: keyed on ENROLMENT_ID; the guardian reuses it
+// per child × programme, and the staff Enrolment record C4 is the same object in the other grammar). C4-TABS-1
+// fills the JOURNEY tab (stepper + what-next). Team · Sessions · Tracker · Results stay EMPTY — see below.
 //
-// ENTITLEMENT: there is no enrolment-detail endpoint (audit C4) — INTERIM, the skeleton reads the RLS-scoped
+// BLOCKED, NOT thin-by-choice (recorded per the C4-TABS-1 ruling): the Sessions tab and the Journey stat-tile
+// row (Team / Next session / Consent) are OMITTED because the reads do not exist —
+//   • the session read (SessionReadController) carries team_id, NOT programme_id, so this enrolment's sessions
+//     cannot be scoped without a server change (an unscoped list in a scoped space is worse than none);
+//   • the enrolment read carries no per-transition timestamps, so the stepper's dates are omitted (never faked
+//     from created_at);
+//   • the Team tile needs the N+1 roster-probe (over budget) and the Next-session tile needs the scoped session
+//     read; the Consent tile is already surfaced elsewhere (a 4th rendering adds nothing).
+// ONE server change — programme_id on the session read — unblocks the Sessions tab AND the Next-session tile
+// AND (with an enrolment-detail read) most of what C2-LIST dropped. That read is the highest-value backlog item.
+//
+// ENTITLEMENT: there is no enrolment-detail endpoint (audit C4) — INTERIM, the space reads the RLS-scoped
 // enrolment LIST and filters client-side by id. An enrolment the viewer cannot read is simply ABSENT from the
-// list → NotFound (Proposal A1 deep-link corollary, same shape as StudentTeam's P0-SAFE-1 guard). Replace this
-// list-filter with a real enrolment-detail read when one exists.
+// list → NotFound (Proposal A1 deep-link corollary). Both personas (student · guardian) reach it via the same read.
 import { useParams } from 'react-router-dom';
 import { Skeleton, Tabs } from 'antd';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +23,7 @@ import type { KaLocale } from '../i18n';
 import { useResource } from '../api/useResource';
 import { programmeName } from '../display/names';
 import { StatusTag } from '../display/status';
-import { ProgrammeBandHeader, EmptyState } from '@/ds2';
+import { ProgrammeBandHeader, EmptyState, JourneyStepper } from '@/ds2';
 import { NotFound } from './NotFound';
 
 interface EnrolRow {
@@ -27,6 +36,34 @@ interface EnrolRow {
 
 // spec C4 order — FIXED: Journey · Team · Sessions · Tracker · Results.
 const TABS = ['journey', 'team', 'sessions', 'tracker', 'results'] as const;
+
+// C4-TABS-1 — the SAME 7-real-state → 5-display-state model as C2-LIST (do not invent a second one).
+// pending_consent folds under Submitted; completed under Active (terminal end); withdrawn/released carry NO
+// stepper (the band's status pill says it). SEG entries are the enrolCard.seg.* label keys.
+const SEG = ['submitted', 'pool', 'teamed', 'confirmed', 'active'];
+const FOLD: Record<string, number> = { submitted: 0, pending_consent: 0, in_pool: 1, teamed: 2, confirmed: 3, active: 4, completed: 4 };
+const TERMINAL_BAD = ['withdrawn', 'released'];
+// status → whatNext string (§3.4's one sanctioned prose slot). Terminal-bad has none.
+const WHATNEXT: Record<string, string> = { submitted: 'submitted', pending_consent: 'submitted', in_pool: 'in_pool', teamed: 'teamed', confirmed: 'confirmed', active: 'active', completed: 'completed' };
+
+// JOURNEY tab — the §3.4 stepper (fold-derived) + what-next. NO stat-tile row and NO per-knot dates (blocked,
+// above). Terminal-bad → the status pill only, no stepper.
+function JourneyPanel({ status, locale }: { status: string; locale: KaLocale }) {
+  const { t } = useTranslation();
+  if (TERMINAL_BAD.includes(status)) return <StatusTag domain="enrolmentStatus" value={status} />;
+  const steps = SEG.map((lbl) => ({ title: t(`enrolCard.seg.${lbl}`) }));
+  const current = status === 'completed' ? SEG.length : (FOLD[status] ?? 0);
+  const wn = WHATNEXT[status];
+  return (
+    <JourneyStepper
+      steps={steps}
+      current={current}
+      locale={locale}
+      whatNext={wn ? t(`enrolSpace.whatNext.${wn}`) : undefined}
+      whatNextLabel={t('enrolSpace.whatNextLabel')}
+    />
+  );
+}
 
 export function EnrolmentSpace() {
   const { t, i18n } = useTranslation();
@@ -54,8 +91,12 @@ export function EnrolmentSpace() {
         items={TABS.map((k) => ({
           key: k,
           label: t(`enrolSpace.tab.${k}`),
-          // C1-SHELL: labelled EMPTY panel — the strip is the skeleton's point; tab CONTENT is the next card.
-          children: <EmptyState message={t('empty.caption')} />,
+          // C4-TABS-1: Journey is filled. The still-empty tabs render an ICON-ONLY empty — no gap-explaining
+          // copy ("empty is empty", C4-TABS-1 ruling; the C1-SHELL "arrives in a later sprint" caption was
+          // instructional and is removed). Client-side tab switching (no route change) is kept — one record.
+          children: k === 'journey'
+            ? <JourneyPanel status={enrol.status} locale={locale} />
+            : <EmptyState message={null} />,
         }))}
       />
     </div>
