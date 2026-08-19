@@ -8,13 +8,15 @@
 // reads 0. This rides on the tm_read co-member wall (same dependency as the B2 names/count split) — if
 // tm_read is ever widened, revisit this split.
 import { useState } from 'react';
-import { Alert, App, Button, Input, List, Select, Space, Tag, Tooltip, Typography } from 'antd';
+import { Alert, App, Button, Input, List, Select, Space, Tooltip, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
 import { useResource, DataBoundary } from '../api/useResource';
 import { mutate, type MutateResult } from '../api/mutate';
 import { StatusTag } from '../display/status';
 import { programmeName, personName } from '../display/names';
+// C8-TEAM — shared team-formation primitives (single definition; role renders plain, not a gold Tag).
+import { tri, MemberRole, JoinableCount, type TeamRow, type Roster, type Lobby } from '../display/team';
 // DS2 (restyle rollout C4 — child-data tier). StudentTeam.tsx joins the ALLOWED @/ds2 adopters
 // (import-guard). Container-framing only (Card→SubPanel); formation/join/submit handlers byte-identical.
 import { SubPanel, EmptyState, WizardRail } from '@/ds2';
@@ -24,26 +26,7 @@ import { NotFound } from './NotFound';
 
 const { Title, Paragraph, Text } = Typography;
 
-interface TeamRow {
-  id: string;
-  programme_id: number;
-  name: string;
-  status: string;
-  member_count: number;
-  programme_name_en?: string | null;
-  programme_name_tc?: string | null;
-  programme_name_sc?: string | null;
-  category_id?: string | null;
-}
 interface EnrolRow { id: string; programme_id: number; status: string; programme_name_en?: string | null; programme_name_tc?: string | null; programme_name_sc?: string | null }
-interface RosterMember { student_id: number; student_name: string | null; role: { name_en: string; name_tc: string; name_sc: string } | null }
-interface Roster { team_id: string; member_count: number; members: RosterMember[] | null }
-interface Lobby { id: string; name_en: string; name_tc: string; name_sc: string; school_bound: boolean; eligible: boolean }
-
-function tri(o: { name_en: string; name_tc: string; name_sc: string } | null, locale: KaLocale): string {
-  if (!o) return '—';
-  return (locale === 'zh-TC' ? o.name_tc : locale === 'zh-SC' ? o.name_sc : o.name_en) || o.name_en;
-}
 
 // P0-SAFE-1 — deep-link corollary (Proposal A1): /my/team is the STUDENT create/join/submit WRITE surface. The
 // nav item is student-gated (isStudentActor), but a deep-linked teacher/school_admin would otherwise render it
@@ -158,7 +141,7 @@ function MyTeamCard({ team, onChange }: { team: TeamRow; onChange: () => void })
                 <List.Item>
                   <Space>
                     <span>{personName(m.student_name)}</span>
-                    {m.role && <Tag color="gold">{tri(m.role, locale)}</Tag>}
+                    <MemberRole role={m.role} locale={locale} />
                   </Space>
                 </List.Item>
               )}
@@ -277,12 +260,4 @@ function FormOrJoin({ enrolment, joinable, onChange }: { enrolment: EnrolRow; jo
       </Space>
     </SubPanel>
   );
-}
-
-/** A joinable team's COUNT ONLY (B2 count-only branch — never teammate names pre-join). */
-function JoinableCount({ teamId }: { teamId: string }) {
-  const { t } = useTranslation();
-  const roster = useResource<Roster>(`/api/teams/${teamId}/members`);
-  if (roster.loading || roster.data == null) return null;
-  return <Tag>{t('studentTeam.members', { n: roster.data.member_count })}</Tag>;
 }

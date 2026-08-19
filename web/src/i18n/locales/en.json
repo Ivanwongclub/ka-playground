@@ -80,7 +80,8 @@
     },
     "tile": { "team": "Team", "nextSession": "Next session", "noTeam": "Not yet", "noSession": "None scheduled" },
     "sessions": { "book": "Book", "cancel": "Cancel booking" },
-    "results": { "pending": "In progress — results not yet released", "released": "Released" }
+    "results": { "pending": "In progress — results not yet released", "released": "Released" },
+    "team": { "teammates": "Teammates", "noTeam": "No team yet", "inPool": "In the pool, waiting for a team", "forming": "Forming teams you can join", "you": "(you)" }
   },
   "shell": {
     "openNavigation": "Open navigation",

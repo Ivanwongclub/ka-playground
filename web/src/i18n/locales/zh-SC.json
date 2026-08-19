@@ -80,7 +80,8 @@
     },
     "tile": { "team": "团队", "nextSession": "下节课", "noTeam": "尚未", "noSession": "暂未安排" },
     "sessions": { "book": "预约", "cancel": "取消预约" },
-    "results": { "pending": "进行中 — 成绩尚未公布", "released": "已公布" }
+    "results": { "pending": "进行中 — 成绩尚未公布", "released": "已公布" },
+    "team": { "teammates": "队友", "noTeam": "尚未加入队伍", "inPool": "在候补池中，等待组队", "forming": "可加入的组队中队伍", "you": "（你）" }
   },
   "shell": {
     "openNavigation": "打开导航",

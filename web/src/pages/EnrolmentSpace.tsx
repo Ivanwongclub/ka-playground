@@ -5,24 +5,27 @@
 // programme_id; book/cancel are student-only). The band image is the detail read's banner_url (the data:, hack
 // is gone). Both personas reach it: student → /my/sessions, guardian → /my/students/{id}/sessions.
 //
-// C7-RESULTS fills the Results tab: the existing embargoed assessment reads, coarsened to a released? bit (see
-// ResultsPanel). STILL BLOCKED, each with a named blocker: Team/Tracker tabs (need team-roster/tracker reads);
-// stepper per-knot DATES (per-transition timestamps live only in audit_events); the tile .ev sub-line (JourneyTile
-// has no sub slot + no signature-detail read); member_count (tm_read admits only the viewer's own row); session
-// LOCATION + MATERIALS (not in the session read). A 404 from the detail endpoint (out-of-scope) → NotFound (A1).
+// C7-RESULTS fills the Results tab (embargo-coarsened assessment reads). C8-TEAM fills the Team tab: the existing
+// roster/mentor/formation endpoints composed enrolment-scoped via the shared team module (see TeamPanel). STILL
+// BLOCKED, each with a named blocker: the Tracker tab (needs the tracker read); stepper per-knot DATES
+// (per-transition timestamps live only in audit_events); the tile .ev sub-line (JourneyTile has no sub slot + no
+// signature-detail read); session LOCATION + MATERIALS (not in the session read). A 404 from the detail endpoint
+// (out-of-scope) → NotFound (A1).
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { App, Button, Skeleton, Space, Tabs, Typography } from 'antd';
+import { App, Button, Input, Select, Skeleton, Space, Tabs, Tooltip, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
-import { useResource } from '../api/useResource';
+import { useResource, DataBoundary } from '../api/useResource';
 import { authFetch } from '../auth/session';
-import { mutate } from '../api/mutate';
+import { mutate, type MutateResult } from '../api/mutate';
 import { useIdentity } from '../auth/identity';
-import { programmeName } from '../display/names';
+import { programmeName, personName } from '../display/names';
 import { StatusTag } from '../display/status';
 import { formatHkt } from '../display/date';
 import { SEG, WHATNEXT, currentIndex, isTerminal } from '../display/enrolmentJourney';
+// C8-TEAM — shared team-formation primitives (single definition; role renders plain, count-only wall).
+import { tri, MemberRole, JoinableCount, memberInitials, type TeamRow, type Roster, type Lobby } from '../display/team';
 import { ProgrammeBandHeader, EmptyState, JourneyStepper, SubPanel } from '@/ds2';
 import { NotFound } from './NotFound';
 
@@ -132,6 +135,154 @@ function ResultsPanel({ programmeId, studentId }: { programmeId: number; student
   );
 }
 
+// ── C8-TEAM — the Team tab (D-1, enrolment-scoped). Composes the SAME endpoints /my/team uses (GET /teams,
+// /teams/{id}/members, /teams/{id}/teachers, /programmes/{id}/lobbies, create/join/submit), filtered to THIS
+// enrolment's programme, through the shared team module (no reimplementation). Every WRITE is student-only
+// (routes gate role:student), so create/join/submit render iff isStudent — the GUARDIAN gets the read-only
+// mirror with NO actions.
+//
+// Deferrals, each with its class:
+//   • "Join requests · you are Team Lead" (Accept/Decline) — DOMAIN-UNBUILT: no join-request table exists;
+//     joins are direct inserts. Omitted, not faked.
+//   • "Join with code" — DOMAIN-UNBUILT: invite codes (B-2/J-3, M-1-gated) unbuilt. Omitted.
+//   • wall "Led by {name}" — MODEL-FORBIDS (D-7): users_read is own-row-only for a student, so a non-member
+//     cannot read the organiser's name (created_by_name resolves NULL). The wall shows name + count only.
+//   • wall "· Public/Private" + pitch blurb — MODEL-LACKS-THE-FIELD: teams has no visibility/description column.
+// Submit is submitter-only and is ABSENT (not disabled) unless the viewer is the team's created_by — the
+// GET /teams read already carries created_by, so this is a client-side gate with NO new read.
+function TeamPanel({ programmeId, status, isStudent, viewerId }: { programmeId: number; status: string; isStudent: boolean; viewerId: number | undefined }) {
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language as KaLocale;
+  const { message, modal } = App.useApp();
+  // GET /teams — RLS-shaped: the viewer's own team (member_count>=1) + forming lobby-wall teams (count 0, student
+  // persona only; a guardian's role does not match the teams_read lobbyWall arm, so their wall is naturally empty).
+  const teams = useResource<{ data: TeamRow[] }>('/api/teams');
+  const mine = (teams.data?.data ?? []).filter((x) => x.programme_id === programmeId);
+  const myTeam = mine.find((x) => x.member_count >= 1) ?? null;
+  const joinable = mine.filter((x) => x.member_count === 0 && x.status === 'forming');
+
+  const surface = (r: MutateResult, okKey: string) => {
+    if (r.ok) { void message.success(t(okKey)); teams.reload(); return; }
+    void message.error(r.message ?? (r.status === 403 ? t('mutate.forbidden') : r.status === 0 ? t('mutate.network') : t('mutate.failed')));
+  };
+  const join = async (teamId: string) => surface(await mutate(`/api/teams/${teamId}/join`), 'studentTeam.joinedOk');
+  const submit = (team: TeamRow) => modal.confirm({
+    title: t('studentTeam.submitTitle', { team: team.name }),
+    content: t('studentTeam.submitBody'),
+    okText: t('studentTeam.submit'), cancelText: t('common.cancel'),
+    onOk: async () => surface(await mutate(`/api/teams/${team.id}/submit`), 'studentTeam.submitted'),
+  });
+
+  if (teams.loading) return <Skeleton active paragraph={{ rows: 3 }} />;
+  if (myTeam) return <TeamedView team={myTeam} isStudent={isStudent} viewerId={viewerId} locale={locale} onSubmit={submit} />;
+  if (status === 'in_pool') return <InPoolView programmeId={programmeId} joinable={joinable} isStudent={isStudent} locale={locale} onJoin={join} onChange={() => teams.reload()} />;
+  return <EmptyState message={null} />; // pre-pool (pending_consent/submitted) or terminal — nothing to form yet
+}
+
+function TeamedView({ team, isStudent, viewerId, locale, onSubmit }: { team: TeamRow; isStudent: boolean; viewerId: number | undefined; locale: KaLocale; onSubmit: (team: TeamRow) => void }) {
+  const { t } = useTranslation();
+  const roster = useResource<Roster>(`/api/teams/${team.id}/members`);
+  const teachers = useResource<{ teachers: { teacher_id: number; teacher_name: string | null }[] }>(`/api/teams/${team.id}/teachers`);
+  // Submit: submitter-only, ABSENT (not disabled) for a non-submitter. created_by rides the GET /teams read.
+  const canSubmit = isStudent && team.status === 'forming' && viewerId !== undefined && team.created_by === viewerId;
+  return (
+    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <Typography.Title level={5} style={{ margin: 0 }}>{team.name}</Typography.Title>
+        <StatusTag domain="teamStatus" value={team.status} />
+      </div>
+      {/* Teammates — names + plain role; "(you)" on the viewer's own row (student persona only). Never contact. */}
+      <div>
+        <Typography.Text strong>{t('enrolSpace.team.teammates')}</Typography.Text>
+        <DataBoundary loading={roster.loading} error={roster.error}>
+          <Space direction="vertical" size={8} style={{ width: '100%', marginTop: 8 }}>
+            {(roster.data?.members ?? []).map((m) => (
+              <div key={m.student_id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', background: 'var(--ka-muted)', border: '1px solid var(--ka-border)', fontSize: 12, fontWeight: 700, flex: '0 0 auto' }}>{memberInitials(m.student_name)}</span>
+                <span style={{ flex: 1, minWidth: 0 }}>{personName(m.student_name)}{isStudent && m.student_id === viewerId ? ` ${t('enrolSpace.team.you')}` : ''}</span>
+                <MemberRole role={m.role} locale={locale} />
+              </div>
+            ))}
+          </Space>
+        </DataBoundary>
+      </div>
+      {/* Mentor — plain text, no chip/link (A3). Only when the programme enables the mentor view. */}
+      {(teachers.data?.teachers.length ?? 0) > 0 && (
+        <div>
+          <Typography.Text strong>{t('studentTeam.mentor')}</Typography.Text>
+          <div style={{ marginTop: 4 }}><Typography.Text>{(teachers.data?.teachers ?? []).map((tt) => personName(tt.teacher_name)).join(', ')}</Typography.Text></div>
+        </div>
+      )}
+      {canSubmit && <div><Button type="primary" className="ka-cta" onClick={() => onSubmit(team)}>{t('studentTeam.submit')}</Button></div>}
+    </Space>
+  );
+}
+
+function InPoolView({ programmeId, joinable, isStudent, locale, onJoin, onChange }: { programmeId: number; joinable: TeamRow[]; isStudent: boolean; locale: KaLocale; onJoin: (id: string) => void; onChange: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+      <div>
+        <Typography.Text strong>{t('enrolSpace.team.noTeam')}</Typography.Text>
+        <div><Typography.Text type="secondary">{t('enrolSpace.team.inPool')}</Typography.Text></div>
+      </div>
+      {isStudent && <CreateTeam programmeId={programmeId} locale={locale} onChange={onChange} />}
+      {joinable.length > 0 && (
+        <div>
+          <Typography.Text strong>{t('enrolSpace.team.forming')}</Typography.Text>
+          {/* Count-only wall (name + member count). NO organiser name (MODEL-FORBIDS, D-7). Join is student-only. */}
+          <Space direction="vertical" size={8} style={{ width: '100%', marginTop: 8 }}>
+            {joinable.map((team) => (
+              <div key={team.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ flex: 1, minWidth: 0 }}>{team.name}</span>
+                <JoinableCount teamId={team.id} />
+                {isStudent && <Button size="small" onClick={() => onJoin(team.id)}>{t('studentTeam.join')}</Button>}
+              </div>
+            ))}
+          </Space>
+        </div>
+      )}
+    </Space>
+  );
+}
+
+function CreateTeam({ programmeId, locale, onChange }: { programmeId: number; locale: KaLocale; onChange: () => void }) {
+  const { t } = useTranslation();
+  const { message } = App.useApp();
+  const lobbies = useResource<{ data: Lobby[] }>(`/api/programmes/${programmeId}/lobbies`);
+  const [lobbyId, setLobbyId] = useState<string | undefined>(undefined);
+  const [name, setName] = useState('');
+  const eligibleLobbies = (lobbies.data?.data ?? []).filter((l) => l.eligible);
+  const create = async () => {
+    if (!lobbyId || name.trim().length < 2) return;
+    const r = await mutate('/api/my/teams', { programme_id: programmeId, category_id: lobbyId, name: name.trim() });
+    if (r.ok) { setName(''); setLobbyId(undefined); void message.success(t('studentTeam.createdOk')); onChange(); }
+    else void message.error(r.message ?? (r.status === 403 ? t('mutate.forbidden') : r.status === 0 ? t('mutate.network') : t('mutate.failed')));
+  };
+  return (
+    <div>
+      <Typography.Text strong>{t('studentTeam.createTitle')}</Typography.Text>
+      <DataBoundary loading={lobbies.loading} error={lobbies.error}>
+        <Space direction="vertical" style={{ width: '100%', marginTop: 8 }}>
+          <Select
+            style={{ width: '100%', maxWidth: 360 }}
+            placeholder={t('studentTeam.createLobby')}
+            value={lobbyId}
+            onChange={setLobbyId}
+            options={eligibleLobbies.map((l) => ({
+              value: l.id,
+              label: (<span>{tri(l, locale)}{l.school_bound && <> <Tooltip title={t('studentTeam.schoolBoundHint')}>★</Tooltip></>}</span>),
+            }))}
+          />
+          <Input style={{ maxWidth: 360 }} placeholder={t('studentTeam.createName')} value={name} onChange={(e) => setName(e.target.value)} maxLength={80} />
+          {/* The in-pool action-gold (≤1 per state): Create. Join above is quiet. */}
+          <Button type="primary" className="ka-cta" disabled={!lobbyId || name.trim().length < 2} onClick={() => void create()}>{t('studentTeam.createCta')}</Button>
+        </Space>
+      </DataBoundary>
+    </div>
+  );
+}
+
 export function EnrolmentSpace() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language as KaLocale;
@@ -208,8 +359,9 @@ export function EnrolmentSpace() {
         items={TABS.map((k) => ({
           key: k,
           label: t(`enrolSpace.tab.${k}`),
-          // Journey + Sessions + Results are filled; Team/Tracker stay icon-only empty (blocked — no gap copy).
+          // Journey + Team + Sessions + Results are filled; Tracker stays icon-only empty (blocked — no gap copy).
           children: k === 'journey' ? journey
+            : k === 'team' ? <TeamPanel programmeId={d.programme_id} status={d.status} isStudent={isStudent} viewerId={identity?.id} />
             : k === 'sessions' ? sessions
             : k === 'results' ? <ResultsPanel programmeId={d.programme_id} studentId={d.student_id} />
             : <EmptyState message={null} />,

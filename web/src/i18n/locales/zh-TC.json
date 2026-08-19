@@ -80,7 +80,8 @@
     },
     "tile": { "team": "團隊", "nextSession": "下節課", "noTeam": "尚未", "noSession": "暫未安排" },
     "sessions": { "book": "預約", "cancel": "取消預約" },
-    "results": { "pending": "進行中 — 成績尚未公佈", "released": "已公佈" }
+    "results": { "pending": "進行中 — 成績尚未公佈", "released": "已公佈" },
+    "team": { "teammates": "隊友", "noTeam": "尚未加入隊伍", "inPool": "在候補池中，等待組隊", "forming": "可加入的組隊中隊伍", "you": "（你）" }
   },
   "shell": {
     "openNavigation": "開啟導覽",
