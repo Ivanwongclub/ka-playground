@@ -1006,8 +1006,10 @@
     "seg": { "submitted": "Submitted", "pool": "Pool", "teamed": "Teamed", "confirmed": "Confirmed", "active": "Active" }
   },
   "selfService": {
-    "childrenTitle": "My Children",
+    "childrenTitle": "Children",
     "childrenSubtitle": "Your children's enrolments and consent.",
+    "enrolChild": "Enrol a child",
+    "enrolChildCta": "Enrol in a programme…",
     "viewSessions": "View sessions",
     "viewProfile": "View record",
     "consentNeeded": "Your signature needed",
@@ -1023,8 +1025,8 @@
     "studentsTitle": "My Students",
     "studentsSubtitle": "Students on your school's roll.",
     "noStudents": "No students on your roll yet.",
-    "programmes_one": "programme",
-    "programmes_other": "programmes",
+    "enrolments_one": "enrolment",
+    "enrolments_other": "enrolments",
     "reviewSign": "Review & sign",
     "viewRecord": "View record"
   }

@@ -1004,8 +1004,10 @@
     "seg": { "submitted": "已提交", "pool": "待組隊", "teamed": "已組隊", "confirmed": "已確認", "active": "進行中" }
   },
   "selfService": {
-    "childrenTitle": "我的子女",
+    "childrenTitle": "子女",
     "childrenSubtitle": "你子女的報名與同意狀況。",
+    "enrolChild": "為子女報名",
+    "enrolChildCta": "報名參加課程…",
     "viewSessions": "查看課節",
     "viewProfile": "查看檔案",
     "consentNeeded": "需要你簽署",
@@ -1021,7 +1023,7 @@
     "studentsTitle": "我的學生",
     "studentsSubtitle": "你校名冊上的學生。",
     "noStudents": "名冊上暫無學生。",
-    "programmes_other": "課程",
+    "enrolments_other": "項報名",
     "reviewSign": "檢閱並簽署",
     "viewRecord": "查看紀錄"
   }

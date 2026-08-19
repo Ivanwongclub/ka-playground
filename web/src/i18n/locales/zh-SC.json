@@ -1004,8 +1004,10 @@
     "seg": { "submitted": "已提交", "pool": "待组队", "teamed": "已组队", "confirmed": "已确认", "active": "进行中" }
   },
   "selfService": {
-    "childrenTitle": "我的子女",
+    "childrenTitle": "子女",
     "childrenSubtitle": "你子女的报名与同意状况。",
+    "enrolChild": "为子女报名",
+    "enrolChildCta": "报名参加课程…",
     "viewSessions": "查看课节",
     "viewProfile": "查看档案",
     "consentNeeded": "需要你签署",
@@ -1021,7 +1023,7 @@
     "studentsTitle": "我的学生",
     "studentsSubtitle": "你校名册上的学生。",
     "noStudents": "名册上暂无学生。",
-    "programmes_other": "课程",
+    "enrolments_other": "项报名",
     "reviewSign": "查阅并签署",
     "viewRecord": "查看记录"
   }

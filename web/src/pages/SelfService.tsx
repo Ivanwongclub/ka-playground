@@ -216,11 +216,19 @@ export function MyChildren() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <Title level={5} style={{ margin: 0 }}>{personName(name)}</Title>
-                    {/* AD-3: pluralize the label via CLDR (_one/_other) — "1 programme" / "2 programmes". */}
-                    <div style={{ marginTop: 6 }}><StatChip value={enrolments.length} label={t('selfService.programmes', { count: enrolments.length })} /></div>
+                    {/* Counts ENROLMENTS (per the prototype's "· 2 enrolments"), pluralised via CLDR (_one/_other).
+                        The child's SCHOOL is DEFERRED — the enrolment read carries no school field (a list-read
+                        server field). */}
+                    <div style={{ marginTop: 6 }}><StatChip value={enrolments.length} label={t('selfService.enrolments', { count: enrolments.length })} /></div>
                   </div>
-                  {/* R1-P360: "View record" opens the SAME Profile360 for this child (guardian child-view).
-                      R1-G: "View sessions" preselects the child in the sessions picker. */}
+                  {/* DELIBERATE, DOCUMENTED DIVERGENCE (a11y) from the prototype's whole-card drill → the child
+                      record. Any one ground is sufficient: (1) the rows are role=button drills to /enrolments/:id
+                      (D-1), so a card-level drill nests interactives — invalid HTML, ambiguous in the a11y tree;
+                      (2) stopPropagation is mouse-only — nothing for keyboard/screen readers; (3) card→child-record
+                      conflicts with rows→enrolment-space. So the drill is an EXPLICIT link. "View record" → the
+                      child record. "View sessions" → /family/sessions — the guardian's ONLY entry since C1-SHELL
+                      demoted the nav slot; FLAG: redundant once the scoped-space Sessions tab covers per-child
+                      sessions — remove it then, not now. */}
                   <Space size="middle">
                     <Link to={`/my/children/${studentId}`}>{t('selfService.viewProfile')}</Link>
                     <Link to={`/family/sessions?student=${studentId}`}>{t('selfService.viewSessions')}</Link>
@@ -242,6 +250,13 @@ export function MyChildren() {
             })}
           </Space>
         </DataBoundary>
+        {/* Prototype's trailing "Enrol a child" card (item 3) — the guardian's marketplace entry (C1-SHELL
+            demoted the nav slot, so this IS the prototype's path). Always available, incl. an empty roll. Its
+            gold CTA is its OWN card's one gold — not a second gold on a child card. */}
+        <Card style={{ background: 'var(--ka-muted)', boxShadow: 'none' }}>
+          <Title level={5} style={{ marginTop: 0 }}>{t('selfService.enrolChild')}</Title>
+          <Link to="/marketplace"><Button type="primary" className="ka-cta">{t('selfService.enrolChildCta')}</Button></Link>
+        </Card>
       </Space>
     </div>
   );
