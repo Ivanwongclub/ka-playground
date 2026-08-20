@@ -71,7 +71,7 @@ Everything hangs off four spine objects: **users** (identity) → **enrolments**
 ### 2C · Programme & config (13 tables)
 | Table | Fields | Guards |
 |---|---|---|
-| **programmes** | status (draft→published, version-snapshotted) · enrolment_opens/closes_at (**no run term** 🔴 MG) · banner_upload_id · **mentor_team_access bool** (S-MENTOR-1; ⚠ X-4 column-vs-override duality) · trilingual names | **NO RLS** — globally readable reference table (this is what made the P-HYGIENE-1 direct arm work and the category arm diverge) |
+| **programmes** | status (draft→published, version-snapshotted) · enrolment_opens/closes_at · **starts_at** (written by `WizardService::syncBasicsDates`, mirrored from `basics.starts_on` at basics-save AND publish, HKT midnight → UTC; FIX-REFUND-SEED) · **ends_at** (exists, still writerless — no `basics.ends_on` anywhere; AUDIT-2 A-1) · banner_upload_id · **mentor_team_access bool** (S-MENTOR-1; ⚠ X-4 column-vs-override duality) · trilingual names | **NO RLS** — globally readable reference table (this is what made the P-HYGIENE-1 direct arm work and the category arm diverge) |
 | **programme_versions / wizard_sections / pre_flight_results** | hub-and-spoke wizard: sections, readiness counts, publish preflight (consent template + fees required), locked-section audit | J-19 UI unbuilt |
 | **programme_capacity** | team-based capacity (OD-31) | **not family-readable**; consumed only at Formation's FOR UPDATE claim |
 | **fee_items** | trilingual, versioned at publish | snapshot into order_lines |

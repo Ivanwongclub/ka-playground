@@ -22,7 +22,7 @@
 | Screen | State | Remaining gaps → class |
 |---|---|---|
 | stu-home | 🟡 dashboard exists, old composition | NEXT-UP card + greeting hero + programme cards **CL** (reads exist post S-READ-2) |
-| stu-progs | ✅ C6 | term **MG** · tracker/results rows **RW** (enrolment-list) · forming-count **RW** · Remind **DU**(D6) |
+| stu-progs | ✅ C6 | term **RW** (not MG — `programmes.starts_at` exists and is now written; the read doesn't carry it) · tracker/results rows **RW** (enrolment-list) · forming-count **RW** · Remind **DU**(D6) |
 | stu-space | ✅ 5 tabs | stepper dates **MG/RW** (transition-log read, `{state,at}` only — ruled shape) · tile `.ev` sub-lines **RW** · tracker requirements **MG×7** (see §6) · join-request block **DU**(B-4) · join-with-code **DU**(B-2/M-1) · wall names **PW** |
 | stu-explore / stu-progdet | 🟡 marketplace exists, needs restyle to card grammar | **CL**; "Ask my guardian" interest ping **DU** (small — an interest table or notification) |
 | stu-me | 🔴 placeholder | identity+language **CL** · "My guardians" **PW** (ungranted read — or rule a grant) |
@@ -61,9 +61,10 @@ fin-rec/conf/refunds ✅ (BI-9 + P0-SAFE-3; Payments' stale amber literal owed) 
 ## 7 · THE SERVER BACKLOG, CONSOLIDATED (from every verdict table)
 
 **Read widens (RW):** enrolment-list tracker/results columns · forming-count aggregate · transition-log read (`{state,at}`, no actor/notes — ruled shape) · tile evidence sub-lines · member-count aggregate if ever wanted (own ruling).
-**Migrations (MG):** programme term · `assessments.released_at` + `max_score` · consent `kind` (media, P-1) · **incident_notes ⚠️ child-safety, promote** · mentor_checkins (M-4) · stage requirements model (7 types: attendance-count, upload, mentor-review, check-in, deliverable, session-ref, sequence-lock **if** ruled) · P-HYGIENE-1 denormalise (in flight) · composite-FK hygiene · period_locks.
+**Migrations (MG):** ~~programme term~~ (RECLASSED — the columns shipped 25 Jul; `starts_at` gained its writer in FIX-REFUND-SEED, so the start date is an **RW**, not a migration; only `ends_at` remains open, AUDIT-2 A-1) · `assessments.released_at` + `max_score` · consent `kind` (media, P-1) · **incident_notes ⚠️ child-safety, promote** · mentor_checkins (M-4) · stage requirements model (7 types: attendance-count, upload, mentor-review, check-in, deliverable, session-ref, sequence-lock **if** ruled) · P-HYGIENE-1 denormalise (in flight) · composite-FK hygiene · period_locks.
 **Domains (DU):** notifications D6/B-19 (blocks: Remind, bell drawer, release-notify, chase reminder, "you'll be notified") · join/change/withdrawal request grammars (B-4/C-1/C-2) · invite codes (B-2/J-3/M-1) · team fields (B-1) · interest ping.
 **Decisions (DR):** **D-5 vocabulary — the long pole** (school fine-grain, mentor grading, release-separation, delegation-config) · D-6 remittance (gua-pay vs sch-bill) · D-4 DENY-WINS · D-3 name-blanking · X-3 seam before delegation-config.
+**Hygiene / integrity (FIX-REFUND-SEED follow-ups, AUDIT-2 §A):** **PRIORITY — the demo seeder must publish through `WizardService::publish`**: `DemoSeeder:287` sets `status = 'published'` directly, skipping pre-flight, version snapshot, capacity seed AND policy seed, so demo data never exercises the publish contract — which is exactly why the NULL-window refund defect stayed invisible · admin `save()` still accepts NULL windows (an explicit staff act, but the invariant now holds only for the provisional seed — wants a validation ruling) · **MG** a DB-level `NOT NULL`/CHECK guard on `withdrawal_policies` window columns (stronger than a service-layer guard; migration + backfill).
 
 ---
 
