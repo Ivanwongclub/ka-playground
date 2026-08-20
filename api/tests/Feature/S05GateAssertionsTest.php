@@ -139,7 +139,7 @@ class S05GateAssertionsTest extends TestCase
         $extraEnrolment = $this->enrolmentId($programme, $extra);
         DB::beginTransaction();
         $this->sys(fn () => DB::table('team_members')->insert([
-            'id' => (string) Str::uuid7(), 'team_id' => $teamId, 'enrolment_id' => $extraEnrolment,
+            'id' => (string) Str::uuid7(), 'team_id' => $teamId, 'programme_id' => $programme->id, 'enrolment_id' => $extraEnrolment,
             'category_id' => $lobby, 'student_id' => $extra->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
         ]));
         $red = $this->sys(fn () => (new CapacityConservationAssertion)->check());

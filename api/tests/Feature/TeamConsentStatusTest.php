@@ -73,7 +73,7 @@ class TeamConsentStatusTest extends TestCase
             DB::table('team_categories')->insert(['id' => $lobby, 'programme_id' => $this->programmeId, 'name_en' => 'Lobby', 'name_tc' => 'Lobby', 'name_sc' => 'Lobby', 'assignment_rule' => 'open', 'school_id' => $s1->id, 'is_default' => true, 'created_at' => now(), 'updated_at' => now()]);
             $this->teamId = (string) Str::uuid7();
             DB::table('teams')->insert(['id' => $this->teamId, 'programme_id' => $this->programmeId, 'category_id' => $lobby, 'name' => 'Alpha', 'status' => 'submitted', 'created_by' => $this->member->id, 'created_at' => now(), 'updated_at' => now()]);
-            DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $this->teamId, 'enrolment_id' => $enrolmentId, 'category_id' => $lobby, 'student_id' => $this->member->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+            DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $this->teamId, 'programme_id' => $this->programmeId, 'enrolment_id' => $enrolmentId, 'category_id' => $lobby, 'student_id' => $this->member->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
         });
     }
 

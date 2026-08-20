@@ -118,7 +118,7 @@ class InvoiceAgingTest extends TestCase
             DB::table('team_categories')->insert(['id' => $lobby, 'programme_id' => $this->programmeId, 'name_en' => 'O', 'name_tc' => 'O', 'name_sc' => 'O', 'assignment_rule' => 'open', 'school_id' => null, 'is_default' => true, 'created_at' => now(), 'updated_at' => now()]);
             $tid = (string) Str::uuid7();
             DB::table('teams')->insert(['id' => $tid, 'programme_id' => $this->programmeId, 'category_id' => $lobby, 'name' => 'T', 'status' => 'confirmed', 'created_by' => $this->ops->id, 'created_at' => now(), 'updated_at' => now()]);
-            DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $tid, 'enrolment_id' => $order->enrolment_id, 'category_id' => $lobby, 'student_id' => $order->student_id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+            DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $tid, 'programme_id' => $this->programmeId, 'enrolment_id' => $order->enrolment_id, 'category_id' => $lobby, 'student_id' => $order->student_id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
 
             return $tid;
         });

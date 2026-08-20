@@ -67,7 +67,7 @@ class TeamRolesReadTest extends TestCase
             foreach ([[$this->holder, $this->guardian], [$this->second, $this->guardian]] as [$stu, $g]) {
                 $e = (string) Str::uuid7();
                 DB::table('enrolments')->insert(['id' => $e, 'programme_id' => $programmeId, 'student_id' => $stu->id, 'acting_guardian_id' => $g->id, 'status' => 'confirmed', 'created_at' => now(), 'updated_at' => now()]);
-                DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $teamId, 'enrolment_id' => $e, 'category_id' => $lobby, 'student_id' => $stu->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+                DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $teamId, 'programme_id' => $programmeId, 'enrolment_id' => $e, 'category_id' => $lobby, 'student_id' => $stu->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
                 $enrols[] = $e;
             }
             // the holder's active guardian link (drives the guardian read branch)

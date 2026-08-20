@@ -71,7 +71,7 @@ class FinanceReportTest extends TestCase
             foreach ([$member, $verifier] as $u) {
                 $eid = (string) Str::uuid7();
                 DB::table('enrolments')->insert(['id' => $eid, 'programme_id' => $this->programmeId, 'student_id' => $u->id, 'acting_guardian_id' => $u->id, 'status' => 'confirmed', 'created_at' => now(), 'updated_at' => now()]);
-                DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $team, 'enrolment_id' => $eid, 'category_id' => $this->lobby, 'student_id' => $u->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+                DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $team, 'programme_id' => $this->programmeId, 'enrolment_id' => $eid, 'category_id' => $this->lobby, 'student_id' => $u->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
             }
             $bid = (string) Str::uuid7();
             DB::table('team_budgets')->insert(['id' => $bid, 'team_id' => $team, 'status' => 'active', 'currency' => 'HKD', 'activated_at' => now(), 'created_at' => now(), 'updated_at' => now()]);

@@ -69,7 +69,7 @@ class TeamListNamesTest extends TestCase
                 $g = User::factory()->create(['role' => 'guardian']);
                 $e = (string) Str::uuid7();
                 DB::table('enrolments')->insert(['id' => $e, 'programme_id' => $programmeId, 'student_id' => $s->id, 'acting_guardian_id' => $g->id, 'status' => 'teamed', 'created_at' => now(), 'updated_at' => now()]);
-                DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $teamId, 'enrolment_id' => $e, 'category_id' => $lobby, 'student_id' => $s->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+                DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $teamId, 'programme_id' => $programmeId, 'enrolment_id' => $e, 'category_id' => $lobby, 'student_id' => $s->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
             }
         });
 

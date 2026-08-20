@@ -66,6 +66,7 @@ class TeamResolutionService
 
                     DB::table('team_members')->insert([
                         'id' => (string) Str::uuid7(), 'team_id' => $team->id, 'enrolment_id' => $enrolment->id,
+                        'programme_id' => $team->programme_id,
                         'category_id' => $team->category_id, 'student_id' => $enrolment->student_id,
                         'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
                     ]);

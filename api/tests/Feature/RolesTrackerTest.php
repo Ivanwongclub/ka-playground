@@ -369,21 +369,18 @@ class RolesTrackerTest extends TestCase
 
         $this->sys(fn () => DB::table('programmes')->where('id', $programme->id)->update(['mentor_team_access' => true]));
 
-        // (b) FLAG ON, but the mentor holds no link to the LOBBY'S SCHOOL → the team is readable while every
-        //     gate row is filtered out: teams_read's mentor arm tests `programmes.mentor_team_access` directly,
-        //     whereas stage_gates_read's tests it THROUGH `team_categories`, which is itself school-scoped for
-        //     a teacher. So the two arms disagree and the mentor gets an all-false tracker.
-        //     PRE-EXISTING (S-MENTOR-1), NOT introduced by this widen — the widen only adds fields to rows the
-        //     caller already reads, and here there are none. FLAGGED for its own ruling; not fixed in this card.
+        // (b) FLAG ON, mentor holds NO link to the LOBBY'S SCHOOL. Before
+        //     2026_08_20_100000_mentor_arm_programme_denorm this returned an all-false tracker: teams_read's
+        //     mentor arm reached the flag through `programmes` (no RLS) while stage_gates_read's reached it
+        //     through the school-scoped `team_categories`, so the team was readable and every gate row was
+        //     filtered out. P-HYGIENE-1 item 1 removed the RLS-scoped table from the policy path; the arms
+        //     now resolve identically and the mentor sees exactly what the family sees.
         Sanctum::actingAs($teamTeacher);
-        $mentorNoSchool = $this->getJson("/api/teams/{$teamId}/tracker")->assertOk()->json();
+        $this->assertSame($memberBody, $this->getJson("/api/teams/{$teamId}/tracker")->assertOk()->json(),
+            'mentor without a link to the lobby school reads the same gates (P-HYGIENE-1 item 1)');
         $this->app['auth']->forgetGuards();
-        $this->assertSame([false, false, false, false, false], array_column($mentorNoSchool['stages'], 'passed'));
-        $this->assertNull($mentorNoSchool['stages'][0]['passed_at']);
-        $this->assertNull($mentorNoSchool['stages'][0]['approver_kind']);
 
-        // (c) the same mentor, linked to the lobby's school (the ordinary case): the gate rows resolve and the
-        //     pass fact rides the UNCHANGED mentor arm — same five stages the family sees.
+        // (c) the same mentor, additionally linked to the lobby's school: unchanged by the fix.
         $this->sys(fn () => DB::table('teacher_links')->insert([
             'id' => (string) Str::uuid7(), 'teacher_id' => $teamTeacher->id, 'school_id' => $this->school->id,
             'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
@@ -432,10 +429,139 @@ class RolesTrackerTest extends TestCase
         }
     }
 
+    // ══════════════════════════════════════════════════════════════════════════════════════════════
+    // P-HYGIENE-1 item 1 — the mentor arm must resolve IDENTICALLY on teams_read, tm_read and
+    // stage_gates_read. Before the denormalisation the two category-route arms silently carried a
+    // fourth condition (the mentor's own school scope) imported from team_categories_read.
+    // ══════════════════════════════════════════════════════════════════════════════════════════════
+
+    /** RIDER-1 — 12 actors × three reads. Only the school-bound-unlinked mentor changes; nobody else moves. */
+    public function test_mentor_arm_resolves_identically_on_all_three_reads(): void
+    {
+        [$programme, $open, $bound] = $this->publishedProgramme();
+        $this->sys(fn () => DB::table('programmes')->where('id', $programme->id)->update(['mentor_team_access' => true]));
+
+        // the SCHOOL-BOUND team (the divergent configuration) …
+        [$teamId, $students, $guardians] = $this->confirmedTeam($programme, $bound, 2, $this->school);
+        $mentor = User::factory()->create(['role' => 'teacher']);          // NO teacher_links → school_ids = ''
+        $this->linkTeacher($teamId, $mentor);
+        Sanctum::actingAs($mentor);
+        $this->postJson("/api/teams/{$teamId}/gates/Plan/approve")->assertOk();
+        $this->app['auth']->forgetGuards();
+
+        // … and an OPEN-lobby team, whose mentor arm always worked (the regression guard)
+        [$openTeamId, , ] = $this->confirmedTeam($programme, $open, 2, null);
+        $openMentor = User::factory()->create(['role' => 'teacher']);
+        $this->linkTeacher($openTeamId, $openMentor);
+        Sanctum::actingAs($openMentor);
+        $this->postJson("/api/teams/{$openTeamId}/gates/Plan/approve")->assertOk();
+        $this->app['auth']->forgetGuards();
+
+        // one probe = the three reads at once: /tracker exercises teams_read (404 wall) then
+        // stage_gates_read (the rows); /members exercises teams_read then tm_read (the $seesMembers
+        // probe under the caller's own RLS decides names vs count-only).
+        $probe = function (User $u, string $team): array {
+            Sanctum::actingAs($u);
+            $tr = $this->getJson("/api/teams/{$team}/tracker");
+            $mem = $this->getJson("/api/teams/{$team}/members");
+            $this->app['auth']->forgetGuards();
+
+            return [
+                'tracker' => $tr->status() === 200
+                    ? count(array_filter(array_column($tr->json('stages'), 'passed'))).' passed'
+                    : (string) $tr->status(),
+                'members' => $mem->status() === 200
+                    ? ($mem->json('members') === null ? 'count-only' : 'names')
+                    : (string) $mem->status(),
+            ];
+        };
+
+        $full = ['tracker' => '1 passed', 'members' => 'names'];
+        $none = ['tracker' => '404', 'members' => '404'];
+
+        // ── 1. mentor of the OPEN-lobby team — worked before, must still work ──
+        $this->assertSame($full, $probe($openMentor, $openTeamId), '1: open-lobby mentor');
+
+        // ── 3. mentor of the SCHOOL-BOUND team, NOT linked to that school — THE FIX.
+        //       Before: tracker "0 passed" (all-false) and members "count-only". ──
+        $this->assertSame($full, $probe($mentor, $teamId), '3: school-bound mentor, not school-linked — the fix');
+
+        // ── 2. the same mentor once linked to the lobby's school — unchanged ──
+        $this->sys(fn () => DB::table('teacher_links')->insert(['id' => (string) Str::uuid7(), 'teacher_id' => $mentor->id,
+            'school_id' => $this->school->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]));
+        $this->assertSame($full, $probe($mentor, $teamId), '2: school-bound mentor, school-linked');
+
+        // ── 4. mentor_team_access OFF — the per-programme opt-in still gates everything ──
+        $this->sys(fn () => DB::table('programmes')->where('id', $programme->id)->update(['mentor_team_access' => false]));
+        $this->assertSame($none, $probe($mentor, $teamId), '4: flag OFF');
+        $this->sys(fn () => DB::table('programmes')->where('id', $programme->id)->update(['mentor_team_access' => true]));
+
+        // ── 5. a mentor linked to a DIFFERENT team reaches nothing here (OD-61 is team-linked) ──
+        $this->assertSame($none, $probe($openMentor, $teamId), '5: mentor of another team');
+
+        // ── 6–12. every non-mentor actor — the arm is role-gated, so none of them moves ──
+        $outsider = $this->pooledStudent($programme, $this->school, $outsiderGuardian);
+        $otherSchool = School::query()->create(['name_en' => 'Other', 'name_tc' => '他', 'name_sc' => '他']);
+        $otherSchoolAdmin = User::factory()->create(['role' => 'school_admin']);
+        DB::table('school_admin_links')->insert(['id' => (string) Str::uuid7(), 'school_admin_id' => $otherSchoolAdmin->id,
+            'school_id' => $otherSchool->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+        $financeOnly = User::factory()->create(['role' => 'academy_admin']);
+        DB::table('admin_capabilities')->insert(['id' => (string) Str::uuid7(), 'user_id' => $financeOnly->id,
+            'capability' => 'finance', 'granted_by' => $this->ops->id, 'granted_at' => now()]);
+
+        $this->assertSame($full, $probe($students[0], $teamId), '6: member student');
+        $this->assertSame($full, $probe($guardians[0], $teamId), '7: guardian of a member');
+        $this->assertSame($full, $probe($this->schoolAdmin, $teamId), '8: lobby school admin');
+        $this->assertSame($full, $probe($this->ops, $teamId), '9: academy operations');
+        $this->assertSame($none, $probe($financeOnly, $teamId), '10: finance-only academy admin');
+        // 11: a pooled non-member of the same programme. The team is CONFIRMED, so the forming-team
+        //     lobbyWall does not admit it either — 404 on both reads.
+        $this->assertSame($none, $probe($outsider, $teamId), '11: non-member student');
+        $this->assertSame($none, $probe($outsiderGuardian, $teamId), '11b: their guardian');
+        $this->assertSame($none, $probe($otherSchoolAdmin, $teamId), '12: another school\'s admin');
+        $this->assertSame($none, $probe(User::factory()->create(['role' => 'member']), $teamId), '12b: network member');
+    }
+
+    /** The denormalised column agrees with `teams` everywhere, and the composite FK keeps it that way. */
+    public function test_denormalised_programme_id_agrees_and_is_enforced(): void
+    {
+        [$programme, $open, ] = $this->publishedProgramme();
+        [$teamId, $students, ] = $this->confirmedTeam($programme, $open, 2, null);
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $this->linkTeacher($teamId, $teacher);
+        Sanctum::actingAs($teacher);
+        $this->postJson("/api/teams/{$teamId}/gates/Plan/approve")->assertOk();
+        $this->app['auth']->forgetGuards();
+
+        $this->sys(function () {
+            // every row the four write paths produced carries the programme, and it agrees with the team
+            foreach (['team_members', 'stage_gates'] as $t) {
+                $this->assertSame(0, DB::table($t)->whereNull('programme_id')->count(), "{$t}: no NULL programme_id");
+                $this->assertSame(0, (int) DB::table($t.' as x')->join('teams as t', 't.id', '=', 'x.team_id')
+                    ->whereColumn('x.programme_id', '<>', 't.programme_id')->count(), "{$t}: agrees with teams");
+            }
+        });
+
+        // a write path that forgot to copy the programme cannot silently re-create the divergence
+        $other = Programme::query()->create(['code' => 'OT-'.Str::upper(Str::random(5)), 'name_en' => 'Other', 'name_tc' => 'O', 'name_sc' => 'O', 'jurisdiction' => 'HK']);
+        $this->expectException(\Illuminate\Database\QueryException::class);
+        $this->sys(fn () => DB::table('stage_gates')->insert([
+            'id' => (string) Str::uuid7(), 'team_id' => $teamId, 'programme_id' => $other->id,
+            'category_id' => DB::table('teams')->where('id', $teamId)->value('category_id'),
+            'stage' => 'Launch', 'status' => 'passed', 'approved_by' => $this->ops->id,
+            'approver_kind' => 'academy', 'approved_at' => now(), 'created_at' => now(), 'updated_at' => now(),
+        ]));
+    }
+
     /**
-     * BEHAVIOUR-SHA — S-TRACKER-1 is a CONTROLLER-only widen: it edits no policy. This pins the live
-     * USING expression of the two policies the read passes through (`teams_read`, `stage_gates_read`), so
-     * any future edit to either arm fails here and must be ruled rather than slipped in behind a widen.
+     * BEHAVIOUR-SHA — pins the live USING expression of every policy these reads pass through, so any
+     * future edit fails here and must be ruled rather than slipped in behind another card.
+     *
+     * `teams_read` MUST NOT MOVE: S-TRACKER-1 was a controller-only widen, and P-HYGIENE-1 item 1
+     * deliberately left teams_read alone (its live definition is A-4's). The pin is the proof.
+     * `stage_gates_read` moved ONCE, in 2026_08_20_100000_mentor_arm_programme_denorm — its pre-change
+     * pin was 81e135f34f0715b2fb119f8c665447d2c5a20eac4f4d830673246fbc2a0454be. `tm_read` changed in the
+     * same migration and is pinned here for the first time.
      */
     public function test_tracker_read_policies_are_untouched_by_the_widen(): void
     {
@@ -444,7 +570,8 @@ class RolesTrackerTest extends TestCase
         ));
 
         $this->assertSame('f28e2e86d6c86c42f7a9b91e2c94e8c899ea0517b388b0caf44374186b9468a3', $sha('teams', 'teams_read'), 'teams_read USING changed');
-        $this->assertSame('81e135f34f0715b2fb119f8c665447d2c5a20eac4f4d830673246fbc2a0454be', $sha('stage_gates', 'stage_gates_read'), 'stage_gates_read USING changed');
+        $this->assertSame('209c8e30ec5561b897e8e0565ed36e797abc2d91c01c9966a6d1d5dbddaba64a', $sha('stage_gates', 'stage_gates_read'), 'stage_gates_read USING changed');
+        $this->assertSame('c559eba2960b262d918248f9753e441535b3096586470e272d4416f7232e6221', $sha('team_members', 'tm_read'), 'tm_read USING changed');
     }
 
     public function test_gate_and_tenure_writes_carry_the_acting_human_not_system(): void

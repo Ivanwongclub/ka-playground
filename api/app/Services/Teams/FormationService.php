@@ -88,7 +88,7 @@ class FormationService
     {
         try {
             DB::table('team_members')->insert([
-                'id' => (string) Str::uuid7(), 'team_id' => $teamId,
+                'id' => (string) Str::uuid7(), 'team_id' => $teamId, 'programme_id' => $programmeId,
                 'enrolment_id' => $enrolment->id, 'category_id' => $categoryId, 'student_id' => $student->id,
                 'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
             ]);

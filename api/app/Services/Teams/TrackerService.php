@@ -92,7 +92,7 @@ class TrackerService
                 }
                 $id = (string) Str::uuid7();
                 DB::table('stage_gates')->insert([
-                    'id' => $id, 'team_id' => $team->id, 'category_id' => $team->category_id,
+                    'id' => $id, 'team_id' => $team->id, 'programme_id' => $team->programme_id, 'category_id' => $team->category_id,
                     'stage' => $stage, 'status' => 'passed', 'approved_by' => $approver->id,
                     'approver_kind' => $kind, 'approved_at' => now(), 'notes' => $notes,
                     'created_at' => now(), 'updated_at' => now(),

@@ -66,7 +66,7 @@ class TeamResolutionScreensTest extends TestCase
             $conf = (string) Str::uuid7();
             DB::table('teams')->insert(['id' => $conf, 'programme_id' => $pid, 'category_id' => $lobby, 'name' => 'Confirmed Crew', 'status' => 'confirmed', 'created_by' => $this->ops->id, 'waiver_reason' => 'below minimum accepted', 'waived_by' => $this->ops->id, 'waived_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
             [$memberEnrol, $memberStu] = $mkEnrol('Mia Member', 'confirmed');
-            DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $conf, 'enrolment_id' => $memberEnrol, 'category_id' => $lobby, 'student_id' => $memberStu, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+            DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $conf, 'programme_id' => $pid, 'enrolment_id' => $memberEnrol, 'category_id' => $lobby, 'student_id' => $memberStu, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
             // the immutable Team Formation audit event backing the confirm log (approver = ops)
             DB::table('audit_events')->insert(['event_id' => (string) Str::uuid7(), 'occurred_at' => now(), 'actor_id' => $this->ops->id, 'actor_role' => 'academy_admin', 'entity_type' => 'team', 'entity_id' => $conf, 'action' => 'team.confirmed', 'to_state' => 'confirmed', 'programme_id' => $pid, 'payload_after' => json_encode(['seats_claimed' => 1, 'member_count' => 1])]);
 
@@ -74,7 +74,7 @@ class TeamResolutionScreensTest extends TestCase
             $form = (string) Str::uuid7();
             DB::table('teams')->insert(['id' => $form, 'programme_id' => $pid, 'category_id' => $lobby, 'name' => 'Forming Few', 'status' => 'forming', 'created_by' => $this->ops->id, 'created_at' => now(), 'updated_at' => now()]);
             [$fEnrol, $fStu] = $mkEnrol('Fred Forming', 'teamed');
-            DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $form, 'enrolment_id' => $fEnrol, 'category_id' => $lobby, 'student_id' => $fStu, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+            DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $form, 'programme_id' => $pid, 'enrolment_id' => $fEnrol, 'category_id' => $lobby, 'student_id' => $fStu, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
 
             // an unplaced (in_pool, not teamed) student
             [$unplaced] = $mkEnrol('Uma Unplaced', 'in_pool');

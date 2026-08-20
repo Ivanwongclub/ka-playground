@@ -76,7 +76,7 @@ class TeamMembersRosterTest extends TestCase
             $eB = $mk($this->memberB, 'teamed');
             $mk($this->joinable, 'in_pool'); // unteamed pooled → sees the forming team via lobbyWall
             foreach ([[$this->memberA, $eA], [$this->memberB, $eB]] as [$stu, $e]) {
-                DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $teamId, 'enrolment_id' => $e, 'category_id' => $lobby, 'student_id' => $stu->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+                DB::table('team_members')->insert(['id' => (string) Str::uuid7(), 'team_id' => $teamId, 'programme_id' => $pid, 'enrolment_id' => $e, 'category_id' => $lobby, 'student_id' => $stu->id, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
             }
             // memberA holds Captain
             DB::table('tenures')->insert(['id' => (string) Str::uuid7(), 'team_id' => $teamId, 'role_id' => $roleId, 'category_id' => $lobby, 'enrolment_id' => $eA, 'student_id' => $this->memberA->id, 'state' => 'active', 'started_at' => now(), 'assigned_by' => $this->ops->id, 'created_at' => now(), 'updated_at' => now()]);
