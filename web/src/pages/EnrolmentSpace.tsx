@@ -6,8 +6,11 @@
 // is gone). Both personas reach it: student → /my/sessions, guardian → /my/students/{id}/sessions.
 //
 // C7-RESULTS fills the Results tab (embargo-coarsened assessment reads). C8-TEAM fills the Team tab: the existing
-// roster/mentor/formation endpoints composed enrolment-scoped via the shared team module (see TeamPanel). STILL
-// BLOCKED, each with a named blocker: the Tracker tab (needs the tracker read); stepper per-knot DATES
+// roster/mentor/formation endpoints composed enrolment-scoped via the shared team module (see TeamPanel).
+// S-TRACKER-1 fills the Tracker tab — the five fixed stage gates as a strip + a detail card, on the tracker read
+// widened in the same card with the pass fact (passed_at + approver_kind); the prototype's requirement rows are
+// DOMAIN-UNBUILT and its now/locked states PROTOTYPE INVENTION, both omitted (see TrackerPanel). STILL
+// BLOCKED, each with a named blocker: stepper per-knot DATES
 // (per-transition timestamps live only in audit_events); the tile .ev sub-line (JourneyTile has no sub slot + no
 // signature-detail read); session LOCATION + MATERIALS (not in the session read). A 404 from the detail endpoint
 // (out-of-scope) → NotFound (A1).
@@ -22,11 +25,12 @@ import { mutate, type MutateResult } from '../api/mutate';
 import { useIdentity } from '../auth/identity';
 import { programmeName, personName } from '../display/names';
 import { StatusTag } from '../display/status';
-import { formatHkt } from '../display/date';
+import { formatHkt, formatHktDate } from '../display/date';
 import { SEG, WHATNEXT, currentIndex, isTerminal } from '../display/enrolmentJourney';
 // C8-TEAM — shared team-formation primitives (single definition; role renders plain, count-only wall).
 import { tri, MemberRole, JoinableCount, memberInitials, type TeamRow, type Roster, type Lobby } from '../display/team';
-import { ProgrammeBandHeader, EmptyState, JourneyStepper, SubPanel } from '@/ds2';
+import { ProgrammeBandHeader, EmptyState, JourneyStepper, SubPanel, WizardRail } from '@/ds2';
+import type { StepState } from '@/ds2';
 import { NotFound } from './NotFound';
 
 interface Detail {
@@ -61,6 +65,74 @@ function SessionRow({ s, isStudent, locale, onAct }: { s: Session; isStudent: bo
         </Space>
       </div>
     </SubPanel>
+  );
+}
+
+// ── S-TRACKER-1 — the Tracker tab. The FIVE fixed stages (Plan · Design · Learn · Pitch · Launch) as a
+// clickable strip, plus a detail card for the selected stage. One read: GET /teams/{team}/tracker, widened
+// in this same card with `passed_at` + `approver_kind` — the pass FACT. Fired only when the enrolment has a
+// team (an in-pool enrolment has no tracker at all).
+//
+// WHAT IS DELIBERATELY ABSENT, and why (the prototype's t-track shows all of it; none of it is servable):
+//   · the "Learn · 1 of 4 met" header chip, the Requirements list, every evidence line, every Met/Pending
+//     chip and the [Submit] button — DOMAIN-UNBUILT. Requirements are not rows: `stage_requirements` is an
+//     empty shell (zero writers, zero readers), the wizard's `tracker` section is an unread blob, and there
+//     is no team_deliverables / deliverable_submissions / mentor_checkins table to hang evidence on. A
+//     tracker built from derived guesses would read as fact; omission is the honest render.
+//   · the `now` / `locked` pill states and "Unlocks when Learn is passed" — PROTOTYPE INVENTION. They
+//     assert a stage SEQUENCE LOCK that approveGate does not enforce (gates can be passed out of order), so
+//     a locked pill would state a rule the server does not keep. Pills are done/todo, nothing else.
+// The rail's own "{done}/{total}" counter is the one honest count on this surface — it counts the served
+// booleans, not requirements.
+interface Gate { stage: string; passed: boolean; passed_at: string | null; approver_kind: string | null }
+
+// The three kinds the server can emit (stage_gates.approver_kind, set by TrackerService's OD-61 resolution).
+// An unrecognised kind renders NO line rather than leaking a raw i18n key — omission again, not a placeholder.
+const APPROVER_KINDS = ['teacher', 'school_admin', 'academy'];
+
+function TrackerPanel({ teamId, locale }: { teamId: string | null; locale: KaLocale }) {
+  const { t } = useTranslation();
+  const [sel, setSel] = useState(0);
+  // No team ⇒ no tracker. EmptyState with no message: an in-pool enrolment has nothing to say here.
+  const tracker = useResource<{ stages: Gate[] }>(teamId ? `/api/teams/${teamId}/tracker` : null);
+  if (teamId == null) return <EmptyState message={null} />;
+
+  const stages = tracker.data?.stages ?? [];
+  const cur = stages[sel];
+  return (
+    <DataBoundary loading={tracker.loading} error={tracker.error} empty={stages.length === 0} emptySize="inline">
+      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+        <WizardRail
+          direction="horizontal"
+          phases={[{
+            title: t('tracker.title'),
+            steps: stages.map((g, i): { label: string; state: StepState; key: string; selected: boolean } => ({
+              label: t(`tracker.stage${g.stage}`),
+              // the served boolean, unembellished — no third state is derived from position in the list
+              state: g.passed ? 'done' : 'todo',
+              key: String(i),
+              selected: i === sel,
+            })),
+          }]}
+          onStep={(k) => setSel(Number(k))}
+        />
+        {cur && (
+          <SubPanel tone={cur.passed ? 'attested' : 'neutral'}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <Typography.Text strong>{t('enrolSpace.tracker.stageHeading', { stage: t(`tracker.stage${cur.stage}`) })}</Typography.Text>
+              <StatusTag domain="stageGate" value={cur.passed ? 'passed' : 'pending'} />
+            </div>
+            {/* The one real line the read can carry. An unpassed stage gets NO line — not a placeholder,
+                not "in progress" (we do not know that), not an unlock promise. */}
+            {cur.passed && cur.passed_at && cur.approver_kind && APPROVER_KINDS.includes(cur.approver_kind) && (
+              <Typography.Text type="secondary" style={{ display: 'block', marginTop: 6 }}>
+                {t(`enrolSpace.tracker.passed.${cur.approver_kind}`, { date: formatHktDate(cur.passed_at, locale) })}
+              </Typography.Text>
+            )}
+          </SubPanel>
+        )}
+      </Space>
+    </DataBoundary>
   );
 }
 
@@ -364,7 +436,7 @@ export function EnrolmentSpace() {
             : k === 'team' ? <TeamPanel programmeId={d.programme_id} status={d.status} isStudent={isStudent} viewerId={identity?.id} />
             : k === 'sessions' ? sessions
             : k === 'results' ? <ResultsPanel programmeId={d.programme_id} studentId={d.student_id} />
-            : <EmptyState message={null} />,
+            : <TrackerPanel teamId={d.team_id} locale={locale} />,
         }))}
       />
     </div>

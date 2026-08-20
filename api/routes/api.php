@@ -212,7 +212,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/admin/teams/{id}/teacher-link', [\App\Http\Controllers\RolesTrackerController::class, 'linkTeacher']);
     Route::post('/admin/teams/{id}/teacher-unlink', [\App\Http\Controllers\RolesTrackerController::class, 'unlinkTeacher']); // S-MENTOR-1 (ruling 5): ops remove; authority in-service
     Route::get('/teams/{team}/roles', [\App\Http\Controllers\TeamRolesController::class, 'show']); // S-UX3-3a STEP 3 B3: RLS-shaped roles/tenure read (member-readable, no elevation)
-    Route::get('/teams/{team}/tracker', [\App\Http\Controllers\TeamRolesController::class, 'tracker']); // R1-S2 B3: Activity Tracker gates ({stage,passed} booleans; SAME member-readable/no-elevation wall)
+    Route::get('/teams/{team}/tracker', [\App\Http\Controllers\TeamRolesController::class, 'tracker']); // R1-S2 B3 + S-TRACKER-1: Activity Tracker gates ({stage,passed,passed_at,approver_kind}; SAME member-readable/no-elevation wall — approver IDENTITY and notes stay withheld)
     Route::get('/teams/{team}/members', [\App\Http\Controllers\TeamMembersController::class, 'index']); // S-UX3-3b B2: member-gated roster (names+role+count via allowlisted elevation; joinable → count only)
     Route::get('/teams/{team}/teachers', [\App\Http\Controllers\TeamTeachersController::class, 'index']); // S-MENTOR-1 (ruling 4): linked-teacher NAMES (roster wall + names-only elevation)
     Route::post('/teams/{id}/roles', [\App\Http\Controllers\RolesTrackerController::class, 'assignRole']);

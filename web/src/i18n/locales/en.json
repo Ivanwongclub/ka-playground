@@ -81,7 +81,8 @@
     "tile": { "team": "Team", "nextSession": "Next session", "noTeam": "Not yet", "noSession": "None scheduled" },
     "sessions": { "book": "Book", "cancel": "Cancel booking" },
     "results": { "pending": "In progress — results not yet released", "released": "Released" },
-    "team": { "teammates": "Teammates", "noTeam": "No team yet", "inPool": "In the pool, waiting for a team", "forming": "Forming teams you can join", "you": "(you)" }
+    "team": { "teammates": "Teammates", "noTeam": "No team yet", "inPool": "In the pool, waiting for a team", "forming": "Forming teams you can join", "you": "(you)" },
+    "tracker": { "stageHeading": "{{stage}} stage", "passed": { "teacher": "Passed {{date}} by the mentor", "school_admin": "Passed {{date}} by the school", "academy": "Passed {{date}} by the academy" } }
   },
   "shell": {
     "openNavigation": "Open navigation",
@@ -557,7 +558,8 @@
       "completed": "Completed",
       "withdrawn": "Withdrawn",
       "released": "Released"
-    }
+    },
+    "gate": { "passed": "Passed", "pending": "Not yet passed" }
   },
   "data": {
     "error": "Couldn't load this",

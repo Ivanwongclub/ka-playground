@@ -93,18 +93,41 @@ class TeamRolesController extends Controller
      * R1-S2 (B3) — the Activity Tracker rail read (GET /teams/{team}/tracker). SAME wall as show():
      * MEMBER-READABLE, resolved WITHIN the caller's RLS (a team the caller cannot see is absent → 404,
      * never a 403 existence leak), NO elevation (never asSystem), NO OD-39 approver gate. Returns the FIVE
-     * fixed Tracker stages as {stage, passed} BOOLEANS only — 'passed' = a stage_gates row exists for that
-     * stage (absence = pending). NO approver identity, NO notes, NO timestamps leave this read.
+     * fixed Tracker stages; 'passed' = a stage_gates row exists for that stage (absence = pending — the
+     * table records passes only).
+     *
+     * S-TRACKER-1 — WIDENED, additively, with the PASS FACT: `passed_at` (stage_gates.approved_at) and
+     * `approver_kind` (teacher | school_admin | academy). Both columns already sat behind the RLS wall the
+     * caller has just passed — this is a READ WIDEN, not a new visibility path: no policy edit, no
+     * elevation, no new arm, same 404. The two fields feed the family scoped-space Tracker tab's one real
+     * line ("Passed 12 Jul by the academy"); without them the gate-detail card has no servable content.
+     *
+     * DELIBERATELY WITHHELD — this line was drawn on purpose, not left undone. Do not widen it without a
+     * ruling:
+     *   · `approved_by` — the approver's IDENTITY. `approver_kind` is a class of authority, not a person;
+     *     naming the individual who judged a child's team is a different disclosure entirely.
+     *   · `notes` — staff FREE TEXT about a child's work, written for an internal audience.
+     * Neither is needed by any family surface, and both would leave this read on an RLS wall that was
+     * never reviewed for them.
      */
     public function tracker(Request $request, string $team): JsonResponse
     {
         DB::table('teams')->where('id', $team)->first() ?? abort(404);
-        $passed = DB::table('stage_gates')->where('team_id', $team)->where('status', 'passed')->pluck('stage')->all();
+        // Only the three columns that leave this read are selected — approved_by and notes are not even
+        // fetched, so no later refactor can accidentally spread them into the payload.
+        $gates = DB::table('stage_gates')->where('team_id', $team)->where('status', 'passed')
+            ->get(['stage', 'approved_at', 'approver_kind'])->keyBy('stage');
 
         return response()->json([
             'team_id' => $team,
             'stages' => array_map(
-                fn (string $s): array => ['stage' => $s, 'passed' => in_array($s, $passed, true)],
+                fn (string $s): array => [
+                    'stage' => $s,
+                    'passed' => $gates->has($s),
+                    // null on an unpassed stage — the client renders no line rather than a placeholder.
+                    'passed_at' => $gates->get($s)->approved_at ?? null,
+                    'approver_kind' => $gates->get($s)->approver_kind ?? null,
+                ],
                 \App\Services\Teams\TrackerService::STAGES,
             ),
         ]);

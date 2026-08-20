@@ -176,7 +176,9 @@ export function ZebraTable<T extends object>({
 
 // ── WizardRail — grouped stepper ────────────────────────────────────────────────────────────────────
 export type StepState = 'done' | 'current' | 'wip' | 'blocked' | 'todo' | 'deferred' | 'optional';
-export interface RailStep { label: ReactNode; state: StepState; locked?: boolean; num?: number; key?: string }
+// S-TRACKER-1: `selected` is CLIENT SELECTION only — which step the reader is looking at. It is NOT a
+// step state (the union above is the server's truth) and it never changes what `state` renders.
+export interface RailStep { label: ReactNode; state: StepState; locked?: boolean; num?: number; key?: string; selected?: boolean }
 export interface RailPhase { title: ReactNode; steps: RailStep[] }
 
 const RAIL_CHECK = (
@@ -219,8 +221,9 @@ export function WizardRail({ phases, onStep, direction = 'auto' }: { phases: Rai
               return (
                 <div
                   key={j}
-                  className={`ds2-step ds2-step--${s.state}${clickable ? ' ds2-step--clickable' : ''}`}
+                  className={`ds2-step ds2-step--${s.state}${clickable ? ' ds2-step--clickable' : ''}${s.selected ? ' ds2-step--sel' : ''}`}
                   role={clickable ? 'button' : undefined}
+                  aria-pressed={clickable && s.selected !== undefined ? s.selected : undefined}
                   tabIndex={clickable ? 0 : undefined}
                   onClick={clickable ? () => onStep(s.key as string) : undefined}
                   onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onStep(s.key as string); } } : undefined}

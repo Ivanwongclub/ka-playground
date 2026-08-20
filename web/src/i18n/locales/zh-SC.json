@@ -81,7 +81,8 @@
     "tile": { "team": "团队", "nextSession": "下节课", "noTeam": "尚未", "noSession": "暂未安排" },
     "sessions": { "book": "预约", "cancel": "取消预约" },
     "results": { "pending": "进行中 — 成绩尚未公布", "released": "已公布" },
-    "team": { "teammates": "队友", "noTeam": "尚未加入队伍", "inPool": "在候补池中，等待组队", "forming": "可加入的组队中队伍", "you": "（你）" }
+    "team": { "teammates": "队友", "noTeam": "尚未加入队伍", "inPool": "在候补池中，等待组队", "forming": "可加入的组队中队伍", "you": "（你）" },
+    "tracker": { "stageHeading": "{{stage}}阶段", "passed": { "teacher": "由导师于 {{date}} 通过", "school_admin": "由学校于 {{date}} 通过", "academy": "由学院于 {{date}} 通过" } }
   },
   "shell": {
     "openNavigation": "打开导航",
@@ -557,7 +558,8 @@
       "completed": "已完成",
       "withdrawn": "已退出",
       "released": "已释放"
-    }
+    },
+    "gate": { "passed": "已通过", "pending": "尚未通过" }
   },
   "data": {
     "error": "无法加载",

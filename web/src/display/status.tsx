@@ -93,6 +93,13 @@ const REGISTRY: Record<string, Record<string, Entry>> = {
   // status (draft|published|open|closed|graded|cancelled|released) is collapsed to `pending`/`released` BEFORE it
   // reaches this pill. The raw status must NEVER be a domain here — a family seeing `graded` would learn the
   // result exists and is being withheld, which is the embargo leaking one bit.
+  // S-TRACKER-1 — a stage gate as the family reads it. TWO values only: `stage_gates` records PASSES, so
+  // the absence of a row is all we know. There is deliberately no 'in progress' and no 'locked' — the
+  // server enforces no stage sequence, so either would state a rule the platform does not keep.
+  stageGate: {
+    passed: { labelKey: 'status.gate.passed', color: 'success' },
+    pending: { labelKey: 'status.gate.pending', color: 'default' },
+  },
   assessmentRelease: {
     pending: { labelKey: 'enrolSpace.results.pending', color: 'processing' },
     released: { labelKey: 'enrolSpace.results.released', color: 'success' },
