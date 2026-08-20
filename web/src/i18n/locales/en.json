@@ -592,7 +592,9 @@
     "formOrJoinDetail": "You're in the pool — team up to take part.",
     "teamNone": "You're not on a team yet.",
     "viewTeam": "My team",
-    "consentWaiting": "Waiting on your guardian",
+    "consentWaiting": "Waiting for your guardian",
+    "nextUp": "Next up",
+    "greeting": { "morning": "Good morning", "afternoon": "Good afternoon", "evening": "Good evening" },
     "consentWaitingSub": "Your guardian signs consent for you — nothing for you to do."
   },
   "profile360": {

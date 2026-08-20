@@ -93,6 +93,13 @@ const REGISTRY: Record<string, Record<string, Entry>> = {
   // status (draft|published|open|closed|graded|cancelled|released) is collapsed to `pending`/`released` BEFORE it
   // reaches this pill. The raw status must NEVER be a domain here — a family seeing `graded` would learn the
   // result exists and is being withheld, which is the embargo leaking one bit.
+  // B1-STU-HOME — the student's consent-waiting pill (stu-home L444). ONE value: the fact is binary from
+  // the student's side — their guardian has not signed yet. Not the consent state machine (the student is
+  // not the signer and never sees declined/expired as an actionable state); a closed one-value domain keeps
+  // the pill going through the single pill component rather than a hand-rolled <Tag>.
+  consentWait: {
+    waiting: { labelKey: 'studentHome.consentWaiting', color: 'processing' },
+  },
   // S-TRACKER-1 — a stage gate as the family reads it. TWO values only: `stage_gates` records PASSES, so
   // the absence of a row is all we know. There is deliberately no 'in progress' and no 'locked' — the
   // server enforces no stage sequence, so either would state a rule the platform does not keep.

@@ -592,7 +592,9 @@
     "formOrJoinDetail": "你已在候補池 — 組隊即可參與。",
     "teamNone": "你尚未加入團隊。",
     "viewTeam": "我的團隊",
-    "consentWaiting": "等待家長處理",
+    "consentWaiting": "等待家長簽署",
+    "nextUp": "接下來",
+    "greeting": { "morning": "早安", "afternoon": "午安", "evening": "晚上好" },
     "consentWaitingSub": "由家長為你簽署同意書 — 你無需處理。"
   },
   "profile360": {
