@@ -49,7 +49,7 @@ class FormationTest extends TestCase
         }
         $this->programme = Programme::query()->create(['code' => 'TEAM-'.Str::upper(Str::random(4)), 'name_en' => 'P', 'name_tc' => 'P', 'name_sc' => 'P', 'jurisdiction' => 'HK']);
         foreach (['basics', 'eligibility', 'fees', 'consent', 'team_rules', 'role_library', 'tracker', 'learning', 'certification'] as $k) {
-            $data = match ($k) { 'fees' => ['has_fee_items' => true], 'consent' => ['template_ref' => $this->templateId], default => ['x' => 1] };
+            $data = match ($k) { 'fees' => ['has_fee_items' => true], 'consent' => ['template_ref' => $this->templateId], 'basics' => ['enrolment_closes_on' => '2027-01-10', 'starts_on' => '2027-02-01'], 'team_rules' => ['formation_deadline_on' => '2027-01-20'], default => ['x' => 1] };
             $this->putJson("/api/admin/programmes/{$this->programme->id}/wizard/{$k}", ['status' => 'complete', 'data' => $data])->assertOk();
         }
         $this->postJson("/api/admin/programmes/{$this->programme->id}/publish")->assertOk();

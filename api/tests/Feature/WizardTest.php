@@ -37,11 +37,11 @@ class WizardTest extends TestCase
     private function completeAllSections(): void
     {
         $payloads = [
-            'basics' => ['description' => 'x'],
+            'basics' => ['description' => 'x', 'enrolment_closes_on' => '2027-01-10', 'starts_on' => '2027-02-01'],
             'eligibility' => ['min_enrolment' => 10, 'age_min' => 8, 'age_max' => 18],
             'fees' => ['has_fee_items' => true],
             'consent' => ['template_ref' => 'placeholder-s03'],
-            'team_rules' => ['min_size' => 3, 'max_size' => 12],
+            'team_rules' => ['min_size' => 3, 'max_size' => 12, 'formation_deadline_on' => '2027-01-20'],
             'role_library' => ['roles' => ['leader']],
             'tracker' => ['stages_configured' => 5],
             'learning' => ['attendance_threshold_pct' => 70],
@@ -92,7 +92,9 @@ class WizardTest extends TestCase
     {
         $this->completeAllSections();
         $this->putJson("/api/admin/programmes/{$this->programme->id}/wizard/team_rules", [
-            'status' => 'complete', 'data' => ['min_size' => 3, 'max_size' => 6],
+            // the timeline must survive a partial re-save: OD-33 is all-three-or-none, so dropping
+            // formation_deadline_on here would raise a deadline.ordering ERROR and block publish.
+            'status' => 'complete', 'data' => ['min_size' => 3, 'max_size' => 6, 'formation_deadline_on' => '2027-01-20'],
         ])->assertOk();
 
         $result = $this->postJson("/api/admin/programmes/{$this->programme->id}/pre-flight")->json();

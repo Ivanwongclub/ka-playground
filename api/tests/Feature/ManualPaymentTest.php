@@ -84,7 +84,7 @@ class ManualPaymentTest extends TestCase
             $data = match ($key) {
                 'fees' => ['has_fee_items' => true],
                 'consent' => ['template_ref' => $templateId],
-                default => ['x' => 1],
+                'basics' => ['enrolment_closes_on' => '2027-01-10', 'starts_on' => '2027-02-01'], 'team_rules' => ['formation_deadline_on' => '2027-01-20'], default => ['x' => 1],
             };
             $this->putJson("/api/admin/programmes/{$this->programme->id}/wizard/{$key}", ['status' => 'complete', 'data' => $data])->assertOk();
         }

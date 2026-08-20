@@ -48,9 +48,9 @@ class WizardMarketingTest extends TestCase
     private function completeAllSections(): void
     {
         $payloads = [
-            'basics' => ['description' => 'x'], 'eligibility' => ['min_enrolment' => 10, 'age_min' => 8, 'age_max' => 18],
+            'basics' => ['description' => 'x', 'enrolment_closes_on' => '2027-01-10', 'starts_on' => '2027-02-01'], 'eligibility' => ['min_enrolment' => 10, 'age_min' => 8, 'age_max' => 18],
             'fees' => ['has_fee_items' => true], 'consent' => ['template_ref' => 'placeholder-s03'],
-            'team_rules' => ['min_size' => 3, 'max_size' => 12], 'role_library' => ['roles' => ['leader']],
+            'team_rules' => ['min_size' => 3, 'max_size' => 12, 'formation_deadline_on' => '2027-01-20'], 'role_library' => ['roles' => ['leader']],
             'tracker' => ['stages_configured' => 5], 'learning' => ['attendance_threshold_pct' => 70],
             'certification' => ['attendance_threshold_pct' => 70],
         ];
