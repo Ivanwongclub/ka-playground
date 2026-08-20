@@ -73,11 +73,29 @@ class WithdrawalPolicyService
         });
     }
 
-    /** OD-2 provisional seed: full refund before start · no bands · no refund after start · approval required. */
+    /**
+     * OD-2 provisional seed: full refund before start · no bands · no refund after start · approval required.
+     *
+     * FIX-REFUND-SEED — a provisional policy is NEVER seeded with a NULL window. Until now this read
+     * `$programme->starts_at`, a column nothing wrote, so every wizard-published programme got
+     * full_refund_before = no_refund_after = NULL; refundPctAt then returns 0 for every date and OD-2's
+     * "full refund before start" silently becomes "no refund at all" — a policy that presents as configured
+     * (seeded_provisional = true) while being inert, failing in the direction that costs the family.
+     * WizardService::syncBasicsDates now populates the column from basics.starts_on, and this refuses if it
+     * is still absent. Defence in depth: pre-flight names the missing date first (a readable finding), this
+     * throw is the backstop for any future caller that skips pre-flight. It runs inside publish()'s
+     * transaction, so the refusal rolls back the status flip, the capacity seed and the version snapshot
+     * together — the programme stays draft rather than going live with a broken refund policy.
+     */
     public function seedProvisional(Programme $programme, User $actor): void
     {
         if (DB::table('withdrawal_policies')->where('programme_id', $programme->id)->exists()) {
             return;
+        }
+        if ($programme->starts_at === null) {
+            throw ValidationException::withMessages(['basics' => [
+                'Cannot seed the provisional withdrawal policy: the programme has no start date (basics.starts_on). A provisional policy with no refund window would refund nothing, ever (OD-2).',
+            ]]);
         }
         DB::table('withdrawal_policies')->insert([
             'id' => (string) Str::uuid7(), 'programme_id' => $programme->id,

@@ -114,23 +114,85 @@ class WithdrawalPolicyTest extends TestCase
         }
     }
 
-    public function test_publish_seeds_od2_provisional_policy(): void
+    /**
+     * FIX-REFUND-SEED — complete every required section. $startsOn null omits the start date entirely,
+     * which also drops the OD-33 timeline to none-set (silent, not partial) — the exact shape that used to
+     * publish happily and seed a NULL-window policy.
+     */
+    private function completeSections(?string $startsOn = '2027-02-01'): void
     {
-        Sanctum::actingAs($this->config);
         foreach (['basics', 'eligibility', 'fees', 'consent', 'team_rules', 'role_library', 'tracker', 'learning', 'certification'] as $key) {
             $data = match ($key) {
                 'fees' => ['has_fee_items' => true],
                 'consent' => ['template_ref' => 'placeholder-s03'],
-                'basics' => ['enrolment_closes_on' => '2027-01-10', 'starts_on' => '2027-02-01'], 'team_rules' => ['formation_deadline_on' => '2027-01-20'], default => ['x' => 1],
+                'basics' => $startsOn === null ? ['description' => 'x'] : ['enrolment_closes_on' => '2027-01-10', 'starts_on' => $startsOn],
+                'team_rules' => $startsOn === null ? ['x' => 1] : ['formation_deadline_on' => '2027-01-20'],
+                default => ['x' => 1],
             };
             $this->putJson("/api/admin/programmes/{$this->programme->id}/wizard/{$key}", ['status' => 'complete', 'data' => $data])->assertOk();
         }
+    }
+
+    /** Publish seeds a REAL window from basics.starts_on — the assertion whose absence hid the defect. */
+    public function test_publish_seeds_od2_provisional_policy_with_real_windows(): void
+    {
+        Sanctum::actingAs($this->config);
+        $this->completeSections('2027-02-01');
         $this->postJson("/api/admin/programmes/{$this->programme->id}/publish")->assertOk();
 
         $this->assertDatabaseHas('withdrawal_policies', [
             'programme_id' => $this->programme->id, 'requires_approval' => true, 'seeded_provisional' => true,
         ]);
         $this->assertDatabaseHas('audit_events', ['action' => 'withdrawal_policy.seeded']);
+
+        // the window is REAL, and it is the HKT midnight of the wizard's date — never NULL, never naive UTC
+        $expected = Carbon::parse('2027-02-01', 'Asia/Hong_Kong')->startOfDay();
+        $policy = DB::table('withdrawal_policies')->where('programme_id', $this->programme->id)->first();
+        $this->assertNotNull($policy->full_refund_before, 'a provisional policy must never carry a NULL window');
+        $this->assertNotNull($policy->no_refund_after);
+        $this->assertTrue($expected->eq(Carbon::parse($policy->full_refund_before)), "full_refund_before {$policy->full_refund_before} != HKT midnight of 2027-02-01");
+        $this->assertTrue($expected->eq(Carbon::parse($policy->no_refund_after)));
+
+        // the column that had no writer now carries the wizard's date (AUDIT-2 A-1)
+        $this->assertTrue($expected->eq(Carbon::parse($this->programme->fresh()->starts_at)));
+
+        // and the consequence that matters: a withdrawal BEFORE the start refunds in full, not 0%
+        $this->assertSame(100, app(WithdrawalPolicyService::class)->refundPctAt($this->programme->id, Carbon::parse('2027-01-15')));
+    }
+
+    /** No start date ⇒ publish REFUSES, atomically. A loud failure beats a silent 0%-forever policy. */
+    public function test_publish_without_a_start_date_is_refused_and_seeds_nothing(): void
+    {
+        Sanctum::actingAs($this->config);
+        $this->completeSections(null);
+
+        $this->postJson("/api/admin/programmes/{$this->programme->id}/publish")->assertStatus(422);
+
+        // the whole transaction rolled back: still draft, no policy, no version snapshot, no seed audit
+        $this->assertSame('draft', $this->programme->fresh()->status);
+        $this->assertDatabaseMissing('withdrawal_policies', ['programme_id' => $this->programme->id]);
+        $this->assertDatabaseMissing('audit_events', ['action' => 'withdrawal_policy.seeded']);
+        $this->assertSame(0, DB::table('programme_versions')->where('programme_id', $this->programme->id)->count());
+        $this->assertNull($this->programme->fresh()->starts_at);
+    }
+
+    /** Pre-flight NAMES the missing date, so the block reads as a finding rather than an exception. */
+    public function test_pre_flight_errors_on_a_missing_start_date(): void
+    {
+        Sanctum::actingAs($this->config);
+        $this->completeSections(null);
+
+        $result = $this->postJson("/api/admin/programmes/{$this->programme->id}/pre-flight")->assertOk()->json();
+        $this->assertFalse($result['publishable']);
+        $finding = collect($result['findings'])->firstWhere('code', 'basics.starts_on_missing');
+        $this->assertNotNull($finding, 'the missing start date must be a NAMED pre-flight finding');
+        $this->assertSame('error', $finding['severity']);
+
+        // and with the date present it is gone
+        $this->completeSections('2027-02-01');
+        $after = $this->postJson("/api/admin/programmes/{$this->programme->id}/pre-flight")->assertOk()->json();
+        $this->assertTrue($after['publishable']);
+        $this->assertNull(collect($after['findings'])->firstWhere('code', 'basics.starts_on_missing'));
     }
 
     // ── Read set: the bound parties (stated pre-build) ──

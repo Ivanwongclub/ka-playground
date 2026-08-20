@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\WizardSection;
 use App\Services\Audit\AuditService;
 use App\Services\Authz\ScopeContext;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -75,6 +76,49 @@ class WizardService
             'sections' => $sections,
             'readiness' => ['complete' => $complete, 'required' => count(array_filter(self::SECTIONS, fn ($m) => $m['required']))],
         ];
+    }
+
+    /**
+     * FIX-REFUND-SEED — the ONE writer of programmes.starts_at (AUDIT-2 A-1).
+     *
+     * The wizard's authoritative start date is `basics.starts_on`, a bare `YYYY-MM-DD` calendar date in
+     * wizard_sections.data. The COLUMN `programmes.starts_at` has existed since 2026_07_25_120000 and until
+     * now had no writer at all — which is how WithdrawalPolicyService::seedProvisional came to seed
+     * `full_refund_before = NULL` on every wizard-published programme (a 0%-everywhere refund policy that
+     * presents as configured). One definition, deliberately: a publish-only writer would go stale the first
+     * time an admin moves the date, relocating the duality instead of closing it. So this is called from
+     * publish() AND from a successful `basics` save — including the POST-PUBLISH edit path, which is legal
+     * and re-validated by deadlineOrderingViolation (see saveSection's OD-33/A12 re-validation above).
+     *
+     * TIMEZONE: a bare HK calendar date is read as Asia/Hong_Kong MIDNIGHT, never naive UTC. Parsing
+     * '2027-02-01' as UTC would place the full-refund boundary 8 hours late — in the family's favour, and
+     * still wrong in a money field.
+     *
+     * ends_at is deliberately NOT written: there is no `basics.ends_on` anywhere in the wizard, the API or
+     * the reference set, and inventing a programme end date is not this card's business. Tracked under
+     * AUDIT-2 A-1 (add the field, or drop the column).
+     */
+    private function syncBasicsDates(Programme $programme): void
+    {
+        $startsOn = ((array) (WizardSection::query()
+            ->where('programme_id', $programme->id)->where('section_key', 'basics')->value('data') ?? []))['starts_on'] ?? null;
+        // MIRROR, never merge: if the wizard no longer carries a date the column is CLEARED. Returning early
+        // instead would leave the previous value behind on a date removal — the exact staleness this writer
+        // exists to prevent, just harder to see. An absent date then blocks publish, which is the point.
+        if (! is_string($startsOn) || trim($startsOn) === '') {
+            $programme->forceFill(['starts_at' => null])->save();
+
+            return;
+        }
+
+        // ->utc() is load-bearing, not decoration. Eloquent serialises a datetime with `Y-m-d H:i:s` and
+        // DROPS the offset, so persisting an HKT-midnight Carbon directly stores '2027-02-01 00:00:00' and
+        // Postgres reads it as UTC midnight — the refund boundary 8 hours late, in the family's favour and
+        // still wrong. Converting first stores the correct instant (HKT midnight = 16:00 UTC the day before).
+        // Caught by test_publish_seeds_od2_provisional_policy_with_real_windows.
+        $programme->forceFill([
+            'starts_at' => Carbon::parse($startsOn, 'Asia/Hong_Kong')->startOfDay()->utc(),
+        ])->save();
     }
 
     /** @param array<string, mixed> $data */
@@ -176,6 +220,12 @@ class WizardService
         if ($key === 'team_rules') {
             DB::table('programmes')->where('id', $programme->id)
                 ->update(['mentor_team_access' => (bool) ($data['mentor_team_access'] ?? false)]);
+        }
+        // FIX-REFUND-SEED: the SAME mirroring shape for the wizard's start date. Called here and at publish
+        // through the one writer, so a post-publish basics edit (legal, OD-33-re-validated above) cannot
+        // leave programmes.starts_at — and therefore the refund window seeded from it — stale.
+        if ($key === 'basics') {
+            $this->syncBasicsDates($programme);
         }
         $this->audit->record(
             'programme', (string) $programme->id, 'programme.section_saved',
@@ -289,6 +339,12 @@ class WizardService
             $findings[] = ['severity' => 'warning', 'code' => 'team.max_below_min_enrolment', 'message' => 'Team maximum is below the minimum enrolment; some students will not fit into a team'];
         }
         $basics = $byKey['basics']['data'] ?? [];
+        // FIX-REFUND-SEED: the start date is a PUBLISH PRECONDITION, not a nicety — the OD-2 provisional
+        // withdrawal policy is seeded from it, and a policy with no window refunds nothing, ever. Named here
+        // so the failure reads as a pre-flight finding; seedProvisional's throw is the backstop.
+        if (empty($basics['starts_on'])) {
+            $findings[] = ['severity' => 'error', 'code' => 'basics.starts_on_missing', 'message' => 'No programme start date set (basics) — the OD-2 provisional withdrawal policy is seeded from it and cannot be seeded without it'];
+        }
         if (empty($basics['hero_image'])) {
             $findings[] = ['severity' => 'info', 'code' => 'basics.no_hero', 'message' => 'No hero image set; the catalogue card will show a colour block'];
         }
@@ -352,7 +408,10 @@ class WizardService
                 ],
                 'created_by' => $actor->id,
             ]);
-            app(WithdrawalPolicyService::class)->seedProvisional($programme, $actor);
+            // FIX-REFUND-SEED: the column must carry the wizard's date BEFORE the provisional policy
+            // is seeded from it — seedProvisional reads $programme->starts_at and refuses on NULL.
+            $this->syncBasicsDates($programme);
+            app(WithdrawalPolicyService::class)->seedProvisional($programme->fresh(), $actor);
             $this->audit->record(
                 'programme', (string) $programme->id, 'programme.published',
                 fromState: 'draft', toState: 'published',
