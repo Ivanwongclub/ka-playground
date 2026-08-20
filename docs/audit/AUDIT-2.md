@@ -180,10 +180,10 @@ Each with the exact line to correct and the correction.
 | **B-14** | Doc 1 §5, Atlas §2C | "no run term 🔴" | See A-1: `programmes.starts_at` / `ends_at` exist and are unwritten. The correction is "columns exist, no writer, no reader beyond the OD-2 seed", not "absent". |
 | **B-15** | Atlas §2A `mentors` ◇ | "mentor registry rows — check shape at audit" | ◇ **resolved**: `mentors(id, user_id, status, created_at, updated_at)` — a thin registry, exactly as guessed. |
 
-Not an error, but worth recording as a naming hazard: this report was carded into **`docs/audits/`** while the
-repo already has **`docs/audit/`** (singular, holding `S04C-…`–`S07-TEST-AUDIT-LIVE.md` and
-`SYSTEM-AUDIT-S00-S04B.md`). I followed the card exactly. Two directories one letter apart will cost someone an
-hour eventually — worth a rename decision.
+Not an error, but recorded as a naming hazard at audit time: this report was carded into `docs/audits/` while
+the repo already had `docs/audit/` (singular, holding `S04C-…`–`S07-TEST-AUDIT-LIVE.md` and
+`SYSTEM-AUDIT-S00-S04B.md`). **Resolved in DOC-FIX-1** — the directories are merged and this file now lives in
+`docs/audit/`. The finding is left standing rather than deleted, because it is what prompted the merge.
 
 ---
 

@@ -1,6 +1,6 @@
 # KAP — PROTOTYPE WORKFLOW & UIUX
 ### What `docs/design/KAP-Prototype.html` actually specifies, screen by screen
-**Document 2 of 3** · 20 Aug 2026 · derived solely from the HTML (387,150 B / 57 screens / 42 `data-p` blocks); line numbers cite the file. Harness elements (not product) are marked ⛔.
+**Document 2 of 3** · 20 Aug 2026 · derived solely from the HTML (387,150 B / 57 screens / 51 `data-p` blocks); line numbers cite the file. Harness elements (not product) are marked ⛔.
 
 **Framing:** family personas render in a **phone frame 390×844** (`.pf`/`.notch`, single column); staff personas render **desktop 1440×900** (`pagewrap`). One chrome for all (header L389 + sider per persona); only items and footer differ. The `fam` class is a modifier, not a second shell. The top persona `.bar` is the prototype's own switcher ⛔.
 

@@ -1,8 +1,8 @@
 # KAP — DATA ATLAS (Document 1B)
 ### Full ER · per-entity schema · relationship map · workflow maps · closed loops
-Companion to KAP-SYSTEM-REFERENCE.md · 20 Aug 2026 · derived from `KAP-ALL-MIGRATIONS.txt` (86 `Schema::create` tables across 62 migration files) + the RLS policy source. Diagrams are Mermaid (text — readable by CC and rendered by GitHub).
+Companion to KAP-SYSTEM-REFERENCE.md · 20 Aug 2026 · derived from the migration source in `api/database/migrations/` (86 `Schema::create` tables) + the RLS policy source. Diagrams are Mermaid (text — readable by CC and rendered by GitHub).
 
-**Honesty rule:** many columns in this repo are added via raw `DB::statement` after `Schema::create`, so a per-column listing here can under-count. Field lists below carry the MEANING-BEARING columns (states, FKs, guards, money); the migrations file remains the byte-level authority. Status enums quoted from their `CHECK` constraints where read; anything marked ◇ = verify against the migration at audit time.
+**Honesty rule:** many columns in this repo are added via raw `DB::statement` after `Schema::create`, so a per-column listing here can under-count. Field lists below carry the MEANING-BEARING columns (states, FKs, guards, money); `api/database/migrations/` remains the byte-level authority. Status enums quoted from their `CHECK` constraints where read; anything marked ◇ = verify against the migration at audit time.
 
 ---
 
@@ -54,7 +54,7 @@ Everything hangs off four spine objects: **users** (identity) → **enrolments**
 | **roles / permissions / role_permissions / capability_permissions / admin_capabilities** | the seeded matrix (Doc 1 §2.1 verbatim) | nightly reconciliation probe DB↔`permission-matrix.php`; `capabilities.grant` audited |
 | **invitations** | single-use sha256 token · 14-day expiry · target role | Member invites gated by OD-22; second accept 422 |
 | **registration_requests / onboarding_exceptions** | self-register → THE approval queue (S04C) · school-verification holding state (OD-28) | provenance assertion `account.provenance` |
-| **guardian_links** | status: ceremony → `pending_confirmation` → `pending_approval` → `active` \| `rejected` (admin) \| `cancelled` (student decline) · origin · **permission_overrides jsonb** (deny-only trigger) | self-activation retired (S04D); `approveLink` writes verified_at; `no_active_without_approval` assertion |
+| **guardian_links** | status CHECK permits NINE: written — ceremony → `pending_confirmation` → `pending_approval` → `active` \| `rejected` (admin) \| `cancelled` (student decline) \| `expired` (`LinkageService:210`) \| **`revoked`** (`LinkRevocationService:67`); permitted but NEVER written — `requested`, `superseded` · origin · **permission_overrides jsonb** (deny-only trigger) | self-activation retired (S04D); `approveLink` writes verified_at; `no_active_without_approval` assertion |
 | **pairing_codes / pairing_code_failures** | the child-pairing ceremony; failure counting (anti-DoS question raised S04C) | codes hashed; hard-invalidate threshold |
 | **held_links / link_visibility_events** | quarantined links · OD-24 visibility trail | greenfield, `scope.public_context_confinement` |
 | **school_links / school_admin_links / teacher_links** | roll membership · admin anchoring · school-stamped single-school teacher (OD-54), offboarding-guarded | vouch (OD-30) writes school_links |
@@ -66,7 +66,6 @@ Everything hangs off four spine objects: **users** (identity) → **enrolments**
 |---|---|---|
 | **school_authority_grants** | school × programme(nullable=all) × capability · granted_by/at | validated against `delegable-capabilities.php`; grant/revoke/refusal all audited |
 | **programme_authority_overrides** | per-programme WITHHOLD rows | withhold wins per-programme in the A-4 arms; ⚠ X-3: a school cannot read the all-schools rows affecting it |
-| **role_library** ◇ | tenure role catalogue (Team Lead etc.) | feeds tenures |
 
 ### 2C · Programme & config (13 tables)
 | Table | Fields | Guards |
@@ -78,6 +77,7 @@ Everything hangs off four spine objects: **users** (identity) → **enrolments**
 | **withdrawal_policies / withdrawal_bands** | banded refund % · DB-validated (no overlap, ordered, in-window, 0–100) | band shown at decision + in mWd ceremony |
 | **consent_templates / consent_template_versions** | trilingual body · version stamp · material-change flag | re-consent fan-out (OD-52) marks `superseded` |
 | **team_categories** | lobby: programme_id · school_id nullable (open vs school-bound) | UNIQUE(id, programme_id) pending (finding-a card) |
+| **role_library** | tenure role catalogue (Team Lead etc.) — programme CONFIG, created in `2026_07_25_100000_create_programme_config_tables.php` (it is not a delegation table) | feeds `tenures` |
 | **certification_rules / badge_rules** | recognition config (exists — J-15 smaller than ranked) | issuance ledger 🔴 |
 
 ### 2D · Journey (17 tables)
@@ -85,23 +85,23 @@ Everything hangs off four spine objects: **users** (identity) → **enrolments**
 |---|---|---|
 | **enrolments** | status CHECK: `submitted \| pending_consent \| in_pool \| teamed \| confirmed \| active \| completed \| withdrawn \| released` — pool is a STATE (OD-34); `released` real terminal (`EnrolmentService:25`) | `enr_read`: family own + school roll + opsAudit (audit_read arm load-bearing via `/reports/enrolment-pool` — comment at 255ca2e); detail read = index narrowed by id, 404 (S-READ-1) |
 | **enrolment_batches / enrolment_batch_rows** | CSV intake → per-row dispositions → commit | school-scoped elevation; batch failure = one aging exception (OD-49) |
-| **consent_requests** | status default `sent`; full set: draft·sent·viewed·signed·declined·expired·**superseded** · merge_data jsonb · **event_sequence jsonb** (the timeline) · **no `kind`** 🔴 P-1 (media consent) | never batched (OD-50); fresh per cohort (OD-53); completeness gates Formation (OD-51) |
+| **consent_requests** | status default `sent`; full set: draft·sent·viewed·signed·declined·expired·**superseded**·**voided** (`2026_07_25_150000`, used by `POST /admin/consent-requests/{id}/void`) · merge_data jsonb · **event_sequence jsonb** (the timeline) · **no `kind`** 🔴 P-1 (media consent) | never batched (OD-50); fresh per cohort (OD-53); completeness gates Formation (OD-51) |
 | **consent_documents / consent_signatures** | rendered doc (upload, scanned) · sha-256 dual-hash · signature evidence | BI-6; guardian-only sign (capability_forbidden) |
 | **teams** | status: `forming → submitted → confirmed` (+ dissolve path) · category_id · programme_id · created_by (= submit authority) · **no intro/visibility** 🔴 B-1 | `teams_read` arms: system·opsAudit·memberOf·lobbySchoolAdmin·lobbyWall(forming+enrolled+lobby-school)·mentor(direct, flag-gated)·A-4 delegated; pin f28e2e86 |
 | **team_members** | status (`active`, ≠removed) · category_id denorm · **programme_id incoming (P-HYGIENE-1)** | `tm_read`: own row + children + school-admin-of-lobby + mentor arm; roster to members via **allowlisted elevation** (names+role+count; contacts WITHHELD); formed-team write exclusivity = service-layer (F-5 carve-out 🔴) |
-| **team_teacher_links** | active mentor link; gate authority prerequisite (OD-55) | read: own link row |
+| **team_teacher_links** | active mentor link; gate authority prerequisite (OD-61) | read: own link row |
 | **tenures** | role ledger (role_library) | **no mentor arm** (secondary finding) |
 | **stage_gates** | 5 fixed stages · status default `passed` (passes only — absence = pending) · approver_kind · approved_at · **notes withheld from family read** · category_id denorm · programme_id incoming | tracker read widened S-TRACKER-1 (`passed_at`+`approver_kind`; identity+notes never selected); **no sequence lock** (D-7) |
 | **stage_requirements** | **empty shell** — 0 of 7 requirement types modelled 🔴 | the Tracker's 12-item blocker map |
-| **sessions / programme_sessions / session_versions** | lifecycle + versioning · programme_id served (S-READ-1) | J-20 admin UI unbuilt |
+| **programme_sessions / session_versions** (NB: the `sessions` table is Laravel's session-driver INFRA, created with `users`, not a journey table) | lifecycle + versioning · programme_id served (S-READ-1) | J-20 admin UI unbuilt |
 | **session_bookings** | `booked \| waitlisted \| cancelled \| attended \| no_show` — session-level waitlist auto-promotes | withdrawal cascade cancels future + promotes |
-| **assessments** | `draft \| published \| open \| closed \| graded \| cancelled` + `released` flag path · **no rubric / max_score / released_at** 🔴 | release irreversible (danger ceremony); embargo at the read: family sees released only, `graded` byte-identical to `published`, unreleased never probed |
+| **assessments** | ONE status CHECK: `draft \| published \| open \| closed \| graded \| released \| cancelled` — `released` is a STATUS VALUE, not a flag · **no rubric / max_score / released_at** 🔴 | release irreversible (danger ceremony); embargo at the read: family sees released only, `graded` byte-identical to `published`, unreleased never probed |
 | **assessment_results** | score · graded_by/at | A-4 delegated arm exists (assessments domain) |
 
 ### 2E · Money (12 tables)
 | Table | Fields | Guards |
 |---|---|---|
-| **orders** | payer_party (`guardian \| school` — CHECK ◇) · status default `issued` (paid·covered_by_invoice·refunded·cancelled) · HKD | issued at Formation via outbox, never at enrolment (OD-31); **amounts reach students via `orders_read`** ⚠ P-3/B-18 — UI restraint only |
+| **orders** | payer_party — `ord_payer_check` = `guardian \| student \| school` (THREE values; ◇ resolved), with `ord_school_payer_check` tying `school` to a non-null payer_school_id · status default `issued` (paid·covered_by_invoice·refunded·cancelled) · HKD | issued at Formation via outbox, never at enrolment (OD-31); **amounts reach students via `orders_read`** ⚠ P-3/B-18 — UI restraint only |
 | **order_lines** | INSERT-only trilingual snapshots | immutable by policy |
 | **payments** | origin (provider/manual) · provider/provider_ref · via_link · status | manual = BI-9: recorder ≠ confirmer (app + DB WITH CHECK) |
 | **payment_links** | token-resolved server-side · initials-only · expiring · dead-once-paid (OD-38) | `payment_links.no_pii` assertion; no anonymous RLS policy |
@@ -135,8 +135,8 @@ flowchart LR
     S -->|books| SB[session_bookings]
     T -->|tracked by| SG[stage_gates]
     M[Mentor/Teacher] -->|linked to| T
-    M -->|approves gates OD-55| SG
-    M -->|marks| ATT[attendance]
+    M -->|approves gates OD-61| SG
+    M -->|marks| ATT["attendance = session_bookings.status"]
     SA[School Admin] -->|roll+vouch| S
     SA -->|endorses| WR
     SA -->|chases| CR
@@ -168,6 +168,9 @@ stateDiagram-v2
     confirmed --> active: programme starts
     active --> completed: terminal (OD-65)
     in_pool --> released: pool released — terminal
+    in_pool --> pending_consent: re-consent (material change, OD-52)
+    teamed --> in_pool: un-teamed back to the pool
+    confirmed --> in_pool: S05-4 dissolution re-pool — the ONLY path a PAID enrolment moves backwards (keeps the order, OD-38: no re-charge, no refund)
     submitted --> withdrawn
     pending_consent --> withdrawn
     in_pool --> withdrawn
@@ -196,7 +199,12 @@ stateDiagram-v2
     pending_confirmation --> cancelled: student declines
     pending_approval --> active: ops approveLink (writes verified_at, audited)
     pending_approval --> rejected: ops refuses
+    active --> revoked: LinkRevocationService (sole-guardian check first)
+    pending_confirmation --> expired: LinkageService, unclaimed ceremony
 ```
+The CHECK permits nine values. Drawn above are the seven that are WRITTEN. `requested` and
+`superseded` are permitted by the constraint and written by nothing — no transition rules govern
+them, which is itself the finding (AUDIT-2 B-5).
 
 ### 4.4 Team Formation (the allocation moment)
 ```mermaid
@@ -231,7 +239,7 @@ guardian requests 🔴UI → school endorses (pastoral, non-authoritative OD-26)
 
 ---
 
-## 5 · CLOSED LOOPS — traced end to end, with the open edge marked
+## 5 · CLOSED LOOPS — the EIGHT, traced end to end, with the open edge marked
 
 **Money loop** ✅ CLOSED: order → payment (provider or BI-9 pair) → gapless receipt → nightly reconcile (60 assertions) → Financial Integrity surface → audit trail. Open edges: period_locks 🔴 (P-8, post-close mutation possible) · aging UI 🔴.
 

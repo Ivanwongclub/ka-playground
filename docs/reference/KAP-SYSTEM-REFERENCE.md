@@ -5,7 +5,7 @@
 20 Aug 2026 · Document 1 of 3 (→ KAP-PROTOTYPE-WORKFLOW.md → KAP-ALIGNMENT-PLAN.md)
 
 **Sources of truth, in precedence order on conflict:**
-① the 62 migrations (`KAP-ALL-MIGRATIONS.txt`) + live policies — what EXISTS
+① the 63 migrations in `api/database/migrations/` + live policies — what EXISTS
 ② `permission-matrix.php` · `delegable-capabilities.php` · `scope-elevations.php` — what is GRANTED
 ③ Rethink Steps 1–6 — what is DESIGNED (wins over prototype on conflict)
 ④ the FR/OD register (FR001–FR228 / OD-1–OD-65) — the decisions
@@ -78,7 +78,7 @@ Gates what may EVER be granted to an edge operator. **Delegable:** student_recor
 route middleware (permission:X)          — coarse gate; NARROWER than policy arms BY DESIGN
   → RLS policy (FORCE, fail-closed)      — row scope; the authority of record for reads
     → service-layer authority (OD-39)    — ~30 staff mutations resolve authority IN-SERVICE
-      → registered elevations (asSystem) — ~60 entries, each with reason + WITHHELD allowlist
+      → registered elevations (asSystem) — 74 entries, each with reason + WITHHELD allowlist
         → DB constraints                 — BI-9 WITH CHECK, narrow-only trigger, status CHECKs
 ```
 🔴 **S-2 (root cause of "shown-not-hidden"):** because ~30 staff writes carry authority in-service with no middleware and no affordance field on reads, the client cannot know who may act — it shows the button and lets the server 403. Entitlement-iff needs reads to return the affordance.
@@ -105,7 +105,7 @@ Format per role: **Does** (functions/features) · **Reads** · **Writes** · **C
 **Gaps 🔴:** withdrawal request path (API chain exists guardian→school-endorse→ops; **no UI for either edge step**) · cancel pending withdrawal (J-17) · co-guardian invite (J-21) · Me is a placeholder (real surface = identity + language + notification prefs + pairing ceremony) · enrol-cascade consequence sheet · media-consent toggle + D1 revocation (P-1; `superseded` status may be reusable).
 
 ### 3.3 TEACHER (mentor)
-**Does (as-designed, B3):** My Teams (roster, stage tracker, check-ins 🔴) · My Sessions (today view, attendance marking) · gate approval for linked teams (`teams.approve`, OD-55: teacher links to TEAM, not students; required before first gate) · grading where delegated 🔴 (permission doesn't exist — D-5).
+**Does (as-designed, B3):** My Teams (roster, stage tracker, check-ins 🔴) · My Sessions (today view, attendance marking) · gate approval for linked teams (`teams.approve`, OD-61: teacher links to TEAM, not students; required before first gate) · grading where delegated 🔴 (permission doesn't exist — D-5).
 **Reads ✅ (config-gated):** `programmes.mentor_team_access` (per-programme toggle, S-MENTOR-1) opens team/roster/gates reads via the mentor arms ⚠️ (P-HYGIENE-1 divergence: category-routed arms silently school-scoped — fix in flight) · linked teams' consent **status** (never documents) · own school's roll (`users_read`: students, teachers, admins of own school — **never guardians**).
 **Writes ✅:** approve stage gates for linked teams (OD-39 in-service authority) · mark attendance ⚠️ (built as a Segmented toggle — design wants a transition request).
 **Cannot:** reach another school · sign consent · see finance · see unreleased results beyond own grading scope · read tenures directly (no mentor arm — secondary finding, own card).
@@ -129,7 +129,7 @@ Format per role: **Does** (functions/features) · **Reads** · **Writes** · **C
 **Does ✅:** events, RSVP, member directory (adults only, `authz.member_directory_exclusive`). **Cannot:** everything else — the absence IS the control. **Gaps:** recognition surfaces (J-15, v2).
 
 ### 3.7 SYSTEM (non-human)
-`asSystem` elevation register (~60 entries, each with justification + WITHHELD allowlist, `ScopeElevationTest`-verified) · scheduled jobs audit with a system actor (OD-58) · transactional payment outbox at Team Formation · re-consent fan-out (OD-20a) · booking cascade + waitlist promotion on withdrawal.
+`asSystem` elevation register (74 entries, each with justification + WITHHELD allowlist, `ScopeElevationTest`-verified) · scheduled jobs audit with a system actor (OD-58) · transactional payment outbox at Team Formation · re-consent fan-out (OD-20a) · booking cascade + waitlist promotion on withdrawal.
 
 ---
 
@@ -137,8 +137,8 @@ Format per role: **Does** (functions/features) · **Reads** · **Writes** · **C
 
 | Relationship | Mechanism | State machine | Status |
 |---|---|---|---|
-| Guardian ↔ Student | `guardian_links` (+ origin) | ceremony → pending_confirmation → confirm → pending_approval → **approveLink** → active; admin refusal = `rejected`, student decline = `cancelled` (distinct) | ✅ two-stage, audited; co-guardian invite 🔴 J-21 |
-| Teacher ↔ Team | `team_teacher_links` | linked by ops; gate authority requires link (OD-55) | ✅; teacher↔students NEVER direct |
+| Guardian ↔ Student | `guardian_links` (+ origin) | the CHECK permits NINE states. Written: ceremony → `pending_confirmation` → confirm → `pending_approval` → **approveLink** → `active`; admin refusal = `rejected`, student decline = `cancelled` (distinct); `expired` (`LinkageService:210`) and **`revoked`** (`LinkRevocationService:67`) are reachable and belong in the machine. Permitted but NEVER written: `requested`, `superseded` | ✅ two-stage, audited; co-guardian invite 🔴 J-21 |
+| Teacher ↔ Team | `team_teacher_links` | linked by ops; gate authority requires link (OD-61) | ✅; teacher↔students NEVER direct |
 | Teacher ↔ School | school-stamped, single-school, offboarding-guarded (OD-54) | | ✅ |
 | Student ↔ School | `school_links` (roll) | vouch (OD-30) / bulk mint; leaving mid-programme: team stands, academy exception (OD-56) | ✅ backend |
 | Student ↔ Team | `team_members` | join (⚠️ direct insert; design = request→review) · formed-team writes platform-only (F-5 carve-out 🔴 — service-layer only today) | 🟡 |
@@ -148,13 +148,13 @@ Format per role: **Does** (functions/features) · **Reads** · **Writes** · **C
 
 ---
 
-## 5 · ER SHAPE (from the 62 migrations — ground truth)
+## 5 · ER SHAPE (from the 63 migrations — ground truth)
 
-**Identity & access:** `users` (role, single) → `roles` / `permissions` / `role_permissions` / `capability_permissions` / `admin_capabilities` · `guardian_links` · `school_links` · `teacher_links` (school-stamped) · `team_teacher_links` · `permission_overrides` (deny-only trigger) · `authority_grants` + override tables (A-2) · `invitations` (single-use sha256, 14d) · `pairing_codes`.
+**Identity & access:** `users` (role, single) → `roles` / `permissions` / `role_permissions` / `capability_permissions` / `admin_capabilities` · `guardian_links` · `school_links` · `teacher_links` (school-stamped) · `team_teacher_links` · `permission_overrides` (**a jsonb COLUMN on the link entities, not a table** — deny-only trigger) · `school_authority_grants` + `programme_authority_overrides` (A-2) · `invitations` (single-use sha256, 14d) · `pairing_codes`.
 
 **Programme & config:** `programmes` (status, version snapshot, `enrolment_opens/closes_at`, `starts_at` (writer landed FIX-REFUND-SEED — mirrored from `basics.starts_on`; the OD-2 refund window seeds from it), `ends_at` (writerless, AUDIT-2 A-1), `banner_upload_id`, `mentor_team_access` ⚠️ column-vs-override duality X-4) · `programme_versions` · `fee_items` · `withdrawal_policies` (banded, DB-validated) · `certification_rules` + `badge_rules` (✅ exist; issuance ledger 🔴) · `team_categories` (lobbies; school-bound or open) · `consent_templates` (versioned, trilingual) · `programme_capacity` (**not family-readable**; team-based, OD-31).
 
-**Journey:** `enrolments` — status CHECK: `submitted | pending_consent | in_pool | teamed | confirmed | active | completed | withdrawn | released` (pool is a STATE, no waitlist table — OD-34; `released` is a real terminal status, `EnrolmentService:25`) · `consent_requests` (status: draft|sent|viewed|signed|declined|expired|**superseded**; event_sequence; dual-hash evidence; **no `kind`** 🔴 P-1) · `teams` (forming|submitted|confirmed…; **no intro/visibility** 🔴 B-1) · `team_members` (denormalised category_id; programme_id incoming per P-HYGIENE-1) · `stage_gates` (5 fixed stages; passes only; approver_kind; **no requirement rows** — stage_requirements an empty shell; **no sequence lock** — "locked" is prototype invention D-7) · `tenures` (role ledger; **no mentor arm**) · `programme_sessions` + `session_bookings` (booked|waitlisted|cancelled|attended|no_show — session-level waitlist ✅ auto-promote) · `attendance` (+ Learn gate S06-4; amendments 🔴 C-8) · `assessments` (draft|published|open|closed|graded|cancelled + released; **no rubric, no moderation seam, no max_score, no released_at** 🔴) · `assessment_results` (score, graded_by/at).
+**Journey:** `enrolments` — status CHECK: `submitted | pending_consent | in_pool | teamed | confirmed | active | completed | withdrawn | released` (pool is a STATE, no waitlist table — OD-34; `released` is a real terminal status, `EnrolmentService:25`) · `consent_requests` (status: draft|sent|viewed|signed|declined|expired|**superseded**|**voided**; event_sequence; dual-hash evidence; **no `kind`** 🔴 P-1) · `teams` (forming|submitted|confirmed…; **no intro/visibility** 🔴 B-1) · `team_members` (denormalised category_id; programme_id incoming per P-HYGIENE-1) · `stage_gates` (5 fixed stages; passes only; approver_kind; **no requirement rows** — stage_requirements an empty shell; **no sequence lock** — "locked" is prototype invention D-7) · `tenures` (role ledger; **no mentor arm**) · `programme_sessions` + `session_bookings` (booked|waitlisted|cancelled|attended|no_show — session-level waitlist ✅ auto-promote) · attendance is **NOT a table** — it is a `session_bookings.status` value (`attended`/`no_show`), which the Learn gate computes from (S06-4, `LearnGateService:44-52`); amendments 🔴 C-8 · `assessments` (status CHECK, one enum: draft|published|open|closed|graded|**released**|cancelled — `released` is a STATUS VALUE, not a flag; **no rubric, no moderation seam, no max_score, no released_at** 🔴) · `assessment_results` (score, graded_by/at).
 
 **Money:** `orders` (+ INSERT-only `order_lines`, trilingual snapshots) · `receipts` (gapless sequence) · `payments` (manual under BI-9: `rf`-style WITH CHECK) · `payment_links` (token-resolved, initials-only, `no_pii` assertion) · `refunds` (approved_by ≠ confirmed_by at DB) · `credit_notes` (immutable, system-only insert) · `consolidated_invoices` (school-settled, OD-25) · payment outbox · **absent 🔴:** `period_locks` (P-8), rubric, waiver reason enum (D-4 #2 rides credit_notes).
 
@@ -177,7 +177,7 @@ Format per role: **Does** (functions/features) · **Reads** · **Writes** · **C
 
 **Delivery:** sessions published (lifecycle API ✅ / UI 🔴 J-20) → booking (capacity + session waitlist ✅) → attendance (mentor marks ⚠️ toggle-not-request; ops oversees) → Learn gate consumes attendance (S06-4) → withdrawal cascade cancels future bookings + promotes waitlist ✅.
 
-**Tracker:** 5 fixed stages, pass-recorded by authorised approver (OD-39/OD-55); `passed_at` + `approver_kind` family-readable (identity + notes withheld); **no requirements, no sequence lock — done/todo only** (D-7 ×3).
+**Tracker:** 5 fixed stages, pass-recorded by authorised approver (OD-39/OD-61); `passed_at` + `approver_kind` family-readable (identity + notes withheld); **no requirements, no sequence lock — done/todo only** (D-7 ×3).
 
 **Assessment (E1):** draft→published→open→closed→graded→**released** (irreversible, danger-confirmed) · embargo at the read: family sees released only; `graded` byte-identical to `published`; unreleased never probed · 🔴 rubric display, moderation seam, release-separated-from-authorship, released_at/max_score.
 
