@@ -39,6 +39,7 @@
   align-items: flex-end;
 }
 .ds2-hero--band { min-height: var(--ka-hero-band); }
+.ds2-hero--card { min-height: var(--ka-hero-card); }
 .ds2-hero--tall { min-height: var(--ka-hero-tall); }
 /* while loading: the shimmer treatment (spec §2.2 step 2) */
 .ds2-hero--loading {

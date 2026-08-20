@@ -41,7 +41,10 @@ function rowsFor(e: Enrolment, locale: KaLocale, t: (k: string) => string, stop:
     rows.push({ label: t('enrolCard.consent'), value: { text: t('studentHome.consentWaiting') } });
   }
   // Team — the name once teamed/confirmed; "Not yet" + the card's ONE gold "Find a team" while in the pool;
-  // nothing before the pool. member_count is D-7 PROTOTYPE-WRONG (a new visibility path) — never rendered.
+  // nothing before the pool. member_count is NOT-SERVED here, and the old "D-7 PROTOTYPE-WRONG / a new
+  // visibility path" note was superseded: the roster read DOES serve member_count to a member (via the
+  // allowlisted elevation, S-UX3-3b), so the count is a legitimate read — it was dropped from THIS list
+  // read for cost (S-READ-2). It is an RW on the list read, not a forbidden disclosure. Still omitted here.
   if (e.team_name) {
     rows.push({ label: t('enrolCard.team'), value: { text: e.team_name } });
   } else if (e.status === 'in_pool') {

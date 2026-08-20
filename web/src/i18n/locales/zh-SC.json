@@ -585,17 +585,9 @@
     "confirm": "确认"
   },
   "studentHome": {
-    "viewSessions": "我的课节",
-    "noNextSession": "暂无安排",
-    "noNextSessionDetail": "你下一节已预约的课节将显示于此。",
-    "formOrJoin": "组建或加入你的团队",
-    "formOrJoinDetail": "你已在候补池 — 组队即可参与。",
-    "teamNone": "你尚未加入团队。",
-    "viewTeam": "我的团队",
     "consentWaiting": "等待家长签署",
     "nextUp": "接下来",
-    "greeting": { "morning": "早上好", "afternoon": "下午好", "evening": "晚上好" },
-    "consentWaitingSub": "由家长为你签署同意书 — 你无需处理。"
+    "greeting": { "morning": "早上好", "afternoon": "下午好", "evening": "晚上好" }
   },
   "profile360": {
     "subtitle": "课程记录与团队",

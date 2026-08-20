@@ -96,7 +96,10 @@ export function HeroBanner({
   fallback,
 }: {
   image: { src: string; alt: string };  // alt feeds <img alt> → string (see FLAG A)
-  height?: 'band' | 'tall';
+  // 'band' = a PAGE hero · 'card' = a card's image band (the prototype's 96px .prog-band) · 'tall' =
+  // the marketing hero. Three roles, three heights — 'card' exists because shrinking 'band' would have
+  // shrunk every page hero with it (B1R rider 1).
+  height?: 'band' | 'card' | 'tall';
   scrim?: 'duotone' | 'bottom' | 'none';
   children: ReactNode;
   fallback?: ReactNode;

@@ -65,7 +65,7 @@ export function GlanceCard({ image, imageFallback, title, status, segments, rows
     >
       {image && (
         <div className="ds2-glance__band">
-          <HeroBanner image={image} height="band" scrim="bottom" fallback={imageFallback}>{null}</HeroBanner>
+          <HeroBanner image={image} height="card" scrim="bottom" fallback={imageFallback}>{null}</HeroBanner>
         </div>
       )}
       <div className="ds2-glance__body">

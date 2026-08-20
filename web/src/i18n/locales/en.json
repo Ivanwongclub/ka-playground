@@ -585,17 +585,9 @@
     "confirm": "Confirm"
   },
   "studentHome": {
-    "viewSessions": "My sessions",
-    "noNextSession": "Nothing scheduled",
-    "noNextSessionDetail": "Your next booked session will appear here.",
-    "formOrJoin": "Form or join your team",
-    "formOrJoinDetail": "You're in the pool — team up to take part.",
-    "teamNone": "You're not on a team yet.",
-    "viewTeam": "My team",
     "consentWaiting": "Waiting for your guardian",
     "nextUp": "Next up",
-    "greeting": { "morning": "Good morning", "afternoon": "Good afternoon", "evening": "Good evening" },
-    "consentWaitingSub": "Your guardian signs consent for you — nothing for you to do."
+    "greeting": { "morning": "Good morning", "afternoon": "Good afternoon", "evening": "Good evening" }
   },
   "profile360": {
     "subtitle": "Programme record & team",

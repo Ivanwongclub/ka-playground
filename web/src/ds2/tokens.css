@@ -89,7 +89,8 @@
   --ka-scrim-duotone: linear-gradient(160deg, rgba(25, 21, 33, 0.82) 0%, rgba(25, 21, 33, 0.55) 100%); /* v3 card #191521, alphas preserved */
   --ka-scrim-bottom:  linear-gradient(0deg, rgba(25, 21, 33, 0.90) 0%, rgba(25, 21, 33, 0.00) 60%);   /* v3 card #191521, alphas preserved */
   --ka-scrim-flat:    linear-gradient(160deg, var(--ka-card), var(--ka-muted));   /* image-fail fallback */
-  --ka-hero-band: 180px;
+  --ka-hero-band: 180px;   /* PAGE hero (stu-home / gua-home) — the prototype's .home-hero */
+  --ka-hero-card: 96px;    /* CARD band (GlanceCard) — the prototype's .prog-band (L194). B1R */
   --ka-hero-tall: 320px;
 
   /* PageCard widths (§2.1) — non-colour */
