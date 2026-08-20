@@ -30,6 +30,14 @@ return new class extends Migration
         $students = "string_to_array(current_setting('app.student_ids', true), ',')";
         $schools = "string_to_array(current_setting('app.school_ids', true), ',')";
         $system = "{$ctx} = 'system'";
+        // P-HYGIENE-1 (item 2): the `audit_read` branch here looks unreachable — permission-matrix grants
+        // audit_read only `audit.read`, and BOTH enrolment routes are permission:enrolment.view, so an
+        // audit-only academy_admin is refused before RLS is consulted. It is NOT dead: GET
+        // /reports/enrolment-pool (routes/api.php, permission:audit.read — the S04A audit element) reads
+        // `enrolments` directly under the CALLER'S RLS with no elevation, and this branch is what populates
+        // it. Route-level permission gates are narrower than table-level policy arms BY DESIGN; unreachable
+        // through one route is not dead. Remove this branch and the report silently returns zeros to the
+        // only capability entitled to open it.
         $opsAudit = "({$role} = 'academy_admin' AND ('operations' = ANY({$caps}) OR 'audit_read' = ANY({$caps}) OR 'super_admin' = ANY({$caps})))";
 
         $read = "{$system} OR {$opsAudit} OR student_id::text = {$actor} OR student_id::text = ANY({$students})
