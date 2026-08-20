@@ -1,5 +1,7 @@
 # KA Playground — Data Model & Schema Reference
 
+> **HISTORICAL — the schema briefing the prototype was designed against (58 migrations, 12 Aug). Superseded as reference by `docs/reference/KAP-DATA-ATLAS.md`.**
+
 > *Schema current to `main` as of 2026-08-12 (58 migrations). Extracted directly from the migration source, including all row-level-security policies.*
 
 

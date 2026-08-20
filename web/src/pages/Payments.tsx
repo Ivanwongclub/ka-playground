@@ -210,9 +210,11 @@ export function Payments() {
                 { key: 'student', title: t('payments.student'), type: 'text', render: (p) => (p.student_id ? <Link to={`/admin/students/${p.student_id}`}>{personName(p.student_name)}</Link> : personName(p.student_name)) }, // R1-F2: → Staff Student 360
                 { key: 'amount', title: t('payments.amount'), type: 'money', render: (p) => formatMoney(p.amount_minor, p.currency, locale) },
                 // BI-9: the confirmer SEES who recorded it; when it is themselves the row shows "You".
+                // CLEANUP-1 part 1: the tint is the DERIVED v3 token, not the retired v2 amber literal
+                // (rgba(251,191,36,.12) = #FBBF24, dropped at DS2 v3). Same pattern as Refunds' approver marker.
                 { key: 'recordedBy', title: t('payments.recordedBy'), type: 'text',
                   render: (p) => p.recorded_by === meId
-                    ? <span style={{ color: 'var(--ka-warning)', background: 'rgba(251,191,36,.12)', fontSize: 12, fontWeight: 600, padding: '2px 9px', borderRadius: 6 }}>{t('payments.you')}</span>
+                    ? <span style={{ color: 'var(--ka-warning)', background: 'var(--ka-warning-tint)', fontSize: 12, fontWeight: 600, padding: '2px 9px', borderRadius: 6 }}>{t('payments.you')}</span>
                     : personName(p.recorded_by_name) },
                 { key: 'status', title: t('common.status'), type: 'status', render: (p) => <StatusTag domain="paymentStatus" value={p.status} /> },
                 // BI-9 shown-not-hidden: the recorder's own Confirm/Reject are SHOWN but DISABLED with the

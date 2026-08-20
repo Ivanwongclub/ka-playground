@@ -103,8 +103,9 @@ export function Refunds() {
               { title: t('refund.destination'), dataIndex: 'destination_party', render: (v: string) => <StatusTag domain="refundDestination" value={v} /> },
               { title: t('common.status'), dataIndex: 'status', render: (s: string) => <StatusTag domain="refundStatus" value={s} /> },
               // BI-9: the confirmer SEES who approved it; when it is themselves the row shows "You".
-              // Uses the DERIVED v3 warning tokens (NOT Payments' stale rgba(251,191,36,.12) v2-amber literal —
-              // that is a separate stale-literal follow-up, AUDIT.md; no token is redefined here, D-2 untouched).
+              // Uses the DERIVED v3 warning tokens; Payments' matching marker was carrying the retired
+              // rgba(251,191,36,.12) v2-amber literal and now mirrors this (CLEANUP-1 part 1). No token is
+              // redefined here, D-2 untouched.
               { title: t('refund.approvedBy'),
                 render: (_, r) => r.approved_by === meId
                   ? <span style={{ color: 'var(--ka-warning)', background: 'var(--ka-warning-tint)', fontSize: 12, fontWeight: 600, padding: '2px 9px', borderRadius: 6 }}>{t('refund.you')}</span>

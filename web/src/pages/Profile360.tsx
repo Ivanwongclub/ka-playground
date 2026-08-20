@@ -259,13 +259,16 @@ export function Profile360({ studentId, displayName, density = 'product' }: { st
                   <StatusTag domain="enrolmentStatus" value={e.status} />
                 </span>
               ),
-              children: <><EnrolmentJourney status={e.status} /><ReleasedResults studentId={studentId} programmeId={e.programme_id} /></>,
+              children: <EnrolmentJourney status={e.status} />,
             }))}
           />
         </DataBoundary>
       </div>
 
-      {/* TEAM & ROLES — current team + status, the Activity Tracker rail (display-only), role history. */}
+      {/* TEAM & ROLES — current team + status, role history. CLEANUP-1 part 2: the Activity Tracker rail and
+          the released-results block are DELETED from the staff surface (§C3) — the prototype's ops-stu carries
+          neither; its team/role content is a tenures line. Deletion only, nothing rebuilt: the staff Student-360
+          recomposition remains parked. Both still render on the FAMILY (§C2) surface, which is their home. */}
       <div style={{ marginTop: 'var(--ka-zone-gap)' }}>
         <Title level={5} style={{ marginBottom: 8 }}>{t('profile360.teamRoles')}</Title>
         {!teamResolved || teams.loading ? (
@@ -279,18 +282,6 @@ export function Profile360({ studentId, displayName, density = 'product' }: { st
                 <Text strong>{team.name}</Text>
                 <StatusTag domain="teamStatus" value={team.status} />
               </span>
-
-              <DataBoundary loading={tracker.loading} error={tracker.error}>
-                <WizardRail
-                  phases={[{
-                    title: t('tracker.title'),
-                    steps: (tracker.data?.stages ?? []).map((g): { label: string; state: StepState } => ({
-                      label: t(`tracker.stage${g.stage}`),
-                      state: g.passed ? 'done' : 'todo',
-                    })),
-                  }]}
-                />
-              </DataBoundary>
 
               <div>
                 <Text type="secondary" style={{ fontSize: 12 }}>{t('profile360.roleHistory')}</Text>
