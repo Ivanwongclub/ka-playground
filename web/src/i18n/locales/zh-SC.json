@@ -277,8 +277,13 @@
     "phaseOptional": "选填"
   },
   "consent": {
-    "listTitle": "同意书请求",
-    "listCaption": "等待您签署的文件",
+    "listTitle": "同意书",
+    "listCaption": "您已签署的同意书，以及仍待您签署的同意书",
+    "rowTitle": "{{programme}} — {{child}}",
+    "whoSigned": "{{date}} 已签署 · v{{version}} · {{language}}",
+    "whoSignedNoVersion": "{{date}} 已签署 · {{language}}",
+    "outstandingHeading": "待您签署",
+    "historyHeading": "已签署及已结案",
     "open": "打开",
     "awaitingSignature": "等待家长签署",
     "loadError": "无法加载此文件",

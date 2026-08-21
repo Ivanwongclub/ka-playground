@@ -3,12 +3,14 @@
 // [1] scroll-to-end (server-recorded) → [2] affirmation → [3] signature capture.
 // Every unmet gate shows an explicit locked state; the button is never the gate.
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   Alert, App as AntApp, Button, Checkbox, Descriptions, Input, Modal,
-  Segmented, Space, Table, Tag, Typography,
+  Segmented, Space, Tag, Typography,
 } from 'antd';
+import { CircleCheckBig, FileClock, FileSignature, FileX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Link, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { authFetch } from '../auth/session';
 import { kaColors } from '../theme/theme';
 import type { KaLocale } from '../i18n';
@@ -16,9 +18,12 @@ import { useResource, DataBoundary } from '../api/useResource';
 import { useIdentity } from '../auth/identity';
 import { isStudentActor, isGuardianActor } from '../nav';
 import { programmeName, personName } from '../display/names';
-import { formatHkt, tsSort } from '../display/date';
+import { formatHkt, formatHktDate, tsSort } from '../display/date';
 import { StatusTag } from '../display/status';
-import { SubPanel, UrgencyChip, urgencyLevel, urgencyDays, urgencyLabel, URGENCY } from '@/ds2';
+import {
+  ActionRequiredList, DS2_ICON, StatusAtom, SubPanel, UrgencyChip,
+  urgencyLevel, urgencyDays, urgencyLabel, URGENCY,
+} from '@/ds2';
 // DS2 rollout C1 — markup-only framing (Card→SubPanel). The BI-6 signing flow (scroll-gate, affirmation,
 // SignaturePad, sign()/decline() handlers, hashes) is BYTE-IDENTICAL. R0-B4 adds urgency to the LIST only.
 import type { UrgencyLevel } from '@/ds2';
@@ -37,6 +42,12 @@ interface RequestRow {
   programme_name_tc: string | null;
   programme_name_sc: string | null;
   student_name: string | null;
+  // B8 — the SIGNATURE's three display facts, joined 1:0..1 and gated by consent_signatures' own RLS.
+  // NULL on an unsigned row (no signature yet) AND for any reader who is not the signer (a student, a
+  // chasing school admin): they get the row and its status, never the signing act. Never assume present.
+  signed_at: string | null;
+  signed_language: string | null;
+  signed_version: number | null;
 }
 
 interface DocumentPayload {
@@ -61,18 +72,59 @@ const statusColor: Record<string, string> = {
   declined: 'red', superseded: 'default', voided: 'default', expired: 'default',
 };
 
+const LIVE = ['sent', 'viewed'];
+
+/**
+ * One SETTLED row — the block's second visual register (prototype L825-834). Deliberately NOT
+ * ActionRequiredList: that primitive requires an `onClick` and a `deadlineLabel` and draws a chevron on
+ * every row, and a settled consent has no target and no deadline. The ceremony REFUSES a signed request
+ * server-side (assertOpen), so a chevron here would be an affordance that lies. Composed from the DS2
+ * atom whose anatomy already matches the block's row — icon + bold title + muted who-line — with the
+ * state pill trailing. No new CSS class: spacing and rules come from the --ka-* token layer.
+ */
+function SettledRow({
+  icon, tone, title, who, trailing, urgency = 'none',
+}: {
+  icon: ReactNode;
+  tone: 'default' | 'attested' | 'action';
+  title: ReactNode;
+  who: ReactNode;
+  trailing: ReactNode;
+  urgency?: UrgencyLevel;
+}) {
+  return (
+    <div
+      // R0-B4's row emphasis, preserved: the same DS2 `.ds2-urgent--{level}` inset rule the Table carried
+      // via rowClassName. `none` adds no class, exactly as before.
+      className={urgency !== 'none' ? `ds2-urgent--${urgency}` : undefined}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '12px 4px', borderTop: '1px solid var(--ka-border)',
+      }}
+    >
+      <div style={{ flex: '1 1 auto', minWidth: 0 }}>
+        <StatusAtom tone={tone} icon={icon} status={title} detail={who} />
+      </div>
+      <Space size={10} style={{ flex: '0 0 auto' }}>{trailing}</Space>
+    </div>
+  );
+}
+
 export function ConsentList() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language as KaLocale;
+  const navigate = useNavigate();
   // S-UX2a: the shared fetch convention — res.ok guarded, errors caught (was an unguarded
   // r.json() that crashed the promise chain on any error response), loading/empty/error states.
   const { has } = useIdentity();
   // R1-S2 B4: the STUDENT sees their consents as WAITING ON THE GUARDIAN (they cannot sign — the ceremony
   // 403s a student). The GUARDIAN view is byte-identical (the actionable "Open" link). Verified student-only.
   const isStudent = isStudentActor(has);
-  // P0-SAFE-1 — the actionable "Open" link is the SIGNER'S affordance. consent.sign is guardian-only
+  // P0-SAFE-1 — the actionable row is the SIGNER'S affordance. consent.sign is guardian-only
   // (capability_forbidden + A-1 never-set), so a school/ops CHASES (keeps the read) but never signs — a
   // non-signer sees a non-actionable label, not a route INTO the ceremony (which the server would 403).
+  // B8 PRESERVES this: only `canSign` gets the whole-row-clickable ActionRequiredList; everyone else gets
+  // the same outstanding row through SettledRow, with the label and no target.
   const canSign = isGuardianActor(has);
   const { data, loading, error } = useResource<{ data: RequestRow[] }>('/api/consent-requests');
   const rows = data?.data ?? [];
@@ -81,53 +133,121 @@ export function ConsentList() {
   // no row hidden, count unchanged (rows.length still gates the empty state).
   const sortedRows = [...rows].sort(
     (a, b) =>
-      (['sent', 'viewed'].includes(a.status) ? 0 : 1) - (['sent', 'viewed'].includes(b.status) ? 0 : 1)
+      (LIVE.includes(a.status) ? 0 : 1) - (LIVE.includes(b.status) ? 0 : 1)
       || tsSort(a.expires_at) - tsSort(b.expires_at),
   );
+  // The block is HISTORY + QUEUE, not a pending queue: a signed row STAYS on the list (prototype L825-834).
+  // The two registers are the split, not a filter — every row still renders, and rows.length still gates empty.
+  const outstanding = sortedRows.filter((row) => LIVE.includes(row.status));
+  const settled = sortedRows.filter((row) => !LIVE.includes(row.status));
 
   // Urgency applies ONLY to a live (awaiting-action) consent — a signed/declined/expired row has no
   // actionable deadline, so it carries no chip or emphasis. Not a proxy: the deadline is expires_at.
   const rowLevel = (row: RequestRow): UrgencyLevel =>
-    ['sent', 'viewed'].includes(row.status) ? urgencyLevel(row.expires_at, URGENCY.consent) : 'none';
+    LIVE.includes(row.status) ? urgencyLevel(row.expires_at, URGENCY.consent) : 'none';
+
+  const rowTitle = (row: RequestRow): string =>
+    t('consent.rowTitle', { programme: programmeName(row, locale), child: personName(row.student_name) });
+
+  /**
+   * The who-line. On a SIGNED row it is the evidence the block asks for — "Signed 5 Jul · v3.2 · English" —
+   * and every part of it is a FACT read off the signature: the date it was signed, the version signed
+   * against, the language actually RENDERED. When the signature is not the reader's (a student, a chasing
+   * school admin) the join returns NULL for all three and the line falls back to the state alone. It never
+   * guesses, and it never shows a version for an UNSIGNED row: versions are language-scoped (OD-20/BI-6)
+   * and none is chosen until the signer picks a language at the ceremony, so there is nothing true to print.
+   */
+  const whoLine = (row: RequestRow): string => {
+    if (row.signed_at && row.signed_language) {
+      const date = formatHktDate(row.signed_at, i18n.language);
+      const language = t(`locale.${row.signed_language}`);
+      return row.signed_version != null
+        ? t('consent.whoSigned', { date, version: row.signed_version, language })
+        : t('consent.whoSignedNoVersion', { date, language });
+    }
+    return t(`consent.status.${row.status}`);
+  };
+
+  const settledIcon = (status: string): ReactNode => {
+    if (status === 'signed') return <CircleCheckBig {...DS2_ICON} aria-hidden />;
+    if (status === 'declined' || status === 'voided') return <FileX {...DS2_ICON} aria-hidden />;
+    return <FileClock {...DS2_ICON} aria-hidden />;
+  };
+
+  const statePill = (row: RequestRow): ReactNode => (
+    <Tag color={statusColor[row.status]}>{t(`consent.status.${row.status}`)}</Tag>
+  );
 
   return (
     <SubPanel tone="neutral">
       <Title level={3}>{t('consent.listTitle')}</Title>
       <Paragraph type="secondary">{t('consent.listCaption')}</Paragraph>
       <DataBoundary loading={loading} error={error} empty={rows.length === 0}>
-        <Table<RequestRow>
-          rowKey="id"
-          dataSource={sortedRows}
-          pagination={false}
-          rowClassName={(row) => { const lvl = rowLevel(row); return lvl !== 'none' ? `ds2-urgent--${lvl}` : ''; }}
-          columns={[
-            { title: t('consent.programme'), render: (_, row) => programmeName(row, locale) },
-            { title: t('consent.student'), render: (_, row) => personName(row.student_name) },
-            {
-              title: t('consent.evidence.statusCol'), dataIndex: 'status',
-              render: (s: string, row) => {
+        {outstanding.length > 0 && (canSign
+          ? (
+            // The whole row is ONE nav target (§3.5) — the block gives the outstanding row a row-level
+            // onclick and no button, and the deadline, not the title, is the loud element.
+            <ActionRequiredList
+              heading={t('consent.outstandingHeading')}
+              count={outstanding.length}
+              items={outstanding.map((row) => {
+                const lvl = rowLevel(row);
+                return {
+                  id: row.id,
+                  icon: <FileSignature {...DS2_ICON} aria-hidden />,
+                  title: rowTitle(row),
+                  who: whoLine(row),
+                  deadlineLevel: lvl,
+                  // A request with no expiry has no countdown to state — an em dash, never a fabricated
+                  // "Due today" (which is what urgencyLabel returns for a null deadline's zero day-count).
+                  deadlineLabel: row.expires_at ? urgencyLabel(lvl, urgencyDays(row.expires_at), t) : '—',
+                  onClick: () => navigate(`/consents/${row.id}`),
+                };
+              })}
+            />
+          )
+          : (
+            <div style={{ marginBottom: 20 }}>
+              <Title level={5} style={{ marginTop: 0 }}>{t('consent.outstandingHeading')}</Title>
+              {outstanding.map((row) => {
                 const lvl = rowLevel(row);
                 return (
-                  <Space>
-                    <Tag color={statusColor[s]}>{t(`consent.status.${s}`)}</Tag>
-                    {lvl !== 'none' && <UrgencyChip level={lvl} label={urgencyLabel(lvl, urgencyDays(row.expires_at), t)} />}
-                  </Space>
+                  <SettledRow
+                    key={row.id}
+                    tone="action"
+                    urgency={lvl}
+                    icon={<FileSignature {...DS2_ICON} aria-hidden />}
+                    title={rowTitle(row)}
+                    who={whoLine(row)}
+                    trailing={(
+                      <>
+                        {lvl !== 'none' && <UrgencyChip level={lvl} label={urgencyLabel(lvl, urgencyDays(row.expires_at), t)} />}
+                        <Text type="secondary">
+                          {isStudent ? t('studentHome.consentWaiting') : t('consent.awaitingSignature')}
+                        </Text>
+                      </>
+                    )}
+                  />
                 );
-              },
-            },
-            {
-              title: t('common.actions'), dataIndex: 'id',
-              render: (id: string, row) =>
-                ['sent', 'viewed'].includes(row.status)
-                  ? (canSign
-                      ? <Link to={`/consents/${id}`}>{t('consent.open')}</Link>
-                      : isStudent
-                        ? <Text type="secondary">{t('studentHome.consentWaiting')}</Text>
-                        : <Text type="secondary">{t('consent.awaitingSignature')}</Text>)
-                  : null,
-            },
-          ]}
-        />
+              })}
+            </div>
+          ))}
+
+        {settled.length > 0 && (
+          <div style={{ marginTop: outstanding.length > 0 ? 24 : 0 }}>
+            <Title level={5} style={{ marginTop: 0 }}>{t('consent.historyHeading')}</Title>
+            {settled.map((row) => (
+              <SettledRow
+                key={row.id}
+                tone={row.status === 'signed' ? 'attested' : 'default'}
+                icon={settledIcon(row.status)}
+                title={rowTitle(row)}
+                who={whoLine(row)}
+                trailing={statePill(row)}
+              />
+            ))}
+          </div>
+        )}
       </DataBoundary>
     </SubPanel>
   );

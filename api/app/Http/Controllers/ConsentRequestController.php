@@ -51,6 +51,19 @@ class ConsentRequestController extends Controller
      * RLS-shaped list: each session sees exactly its branch of the read set.
      * S-UX2b: additive display names via LEFT JOINs (never drop a row); each name is gated by the
      * joined table's own RLS (programmes, users_read) — resolves iff the caller could read it, else NULL.
+     *
+     * B8: the same pattern extended to the SIGNATURE's three display facts — signed_at, the language
+     * RENDERED, and the version signed against — so a settled row can say "Signed 5 Jul · v3.2 · English"
+     * instead of merely "Signed". `consent_signatures.request_id` is UNIQUE, so the join is strictly
+     * 1:0..1 and cannot fan a row out; `consent_template_versions` hangs off the signature, not the
+     * request, because a version is LANGUAGE-SCOPED (OD-20/BI-6) and is only chosen when the signer
+     * picks a language at the ceremony — an UNSIGNED request therefore has no version to name, and
+     * these three come back NULL for it. That is the honest answer, not a gap.
+     *
+     * Each fact stays gated by its own table's RLS: cs_read admits the SIGNER, ops and audit — so the
+     * guardian reads their own signature, while a student or a chasing school admin sees the row and
+     * its status with the three facts NULL. The list widens; consent_signatures does not. Display only:
+     * no hash, no signature payload, no image id, no method, no IP, no user agent (RIDER asserts each).
      */
     public function index(): JsonResponse
     {
@@ -58,11 +71,14 @@ class ConsentRequestController extends Controller
             ->leftJoin('programmes as p', 'p.id', '=', 'r.programme_id')
             ->leftJoin('users as s', 's.id', '=', 'r.student_id')
             ->leftJoin('users as sg', 'sg.id', '=', 'r.signer_id')
+            ->leftJoin('consent_signatures as cs', 'cs.request_id', '=', 'r.id')
+            ->leftJoin('consent_template_versions as ctv', 'ctv.id', '=', 'cs.template_version_id')
             ->orderBy('r.created_at')
             ->get([
                 'r.id', 'r.template_id', 'r.programme_id', 'r.student_id', 'r.signer_id', 'r.status', 'r.expires_at',
                 'p.name_en as programme_name_en', 'p.name_tc as programme_name_tc', 'p.name_sc as programme_name_sc',
                 's.name as student_name', 'sg.name as signer_name',
+                'cs.signed_at', 'cs.language as signed_language', 'ctv.version as signed_version',
             ])]);
     }
 

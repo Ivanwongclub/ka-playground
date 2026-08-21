@@ -277,8 +277,13 @@
     "phaseOptional": "Optional"
   },
   "consent": {
-    "listTitle": "Consent requests",
-    "listCaption": "Documents awaiting your signature",
+    "listTitle": "Consents",
+    "listCaption": "Consents you have signed, and any still awaiting your signature",
+    "rowTitle": "{{programme}} — for {{child}}",
+    "whoSigned": "Signed {{date}} · v{{version}} · {{language}}",
+    "whoSignedNoVersion": "Signed {{date}} · {{language}}",
+    "outstandingHeading": "Awaiting your signature",
+    "historyHeading": "Signed and settled",
     "open": "Open",
     "awaitingSignature": "Awaiting guardian signature",
     "loadError": "Could not load this document",
