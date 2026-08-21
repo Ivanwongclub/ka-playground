@@ -641,6 +641,12 @@
     "action": { "published": "發布", "open": "開放", "closed": "截止", "graded": "標記已評分", "released": "公佈", "cancelled": "取消" }
   },
   "marketplace": {
+    "heroTitle": "構建・展示・啟航",
+    "heroLead": "實作型課程，校隊將真實構想由計劃帶到啟航。",
+    "browseOpen": "瀏覽開放報名的課程",
+    "termFrom": "{{start}} 起",
+    "open": "開啟 ›",
+    "filter": { "all": "全部", "open": "開放報名", "enrolled": "我的報名" },
     "title": "課程市集",
     "subtitle": "瀏覽開放中的課程並報名。",
     "enrol": "報名",

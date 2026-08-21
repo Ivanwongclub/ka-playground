@@ -641,6 +641,12 @@
     "action": { "published": "Publish", "open": "Open", "closed": "Close", "graded": "Mark graded", "released": "Release", "cancelled": "Cancel" }
   },
   "marketplace": {
+    "heroTitle": "Build. Pitch. Launch.",
+    "heroLead": "Hands-on programmes where school teams take a real idea from plan to launch.",
+    "browseOpen": "Browse open programmes",
+    "termFrom": "From {{start}}",
+    "open": "Open ›",
+    "filter": { "all": "All", "open": "Enrolment open", "enrolled": "My enrolled" },
     "title": "Programme Marketplace",
     "subtitle": "Browse open programmes and enrol.",
     "enrol": "Enrol",

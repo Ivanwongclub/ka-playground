@@ -93,6 +93,13 @@ const REGISTRY: Record<string, Record<string, Entry>> = {
   // status (draft|published|open|closed|graded|cancelled|released) is collapsed to `pending`/`released` BEFORE it
   // reaches this pill. The raw status must NEVER be a domain here — a family seeing `graded` would learn the
   // result exists and is being withheld, which is the embargo leaking one bit.
+  // B7-MARKETPLACE — the catalogue's derived enrolment window (MarketplaceController: open|closed ONLY —
+  // capacity/"Full" is deliberately NOT derivable by families, D-MKT-2). Labels reuse the existing
+  // marketplace.status.* pair rather than minting a second vocabulary.
+  catalogueStatus: {
+    open: { labelKey: 'marketplace.status.open', color: 'success' },
+    closed: { labelKey: 'marketplace.status.closed', color: 'default' },
+  },
   // B3-GUA-CHILD — consent state as the FAMILY reads it. The values are the `cr_status_check` enum itself
   // (draft is never issued to a family, so it is not offered here); labels reuse the existing consent.status.*
   // set rather than minting parallel copy.

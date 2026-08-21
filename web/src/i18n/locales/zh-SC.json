@@ -641,6 +641,12 @@
     "action": { "published": "发布", "open": "开放", "closed": "截止", "graded": "标记已评分", "released": "公布", "cancelled": "取消" }
   },
   "marketplace": {
+    "heroTitle": "构建・展示・启航",
+    "heroLead": "实作型课程，校队将真实构想由计划带到启航。",
+    "browseOpen": "浏览开放报名的课程",
+    "termFrom": "{{start}} 起",
+    "open": "开启 ›",
+    "filter": { "all": "全部", "open": "开放报名", "enrolled": "我的报名" },
     "title": "课程市集",
     "subtitle": "浏览开放中的课程并报名。",
     "enrol": "报名",
