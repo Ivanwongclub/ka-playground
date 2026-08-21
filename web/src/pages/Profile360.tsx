@@ -12,15 +12,14 @@ import { Collapse, Skeleton, Space, Tag, Typography } from 'antd';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
-import { useIdentity } from '../auth/identity';
 import { authFetch } from '../auth/session';
 import { useResource, DataBoundary } from '../api/useResource';
 import { personName, programmeName, initials } from '../display/names';
 import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
 import { TERMINAL_BAD } from '../display/enrolmentJourney'; // C5-CONSUME: one definition of the terminal states
-import { SubPanel, EmptyState, WizardRail, RecordShell, RecordHeaderBand, GlanceCard, JourneyStepper } from '@/ds2';
-import type { StepState, SegItem, GlanceRow } from '@/ds2';
+import { SubPanel, EmptyState, WizardRail } from '@/ds2';
+import type { StepState } from '@/ds2';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -43,39 +42,6 @@ function roleName(r: RoleRow, locale: KaLocale): string {
 // list gives the programme's assessments; each RELEASED one's score is fetched from the EMBARGOED result read
 // (returns null until Released / for non-family). Renders NOTHING when the student has no released result —
 // no teasing empty section (for ALL three consumers).
-function ReleasedResults({ studentId, programmeId }: { studentId: number; programmeId: number }) {
-  const { t } = useTranslation();
-  const assessments = useResource<{ data: { id: string; title: string; status: string }[] }>(`/api/programmes/${programmeId}/assessments`);
-  const [results, setResults] = useState<{ title: string; score: number }[]>([]);
-  useEffect(() => {
-    const released = (assessments.data?.data ?? []).filter((a) => a.status === 'released');
-    if (released.length === 0) { setResults([]); return; }
-    let alive = true;
-    (async () => {
-      const out: { title: string; score: number }[] = [];
-      for (const a of released) {
-        try {
-          const r = await authFetch(`/api/assessments/${a.id}/results/${studentId}`);
-          if (!r.ok) continue;
-          const body = (await r.json()) as { result: { score: number | null } | null };
-          if (body.result && body.result.score !== null) out.push({ title: a.title, score: body.result.score });
-        } catch { /* embargoed / unreadable → simply not shown */ }
-      }
-      if (alive) setResults(out);
-    })();
-    return () => { alive = false; };
-  }, [assessments.data, studentId]);
-
-  if (results.length === 0) return null; // honest: no released result → nothing rendered
-  return (
-    <div style={{ marginTop: 10 }}>
-      <Text type="secondary" style={{ fontSize: 12 }}>{t('assess.results')}</Text>
-      {results.map((r, i) => (
-        <div key={i} style={{ fontSize: 13, marginTop: 2 }}><Text strong>{r.title}</Text>: {r.score}</div>
-      ))}
-    </div>
-  );
-}
 
 function EnrolmentJourney({ status }: { status: string }) {
   const { t } = useTranslation();
@@ -98,12 +64,6 @@ function EnrolmentJourney({ status }: { status: string }) {
 // JOURNEY / TERMINAL_BAD / indexOf logic), rendered via the P0-4-era JourneyStepper (bare — no tiles/whatNext)
 // instead of WizardRail. NEW component: EnrolmentJourney (above) stays untouched for the admin branch. antd Steps
 // `current={cur}` yields the same done(<cur)/current(===cur)/todo(>cur) semantics the WizardRail mapped by hand.
-function EnrolmentJourneyStepper({ status, locale }: { status: string; locale: KaLocale }) {
-  const { t } = useTranslation();
-  if (TERMINAL_BAD.includes(status)) return <StatusTag domain="enrolmentStatus" value={status} />;
-  const cur = JOURNEY.indexOf(status);
-  return <JourneyStepper current={cur} locale={locale} steps={JOURNEY.map((s) => ({ title: t(`enrol.status.${s}`) }))} />;
-}
 
 /** The composition. `studentId` selects the subject; `displayName` overrides the name shown (the self-view
  *  passes it from /api/me; the child-view derives it from the enrolment rows). */
@@ -140,7 +100,9 @@ export function Profile360({ studentId, displayName, density = 'product' }: { st
     return () => { alive = false; };
   }, [teams.data, studentId]);
 
-  const tracker = useResource<{ stages: { stage: string; passed: boolean }[] }>(team ? `/api/teams/${team.id}/tracker` : null);
+  // B5-ME: the tracker read is GONE. Its last consumer was the product-density segbar; CLEANUP-1 had already
+  // deleted the ADMIN branch's tracker rail (§C3), so since then the staff Student 360 was fetching
+  // /teams/{id}/tracker on every visit and discarding it. One request per staff 360 view, reclaimed.
   const roles = useResource<{ roles: RoleRow[] }>(team ? `/api/teams/${team.id}/roles` : null);
 
   const myEnrolments = (enrolments.data?.data ?? []).filter((e) => e.student_id === studentId);
@@ -153,76 +115,11 @@ export function Profile360({ studentId, displayName, density = 'product' }: { st
     for (const p of role.past) if (p.student_id === studentId) myRoles.push({ role, tenure: p, current: false });
   }
 
-  // ── FAMILY grammar (§C2 · V3-STUDENT360) — RecordShell single-column: header + main, NO highlights/rail/
-  // history (those are staff §C3, deferred to V3-STUDENT360-STAFF). The shared fetch/derivation block above is
-  // UNCHANGED; only this product-density render is new. Enrolment GlanceCards are DISPLAY-ONLY (no drill):
-  // Profile360 has no nav today and nav.tsx bars the student from /enrolments (R1-S2), so routing out would be a
-  // regression disguised as adoption — the journey + released results render inline. Avatar dropped (§C1/§C2
-  // headers carry none; it was decorative). ──
-  if (density === 'product') {
-    return (
-      <div style={{ maxWidth: 900 }} data-density={density}>
-        <RecordShell
-          header={<RecordHeaderBand eyebrow={t('profile360.subtitle')} name={personName(name)} />}
-          main={(
-            <>
-              <div>
-                <Title level={5} style={{ marginBottom: 8 }}>{t('profile360.programmeRecord')}</Title>
-                <DataBoundary loading={enrolments.loading} error={enrolments.error} empty={myEnrolments.length === 0} emptySize="inline">
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    {myEnrolments.map((e) => (
-                      <div key={e.id} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        <GlanceCard
-                          imageFallback={<div />}
-                          title={programmeName(e, locale)}
-                          status={<StatusTag domain="enrolmentStatus" value={e.status} />}
-                        />
-                        <EnrolmentJourneyStepper status={e.status} locale={locale} />
-                        <ReleasedResults studentId={studentId} programmeId={e.programme_id} />
-                      </div>
-                    ))}
-                  </div>
-                </DataBoundary>
-              </div>
-
-              <div>
-                <Title level={5} style={{ marginBottom: 8 }}>{t('profile360.teamRoles')}</Title>
-                {!teamResolved || teams.loading ? (
-                  <Skeleton active paragraph={{ rows: 3 }} />
-                ) : !team ? (
-                  <SubPanel tone="neutral"><EmptyState size="inline" message={t('profile360.noTeam')} /></SubPanel>
-                ) : (
-                  <GlanceCard
-                    imageFallback={<div />}
-                    title={team.name}
-                    status={<StatusTag domain="teamStatus" value={team.status} />}
-                    // tracker → segbar: SAME truth the admin WizardRail maps (line: g.passed ? 'done' : 'todo') —
-                    // completed stage = done segment, else todo. No 'current' re-interpretation.
-                    segments={(tracker.data?.stages ?? []).map((g): SegItem => ({
-                      label: t(`tracker.stage${g.stage}`),
-                      state: g.passed ? 'done' : 'todo',
-                    }))}
-                    rows={
-                      roles.loading
-                        ? []
-                        : myRoles.length === 0
-                          ? [{ label: t('profile360.roleHistory'), value: { text: t('profile360.noRoles') } }]
-                          : myRoles.map(({ role, tenure, current }): GlanceRow => ({
-                              label: roleName(role, locale),
-                              value: current
-                                ? { tag: <Tag color="gold">{t('profile360.roleCurrent')}</Tag> }
-                                : { text: `${formatHkt(tenure.started_at, locale)} → ${tenure.ended_at ? formatHkt(tenure.ended_at, locale) : ''}` },
-                            }))
-                    }
-                  />
-                )}
-              </div>
-            </>
-          )}
-        />
-      </div>
-    );
-  }
+  // ── B5-ME: the FAMILY (product-density) branch was RETIRED here. /my/profile is now the stu-me
+  // composition (pages/Me.tsx): identity + school + language, per the block (L661-674). Its programme
+  // record, journey steppers and released results were EXTRAs against that block — released results
+  // now live where the prototype puts them, in the scoped space's Results tab. Profile360 is the STAFF
+  // Student 360 only. ──
 
   // ── ADMIN grammar (density==='admin') — the pre-V3 composition, UNCHANGED (deferred to V3-STUDENT360-STAFF). ──
   return (
@@ -305,12 +202,6 @@ export function Profile360({ studentId, displayName, density = 'product' }: { st
   );
 }
 
-// ── Student SELF-VIEW: /my/profile ──────────────────────────────────────────────────────────────────
-export function MyProfile() {
-  const { identity } = useIdentity();
-  if (!identity) return <Skeleton active paragraph={{ rows: 4 }} />;
-  return <Profile360 studentId={identity.id} displayName={identity.name} />;
-}
 
 // ── B3-GUA-CHILD: the guardian CHILD-VIEW export was RETIRED here. /my/children/:studentId is now the
 // gua-child hub (pages/ChildHub.tsx) — keeping this would have left two guardian child views to drift apart.

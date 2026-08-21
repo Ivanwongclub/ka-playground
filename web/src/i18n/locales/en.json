@@ -1048,5 +1048,17 @@
     "line": "Line",
     "amount": "Amount",
     "receipt": "Receipt {{number}} · {{date}}"
+  },
+  "me": {
+    "title": "Me",
+    "school": "School",
+    "language": "Language",
+    "roleStudent": "Student",
+    "roleGuardian": "Guardian",
+    "linkChild": "Link another child",
+    "enterCode": "Enter a pairing code",
+    "codeLabel": "Pairing code",
+    "codeSubmit": "Link",
+    "codeAccepted": "Pairing code accepted — awaiting the student’s confirmation"
   }
 }

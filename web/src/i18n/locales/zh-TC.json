@@ -1045,5 +1045,17 @@
     "line": "項目",
     "amount": "金額",
     "receipt": "收據 {{number}} · {{date}}"
+  },
+  "me": {
+    "title": "我",
+    "school": "學校",
+    "language": "語言",
+    "roleStudent": "學生",
+    "roleGuardian": "家長",
+    "linkChild": "連結另一名子女",
+    "enterCode": "輸入配對碼",
+    "codeLabel": "配對碼",
+    "codeSubmit": "連結",
+    "codeAccepted": "已接受配對碼 — 等待學生確認"
   }
 }

@@ -68,7 +68,10 @@ const OpsAttendance = lazy(() => import('./pages/SessionAttendance').then((m) =>
 const MyChildren = lazy(() => import('./pages/SelfService').then((m) => ({ default: m.MyChildren })));
 const MyPayments = lazy(() => import('./pages/SelfService').then((m) => ({ default: m.MyPayments })));
 const MyStudents = lazy(() => import('./pages/SelfService').then((m) => ({ default: m.MyStudents })));
-const MyProfile = lazy(() => import('./pages/Profile360').then((m) => ({ default: m.MyProfile })));
+// B5-ME: both Me surfaces are their own composition now (stu-me L661-674 / gua-me L905-918).
+// Profile360 keeps the STAFF Student 360 only.
+const StudentMe = lazy(() => import('./pages/Me').then((m) => ({ default: m.StudentMe })));
+const GuardianMe = lazy(() => import('./pages/Me').then((m) => ({ default: m.GuardianMe })));
 // B3-GUA-CHILD: /my/children/:studentId is the gua-child HUB now, not the Profile360 composition
 // (AUDIT-2 classed that WRONG-SHAPE for this route). Profile360 still serves /my/profile + the staff 360.
 const ChildHub = lazy(() => import('./pages/ChildHub').then((m) => ({ default: m.ChildHub })));
@@ -133,8 +136,8 @@ function Root() {
               {/* C2-LIST — the STUDENT "Programmes" list (GlanceCard per enrolment, drills into /enrolments/:id).
                   The GUARDIAN "Me" stays an empty Placeholder skeleton (a later card). */}
               <Route path="/programmes" element={<StudentProgrammes />} />
-              <Route path="/me" element={<Placeholder titleKey="empty.title" />} />
-              <Route path="/my/profile" element={<MyProfile />} />
+              <Route path="/me" element={<GuardianMe />} />
+              <Route path="/my/profile" element={<StudentMe />} />
               <Route path="/my/children/:studentId" element={<ChildHub />} />
               <Route path="/my/payments" element={<MyPayments />} />
               <Route path="/my/students" element={<MyStudents />} />
