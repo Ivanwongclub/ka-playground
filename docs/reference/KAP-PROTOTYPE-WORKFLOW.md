@@ -45,7 +45,22 @@
 
 ## 2 · GUARDIAN (9 screens, phone)
 
-**gua-home L701** — hero "Your family's pending actions" · action cards EACH child×need: consent → gold `Review & sign`; order → amount · due · blue countdown chip · gold `View payments` · stat trio (Children / Outstanding HK$ / Enrolments).
+**gua-home L701** — NO hero: a bare `.eyebrow` "Guardian" + `<h2>` name (L702-703). Then ONE card,
+`border-left:4px solid var(--warn)`, headed **"Action required · {n}"** (L704-705), holding one `.todo-row`
+per NEED (L706-714): `.glyph` icon · `<h4>` title carrying the subject — "Sign consent for {child}",
+"Pay {amount} for {child}" · `.who` sub-line (programme · detail) · `.todo-deadline` (bold `var(--warn)`
+line + uppercase 11px `small`) · a `›` chevron. The WHOLE ROW is the affordance (`onclick`, `cursor:pointer`,
+`:hover h4 {color:gold}`) — there are **no buttons, no chips, no countdown pills** anywhere in the block.
+Per-type emphasis, per the file's own screen note at L2174 ("Action-required list: bold titles, bold
+deadlines — expires_at and payment_due_at as the loudest thing on the page"): the consent row bolds
+"6 days left" over a small "expires 19 Aug"; the payment row bolds "Due 20 Aug" over a small "7 days left".
+Then `<h3 class="sect">Children</h3>` (L715) + one card per child: `.av` initials · name · "{n} enrolments"
+· `›` (L716-722). **No stat trio.**
+> CORRECTED 21 Aug (B2-GUA-HOME). The previous row described the BUILT dashboard — hero, gold
+> `Review & sign` / `View payments` CTAs, a blue countdown chip and a Children/Outstanding/Enrolments stat
+> trio — none of which exists at L701-729. Cause: the row was written with the build's screenshots in recent
+> memory rather than from the block. Verified against the markup, the class CSS (`.todo-row` L349-357) and
+> the screen note (L2174).
 **gua-children L730** — child cards: avatar+name, "{school} · {n} enrolments", per-enrolment rows (Consent "Expires in 6 days" chip / Fees "HK$1,800 · due 20 Aug" / status "Confirmed · Team Aurora" / Next session), whole card → child; trailing **"Enrol a child"** gold card.
 **gua-child L750** — one child: identity, school, per-enrolment cards → gua-space.
 **gua-space L777** — the SAME scoped space; guardian mirror: L812 states Team/Sessions/Tracker/Results "composed identically to Ka-yan's own view… the guardian additions are **Fees and signing authority**." Fees tab: order lines, amount, receipt links.
