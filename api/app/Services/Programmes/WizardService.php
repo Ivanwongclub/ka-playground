@@ -98,26 +98,51 @@ class WizardService
      * the reference set, and inventing a programme end date is not this card's business. Tracked under
      * AUDIT-2 A-1 (add the field, or drop the column).
      */
+    /**
+     * The ONE writer that mirrors the wizard's basics timeline onto the `programmes` columns the rest of the
+     * platform reads. FIX-REFUND-SEED established it for `starts_on`; SEED-CONTRACT-1 (ruling 1, option A)
+     * widens it to the whole enrolment WINDOW, so the wizard owns the timeline end to end.
+     *
+     * WHY THE WINDOW HAD TO JOIN IT: `enrolment_closes_on` lived in the basics JSON while the storefront's
+     * open/closed chip was derived from the `enrolment_closes_at` COLUMN, with nothing mirroring between
+     * them — so the two drifted, and the demo storefront advertised "Enrolment open" for 82 days after its
+     * own published closing date. Same column, same source, no split.
+     *
+     * MIRROR, never merge: if the wizard no longer carries a date the column is CLEARED. Returning early
+     * instead would leave the previous value behind on a date removal — the exact staleness this writer
+     * exists to prevent, just harder to see. An absent start date then blocks publish, which is the point.
+     *
+     * FLAG (retirement card, ruling 1): ProgrammeController still validates and writes
+     * `enrolment_opens_at`/`enrolment_closes_at` directly on the admin create/update. Until that card lands,
+     * an admin's window write survives only until the next basics save, which will mirror over it. Acceptable
+     * now because no live admin surface writes basics (J-19 unbuilt); the retirement card closes it properly.
+     */
     private function syncBasicsDates(Programme $programme): void
     {
-        $startsOn = ((array) (WizardSection::query()
-            ->where('programme_id', $programme->id)->where('section_key', 'basics')->value('data') ?? []))['starts_on'] ?? null;
-        // MIRROR, never merge: if the wizard no longer carries a date the column is CLEARED. Returning early
-        // instead would leave the previous value behind on a date removal — the exact staleness this writer
-        // exists to prevent, just harder to see. An absent date then blocks publish, which is the point.
-        if (! is_string($startsOn) || trim($startsOn) === '') {
-            $programme->forceFill(['starts_at' => null])->save();
-
-            return;
-        }
+        $basics = (array) (WizardSection::query()
+            ->where('programme_id', $programme->id)->where('section_key', 'basics')->value('data') ?? []);
 
         // ->utc() is load-bearing, not decoration. Eloquent serialises a datetime with `Y-m-d H:i:s` and
         // DROPS the offset, so persisting an HKT-midnight Carbon directly stores '2027-02-01 00:00:00' and
         // Postgres reads it as UTC midnight — the refund boundary 8 hours late, in the family's favour and
         // still wrong. Converting first stores the correct instant (HKT midnight = 16:00 UTC the day before).
         // Caught by test_publish_seeds_od2_provisional_policy_with_real_windows.
+        $at = function (string $key, bool $endOfDay = false) use ($basics): ?\Illuminate\Support\Carbon {
+            $on = $basics[$key] ?? null;
+            if (! is_string($on) || trim($on) === '') {
+                return null;
+            }
+            $day = Carbon::parse($on, 'Asia/Hong_Kong');
+
+            return ($endOfDay ? $day->endOfDay() : $day->startOfDay())->utc();
+        };
+
         $programme->forceFill([
-            'starts_at' => Carbon::parse($startsOn, 'Asia/Hong_Kong')->startOfDay()->utc(),
+            'starts_at' => $at('starts_on'),
+            'enrolment_opens_at' => $at('enrolment_opens_on'),
+            // END of day: "enrolment closes on the 31st" means the 31st is still open. startOfDay would shut
+            // the storefront a full day early — the chip is derived as `now >= closes_at`.
+            'enrolment_closes_at' => $at('enrolment_closes_on', endOfDay: true),
         ])->save();
     }
 

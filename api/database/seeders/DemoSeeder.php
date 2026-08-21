@@ -83,12 +83,14 @@ class DemoSeeder extends Seeder
         // ── Academy staff ──
         $ops = $this->admin('ops@example.com', 'Demo Ops Admin', ['configuration', 'operations']);
         $fin1 = $this->admin('finance1@example.com', 'Demo Finance One', ['finance']);
-        $this->admin('finance2@example.com', 'Demo Finance Two', ['finance']); // BI-9 needs a 2nd finance officer
+        $fin2 = $this->admin('finance2@example.com', 'Demo Finance Two', ['finance']); // BI-9 needs a 2nd finance officer
         $this->admin('super@example.com', 'Demo Super Admin', ['super_admin']);
         $this->admin('audit@example.com', 'Demo Audit Reader', ['audit_read']);
 
-        // ── Published, marketing-complete, trilingual programme (catalogue not empty) ──
-        $programme = $this->publishProgramme($ops);
+        // ── Three published programmes, ALL through WizardService::publish (SEED-CONTRACT-1) ──
+        //    stem = running (enrolment closed) · ai = enrolment OPEN now · soon = not yet open.
+        $progs = $this->publishDemoProgrammes($ops);
+        $programme = $progs['stem'];
         $enrolments = app(EnrolmentService::class);
         $signing = app(ConsentSigningService::class);
         $orders = app(OrderService::class);
@@ -123,6 +125,16 @@ class DemoSeeder extends Seeder
         $this->sign($signing, $enrolments, $programme, $guardianA, $a['a6']);
         $this->confirmOrder($enrolments, $orders, $ops, $a['a6']);
 
+        // (a) A3 also enrols in the OPEN programme — the only child with 2+ enrolments, so the child hub's
+        // multi-enrolment list and the "which enrolment?" drill are exercised rather than assumed.
+        $this->enrol($enrolments, $progs['ai'], $guardianA, $a['a3']);
+
+        // (g) A7 — an ACTIVE link and NO enrolment. This is the S-READ-3 picker case and the register→link→
+        // enrol dead-end: the Marketplace child picker derives children from ENROLMENT rows, so before this
+        // child existed the bug was invisible in demo data. GET /my/children now has something to prove.
+        $a7 = $this->account('student.a7@example.com', 'Demo Student A7', 'student');
+        $this->activeGuardianLink($guardianA, $a7);
+
         // ── Family B — a SEPARATE guardian + child (the cross-family RLS boundary) ──
         $guardianB = $this->account('guardianB@example.com', 'Demo Guardian B', 'guardian');
         $childB = $this->account('student.b1@example.com', 'Demo Student B1', 'student');
@@ -152,10 +164,12 @@ class DemoSeeder extends Seeder
         $this->provisionSchool($ops);
         $teacher = User::query()->where('email', 'teacher@example.com')->first();
         $this->linkDemoMentor($programme, $teacher, $ops); // S-MENTOR-1: enable the flag + link teacher@ → Demo Team Alpha
+        // (c) + (f) — the full OD-23/OD-28 two-decision chain, end to end, through the real services.
+        $this->seedRegistrationChain($ops, $guardianA, $programme, $enrolments);
 
         // ── Populate the surfaces that would otherwise render EMPTY (demo-quality). All via
         //    REAL service flows; @example.com synthetic; the RLS fixtures (B1) stay untouched. ──
-        $this->seedSessions($programme, $ops, $teacher, $enrolments, $orders, $signing, $guardianB, $a['a3']); // attendance surfaces + RosterMark + a3 showcase booking
+        $this->seedSessions($programme, $ops, $teacher, $enrolments, $orders, $signing, $guardianB, $a['a3'], $fin1, $fin2); // attendance + RosterMark + a3 showcase booking + the settled payment (b)
         $this->seedMemberCommunity($ops, $member);                                           // Events / Directory / Profile / RSVP
         $this->seedAdminQueues($guardianA, $a['a2']);                                         // Withdrawals + onboarding/Approvals queue
         app(\App\Services\Enrolments\EnrolmentActivationService::class)->run();               // activate the session cohort (confirmed → active)
@@ -240,16 +254,18 @@ class DemoSeeder extends Seeder
         }
     }
 
-    private function publishProgramme(User $ops): Programme
+    /**
+     * The demo consent template — created ONCE and shared by every demo programme (one academy template,
+     * three programmes, which is how a real academy works). Trilingual and published, so
+     * preFlight's consent.language_versions_incomplete / language_drift checks are genuinely satisfied.
+     */
+    private function consentTemplate(User $ops): string
     {
-        $templates = app(ConsentTemplateService::class);
-        $programme = Programme::query()->firstOrCreate(
-            ['code' => 'DEMO-STEM'],
-            ['name_en' => 'Summer STEM 2026 (demo)', 'name_tc' => '2026 夏季 STEM（示範）', 'name_sc' => '2026 夏季 STEM（示范）', 'jurisdiction' => 'HK', 'status' => 'draft'],
-        );
-        if ($programme->status === 'published') {
-            return $programme;
+        $existing = DB::table('consent_templates')->where('name_en', 'STEM Consent (demo)')->value('id');
+        if ($existing !== null) {
+            return (string) $existing;
         }
+        $templates = app(ConsentTemplateService::class);
         $templateId = $templates->createTemplate(['name_en' => 'STEM Consent (demo)', 'name_tc' => 'STEM 同意書（示範）', 'name_sc' => 'STEM 同意书（示范）'], $ops);
         foreach ([
             'en' => '<p>[DEMO — placeholder, non-binding] I consent to {{student_name}} joining {{programme_name}} (fee {{fee_total}}). {{signature}} {{signature_date}}</p>',
@@ -259,21 +275,57 @@ class DemoSeeder extends Seeder
             $vid = $templates->draftVersion($templateId, $lang, $body, $ops);
             $templates->publishVersion($vid, $ops);
         }
+
+        return $templateId;
+    }
+
+    /**
+     * SEED-CONTRACT-1 — publish a demo programme THROUGH THE REAL CONTRACT.
+     *
+     * The seeder used to write `status = 'published'` directly. That single line was the cause of three
+     * separate incidents, because it skipped everything publish() does: the demo database carried
+     * 0 programme_versions, 0 programme_capacity rows and 0 withdrawal_policies, so the OD-31 seat counter,
+     * the D5 config snapshot and the OD-2 provisional refund policy — the habitat of the FIX-REFUND-SEED
+     * money defect — were never exercised by demo data at all.
+     *
+     * Now: real pre-flight, real version snapshot, real capacity seed, real provisional policy.
+     *
+     * `eligibility.capacity` is the load-bearing add. `capacity.unset` is only a WARNING, so publish()
+     * succeeds without it and still seeds no counter — routing through the contract would have bought three
+     * of its four artefacts. team_rules 2..6 keeps capacity.below_min_team clean.
+     *
+     * fee_items are inserted BEFORE publish because `fees.empty` is a hard pre-flight ERROR.
+     *
+     * @param  array<string, mixed>  $spec
+     */
+    private function publishProgramme(User $ops, string $templateId, array $spec): Programme
+    {
+        $programme = Programme::query()->firstOrCreate(
+            ['code' => $spec['code']],
+            ['name_en' => $spec['name_en'], 'name_tc' => $spec['name_tc'], 'name_sc' => $spec['name_sc'],
+                'jurisdiction' => 'HK', 'status' => 'draft'],
+        );
+        if ($programme->status === 'published') {
+            return $programme; // idempotent — and publish() itself refuses a non-draft
+        }
+
         foreach (['basics', 'eligibility', 'fees', 'consent', 'team_rules', 'role_library', 'tracker', 'learning', 'certification', 'marketing'] as $key) {
             $data = match ($key) {
                 'fees' => ['has_fee_items' => true],
                 'consent' => ['template_ref' => $templateId],
-                'basics' => ['enrolment_closes_on' => '2026-06-01', 'starts_on' => '2026-07-15'],
-                'team_rules' => ['formation_deadline_on' => '2026-06-20'],
-                // KAP-MKT-1: complete, trilingual marketing so the demo programme appears in the storefront
-                // (the catalogue's sole safety gate is marketingLanguageGaps === []; brand_color a valid hex).
-                'marketing' => [
-                    'tagline' => ['en' => 'Build. Pitch. Launch.', 'tc' => '構建・展示・啟航', 'sc' => '构建・展示・启航'],
-                    'category' => ['en' => 'STEM', 'tc' => 'STEM', 'sc' => 'STEM'],
-                    'age_range' => ['en' => 'Ages 10–14', 'tc' => '10 至 14 歲', 'sc' => '10 至 14 岁'],
-                    'duration' => ['en' => '6 weeks', 'tc' => '六週', 'sc' => '六周'],
-                    'brand_color' => '#6B4E71',
+                // The FULL OD-33 timeline. `enrolment_opens_on` is new (SEED-CONTRACT-1 ruling 1): the wizard
+                // now owns the whole window, and syncBasicsDates mirrors all three onto their columns.
+                'basics' => [
+                    'enrolment_opens_on' => $spec['opens_on'],
+                    'enrolment_closes_on' => $spec['closes_on'],
+                    'starts_on' => $spec['starts_on'],
                 ],
+                'team_rules' => ['formation_deadline_on' => $spec['formation_on'], 'min_team_size' => 2, 'max_size' => 6],
+                // OD-31: without this publish() seeds NO seat counter (capacity.unset is only a warning).
+                'eligibility' => ['capacity' => 30],
+                // KAP-MKT-1: complete, trilingual marketing so the programme appears in the storefront
+                // (the catalogue's sole safety gate is marketingLanguageGaps === []; brand_color a valid hex).
+                'marketing' => $spec['marketing'],
                 default => ['x' => 1],
             };
             DB::table('wizard_sections')->updateOrInsert(
@@ -283,10 +335,69 @@ class DemoSeeder extends Seeder
         }
         DB::table('fee_items')->insert(['id' => (string) Str::uuid7(), 'programme_id' => $programme->id,
             'name_en' => 'Programme fee', 'name_tc' => '課程費用', 'name_sc' => '课程费用',
-            'amount_minor' => 250000, 'currency' => 'HKD', 'created_at' => now(), 'updated_at' => now()]);
-        $programme->update(['status' => 'published']);
+            'amount_minor' => $spec['fee_minor'], 'currency' => 'HKD', 'created_at' => now(), 'updated_at' => now()]);
 
-        return $programme;
+        return app(\App\Services\Programmes\WizardService::class)->publish($programme, $ops);
+    }
+
+    /**
+     * The three demo programmes. Dates are RELATIVE to the seed run for the two forward-looking ones, so the
+     * demo cannot rot the way the sessions did (both "upcoming" sessions had drifted into the past by the
+     * time anyone looked). OD-33 ordering — enrolment close < formation deadline < start — holds for each.
+     *
+     * @return array{stem: Programme, ai: Programme, soon: Programme}
+     */
+    private function publishDemoProgrammes(User $ops): array
+    {
+        $templateId = $this->consentTemplate($ops);
+        $d = fn (int $days): string => now()->addDays($days)->toDateString();
+
+        return [
+            // RUNNING: started, enrolment long closed. Its window is now genuinely `closed` on the storefront
+            // — which is the point of the mirror: it used to advertise "Enrolment open" 82 days after its own
+            // published closing date, because closes_on lived in JSON and the chip was derived from a column
+            // nothing wrote.
+            'stem' => $this->publishProgramme($ops, $templateId, [
+                'code' => 'DEMO-STEM', 'name_en' => 'Summer STEM 2026 (demo)', 'name_tc' => '2026 夏季 STEM（示範）', 'name_sc' => '2026 夏季 STEM（示范）',
+                'opens_on' => '2026-05-01', 'closes_on' => '2026-06-01', 'formation_on' => '2026-06-20', 'starts_on' => '2026-07-15',
+                'fee_minor' => 250000,
+                'marketing' => [
+                    'tagline' => ['en' => 'Build. Pitch. Launch.', 'tc' => '構建・展示・啟航', 'sc' => '构建・展示・启航'],
+                    'category' => ['en' => 'STEM', 'tc' => 'STEM', 'sc' => 'STEM'],
+                    'age_range' => ['en' => 'Ages 10–14', 'tc' => '10 至 14 歲', 'sc' => '10 至 14 岁'],
+                    'duration' => ['en' => '6 weeks', 'tc' => '六週', 'sc' => '六周'],
+                    'brand_color' => '#6B4E71',
+                ],
+            ]),
+            // OPEN NOW: the enrolable programme. Without it the mirror would leave the catalogue with a single
+            // closed card, and the guardian-enrol path would go from unexercised to UNEXERCISABLE.
+            'ai' => $this->publishProgramme($ops, $templateId, [
+                'code' => 'DEMO-AI', 'name_en' => 'AI Discovery (demo)', 'name_tc' => 'AI 探索（示範）', 'name_sc' => 'AI 探索（示范）',
+                'opens_on' => $d(-30), 'closes_on' => $d(70), 'formation_on' => $d(85), 'starts_on' => $d(100),
+                'fee_minor' => 180000,
+                'marketing' => [
+                    'tagline' => ['en' => 'Make something that thinks.', 'tc' => '打造會思考的作品', 'sc' => '打造会思考的作品'],
+                    'category' => ['en' => 'AI', 'tc' => '人工智能', 'sc' => '人工智能'],
+                    'age_range' => ['en' => 'Ages 12–16', 'tc' => '12 至 16 歲', 'sc' => '12 至 16 岁'],
+                    'duration' => ['en' => '8 weeks', 'tc' => '八週', 'sc' => '八周'],
+                    'brand_color' => '#3E5C76',
+                ],
+            ]),
+            // COMING SOON: enrolment has not opened yet. Makes B9's "Coming soon" filter demonstrable — the
+            // filter needs enrolment_opens_at in the FUTURE, which S-READ-3 now serves on the catalogue read.
+            'soon' => $this->publishProgramme($ops, $templateId, [
+                'code' => 'DEMO-SOON', 'name_en' => 'Design Lab 2027 (demo)', 'name_tc' => '2027 設計實驗室（示範）', 'name_sc' => '2027 设计实验室（示范）',
+                'opens_on' => $d(30), 'closes_on' => $d(90), 'formation_on' => $d(105), 'starts_on' => $d(120),
+                'fee_minor' => 210000,
+                'marketing' => [
+                    'tagline' => ['en' => 'Design for someone real.', 'tc' => '為真實的人而設計', 'sc' => '为真实的人而设计'],
+                    'category' => ['en' => 'Design', 'tc' => '設計', 'sc' => '设计'],
+                    'age_range' => ['en' => 'Ages 11–15', 'tc' => '11 至 15 歲', 'sc' => '11 至 15 岁'],
+                    'duration' => ['en' => '10 weeks', 'tc' => '十週', 'sc' => '十周'],
+                    'brand_color' => '#5C6E58',
+                ],
+            ]),
+        ];
     }
 
     private function enrol(EnrolmentService $enrolments, Programme $programme, User $guardian, User $student): void
@@ -342,6 +453,121 @@ class DemoSeeder extends Seeder
         imagedestroy($img);
         $evidence = new \Illuminate\Http\UploadedFile($tmp, 'evidence.jpg', 'image/jpeg', null, true);
         app(ManualPaymentService::class)->record($order->id, (int) $order->total_amount_minor, $order->currency, [$evidence], 'Bank transfer received (demo)', $fin1);
+    }
+
+    /**
+     * SEED-CONTRACT-1 (c)+(f) — the two-decision chain, walked end to end by real services.
+     *
+     * OD-23/OD-28 say approving a PERSON is not approving a RELATIONSHIP: two decisions, separately recorded,
+     * separately audited. Demo data never walked it, so two consequences were invisible:
+     *   · no enrolled child had a school_link, so `school_name` was NULL on every enrolment read and the
+     *     school chip on the child hub / enrolment space could not render at all;
+     *   · every guardian_link was `active`, so the nameless pending row S-READ-3 serves had no example.
+     *
+     * C1 — registers naming the school → ops approves the PERSON (this creates the ACTIVE school_link and a
+     *      PENDING guardian link, never an active one) → ops approves the LINK → enrolled. School-linked.
+     * C2 — same path, and the link is deliberately LEFT `pending_approval`. Nameless in /my/children by
+     *      design (ruling F-1), and a live row in the guardian-link review queue.
+     */
+    private function seedRegistrationChain(User $ops, User $guardianA, Programme $programme, EnrolmentService $enrolments): void
+    {
+        $school = School::query()->where('name_en', 'Demo Academy')->first();
+        if ($school === null || DB::table('registration_requests')->where('applicant_email', 'student.c1@example.com')->exists()) {
+            return; // needs the school; idempotent
+        }
+        $registration = app(\App\Services\Identity\RegistrationService::class);
+        $approvals = app(\App\Services\Identity\RegistrationApprovalService::class);
+        $linkage = app(\App\Services\Identity\LinkageService::class);
+
+        foreach ([['c1', 'Demo Student C1', true], ['c2', 'Demo Student C2', false]] as [$key, $name, $approveTheLink]) {
+            $email = "student.{$key}@example.com";
+            $this->assertSynthetic($email);
+            // The REAL public submission, honeypot and all: `form_nonce` is the encrypted issue-time the form
+            // mints, and looksAutomated() drops anything filled in under 2s or over an hour. 30s is a human.
+            $registration->submit([
+                'kind' => 'student', 'applicant_name' => $name, 'applicant_email' => $email,
+                'preferred_language' => 'en', 'school_id' => $school->id,
+                'counterpart_email' => $guardianA->email, 'counterpart_name' => $guardianA->name,
+                'form_nonce' => \Illuminate\Support\Facades\Crypt::encryptString((string) now()->subSeconds(30)->timestamp),
+            ]);
+            $requestId = DB::table('registration_requests')->where('applicant_email', $email)->value('id');
+
+            // DECISION 1 — the person. Creates the account + the ACTIVE school_link, and (via
+            // linkCounterpartAtApproval) a PENDING guardian link. Never an active one.
+            $student = $approvals->approve((string) $requestId, $ops);
+            $this->activateSeededAccount($student);
+
+            $linkId = DB::table('guardian_links')->where('student_id', $student->id)
+                ->where('guardian_id', $guardianA->id)->value('id');
+            if ($linkId === null || ! $approveTheLink) {
+                continue; // C2 stops here — the pending link IS the fixture
+            }
+            // DECISION 2 — the relationship. Separately recorded, separately audited.
+            $linkage->approveLink((string) $linkId, $ops);
+            $this->enrol($enrolments, $programme, $guardianA, $student);
+        }
+    }
+
+    /**
+     * A registration-approved account is minted PENDING ACTIVATION (it owns its own address, OD-29), so it
+     * cannot log in. The demo needs these two to be loginable like every other seeded account, so the
+     * password and verification are set the same way account() does — the ONLY divergence from the real
+     * flow, and it is a demo-login convenience, not a state the platform cannot reach (activation reaches it).
+     */
+    private function activateSeededAccount(User $student): void
+    {
+        $student->forceFill([
+            'password' => Hash::make($this->password),
+            'email_verified_at' => $student->email_verified_at ?? now(),
+        ])->save();
+    }
+
+    /**
+     * Record AND confirm a manual payment — the complete BI-9 four-eyes cycle, which no demo record had ever
+     * completed (0 paid orders, 0 receipts before this).
+     *
+     * `confirm` dispatches FinalizeManualPayment (order → paid + gapless receipt) afterCommit, and this
+     * project runs QUEUE_CONNECTION=database, so in a seeder it would sit in the queue and the demo would
+     * still show no receipt. Running it inline is safe: the job returns early unless the order is still
+     * `issued`, so the queued copy is a harmless no-op.
+     */
+    private function settleManualPayment(object $order, User $fin1, User $fin2): void
+    {
+        $this->recordManualPayment($order, $fin1);
+        $payment = DB::table('payments')->where('order_id', $order->id)
+            ->where('status', 'pending_confirmation')->first();
+        if ($payment === null) {
+            return; // already settled on an earlier run
+        }
+
+        // BI-10 gates confirmation on the evidence being scan-CLEAN, and the scan is queued
+        // (QUEUE_CONNECTION=database), so the seeder must run it inline or confirm() refuses. Running the
+        // real ScanUpload job is the point — this seeds a payment that passed the actual scan, not one that
+        // sidestepped it.
+        $evidence = DB::table('payment_evidence')->where('payment_id', $payment->id)->pluck('upload_id');
+        foreach ($evidence as $uploadId) {
+            try {
+                dispatch_sync(new \App\Jobs\ScanUpload($uploadId));
+            } catch (\Throwable $e) {
+                $this->command->warn("evidence scan unavailable: {$e->getMessage()}");
+            }
+        }
+        // Degrade, never abort — the same contract seedBanner already follows. An environment with no
+        // ClamAV (the kap-seed Cloud Run job; a laptop with the sidecar stopped) still gets a complete seed,
+        // just without the settled-payment fixture. BI-10 is never bypassed to manufacture demo data.
+        $unclean = DB::table('payment_evidence as pe')->join('uploads as u', 'u.id', '=', 'pe.upload_id')
+            ->where('pe.payment_id', $payment->id)->where('u.status', '<>', 'clean')->count();
+        if ($unclean > 0) {
+            $this->command->warn('settled-payment fixture skipped: evidence did not reach scan-clean (BI-10) — no ClamAV in this environment.');
+
+            return;
+        }
+
+        app(ManualPaymentService::class)->confirm($payment->id, $fin2); // BI-9: recorder ≠ confirmer
+        // confirm() dispatches FinalizeManualPayment afterCommit onto the DATABASE queue, so in a seeder it
+        // would sit there and the demo would still show no receipt. Inline is safe: the job returns early
+        // unless the order is still `issued`, so the queued copy is a harmless no-op.
+        dispatch_sync(new \App\Jobs\FinalizeManualPayment($payment->id));
     }
 
     /** A forming team via the REAL FormationService — renders on /my/team (member_count ≥ 1). */
@@ -525,7 +751,7 @@ class DemoSeeder extends Seeder
      * Service). A 3-child cohort under guardian B (leaving B1, the RLS fixture, in-pool) is taken to
      * 'confirmed', booked into a COMPLETED session (mixed marks) + an UPCOMING session.
      */
-    private function seedSessions(Programme $programme, User $ops, ?User $teacher, EnrolmentService $enrolments, OrderService $orders, ConsentSigningService $signing, User $guardianB, User $showcase): void
+    private function seedSessions(Programme $programme, User $ops, ?User $teacher, EnrolmentService $enrolments, OrderService $orders, ConsentSigningService $signing, User $guardianB, User $showcase, User $fin1, User $fin2): void
     {
         if ($teacher === null || DB::table('programme_sessions')->where('programme_id', $programme->id)->exists()) {
             return; // needs a mentor; idempotent
@@ -540,7 +766,15 @@ class DemoSeeder extends Seeder
             $this->activeGuardianLink($guardianB, $s);
             $this->enrol($enrolments, $programme, $guardianB, $s);
             $this->sign($signing, $enrolments, $programme, $guardianB, $s);
-            $this->confirmOrder($enrolments, $orders, $ops, $s); // confirmed WITH its order issued — OD-43 (a live enrolment must carry its money artifact); bookable
+            $order = $this->confirmOrder($enrolments, $orders, $ops, $s); // confirmed WITH its order issued — OD-43 (a live enrolment must carry its money artifact); bookable
+            // (b) SEED-CONTRACT-1 — the FIRST cohort child's payment is taken all the way through BI-9:
+            // finance1 records, finance2 confirms. That yields the demo's only PAID order and its only
+            // gapless receipt (BI-2), which the family receipt line and the finance surfaces both need.
+            // a3's payment is deliberately left at pending_confirmation (the live four-eyes moment) and a6's
+            // order stays issued-unpaid (the guardian's payable task) — both are untouched here.
+            if ($k === 'b2') {
+                $this->settleManualPayment($order, $fin1, $fin2);
+            }
             $cohort[] = $s;
         }
 
@@ -558,10 +792,14 @@ class DemoSeeder extends Seeder
         $attendance->mark($s1, $cohort[1]->id, 'no_show', $teacher);
         $sessions->transition($s1, 'completed', $ops);
 
-        // UPCOMING session (bookable) — shows in My Sessions / My Child's Sessions.
+        // UPCOMING session (bookable) — shows in My Sessions / My Child's Sessions, and is what makes the
+        // student-home NEXT UP card render at all.
+        // +21d, not +5d (SEED-CONTRACT-1 (d)): at +5d BOTH demo sessions had drifted into the PAST within a
+        // week of seeding and were auto-completed, so NEXT UP was empty and looked like a dead branch when it
+        // was really a stale fixture. Three weeks keeps the demo honest for a realistic review window.
         $s2 = $sessions->create($programme->id, [
             'title' => 'STEM Workshop 2', 'capacity' => 12, 'mentor_id' => $teacher->id,
-            'starts_at' => now()->addDays(5)->toIso8601String(), 'ends_at' => now()->addDays(5)->addHours(2)->toIso8601String(),
+            'starts_at' => now()->addDays(21)->toIso8601String(), 'ends_at' => now()->addDays(21)->addHours(2)->toIso8601String(),
         ], $ops);
         $sessions->transition($s2, 'published', $ops);
         foreach ($cohort as $s) {
