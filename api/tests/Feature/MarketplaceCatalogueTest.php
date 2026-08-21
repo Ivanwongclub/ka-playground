@@ -138,7 +138,11 @@ class MarketplaceCatalogueTest extends TestCase
         $this->assertEqualsCanonicalizing(
             // KAP-MKT-1: +status (open/closed, derived — no capacity), +banner_url (a public marketing URL, no
             // PII). Still the marketing + programme-identity allowlist; nothing personal / count / capacity.
-            ['id', 'code', 'name_en', 'name_tc', 'name_sc', 'phase', 'starts_on', 'enrolment_closes_on', 'tagline', 'category', 'age_range', 'duration', 'brand_color', 'status', 'banner_url'],
+            // S-READ-3: +enrolment_opens_at (the window date the `status` above is derived from — same source,
+            // so they cannot contradict). This assertion is the ANONYMOUS payload contract, and it is exactly
+            // why fee_total_minor is absent from it: the storefront price is served to authenticated family
+            // callers only (F-3), which is what keeps payment_links.single_reader TRUE and not merely green.
+            ['id', 'code', 'name_en', 'name_tc', 'name_sc', 'phase', 'starts_on', 'enrolment_opens_at', 'enrolment_closes_on', 'tagline', 'category', 'age_range', 'duration', 'brand_color', 'status', 'banner_url'],
             array_keys($detail->json()),
         );
     }

@@ -106,6 +106,12 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->middleware(['role:guardian', 'throttle:pairing']);
     Route::post('/my/guardian-requests/{id}/confirm', [LinkController::class, 'confirm'])->middleware('role:student');
     Route::post('/my/link-requests', [LinkController::class, 'requestByEmail'])->middleware('role:guardian');
+    // S-READ-3 item 1 — the two family LINK reads (self-reads; guardian_links_read already carries an arm for
+    // each side). NAMING FLAG, not resolved here: the API's other guardian-facing routes use the /my/students
+    // noun (see /my/students/{studentId}/consent-status and /sessions below); the card and the client route
+    // both say /my/children. Renames are their own card.
+    Route::get('/my/children', [\App\Http\Controllers\MyLinksController::class, 'children'])->middleware('role:guardian');
+    Route::get('/my/guardians', [\App\Http\Controllers\MyLinksController::class, 'guardians'])->middleware('role:student');
     Route::post('/school/guardian-links', [LinkController::class, 'schoolVouch'])->middleware('role:school_admin');
     Route::middleware('role:school_admin')->group(function (): void {
         Route::get('/school/students', [SchoolAdminController::class, 'students']);

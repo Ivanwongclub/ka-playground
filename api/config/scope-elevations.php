@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\MarketplaceController;
+use App\Http\Controllers\MyLinksController;
+use App\Services\Authz\AuthorityGrantService;
+
 // The asSystem() allowlist (Leo, S02A gate review). Every sanctioned elevation
 // is declared here: call site => the reason it exists. asSystem() REFUSES any
 // call site not listed (runtime LogicException) and audits every elevation.
@@ -149,6 +153,18 @@ return [
     'App\Http\Controllers\OrdersController::index' => 'Order attribution (S-UX-AUDIT-1 AD-2): resolve student DISPLAY NAME only for the student_ids already present in the caller-RLS order rows, so a finance-only actor (users_read nulls student rows for them) sees whose order they settle. Display name ONLY — no email, no DOB, no id beyond the payload\'s student_id. Resolved AFTER the caller-RLS fetch, one narrow call per read.',
     'App\Http\Controllers\ManualPaymentController::index' => 'Order attribution (S-UX-AUDIT-1 AD-2): resolve student DISPLAY NAME only for the student_ids already present in the caller-RLS order rows, so a finance-only actor (users_read nulls student rows for them) sees whose order they settle. Display name ONLY — no email, no DOB, no id beyond the payload\'s student_id. Resolved AFTER the caller-RLS fetch, one narrow call per read.',
 
+    // S-READ-3 (F-2): the STUDENT side of the family link reads. users_read has no arm admitting a student to
+    // any other user row, so an active guardian's DISPLAY NAME is resolved here in the AD-2 shape — name only,
+    // after the caller-RLS fetch, for guardian_ids already in that payload. Non-active links stay nameless
+    // (F-1 mirrored), so this never resolves a relationship the academy has not yet approved.
+    'App\Http\Controllers\MyLinksController::guardians' => MyLinksController::REASON,
+
+    // S-READ-3 (F-3/F-4): the storefront's published price. fee_items is RLS finance-only and the wizard's fees
+    // section carries no amounts, so there is no unelevated path to it; fee_items_read is NOT touched. Bounded
+    // to ONE query per request for the already-filtered listable ids, and only for an authenticated family
+    // caller — one audit row per authenticated marketplace load, none at all for anonymous traffic.
+    'App\Http\Controllers\MarketplaceController::withFeeTotals' => MarketplaceController::FEE_REASON,
+
     // R1-F1 (item 4): the refund surface (finance) shows WHY a refund exists — its originating withdrawal.
     // finance is NOT in wr_read, so display-only origin fields are resolved via this narrow elevation.
     'App\Http\Controllers\RefundController::index' => 'Refund origin attribution (R1-F1 item 4): resolve the originating withdrawal\'s DISPLAY fields only — reason, requested_by name, decided_by name — for the withdrawal_request_ids ALREADY in the caller-RLS refund payload, so a finance officer (finance is NOT in wr_read) sees why the refund exists. Display fields ONLY — no student/guardian id, no enrolment, nothing beyond these three. Resolved AFTER the caller-RLS refund fetch, one narrow call.',
@@ -157,7 +173,7 @@ return [
     // tables system-write-only. Writing the delegation map (which delegable capability a school/programme holds)
     // is platform-exclusive: A-1 marks capabilities.grant + configuration.manage never-delegable, so an edge
     // operator can never write it. Reasons reference the service constants verbatim (asSystem byte-matches).
-    'App\Services\Authz\AuthorityGrantService::grant' => \App\Services\Authz\AuthorityGrantService::REASON_GRANT,
-    'App\Services\Authz\AuthorityGrantService::revoke' => \App\Services\Authz\AuthorityGrantService::REASON_REVOKE,
-    'App\Services\Authz\AuthorityGrantService::setOverride' => \App\Services\Authz\AuthorityGrantService::REASON_OVERRIDE,
+    'App\Services\Authz\AuthorityGrantService::grant' => AuthorityGrantService::REASON_GRANT,
+    'App\Services\Authz\AuthorityGrantService::revoke' => AuthorityGrantService::REASON_REVOKE,
+    'App\Services\Authz\AuthorityGrantService::setOverride' => AuthorityGrantService::REASON_OVERRIDE,
 ];

@@ -115,8 +115,12 @@ return new class extends Migration
         DB::unprepared("CREATE POLICY team_categories_update ON team_categories FOR UPDATE USING ({$system} OR {$config}) WITH CHECK ({$system} OR {$config})");
         DB::unprepared("CREATE POLICY team_categories_delete ON team_categories FOR DELETE USING ({$system})");
 
-        // fee_items: commercial terms — academy staff only until the client
-        // question resolves the S04A consumer clause (card plan)
+        // fee_items: commercial terms — academy staff only. The parked S04A consumer clause is RESOLVED
+        // (owner ruling, S-READ-3, 2026-08-22): a PUBLISHED programme's fee is family-visible pre-enrolment.
+        // That ruling is served WITHOUT widening this policy — MarketplaceController sums the published
+        // price under a registered, once-per-request elevation for an authenticated family caller, so
+        // fee_items stays finance-only at the row level and no anonymous reader ever reaches money data
+        // (payment_links.single_reader). Comment-only edit to an already-run migration: no schema change.
         DB::unprepared('ALTER TABLE fee_items ENABLE ROW LEVEL SECURITY');
         DB::unprepared('ALTER TABLE fee_items FORCE ROW LEVEL SECURITY');
         DB::unprepared("CREATE POLICY fee_items_read ON fee_items FOR SELECT USING ({$system} OR {$finance})");
