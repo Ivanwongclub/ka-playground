@@ -48,6 +48,22 @@ export function formatHktDate(v: string | null | undefined, locale: string): str
 }
 
 /**
+ * Day + month only, HKT — "21 Aug". The deadline treatment on an action-required row (B2-GUA-HOME) needs
+ * the SHORT form the prototype uses: a full medium date ("Aug 21, 2026") squeezes the row title on a 390px
+ * phone hard enough to break a money value mid-number. Year-less by design: these deadlines are days away.
+ */
+export function formatHktDayMonth(v: string | null | undefined, locale: string): string {
+  if (!v) return '\u2014';
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(v.trim());
+  const d = dateOnly ? new Date(`${v.trim()}T00:00:00`) : parse(v);
+  if (Number.isNaN(d.getTime())) return '\u2014';
+  return new Intl.DateTimeFormat(
+    locale,
+    dateOnly ? { day: 'numeric', month: 'short' } : { timeZone: 'Asia/Hong_Kong', day: 'numeric', month: 'short' },
+  ).format(d);
+}
+
+/**
  * Sort key for a pg timestamptz or bare date (ms since epoch), reusing the same `parse` normaliser as the
  * formatters above (NOT a hand-rolled Date.parse). null / undefined / unparseable → +Infinity so a missing
  * deadline sorts LAST under ascending order. Display-only ordering (P0-SAFE-2, Proposal Part D-b) — never

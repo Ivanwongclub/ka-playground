@@ -662,15 +662,13 @@
     "stageLaunch": "启动"
   },
   "guardianHome": {
-    "subtitle": "您家庭的待办事项",
-    "allClear": "目前没有需要您处理的事项",
-    "allClearDetail": "暂无同意书待签署，亦无款项到期。",
-    "consentCta": "查看并签署",
-    "paymentCta": "查看付款",
-    "viewAllConsents": "查看所有同意书请求（{{count}}）",
-    "viewAllPayments": "查看所有付款（{{count}}）",
-    "children": "子女",
-    "outstanding": "未付款项"
+    "eyebrow": "家长",
+    "actionRequired": "需要处理",
+    "signConsentFor": "为 {{child}} 签署同意书",
+    "payFor": "为 {{child}} 缴付 {{amount}}",
+    "expiresOn": "{{date}} 到期",
+    "dueOn": "{{date}} 到期",
+    "children": "子女"
   },
   "order": {
     "lines": {

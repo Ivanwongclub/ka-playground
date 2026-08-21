@@ -1,36 +1,82 @@
-// R1-G — the GUARDIAN persona home (the PAYING persona). Action-first, same weight/primitives as
-// StudentHome (HeroBanner/TaskCard/StatCard/EmptyState). Routed by Dashboard for the guardian-exclusive
-// predicate (consent.sign — capability_forbidden bars it from every capability group). Reads ONLY: three
-// PARALLEL client reads (useResource), no aggregate endpoint, no server change. Money appears here for the
-// first time (formatMoney; the only computation is the client-side outstanding SUM). Consent is the
-// guardian's OWN legal act — framed as a task, CTA links to the ceremony, never alters it.
-import { Col, Row, Skeleton } from 'antd';
-import { CreditCard, FileSignature, GraduationCap, Users } from 'lucide-react';
+// B2-GUA-HOME — the GUARDIAN persona home, composed to the prototype's `gua-home` (L701-729): an
+// ACTION-REQUIRED LIST, nothing else. The file's own screen note (L2174) states the intent — "bold titles,
+// bold deadlines — expires_at and payment_due_at as the loudest thing on the page" — which is why the hero,
+// the gold CTAs and the stat trio the previous composition carried are all GONE (ruled B2, and Doc 2 §2's
+// row was corrected in the same card: it had been describing this build rather than the block).
+//
+// CLIENT ONLY: no server change, no new read. THREE reads, unchanged in count (3 → 3) because every one is
+// load-bearing — unlike B1, S-READ-2 cannot retire any of them:
+//   • GET /api/consent-requests — the ONLY source of the consent request ID, which is the ceremony address
+//     (/consents/{id}). The enrolment list's consent_status/consent_expires_at can DRESS a row but cannot
+//     ADDRESS it; dropping this read would downgrade the drill to the list.
+//   • GET /api/orders           — amounts, due dates, payer party. Deliberately absent from the enrolment
+//     read (P-3: a student must never receive an amount), so it cannot move there.
+//   • GET /api/enrolments       — the Children section (student_name grouped by student_id).
+//
+// Action-golds: 0. The block has no buttons at all — each row IS the affordance. Guardian amounts are
+// permitted (P-3 is student-only) and the payment row carries its amount in the row TITLE, as the block does.
+import { ChevronRight, CreditCard, FileSignature } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import type { ReactNode } from 'react';
+import { Skeleton, Typography } from 'antd';
 import type { KaLocale } from '../i18n';
 import { useIdentity } from '../auth/identity';
-import { asset } from '../assets';
 import { personName } from '../display/names';
 import { formatMoney } from '../display/money';
-import { formatHkt } from '../display/date';
-import {
-  HeroBanner, TaskCard, StatCard, EmptyState, SubPanel, useResource,
-  urgencyLevel, urgencyDays, urgencyLabel, URGENCY,
-} from '@/ds2';
+import { formatHktDayMonth } from '../display/date';
+import { useResource, urgencyLevel, urgencyDays, urgencyLabel, URGENCY } from '@/ds2';
+import type { UrgencyLevel } from '@/ds2';
 
 interface ConsentRow { id: string; status: string; expires_at: string | null; student_name: string | null; programme_name_en: string | null; programme_name_tc: string | null; programme_name_sc: string | null }
 interface OrderRow { id: string; student_id: number; payer_party: string; status: string; total_amount_minor: number; currency: string; payment_due_at: string | null; student_name: string | null; programme_name_en: string; programme_name_tc: string; programme_name_sc: string }
-interface EnrolRow { student_id: number }
+interface EnrolRow { student_id: number; student_name: string | null }
 
 const OPEN_CONSENT = new Set(['sent', 'viewed']);
-const CONSENT_CAP = 3;
-const PAYMENT_CAP = 2;
 
-// The API timestamp normaliser (mirrors display/date + urgency) so soonest-first sorts honestly.
 const ts = (s: string | null): number => (s ? Date.parse(s.trim().replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00')) : Number.POSITIVE_INFINITY);
 function progName(r: { programme_name_en: string | null; programme_name_tc: string | null; programme_name_sc: string | null }, locale: KaLocale): string {
   return (locale === 'zh-TC' ? r.programme_name_tc : locale === 'zh-SC' ? r.programme_name_sc : r.programme_name_en) || r.programme_name_en || '';
+}
+function initials(name: string): string {
+  const parts = name.split(/\s+/).filter(Boolean);
+  return (parts.length >= 2 ? parts[0][0] + parts[1][0] : name.slice(0, 2)).toUpperCase();
+}
+
+/** The deadline block: the loud fact bold and coloured by URGENCY LEVEL, the other fact small beneath it.
+ *  The block hardcodes var(--warn) because its demo deadlines are always imminent; we colour by the built
+ *  ladder instead (soon = pending blue → due = warning → overdue = danger, W1-GROUND), so a deadline sixty
+ *  days out does not shout. `none` keeps the default text colour — still bold, still the loudest thing. */
+const LEVEL_COLOR: Record<UrgencyLevel, string> = {
+  none: 'var(--ka-fg)', soon: 'var(--ka-pending)', due: 'var(--ka-warning)', overdue: 'var(--ka-danger)',
+};
+function Deadline({ loud, quiet, level }: { loud: string; quiet: string; level: UrgencyLevel }) {
+  return (
+    <div style={{ textAlign: 'right', flex: 'none' }}>
+      <b style={{ display: 'block', fontSize: 15.5, fontWeight: 700, color: LEVEL_COLOR[level] }}>{loud}</b>
+      <small style={{ fontSize: 11, color: 'var(--ka-muted-fg)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{quiet}</small>
+    </div>
+  );
+}
+
+/** One `.todo-row`: glyph · title (the subject) · who · deadline · chevron. The WHOLE ROW is one Link —
+ *  the block has no inner controls, so nothing nests and the GUA-FIX objection does not arise. */
+function TodoRow({ to, icon, title, who, deadline }: { to: string; icon: ReactNode; title: string; who: string; deadline: ReactNode }) {
+  return (
+    <Link to={to} style={{ color: 'inherit', display: 'block' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 0', borderBottom: '1px solid var(--ka-border)' }}>
+        <span style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--ka-muted)', display: 'grid', placeItems: 'center', flex: 'none', color: 'var(--ka-muted-fg)' }}>{icon}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* keep-all: the title carries a money value ("Pay HK$2,500.00 for …") and a number split across
+              two lines is unreadable. Wraps at spaces, never inside the amount. */}
+          <Typography.Text strong style={{ display: 'block', fontSize: 16.5, wordBreak: 'keep-all' }}>{title}</Typography.Text>
+          <Typography.Text type="secondary" style={{ fontSize: 13 }}>{who}</Typography.Text>
+        </div>
+        {deadline}
+        <ChevronRight size={16} aria-hidden style={{ color: 'var(--ka-muted-fg)', flex: 'none' }} />
+      </div>
+    </Link>
+  );
 }
 
 export function GuardianHome() {
@@ -38,119 +84,104 @@ export function GuardianHome() {
   const locale = i18n.language as KaLocale;
   const { identity } = useIdentity();
 
-  // Three PARALLEL reads — each zone renders its own Skeleton while its source loads.
   const consents = useResource<{ data: ConsentRow[] }>('/api/consent-requests');
   const orders = useResource<{ data: OrderRow[] }>('/api/orders');
   const enrolments = useResource<{ data: EnrolRow[] }>('/api/enrolments');
 
-  // Pending consent — the guardian's own signature. Soonest deadline first; capped, with a view-all overflow.
+  // Soonest deadline first. NO cap: the block renders the full list, bounded by family size (the previous
+  // CONSENT_CAP/PAYMENT_CAP + "view all" overflow links were a build invention and went with the trio).
   const openConsents = (consents.data?.data ?? [])
     .filter((c) => OPEN_CONSENT.has(c.status))
     .sort((a, b) => ts(a.expires_at) - ts(b.expires_at));
-
-  // Payable orders — issued (unpaid) AND family-payable (school-payer orders are the school's to settle).
+  // Family-payable only — a school-settled order is the school's to remit, never the guardian's task.
   const payable = (orders.data?.data ?? [])
     .filter((o) => o.status === 'issued' && (o.payer_party === 'guardian' || o.payer_party === 'student'))
     .sort((a, b) => ts(a.payment_due_at) - ts(b.payment_due_at));
-  const outstanding = payable.reduce((sum, o) => sum + o.total_amount_minor, 0);
-  const currency = payable[0]?.currency ?? 'HKD';
 
-  const childCount = new Set((enrolments.data?.data ?? []).map((e) => e.student_id)).size;
-  const enrolCount = (enrolments.data?.data ?? []).length;
+  // The Children section: one card per child, from the enrolments the guardian can already read.
+  const byChild = new Map<number, { name: string; count: number }>();
+  for (const e of enrolments.data?.data ?? []) {
+    const prev = byChild.get(e.student_id);
+    byChild.set(e.student_id, { name: e.student_name ?? '', count: (prev?.count ?? 0) + 1 });
+  }
+  const children = [...byChild.entries()].sort((a, b) => a[1].name.localeCompare(b[1].name));
 
-  const loadingWork = consents.loading || orders.loading;
-  const nothingPending = !loadingWork && openConsents.length === 0 && payable.length === 0;
-  // Hoisted out of JSX so the overflow test carries no `>` (the i18n-check JSX heuristic, as Dashboard does).
-  const moreConsents = openConsents.length > CONSENT_CAP;
-  const morePayments = payable.length > PAYMENT_CAP;
-
-  // AL-2: consent + payment TaskCards share ONE grid so an odd last card can span full width (no dead
-  // half-column). Consents first (the guardian's own legal act), then the payable orders.
-  const pendingCards = [
-    ...openConsents.slice(0, CONSENT_CAP).map((c) => {
-      const lvl = urgencyLevel(c.expires_at, URGENCY.consent);
-      return {
-        key: `c-${c.id}`,
-        render: () => (
-          <TaskCard
-            icon={<FileSignature size={18} />}
-            title={personName(c.student_name)}
-            context={progName(c, locale)}
-            urgency={lvl}
-            urgencyLabel={lvl !== 'none' ? urgencyLabel(lvl, urgencyDays(c.expires_at), t) : undefined}
-            cta={{ label: t('guardianHome.consentCta'), to: `/consents/${c.id}` }}
-          />
-        ),
-      };
-    }),
-    ...payable.slice(0, PAYMENT_CAP).map((o) => {
-      const lvl = urgencyLevel(o.payment_due_at, URGENCY.payment);
-      // AD-4: the guardian payment card now names the child — "Demo Student A6 · Summer STEM 2026".
-      const who = o.student_name ? `${personName(o.student_name)} · ${progName(o, locale)}` : progName(o, locale);
-      return {
-        key: `p-${o.id}`,
-        render: () => (
-          <TaskCard
-            icon={<CreditCard size={18} />}
-            title={who}
-            context={`${formatMoney(o.total_amount_minor, o.currency, locale)}${o.payment_due_at ? ` · ${t('selfService.due')} ${formatHkt(o.payment_due_at, locale)}` : ''}`}
-            urgency={lvl}
-            urgencyLabel={lvl !== 'none' ? urgencyLabel(lvl, urgencyDays(o.payment_due_at), t) : undefined}
-            cta={{ label: t('guardianHome.paymentCta'), to: '/my/payments' }}
-          />
-        ),
-      };
-    }),
-  ];
+  const needCount = openConsents.length + payable.length;
+  const workLoading = consents.loading || orders.loading;
 
   return (
-    <div style={{ maxWidth: 1100 }} data-density="product">
-      <HeroBanner image={{ src: asset('auth/featured-sc5.jpg'), alt: '' }} height="band">
-        <div style={{ fontFamily: 'var(--ka-font-display)', fontWeight: 700, fontSize: 24 }}>{t('dashboard.greeting', { name: identity?.name ?? '' })}</div>
-        <div style={{ fontSize: 13 }}>{t('guardianHome.subtitle')}</div>
-      </HeroBanner>
+    <div data-density="product">
+      <div style={{ fontSize: 12, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 500, color: 'var(--ka-muted-fg)' }}>
+        {t('guardianHome.eyebrow')}
+      </div>
+      <h2 style={{ fontFamily: 'var(--ka-font-display)', fontWeight: 700, fontSize: 31, lineHeight: 1.15, margin: '4px 0 24px' }}>
+        {personName(identity?.name ?? '')}
+      </h2>
 
-      {/* PENDING WORK — the family's outstanding actions, front and centre. */}
-      {loadingWork ? (
-        <Row gutter={[16, 16]} style={{ marginTop: 'var(--ka-zone-gap)' }}>
-          {[0, 1].map((i) => <Col key={i} xs={24} md={12}><Skeleton active paragraph={{ rows: 2 }} /></Col>)}
-        </Row>
-      ) : nothingPending ? (
-        <div style={{ marginTop: 'var(--ka-zone-gap)' }}>
-          <SubPanel tone="neutral">
-            <EmptyState size="inline" icon={<FileSignature size={28} />} message={t('guardianHome.allClear')} detail={t('guardianHome.allClearDetail')} />
-          </SubPanel>
-        </div>
-      ) : (
-        <Row gutter={[16, 16]} align="stretch" style={{ marginTop: 'var(--ka-zone-gap)' }}>
-          {pendingCards.map((card, i) => {
-            const full = i === pendingCards.length - 1 && pendingCards.length % 2 === 1;
-            return <Col key={card.key} xs={24} md={full ? 24 : 12}>{card.render()}</Col>;
+      {/* ACTION REQUIRED — the card exists iff a need exists (entitlement-iff). Zero needs ⇒ no card and no
+          "all caught up" copy: the prototype has no such state, and an empty inbox needs no sentence. */}
+      {workLoading ? (
+        <Skeleton active paragraph={{ rows: 3 }} />
+      ) : needCount > 0 && (
+        <div style={{ background: 'var(--ka-card)', borderRadius: 'var(--ka-r-md)', borderLeft: '4px solid var(--ka-warning)', padding: '18px 20px 0' }}>
+          <Typography.Title level={3} style={{ fontSize: 19, marginBottom: 4 }}>
+            {t('guardianHome.actionRequired')} <span style={{ color: 'var(--ka-warning)' }}>· {needCount}</span>
+          </Typography.Title>
+
+          {openConsents.map((c) => {
+            const level = urgencyLevel(c.expires_at, URGENCY.consent);
+            return (
+              <TodoRow
+                key={c.id}
+                to={`/consents/${c.id}`}
+                icon={<FileSignature size={20} aria-hidden />}
+                title={t('guardianHome.signConsentFor', { child: personName(c.student_name ?? '') })}
+                who={progName(c, locale)}
+                // NO deadline ⇒ NO deadline block. urgencyDays(null) is 0, so urgencyLabel would read "Due
+                // today" beside an em-dash date — a fabricated urgency on a consent that simply has no
+                // expiry. Omit rather than invent (caught in the built shot, not in review).
+                deadline={c.expires_at ? <Deadline level={level} loud={urgencyLabel(level, urgencyDays(c.expires_at), t)} quiet={t('guardianHome.expiresOn', { date: formatHktDayMonth(c.expires_at, locale) })} /> : null}
+              />
+            );
           })}
-          {moreConsents && (
-            <Col xs={24}><Link to="/consents">{t('guardianHome.viewAllConsents', { count: openConsents.length })}</Link></Col>
-          )}
-          {morePayments && (
-            <Col xs={24}><Link to="/my/payments">{t('guardianHome.viewAllPayments', { count: payable.length })}</Link></Col>
-          )}
-        </Row>
+
+          {payable.map((o) => {
+            const level = urgencyLevel(o.payment_due_at, URGENCY.payment);
+            return (
+              <TodoRow
+                key={o.id}
+                to="/my/payments"
+                icon={<CreditCard size={20} aria-hidden />}
+                title={t('guardianHome.payFor', { amount: formatMoney(o.total_amount_minor, o.currency, locale), child: personName(o.student_name ?? '') })}
+                // programme only — the block's "· fee + materials" needs order_lines, which the orders LIST
+                // read does not select (OrdersController:29). Omitted, not approximated. FLAG.
+                who={progName(o, locale)}
+                deadline={o.payment_due_at ? <Deadline level={level} loud={t('guardianHome.dueOn', { date: formatHktDayMonth(o.payment_due_at, locale) })} quiet={urgencyLabel(level, urgencyDays(o.payment_due_at), t)} /> : null}
+              />
+            );
+          })}
+        </div>
       )}
 
-      {/* AT A GLANCE — children, the outstanding total (client-summed, display-only), enrolments. */}
-      <Row gutter={[16, 16]} style={{ marginTop: 'var(--ka-zone-gap)' }}>
-        <Col xs={24} sm={8}>
-          {enrolments.loading ? <Skeleton active paragraph={{ rows: 1 }} title={{ width: '55%' }} />
-            : <StatCard label={t('guardianHome.children')} value={childCount} icon={<Users size={18} />} to="/my/children" />}
-        </Col>
-        <Col xs={24} sm={8}>
-          {orders.loading ? <Skeleton active paragraph={{ rows: 1 }} title={{ width: '55%' }} />
-            : <StatCard label={t('guardianHome.outstanding')} value={formatMoney(outstanding, currency, locale)} icon={<CreditCard size={18} />} accent={outstanding > 0 ? 'gold' : 'default'} to="/my/payments" />}
-        </Col>
-        <Col xs={24} sm={8}>
-          {enrolments.loading ? <Skeleton active paragraph={{ rows: 1 }} title={{ width: '55%' }} />
-            : <StatCard label={t('dashboard.enrolments')} value={enrolCount} icon={<GraduationCap size={18} />} to="/enrolments" />}
-        </Col>
-      </Row>
+      <Typography.Title level={3} style={{ fontSize: 15.5, fontWeight: 700, margin: '18px 0 12px' }}>{t('guardianHome.children')}</Typography.Title>
+      {enrolments.loading ? <Skeleton active paragraph={{ rows: 2 }} /> : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {children.map(([id, c]) => (
+            <Link key={id} to={`/my/children/${id}`} style={{ color: 'inherit', display: 'block' }}>
+              <div style={{ background: 'var(--ka-card)', borderRadius: 'var(--ka-r-md)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--ka-muted)', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600, color: 'var(--ka-muted-fg)', flex: 'none' }}>
+                  {initials(personName(c.name))}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Typography.Text strong style={{ display: 'block', fontSize: 14 }}>{personName(c.name)}</Typography.Text>
+                  <Typography.Text type="secondary">{c.count} {t('selfService.enrolments', { count: c.count })}</Typography.Text>
+                </div>
+                <ChevronRight size={16} aria-hidden style={{ color: 'var(--ka-muted-fg)', flex: 'none' }} />
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

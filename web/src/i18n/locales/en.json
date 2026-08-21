@@ -662,15 +662,13 @@
     "stageLaunch": "Launch"
   },
   "guardianHome": {
-    "subtitle": "Your family's pending actions",
-    "allClear": "Nothing needs your attention",
-    "allClearDetail": "No consent to sign and no payment due right now.",
-    "consentCta": "Review & sign",
-    "paymentCta": "View payments",
-    "viewAllConsents": "View all consent requests ({{count}})",
-    "viewAllPayments": "View all payments ({{count}})",
-    "children": "Children",
-    "outstanding": "Outstanding"
+    "eyebrow": "Guardian",
+    "actionRequired": "Action required",
+    "signConsentFor": "Sign consent for {{child}}",
+    "payFor": "Pay {{amount}} for {{child}}",
+    "expiresOn": "expires {{date}}",
+    "dueOn": "Due {{date}}",
+    "children": "Children"
   },
   "order": {
     "lines": {
