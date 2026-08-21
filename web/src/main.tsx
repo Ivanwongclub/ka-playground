@@ -69,7 +69,9 @@ const MyChildren = lazy(() => import('./pages/SelfService').then((m) => ({ defau
 const MyPayments = lazy(() => import('./pages/SelfService').then((m) => ({ default: m.MyPayments })));
 const MyStudents = lazy(() => import('./pages/SelfService').then((m) => ({ default: m.MyStudents })));
 const MyProfile = lazy(() => import('./pages/Profile360').then((m) => ({ default: m.MyProfile })));
-const ChildProfile = lazy(() => import('./pages/Profile360').then((m) => ({ default: m.ChildProfile })));
+// B3-GUA-CHILD: /my/children/:studentId is the gua-child HUB now, not the Profile360 composition
+// (AUDIT-2 classed that WRONG-SHAPE for this route). Profile360 still serves /my/profile + the staff 360.
+const ChildHub = lazy(() => import('./pages/ChildHub').then((m) => ({ default: m.ChildHub })));
 const StaffStudent360 = lazy(() => import('./pages/Profile360').then((m) => ({ default: m.StaffStudent360 })));
 const Marketplace = lazy(() => import('./pages/Marketplace').then((m) => ({ default: m.Marketplace })));
 const Programme360 = lazy(() => import('./pages/Programme360').then((m) => ({ default: m.Programme360 })));
@@ -133,7 +135,7 @@ function Root() {
               <Route path="/programmes" element={<StudentProgrammes />} />
               <Route path="/me" element={<Placeholder titleKey="empty.title" />} />
               <Route path="/my/profile" element={<MyProfile />} />
-              <Route path="/my/children/:studentId" element={<ChildProfile />} />
+              <Route path="/my/children/:studentId" element={<ChildHub />} />
               <Route path="/my/payments" element={<MyPayments />} />
               <Route path="/my/students" element={<MyStudents />} />
               <Route path="/learn" element={<Placeholder titleKey="empty.title" />} />

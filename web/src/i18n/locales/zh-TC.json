@@ -1026,5 +1026,14 @@
     "enrolments_other": "項報名",
     "reviewSign": "檢閱並簽署",
     "viewRecord": "查看紀錄"
+  },
+  "guaChild": {
+    "backToChildren": "‹ 子女",
+    "enrolments": "報名",
+    "sign": "簽署",
+    "settled": "已結清",
+    "settledWithReceipt": "已結清 · {{receipt}}",
+    "orderIssued": "{{amount}} · 已發出帳單",
+    "awaitingTeam": "等待組隊"
   }
 }

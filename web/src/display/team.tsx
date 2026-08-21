@@ -28,13 +28,10 @@ export function tri(o: Tri | null, locale: KaLocale): string {
   return (locale === 'zh-TC' ? o.name_tc : locale === 'zh-SC' ? o.name_sc : o.name_en) || o.name_en;
 }
 
-/** Two-letter initials for a roster avatar — never a raw id. */
-export function memberInitials(name: string | null): string {
-  const n = (name ?? '').trim();
-  if (!n) return '—';
-  const parts = n.split(/\s+/).filter(Boolean);
-  return (parts.length >= 2 ? parts[0][0] + parts[1][0] : n.slice(0, 2)).toUpperCase();
-}
+/** Two-letter initials for a roster avatar — never a raw id. B3-GUA-CHILD: the implementation moved to
+ *  display/names.ts as the ONE definition (it had drifted into four copies); this alias keeps the team
+ *  module's API unchanged for its existing callers. */
+export { initials as memberInitials } from './names';
 
 /** A member's tenure role as INFORMATIVE right-aligned text — no pill, no gold (single definition; see header). */
 export function MemberRole({ role, locale }: { role: Tri | null; locale: KaLocale }) {

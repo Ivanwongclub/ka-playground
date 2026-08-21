@@ -15,7 +15,7 @@ import type { KaLocale } from '../i18n';
 import { useIdentity } from '../auth/identity';
 import { authFetch } from '../auth/session';
 import { useResource, DataBoundary } from '../api/useResource';
-import { personName, programmeName } from '../display/names';
+import { personName, programmeName, initials } from '../display/names';
 import { formatHkt } from '../display/date';
 import { StatusTag } from '../display/status';
 import { TERMINAL_BAD } from '../display/enrolmentJourney'; // C5-CONSUME: one definition of the terminal states
@@ -33,11 +33,6 @@ interface RoleRow { role_id: string; name_en: string; name_tc: string; name_sc: 
 // The enrolment journey (same order as Enrolments' active lens) — rendered DISPLAY-ONLY here (no onStep):
 // the clickable journey stays on /enrolments. Terminal-bad states show their tag instead of a rail.
 const JOURNEY = ['submitted', 'pending_consent', 'in_pool', 'teamed', 'confirmed', 'active', 'completed'];
-
-function initials(name: string): string {
-  const parts = name.split(/\s+/).filter(Boolean);
-  return (parts.length >= 2 ? parts[0][0] + parts[1][0] : name.slice(0, 2)).toUpperCase();
-}
 
 function roleName(r: RoleRow, locale: KaLocale): string {
   return (locale === 'zh-TC' ? r.name_tc : locale === 'zh-SC' ? r.name_sc : r.name_en) || r.name_en;
@@ -317,15 +312,9 @@ export function MyProfile() {
   return <Profile360 studentId={identity.id} displayName={identity.name} />;
 }
 
-// ── Guardian CHILD-VIEW: /my/children/:studentId — the SAME Profile360 for the child, from the guardian's
-// own (child-scoped) reads. The name is derived from the child's enrolment rows inside Profile360. ────
-export function ChildProfile() {
-  const { studentId } = useParams();
-  const { t } = useTranslation();
-  const id = Number(studentId);
-  if (!Number.isFinite(id)) return <Paragraph type="secondary">{t('profile360.notFound')}</Paragraph>;
-  return <Profile360 studentId={id} />;
-}
+// ── B3-GUA-CHILD: the guardian CHILD-VIEW export was RETIRED here. /my/children/:studentId is now the
+// gua-child hub (pages/ChildHub.tsx) — keeping this would have left two guardian child views to drift apart.
+// Profile360 still serves the student's own /my/profile and the staff Student 360 below. ────
 
 // ── R1-F2 — STAFF Student 360: /admin/students/:studentId. The SAME Profile360 (the R1-P360 reuse contract),
 // at ADMIN density, composed from the staff caller's own reads. Gate operations.manage ∨ audit.read (super

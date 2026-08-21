@@ -1029,5 +1029,14 @@
     "enrolments_other": "enrolments",
     "reviewSign": "Review & sign",
     "viewRecord": "View record"
+  },
+  "guaChild": {
+    "backToChildren": "‹ Children",
+    "enrolments": "Enrolments",
+    "sign": "Sign",
+    "settled": "Settled",
+    "settledWithReceipt": "Settled · {{receipt}}",
+    "orderIssued": "{{amount}} · order issued",
+    "awaitingTeam": "Awaiting team formation"
   }
 }

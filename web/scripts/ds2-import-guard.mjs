@@ -30,6 +30,7 @@ const ALLOWED = [
   'src/pages/Marketplace.tsx', // KAP-MKT-1 — the programme storefront (catalogue + guardian-led enrolment)
   'src/pages/EnrolmentSpace.tsx', // C1-SHELL — the family scoped programme space skeleton (ProgrammeBandHeader + EmptyState; band + empty tab strip, no content)
   'src/pages/StudentProgrammes.tsx', // C2-LIST — the STUDENT /programmes enrolment-card list (GlanceCard per enrolment; drills into EnrolmentSpace)
+  'src/pages/ChildHub.tsx', // B3-GUA-CHILD — the guardian child hub (GlanceCard per enrolment); /my/children/:studentId moved here off Profile360
   'src/AppShell.tsx', // C3-CHROME — the global shell adopts ElasticSearch (§3.12) in the header (its first consumer, audit S4 S-4)
   // ── restyle rollout: each surface is a deliberate adoption in its own gated card ──
   'src/pages/SelfService.tsx', // ANCHORS STEP 1 — My Children (MyPayments/MyStudents in-file are untouched)

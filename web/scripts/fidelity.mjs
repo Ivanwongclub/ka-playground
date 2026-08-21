@@ -35,7 +35,7 @@
 //
 // PREREQUISITES (manual, one-time — deliberately NOT a postinstall hook, so no install/CI bloat):
 //   npm i -D playwright   (done)      ·      npx playwright install chromium   (the ~150 MB browser binary)
-// The built app must be running locally (default http://localhost:8080 — override with FIDELITY_BASE).
+// The built app must be running locally (default http://127.0.0.1:8080 — override with FIDELITY_BASE).
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════════
 import { chromium } from 'playwright';
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -46,7 +46,10 @@ import { dirname, join, resolve } from 'node:path';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, '../..'); // web/scripts → repo root
 const PROTO_TRACKED = join(REPO, 'docs/design/KAP-Prototype.html');
-const BASE = process.env.FIDELITY_BASE ?? 'http://localhost:8080';
+// 127.0.0.1, never `localhost`: `localhost` resolves to ::1 first, and if anything else holds the IPv6
+// :8080 (a foreign container, an ssh tunnel) the rig photographs a DIFFERENT PRODUCT and saves it as
+// `<screen>.built.png` without erroring — a fidelity tool that lies is worse than one that fails (B3).
+const BASE = process.env.FIDELITY_BASE ?? 'http://127.0.0.1:8080';
 
 const VIEWPORTS = { desktop: { width: 1440, height: 900 }, mobile: { width: 390, height: 844 } };
 

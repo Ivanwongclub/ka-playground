@@ -34,3 +34,20 @@ export function schoolName(row: HasSchoolNames, locale: KaLocale): string | null
 export function personName(name: string | null | undefined): string {
   return name && name.trim() ? name : '—';
 }
+
+/**
+ * Two-letter initials for an avatar — never a raw id. ONE definition (B3-GUA-CHILD): this had drifted into
+ * FOUR copies — display/team.tsx's memberInitials plus a local `initials` in Profile360, GuardianHome and
+ * (nearly) this card's page. The null-safe form from team.tsx is the superset and is what survives; every
+ * caller now shares it.
+ *
+ * BEHAVIOUR DELTA, stated rather than smuggled: for the two page callers an EMPTY name previously rendered
+ * an empty avatar (''.toUpperCase()); it now renders '—', the placeholder the roster already used. Identical
+ * for every non-empty name, which is every case where a name resolves.
+ */
+export function initials(name: string | null | undefined): string {
+  const n = (name ?? '').trim();
+  if (!n) return '—';
+  const parts = n.split(/\s+/).filter(Boolean);
+  return (parts.length >= 2 ? parts[0][0] + parts[1][0] : n.slice(0, 2)).toUpperCase();
+}

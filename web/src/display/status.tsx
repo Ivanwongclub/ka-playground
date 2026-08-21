@@ -93,6 +93,18 @@ const REGISTRY: Record<string, Record<string, Entry>> = {
   // status (draft|published|open|closed|graded|cancelled|released) is collapsed to `pending`/`released` BEFORE it
   // reaches this pill. The raw status must NEVER be a domain here — a family seeing `graded` would learn the
   // result exists and is being withheld, which is the embargo leaking one bit.
+  // B3-GUA-CHILD — consent state as the FAMILY reads it. The values are the `cr_status_check` enum itself
+  // (draft is never issued to a family, so it is not offered here); labels reuse the existing consent.status.*
+  // set rather than minting parallel copy.
+  consentState: {
+    sent: { labelKey: 'consent.status.sent', color: 'warning' },
+    viewed: { labelKey: 'consent.status.viewed', color: 'warning' },
+    signed: { labelKey: 'consent.status.signed', color: 'success' },
+    declined: { labelKey: 'consent.status.declined', color: 'error' },
+    expired: { labelKey: 'consent.status.expired', color: 'error' },
+    superseded: { labelKey: 'consent.status.superseded', color: 'default' },
+    voided: { labelKey: 'consent.status.voided', color: 'default' },
+  },
   // B1-STU-HOME — the student's consent-waiting pill (stu-home L444). ONE value: the fact is binary from
   // the student's side — their guardian has not signed yet. Not the consent state machine (the student is
   // not the signer and never sees declined/expired as an actionable state); a closed one-value domain keeps

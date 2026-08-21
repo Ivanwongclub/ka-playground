@@ -22,7 +22,7 @@ import type { ReactNode } from 'react';
 import { Skeleton, Typography } from 'antd';
 import type { KaLocale } from '../i18n';
 import { useIdentity } from '../auth/identity';
-import { personName } from '../display/names';
+import { personName, initials } from '../display/names';
 import { formatMoney } from '../display/money';
 import { formatHktDayMonth } from '../display/date';
 import { useResource, urgencyLevel, urgencyDays, urgencyLabel, URGENCY } from '@/ds2';
@@ -38,11 +38,6 @@ const ts = (s: string | null): number => (s ? Date.parse(s.trim().replace(' ', '
 function progName(r: { programme_name_en: string | null; programme_name_tc: string | null; programme_name_sc: string | null }, locale: KaLocale): string {
   return (locale === 'zh-TC' ? r.programme_name_tc : locale === 'zh-SC' ? r.programme_name_sc : r.programme_name_en) || r.programme_name_en || '';
 }
-function initials(name: string): string {
-  const parts = name.split(/\s+/).filter(Boolean);
-  return (parts.length >= 2 ? parts[0][0] + parts[1][0] : name.slice(0, 2)).toUpperCase();
-}
-
 /** The deadline block: the loud fact bold and coloured by URGENCY LEVEL, the other fact small beneath it.
  *  The block hardcodes var(--warn) because its demo deadlines are always imminent; we colour by the built
  *  ladder instead (soon = pending blue → due = warning → overdue = danger, W1-GROUND), so a deadline sixty
