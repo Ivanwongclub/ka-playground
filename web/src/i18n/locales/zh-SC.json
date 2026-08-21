@@ -64,6 +64,7 @@
   "enrolSpace": {
     "tab": {
       "journey": "历程",
+      "fees": "费用",
       "team": "团队",
       "sessions": "课节",
       "tracker": "活动进度",
@@ -1035,5 +1036,11 @@
     "settledWithReceipt": "已结清 · {{receipt}}",
     "orderIssued": "{{amount}} · 已发出账单",
     "awaitingTeam": "等待组队"
+  },
+  "guaFees": {
+    "order": "账单",
+    "line": "项目",
+    "amount": "金额",
+    "receipt": "收据 {{number}} · {{date}}"
   }
 }

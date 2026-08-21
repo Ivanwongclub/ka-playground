@@ -23,9 +23,11 @@ import { useResource, DataBoundary } from '../api/useResource';
 import { authFetch } from '../auth/session';
 import { mutate, type MutateResult } from '../api/mutate';
 import { useIdentity } from '../auth/identity';
+import { isGuardianActor } from '../nav'; // B4: the ONE guardian-actor signature (C1-SHELL)
 import { programmeName, personName } from '../display/names';
 import { StatusTag } from '../display/status';
 import { formatHkt, formatHktDate } from '../display/date';
+import { formatMoney } from '../display/money';
 import { SEG, WHATNEXT, currentIndex, isTerminal } from '../display/enrolmentJourney';
 // C8-TEAM — shared team-formation primitives (single definition; role renders plain, count-only wall).
 import { tri, MemberRole, JoinableCount, memberInitials, type TeamRow, type Roster, type Lobby } from '../display/team';
@@ -41,8 +43,16 @@ interface Detail {
 interface Session { id: string; title: string; starts_at: string; status: string; programme_id: number; booking_status: string | null }
 interface ConsentReq { programme_id: number; student_id: number; status: string }
 
-// spec C4 order — FIXED: Journey · Team · Sessions · Tracker · Results.
+// spec C4 order — FIXED: Journey · Team · Sessions · Tracker · Results. B4 adds FEES for the guardian only,
+// positioned after Journey exactly as gua-space orders it (L785-786).
+//
+// SIX tabs for a guardian, where the prototype's gua-space draws THREE (Journey · Fees · one combined
+// "Team · Sessions · Tracker · Results"). A DELIBERATE, DOCUMENTED divergence, ruled at B4: that combined
+// pane is a DEMO SHORTCUT, not a design position — its content (L810-812) is a ghost card reading "Mirrors
+// the student view … Switch to the Student role → Programme space to walk those tabs". It tells the reader
+// to go and look elsewhere; our build actually composes the four, which is what the mirror note promises.
 const TABS = ['journey', 'team', 'sessions', 'tracker', 'results'] as const;
+const GUARDIAN_TABS = ['journey', 'fees', 'team', 'sessions', 'tracker', 'results'] as const;
 
 // ── one session row — title + date + booking chip + (student, upcoming) book/cancel. Location + materials are
 // omitted (not in the read, entitlement-iff). Book is the row's one gold (≤1 per row); cancel is quiet. ──
@@ -133,6 +143,74 @@ function TrackerPanel({ teamId, locale }: { teamId: string | null; locale: KaLoc
         )}
       </Space>
     </DataBoundary>
+  );
+}
+
+// ── B4-GUA-SPACE-FEES — the Fees tab (gua-space L800-808). A GUARDIAN ADDITION: L812 states "the guardian
+// additions are Fees and signing authority", so the tab is gated on isGuardianActor(has) — the C1 one-
+// definition predicate — and NOT on !isStudent, which would also admit ops/audit/super (enr_read admits
+// them at this same URL, and staff have their own finance surfaces).
+//
+// The reads live INSIDE this component, which antd Tabs does not mount until the pane is first activated
+// (no forceRender anywhere in the codebase). So for a student the component is never constructed and the
+// two reads cannot fire — P-3 expressed structurally rather than by hiding a rendered thing. Cost: 2 reads,
+// guardian-only, tab-activation-only (the C7 ResultsPanel pattern).
+//   /api/orders   — the order for THIS enrolment (amount + state). Guardian amounts are permitted.
+//   /api/receipts — receipt_number + issued_at. receipts_read is `system OR EXISTS (… orders o WHERE
+//                   o.id = receipts.order_id)`, so a receipt inherits its order's visibility (B3).
+//
+// NOT-SERVED: the block's table is one row per ORDER LINE ("Programme fee HK$1,500 · Materials HK$300"),
+// and /api/orders selects no order_lines (OrdersController:29). One ORDER-level row renders instead, its
+// Line cell carrying the programme name — a true fact already in hand — never an invented line label. The
+// table shape is kept so the itemisation drops in unchanged when order_lines reaches the read. FLAG: RW.
+interface OrderRow { id: string; enrolment_id: string; status: string; total_amount_minor: number; currency: string }
+interface ReceiptRow { order_id: string; receipt_number: string; issued_at: string }
+
+function FeesPanel({ enrolmentId, programme, locale }: { enrolmentId: string; programme: string; locale: KaLocale }) {
+  const { t } = useTranslation();
+  const orders = useResource<{ data: OrderRow[] }>('/api/orders');
+  const receipts = useResource<{ data: ReceiptRow[] }>('/api/receipts');
+
+  if (orders.loading) return <Skeleton active paragraph={{ rows: 3 }} />;
+  const order = (orders.data?.data ?? []).find((o) => o.enrolment_id === enrolmentId) ?? null;
+  // No order yet (pre-Formation: OD-31 issues it at Team Formation) — nothing to say, and no gap copy saying so.
+  if (!order) return <EmptyState message={null} />;
+  const receipt = (receipts.data?.data ?? []).find((r) => r.order_id === order.id) ?? null;
+
+  return (
+    <SubPanel tone="neutral">
+      {/* The block writes the state INTO the heading ("Order · settled", L802). We render "Order" + the
+          StatusTag pill instead: state-as-pill is the house grammar and it reuses the status.order.* labels
+          rather than minting a second vocabulary for the same enum. Deliberate Kit divergence (ruled B4). */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <Typography.Text strong>{t('guaFees.order')}</Typography.Text>
+        <StatusTag domain="orderStatus" value={order.status} />
+      </div>
+
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+        <thead>
+          <tr style={{ textAlign: 'left', color: 'var(--ka-muted-fg)', fontSize: 12 }}>
+            <th scope="col" style={{ fontWeight: 500, padding: '4px 0' }}>{t('guaFees.line')}</th>
+            <th scope="col" style={{ fontWeight: 500, padding: '4px 0' }}>{t('guaFees.amount')}</th>
+            <th scope="col" style={{ fontWeight: 500, padding: '4px 0' }}>{t('common.status')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style={{ padding: '6px 0' }}>{programme}</td>
+            <td style={{ padding: '6px 0' }}>{formatMoney(order.total_amount_minor, order.currency, locale)}</td>
+            <td style={{ padding: '6px 0' }}><StatusTag domain="orderStatus" value={order.status} /></td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* Muted TEXT, not a link (the corrected Doc 2 row). Absent receipt ⇒ no line, never an invented number. */}
+      {receipt && (
+        <Typography.Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+          {t('guaFees.receipt', { number: receipt.receipt_number, date: formatHktDate(receipt.issued_at, locale) })}
+        </Typography.Text>
+      )}
+    </SubPanel>
   );
 }
 
@@ -360,12 +438,15 @@ export function EnrolmentSpace() {
   const locale = i18n.language as KaLocale;
   const { message } = App.useApp();
   const { enrolmentId } = useParams();
-  const { identity } = useIdentity();
+  const { identity, has } = useIdentity();
 
   // C5-CONSUME: the space's OWN read is now the detail endpoint (S-READ-1) — not the list-filter interim.
   const detail = useResource<Detail>(`/api/enrolments/${enrolmentId}`);
   const d = detail.data;
   const isStudent = !!(d && identity && identity.id === d.student_id);
+  // B4: the Fees tab is a GUARDIAN addition (L812) — NOT merely "not the student", which would also admit
+  // ops/audit/super, who reach this same URL under enr_read and have their own finance surfaces.
+  const isGuardian = isGuardianActor(has);
   // dependent reads (fire once the detail resolves student_id/programme_id): persona-split sessions + consent.
   const sessionsRes = useResource<{ sessions: Session[] }>(d ? (isStudent ? '/api/my/sessions' : `/api/my/students/${d.student_id}/sessions`) : null);
   const consentRes = useResource<{ data: ConsentReq[] }>(d ? '/api/consent-requests' : null);
@@ -428,13 +509,18 @@ export function EnrolmentSpace() {
       />
       <Tabs
         style={{ marginTop: 16 }}
-        items={TABS.map((k) => ({
+        // B4: the guardian's SIXTH tab pushed the strip past a 390px phone, collapsing Tracker and Results
+        // into antd's "…" overflow menu — two composed tabs hidden behind a dropdown. A tighter gutter fits
+        // all six at 390 (measured, not guessed); the student's five are unaffected by a smaller gap.
+        tabBarGutter={12}
+        items={(isGuardian ? GUARDIAN_TABS : TABS).map((k) => ({
           key: k,
           label: t(`enrolSpace.tab.${k}`),
           // Journey + Team + Sessions + Results are filled; Tracker stays icon-only empty (blocked — no gap copy).
           children: k === 'journey' ? journey
             : k === 'team' ? <TeamPanel programmeId={d.programme_id} status={d.status} isStudent={isStudent} viewerId={identity?.id} />
             : k === 'sessions' ? sessions
+            : k === 'fees' ? <FeesPanel enrolmentId={d.id} programme={name} locale={locale} />
             : k === 'results' ? <ResultsPanel programmeId={d.programme_id} studentId={d.student_id} />
             : <TrackerPanel teamId={d.team_id} locale={locale} />,
         }))}

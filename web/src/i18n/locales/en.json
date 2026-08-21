@@ -64,6 +64,7 @@
   "enrolSpace": {
     "tab": {
       "journey": "Journey",
+      "fees": "Fees",
       "team": "Team",
       "sessions": "Sessions",
       "tracker": "Tracker",
@@ -1038,5 +1039,11 @@
     "settledWithReceipt": "Settled · {{receipt}}",
     "orderIssued": "{{amount}} · order issued",
     "awaitingTeam": "Awaiting team formation"
+  },
+  "guaFees": {
+    "order": "Order",
+    "line": "Line",
+    "amount": "Amount",
+    "receipt": "Receipt {{number}} · {{date}}"
   }
 }
