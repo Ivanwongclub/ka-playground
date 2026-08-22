@@ -54,24 +54,24 @@ class TeamConfirmationService
     {
         $team = DB::table('teams')->where('id', $teamId)->first() ?? abort(404);
         if ($team->status !== 'submitted') {
-            abort(409, "Team is {$team->status}; only a submitted team can be 成團-confirmed");
+            abort(409, "Team is {$team->status}; only a submitted team can be Formation-confirmed");
         }
         // 0. hard precondition: formation deadline set (OD-33; S04A warns, S05 refuses)
         $deadline = json_decode((string) DB::table('wizard_sections')
             ->where('programme_id', $team->programme_id)->where('section_key', 'team_rules')
             ->value('data'), true)['formation_deadline_on'] ?? null;
         if ($deadline === null) {
-            abort(422, 'No formation deadline set for this programme — 成團 refused (OD-33)');
+            abort(422, 'No formation deadline set for this programme — Team Formation refused (OD-33)');
         }
         // 1. approver authority (OD-39): school admin of the lobby's school, or academy ops/super
         $this->assertApprover($team, $approver);
         // capacity must be configured (S05-2 hard requirement at Team Formation)
         if (! DB::table('programme_capacity')->where('programme_id', $team->programme_id)->exists()) {
-            abort(422, 'Programme capacity is not configured — 成團 refused (OD-31)');
+            abort(422, 'Programme capacity is not configured — Team Formation refused (OD-31)');
         }
 
         return $this->scope->asSystem(
-            'Team 成團 confirmation (S05): the whole seat-claim transaction is a system state-machine op — FOR SHARE on members\' consent (+guardian_links), FOR UPDATE on programme_capacity, teamed→confirmed, one payment_obligation per member. The approver\'s authority (OD-39) was established before the elevation; only the members\' own rows are touched.',
+            'Team Formation confirmation (S05): the whole seat-claim transaction is a system state-machine op — FOR SHARE on members\' consent (+guardian_links), FOR UPDATE on programme_capacity, teamed→confirmed, one payment_obligation per member. The approver\'s authority (OD-39) was established before the elevation; only the members\' own rows are touched.',
             function () use ($team, $approver): array {
                 return DB::transaction(function () use ($team, $approver): array {
                     $members = DB::table('team_members')->where('team_id', $team->id)->where('status', 'active')
@@ -96,7 +96,7 @@ class TeamConfirmationService
                     // re-verify consent per member UNDER the lock (OD-57/58 — no stale confirm)
                     foreach ($members as $m) {
                         if (! $this->consent->consentSatisfied((int) $team->programme_id, (int) $m->student_id)) {
-                            abort(422, "Member {$m->student_id} consent is not satisfied or is stale — 成團 refused (OD-57/58)");
+                            abort(422, "Member {$m->student_id} consent is not satisfied or is stale — Team Formation refused (OD-57/58)");
                         }
                     }
 
@@ -104,7 +104,7 @@ class TeamConfirmationService
                     $n = $members->count();
                     $cap = DB::selectOne('SELECT capacity, claimed FROM programme_capacity WHERE programme_id = ? FOR UPDATE', [$team->programme_id]);
                     if ((int) $cap->claimed + $n > (int) $cap->capacity) {
-                        abort(409, "Insufficient capacity: {$cap->claimed}/{$cap->capacity} claimed, this team needs {$n} — 成團 refused, no partial claim (OD-32)");
+                        abort(409, "Insufficient capacity: {$cap->claimed}/{$cap->capacity} claimed, this team needs {$n} — Team Formation refused, no partial claim (OD-32)");
                     }
                     DB::update('UPDATE programme_capacity SET claimed = claimed + ?, updated_at = now() WHERE programme_id = ?', [$n, $team->programme_id]);
 
@@ -112,7 +112,7 @@ class TeamConfirmationService
                     // programme's E6 payer_party (S04F STEP 1 / OD-25) — NOT hardcoded guardian.
                     $obligationIds = [];
                     foreach ($members as $m) {
-                        $this->enrolments->transition($m->enrolment_id, 'confirmed', $approver, "成團 of team {$team->id}");
+                        $this->enrolments->transition($m->enrolment_id, 'confirmed', $approver, "Team Formation of team {$team->id}");
                         // OD-38 "no re-charge": a dissolution re-pools PAID members into the
                         // pool keeping their paid order. When such a member re-teams, they
                         // claim a seat and confirm, but get NO second obligation — otherwise

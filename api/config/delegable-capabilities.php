@@ -56,8 +56,8 @@ return [
     // orphan-check but MUST be present (the assertion guards them). They record a platform-only invariant now
     // so the concept is born never-delegable the moment its permission is introduced (A-2/A-4 or later).
     'never_reserved' => [
-        // Mutating a FORMED team's membership (成團) is platform-only — never an edge operator's act. teams.approve
-        // (delegable) is the approval of formation; membership mutation AFTER 成團 is a different, reserved act.
+        // Mutating a FORMED team's membership (Team Formation) is platform-only — never an edge operator's act. teams.approve
+        // (delegable) is the approval of formation; membership mutation AFTER Team Formation is a different, reserved act.
         'teams.formed_membership_mutation' => 'platform_only',
     ],
 ];

@@ -22,7 +22,7 @@ class CapacityClaimsWholeAssertion implements Assertion
 
     public function proves(): string
     {
-        return 'every recorded 成團 claimed exactly as many seats as it had members at confirm time (team.confirmed audit: seats_claimed = member_count > 0) — no partial claims';
+        return 'every recorded Team Formation claimed exactly as many seats as it had members at confirm time (team.confirmed audit: seats_claimed = member_count > 0) — no partial claims';
     }
 
     public function cites(): string
@@ -47,7 +47,7 @@ class CapacityClaimsWholeAssertion implements Assertion
         $total = (int) DB::table('audit_events')->where('action', 'team.confirmed')->count();
 
         return $bad > 0
-            ? AssertionResult::fail("{$bad} 成團 claim(s) where seats_claimed ≠ member_count (a partial claim, OD-32)")
-            : AssertionResult::pass("{$total} 成團 claim(s) checked".($total === 0 ? ' (vacuous)' : ', all whole (seats = members)'));
+            ? AssertionResult::fail("{$bad} Team Formation claim(s) where seats_claimed ≠ member_count (a partial claim, OD-32)")
+            : AssertionResult::pass("{$total} Team Formation claim(s) checked".($total === 0 ? ' (vacuous)' : ', all whole (seats = members)'));
     }
 }

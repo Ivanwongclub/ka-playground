@@ -58,6 +58,6 @@ class PaymentObligationCompletenessAssertion implements Assertion
 
         return $failures !== []
             ? AssertionResult::fail(implode(' · ', $failures))
-            : AssertionResult::pass("{$total} obligation(s) checked".($total === 0 ? ' (vacuous until 成團 volume)' : ', all consumed into orders within the window'));
+            : AssertionResult::pass("{$total} obligation(s) checked".($total === 0 ? ' (vacuous until Team Formation volume)' : ', all consumed into orders within the window'));
     }
 }

@@ -28,7 +28,7 @@ class ConsentCompleteAtConfirmAssertion implements Assertion
 
     public function proves(): string
     {
-        return 'every 成團-confirmed enrolment had a consent signature signed at or before its confirm event AND not superseded by then — no team confirmed on unsatisfied OR stale consent (judged by confirm-time facts, not live state)';
+        return 'every Formation-confirmed enrolment had a consent signature signed at or before its confirm event AND not superseded by then — no team confirmed on unsatisfied OR stale consent (judged by confirm-time facts, not live state)';
     }
 
     public function cites(): string
@@ -78,8 +78,8 @@ class ConsentCompleteAtConfirmAssertion implements Assertion
         $count = count($violations);
 
         return $count > 0
-            ? AssertionResult::fail("{$count} 成團-confirmed enrolment(s) confirmed on unsatisfied/stale consent — a required guardian's consent signature missing or superseded by confirm (OD-57/58; requires_all hardened)")
-            : AssertionResult::pass("{$total} 成團 confirm event(s) checked".($total === 0 ? ' (vacuous)' : ', all had complete non-stale consent at confirm (incl. requires_all)'));
+            ? AssertionResult::fail("{$count} Formation-confirmed enrolment(s) confirmed on unsatisfied/stale consent — a required guardian's consent signature missing or superseded by confirm (OD-57/58; requires_all hardened)")
+            : AssertionResult::pass("{$total} Formation confirm event(s) checked".($total === 0 ? ' (vacuous)' : ', all had complete non-stale consent at confirm (incl. requires_all)'));
     }
 
     /** A signed, not-superseded-before-confirm signature for (e.programme_id, e.student_id), correlated to ae.occurred_at. */

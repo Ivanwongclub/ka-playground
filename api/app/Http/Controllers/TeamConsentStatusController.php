@@ -40,7 +40,7 @@ class TeamConsentStatusController extends Controller
         // Elevated read: members' consent lies outside the caller's derived scope; the elevation
         // returns aggregate booleans/counts + the member's own name only — no guardian identity.
         return response()->json($this->scope->asSystem(
-            'Team consent roster (S-UX3-3a): aggregate per-member consent booleans/counts for the 成團 gate. The members and their guardians are outside the caller\'s derived scope; only booleans, counts and the member student\'s own name leave the elevation — no guardian id, name, request row, timestamp or signing order (child-safety privacy allowlist). Advisory read; the confirm-time FOR SHARE re-check is the authority.',
+            'Team consent roster (S-UX3-3a): aggregate per-member consent booleans/counts for the Team Formation gate. The members and their guardians are outside the caller\'s derived scope; only booleans, counts and the member student\'s own name leave the elevation — no guardian id, name, request row, timestamp or signing order (child-safety privacy allowlist). Advisory read; the confirm-time FOR SHARE re-check is the authority.',
             function () use ($t): array {
                 $members = DB::table('team_members as tm')
                     ->leftJoin('users as u', 'u.id', '=', 'tm.student_id')

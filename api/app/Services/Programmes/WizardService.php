@@ -211,7 +211,7 @@ class WizardService
                 throw ValidationException::withMessages(['capacity' => ["Capacity cannot be lowered to {$data['capacity']}: {$claimed} seat(s) are already claimed by confirmed teams (OD-31)"]]);
             }
             $this->scope->asSystem(
-                'Programme capacity edit (S05-2): the seat counter is a system-only table (claimed moves only through 成團); this raises/lowers the CAPACITY column after the OD-31 lower-below-claimed guard, never claimed. Config authority was established by the wizard route before this call.',
+                'Programme capacity edit (S05-2): the seat counter is a system-only table (claimed moves only through Team Formation); this raises/lowers the CAPACITY column after the OD-31 lower-below-claimed guard, never claimed. Config authority was established by the wizard route before this call.',
                 fn () => DB::table('programme_capacity')->where('programme_id', $programme->id)->update(['capacity' => (int) $data['capacity'], 'updated_at' => now()]),
             );
         }
@@ -327,7 +327,7 @@ class WizardService
         $capacity = ($byKey['eligibility']['data'] ?? [])['capacity'] ?? null;
         $minTeam = (int) (($byKey['team_rules']['data'] ?? [])['min_team_size'] ?? 1);
         if ($capacity === null) {
-            $findings[] = ['severity' => 'warning', 'code' => 'capacity.unset', 'message' => 'No programme capacity set (OD-31, eligibility) — S05 team 成團 refuses without it'];
+            $findings[] = ['severity' => 'warning', 'code' => 'capacity.unset', 'message' => 'No programme capacity set (OD-31, eligibility) — S05 Team Formation refuses without it'];
         } elseif ((int) $capacity <= 0) {
             $findings[] = ['severity' => 'error', 'code' => 'capacity.invalid', 'message' => 'Programme capacity must be greater than 0 (OD-31)'];
         } elseif ((int) $capacity < $minTeam) {
