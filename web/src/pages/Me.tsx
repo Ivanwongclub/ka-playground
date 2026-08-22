@@ -1,21 +1,22 @@
 // B5-ME — the two "Me" surfaces, composed to the prototype's stu-me (L661-674) and gua-me (L905-918).
 // CLIENT ONLY: no server change, no new read.
 //
+// B9-CONSUME-FAMILY — the two omissions below are REVERSED, both by S-READ-3's link reads. What B5 flagged
+// as a missing endpoint was exactly that, and the endpoint now exists; the flags are resolved, not overruled.
+//
 // Both blocks are the same shape — h2 "Me", an identity card (avatar · name · role line · hr · label/value
 // rows), then ONE second card — so the identity card is a single definition here and each persona supplies
 // its own rows and second card.
 //
 // OMITTED, never placeholdered (verdicts, B5 STEP 1):
-//   · stu-me's "My guardians" card — NOT-SERVED (read-narrow). guardian_links_read DOES admit the student
-//     (`student_id::text = current_setting('app.actor_id')`), but NO route serves it: the only readers are
-//     AccessIdentityReportController (audit-gated) and SessionReadController:67 (an internal guard). So it is
-//     a missing endpoint, not a forbidden disclosure — D-7 classes it PROTOTYPE-WRONG/ungranted, which is
-//     incorrect and predates the read cards. FLAG: reclass to RW; `GET /my/guardians` (name + status only,
-//     the roster-elevation shape) joins the RW backlog.
-//   · gua-me's "· {n} linked children" — same gap from the guardian's side: no route serves their links. The
-//     count that IS derivable (/api/enrolments, distinct student_id) is a DIFFERENT FACT — children WITH
-//     ENROLMENTS — and would read as quietly false for a newly-linked child with no enrolment. "Guardian"
-//     alone renders instead.
+//   · stu-me's "My guardians" card — was NOT-SERVED (read-narrow), and B5 read it right: guardian_links_read
+//     already admitted the student, but no ROUTE served it. GET /my/guardians (S-READ-3 item 1) is that route,
+//     in exactly the shape B5 predicted — name + status, the AD-2 display-name elevation. The card is BUILT.
+//   · gua-me's "· {n} linked children" — B5 refused to derive it from /api/enrolments because distinct
+//     student_id is a DIFFERENT FACT (children WITH ENROLMENTS) and reads as quietly false for a newly-linked
+//     child. That objection is now moot: GET /my/children IS the link read, so the count is the link count
+//     itself. ALL statuses, not just active — the guardian is asking how many children they are linked to,
+//     and a pending link is a link they are entitled to know they hold (the read serves them their own row).
 //   · gua-me's "Notifications — In-app · email coming" row — DOMAIN-UNBUILT (D6): no notifications table,
 //     route or client anywhere, and "email coming" is a promise about an unbuilt domain.
 //   · the ceremony copy above the pairing button — instructional (Kit).
@@ -32,6 +33,9 @@ import { mutate } from '../api/mutate';
 import { LocaleSwitcher } from '../components/LocaleSwitcher';
 
 interface EnrolRow { student_id: number; school_name_en: string | null; school_name_tc: string | null; school_name_sc: string | null }
+// GET /my/guardians and GET /my/children (S-READ-3 item 1). `name` is null for every non-active link (F-1/F-2).
+interface GuardianLink { guardian_id: number; name: string | null; status: string }
+interface ChildLink { student_id: number; name: string | null; status: string }
 
 /** One label/value row — the block's `.req-row` grammar: muted label left, value right. */
 function MeRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -61,6 +65,46 @@ function IdentityCard({ name, roleLine, children }: { name: string; roleLine: st
   );
 }
 
+/**
+ * B9 item 2 — stu-me's "My guardians" card (block L670-673), one `.roster-row` per link.
+ *
+ * NAMELESS WHEN PENDING, and that is the model working. GET /my/guardians resolves the display name for
+ * ACTIVE links only (F-2, mirroring F-1): the two-stage ceremony exists so the academy vets a relationship
+ * before either party is treated as connected, and handing the student the name of a not-yet-approved
+ * would-be guardian would give out the ceremony's prize early. So a pending row carries its STATE and no
+ * identity — the student learns a link is in progress without learning who claims it.
+ *
+ * The block's sub-line reads "Guardian · verified". "verified" is NOT a served fact — no field on this read
+ * or any other backs it — so the row carries the role word alone rather than asserting a verification the
+ * platform never performed. Kit: the chip takes no dot.
+ */
+function GuardianRosterRow({ link }: { link: GuardianLink }) {
+  const { t } = useTranslation();
+  const active = link.status === 'active';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: '1px solid var(--ka-border)' }}>
+      <span style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--ka-muted)', display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 600, color: 'var(--ka-muted-fg)', flex: 'none' }}>
+        {active ? initials(personName(link.name)) : '·'}
+      </span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* ACTIVE → the name, with the role beneath it. PENDING → the role alone: there is no name to show,
+            and a placeholder dash in the name slot would read as a broken record rather than a pending one. */}
+        {active
+          ? (
+            <>
+              <div style={{ fontWeight: 600 }}>{personName(link.name)}</div>
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>{t('me.roleGuardian')}</Typography.Text>
+            </>
+          )
+          : <div style={{ fontWeight: 600 }}>{t('me.roleGuardian')}</div>}
+      </div>
+      <span className={`ant-tag ka-pill ka-pill--${active ? 'ok' : 'pend'}`} style={{ flex: 'none' }}>
+        {t(`me.link.${link.status}`)}
+      </span>
+    </div>
+  );
+}
+
 function MeTitle() {
   const { t } = useTranslation();
   return <Typography.Title level={2} style={{ fontSize: 23, marginBottom: 16 }}>{t('me.title')}</Typography.Title>;
@@ -71,8 +115,10 @@ export function StudentMe() {
   const { t, i18n } = useTranslation();
   const locale = i18n.language as KaLocale;
   const { identity } = useIdentity();
-  // ONE read, and only for the school chip — the identity itself rides the shell's /api/me.
+  // TWO reads now: /api/enrolments for the school chip, and the link read behind the guardians card. The
+  // identity itself still rides the shell's /api/me.
   const enr = useResource<{ data: EnrolRow[] }>('/api/enrolments');
+  const links = useResource<{ data: GuardianLink[] }>('/api/my/guardians');
   if (!identity) return <Skeleton active paragraph={{ rows: 3 }} />;
 
   const mine = (enr.data?.data ?? []).find((e) => e.student_id === identity.id) ?? null;
@@ -90,6 +136,16 @@ export function StudentMe() {
             (extracted at S-UX1 so public pages could switch too). */}
         <MeRow label={t('me.language')}><LocaleSwitcher /></MeRow>
       </IdentityCard>
+
+      {/* B9 item 2 — the block's second card. Rendered only when the student HAS links: a student with none
+          is a real and unremarkable state (a school-roll student with no guardian on the platform yet), and
+          an empty "My guardians" card would invite them to wonder what went wrong. */}
+      {(links.data?.data ?? []).length > 0 && (
+        <div style={{ background: 'var(--ka-card)', borderRadius: 'var(--ka-r-md)', padding: '18px 20px', marginTop: 'var(--ka-zone-gap)' }}>
+          <Typography.Title level={3} style={{ fontSize: 15.5, marginTop: 0, marginBottom: 4 }}>{t('me.myGuardians')}</Typography.Title>
+          {(links.data?.data ?? []).map((l) => <GuardianRosterRow key={l.guardian_id} link={l} />)}
+        </div>
+      )}
     </div>
   );
 }
@@ -102,7 +158,16 @@ export function GuardianMe() {
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
+  // B9 item 3 — the block's "Guardian · 2 linked children" (L909). The count is the LINK count, from the
+  // link read itself, so it is the fact the line claims to be. ALL statuses: the guardian is being told how
+  // many children they are linked to, and a pending link is one they hold and are served their own row for.
+  const links = useResource<{ data: ChildLink[] }>('/api/my/children');
   if (!identity) return <Skeleton active paragraph={{ rows: 3 }} />;
+
+  // Zero falls back to the bare role word rather than "Guardian · 0 linked children" — a freshly registered
+  // guardian awaiting their first ceremony is a real state, and counting to zero at them states nothing.
+  const linkCount = (links.data?.data ?? []).length;
+  const roleLine = linkCount > 0 ? t('me.roleGuardianLinked', { count: linkCount }) : t('me.roleGuardian');
 
   // REDEEM only. The block's "Start a pairing code" names the wrong actor: POST /my/pairing-codes is
   // role:student — the STUDENT generates, the GUARDIAN redeems (POST /pairing-codes/redeem, role:guardian).
@@ -130,7 +195,7 @@ export function GuardianMe() {
   return (
     <div data-density="product" style={{ maxWidth: 900 }}>
       <MeTitle />
-      <IdentityCard name={personName(identity.name)} roleLine={t('me.roleGuardian')}>
+      <IdentityCard name={personName(identity.name)} roleLine={roleLine}>
         <MeRow label={t('me.language')}><LocaleSwitcher /></MeRow>
       </IdentityCard>
 

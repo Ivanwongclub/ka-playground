@@ -12,11 +12,11 @@ import { useResource, DataBoundary } from '../api/useResource';
 import { mutate } from '../api/mutate';
 import { personName, schoolName } from '../display/names';
 import { formatMoney } from '../display/money';
-import { formatHkt } from '../display/date';
+import { formatHkt, formatHktDayMonth } from '../display/date';
 import { StatusTag } from '../display/status';
 // DS2 (restyle rollout — anchor STEP 1 MyChildren; C3 MyPayments/MyStudents). ALLOWED adopter already
 // (import-guard, no change). C3 is container-framing only (List/Card→SubPanel); MyChildren is untouched.
-import { SubPanel, ZoneStack, StatChip, EmptyState, UrgencyChip, urgencyLevel, urgencyDays, urgencyLabel, URGENCY } from '@/ds2';
+import { SubPanel, ZoneStack, StatChip, MetaChip, EmptyState, UrgencyChip, urgencyLevel, urgencyDays, urgencyLabel, URGENCY } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -30,6 +30,9 @@ interface Enrolment { id: string; programme_id: number; student_id: number; stat
 interface Order { id: string; programme_id: number; student_id: number; payer_party: string; status: string; total_amount_minor: number; currency: string; payment_due_at: string | null; student_name: string | null; programme_name_en: string; programme_name_tc: string; programme_name_sc: string }
 interface Receipt { id: string; order_id: string; receipt_number: number; amount_minor: number; currency: string; issued_at: string }
 interface StudentRow { student_id: number; student_name: string | null }
+// GET /api/consent-requests — B9 uses it for the request ID alone (the ceremony's target). Everything else
+// on this surface still comes off the enrolment read.
+interface ConsentRequestRow { id: string; student_id: number; programme_id: number; status: string }
 interface OrderLine { id: string; name_en: string; name_tc: string; name_sc: string; amount_minor: number; currency: string }
 
 function progName(r: { programme_name_en: string; programme_name_tc: string; programme_name_sc: string }, locale: KaLocale): string {
@@ -103,8 +106,8 @@ function childInitials(name: string | null): string {
 // ── Guardian: one child's enrolment as a DRILL row (C2-LIST / C6). The row's object is the ENROLMENT, so the
 // whole row navigates to the scoped space /enrolments/:enrolmentId (ruling #5); the action button stops
 // propagation so it fires its own destination, not the drill. §3.1: informative values are plain text; only an
-// ACTIONABLE state (sign / get-link) is a button. goldKey carries the child card's SINGLE gold (ruling #2) — the
-// button is gold only when it is the child's one gold target.
+// ACTIONABLE state (sign / pay) is a button, and B9 makes that button GOLD on every row that has one — the
+// gold budget is per ROW, not per card (see the note above ChildEnrolmentRow).
 //
 // THE ROW SET IS EMERGENT, NOT A TABLE OF STATES (C6 ruling #2): each row renders IFF its computed value is
 // non-empty. Consent comes from the enrolment read's consent_status/expires now (no second fetch); Fees still
@@ -114,19 +117,18 @@ function childInitials(name: string | null): string {
 // which values exist. ──
 function ckey(studentId: number, programmeId: number): string { return `${studentId}:${programmeId}`; }
 
-// The child card's one gold target: the first actionable row in enrolment order (consent before fees). null when
-// the child has no action — that card then carries NO gold (ruling #2). Consent-actionable is now read straight
-// off the enrolment's consent_status; fees-actionable off the guardian's order.
-function goldTarget(enrolments: Enrolment[], orderBy: Map<string, Order>): string | null {
-  for (const e of enrolments) {
-    if (e.consent_status && ['sent', 'viewed'].includes(e.consent_status)) return `${e.id}:consent`;
-    const o = orderBy.get(ckey(e.student_id, e.programme_id));
-    if (o && o.status === 'issued') return `${e.id}:fees`;
-  }
-  return null;
-}
+// B9 — the gold rule moves from PER-CARD to PER-ROW, which is what the block actually draws. C6 read the
+// standing "≤1 gold" rule as one gold per child card and picked a single winner across all of a child's rows;
+// the block gives card 1 a gold [Sign] and card 2 a gold [Pay] (L734/L741), and a child who owes BOTH a
+// signature and a payment has two different obligations on two different rows. Suppressing one does not make
+// the card calmer — it hides a real, dated obligation behind a quieter button.
+//
+// The rule is preserved where it means something: ONE gold per ROW (a row has exactly one action), and a row
+// is gold-eligible only when genuinely ACTIONABLE — consent open for signing, or an order still issued. A
+// settled row carries no button at all, so golds cannot multiply past the obligations that actually exist.
+// goldTarget() is deleted rather than rewritten: there is no longer a winner to choose.
 
-function ChildEnrolmentRow({ e, order, goldKey }: { e: Enrolment; order?: Order; goldKey: string | null }) {
+function ChildEnrolmentRow({ e, order, consentRequestId }: { e: Enrolment; order?: Order; consentRequestId?: string }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language as KaLocale;
   const navigate = useNavigate();
@@ -137,12 +139,17 @@ function ChildEnrolmentRow({ e, order, goldKey }: { e: Enrolment; order?: Order;
   // Consent — the guardian CAN sign, so an actionable consent is a gold-eligible button plus an expiry countdown
   // driven by the real consent_expires_at now on the read.
   if (e.consent_status && ['sent', 'viewed'].includes(e.consent_status)) {
-    const gold = goldKey === `${e.id}:consent`;
     const lvl = urgencyLevel(e.consent_expires_at, URGENCY.consent);
+    // B9 — the block sends [Sign] to the CEREMONY (L734 `go('gua-sign')`), not to the consents list. The
+    // enrolment read carries consent_status and consent_expires_at but NOT the request id, so the id comes
+    // from the guardian's own /api/consent-requests, matched on (student, programme) exactly as the order is.
+    // Without a match — e.g. a request addressed to a CO-guardian, which this guardian cannot read — the row
+    // falls back to the list rather than guessing an id: a wrong id is a 404 into a legal ceremony.
+    const target = consentRequestId ? `/consents/${consentRequestId}` : '/consents';
     rows.push({ label: `${t('enrolCard.consent')} · ${prog}`, node: (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         {lvl !== 'none' && <UrgencyChip level={lvl} label={urgencyLabel(lvl, urgencyDays(e.consent_expires_at), t)} />}
-        <Link to="/consents" onClick={stop}><Button type={gold ? 'primary' : 'default'} size="small" className={gold ? 'ka-cta' : undefined}>{t('selfService.reviewSign')}</Button></Link>
+        <Link to={target} onClick={stop}><Button type="primary" size="small" className="ka-cta">{t('selfService.sign')}</Button></Link>
       </span>
     ) });
   } else if (e.consent_status) {
@@ -152,12 +159,20 @@ function ChildEnrolmentRow({ e, order, goldKey }: { e: Enrolment; order?: Order;
   }
   if (order) {
     if (order.status === 'issued') {
-      const gold = goldKey === `${e.id}:fees`;
-      const due = order.payment_due_at ? ` · ${t('selfService.due')} ${formatHkt(order.payment_due_at, locale)}` : '';
+      // DAY + MONTH, matching the block's "due 20 Aug". formatHkt appended a clock time ("Aug 29, 2026,
+      // 3:41 AM") — not a fact a guardian needs, since an obligation falls due on a DAY — and at 390px the
+      // extra characters burst the chip. Caught in the built shot, not reasoned about.
+      const due = order.payment_due_at ? ` · ${t('selfService.due')} ${formatHktDayMonth(order.payment_due_at, locale)}` : '';
+      // B9 — the block puts amount + due date in a WARN chip (L741), not in muted body text: an unpaid
+      // obligation with a date on it is the loud half of its row, the same way the consent countdown is.
+      // The treatment is DS2's UrgencyChip when a due date gives it a level; with no due date there is no
+      // deadline to be urgent about, so the amount rides a plain MetaChip instead of a coloured one.
+      const lvl = urgencyLevel(order.payment_due_at, URGENCY.payment);
+      const amountDue = `${formatMoney(order.total_amount_minor, order.currency, locale)}${due}`;
       rows.push({ label: `${t('enrolCard.fees')} · ${prog}`, node: (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <Text type="secondary">{formatMoney(order.total_amount_minor, order.currency, locale)}{due}</Text>
-          <Link to="/my/payments" onClick={stop}><Button type={gold ? 'primary' : 'default'} size="small" className={gold ? 'ka-cta' : undefined}>{t('selfService.getLink')}</Button></Link>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '100%' }}>
+          {lvl !== 'none' ? <UrgencyChip level={lvl} label={amountDue} /> : <MetaChip>{amountDue}</MetaChip>}
+          <Link to="/my/payments" onClick={stop}><Button type="primary" size="small" className="ka-cta">{t('selfService.pay')}</Button></Link>
         </span>
       ) });
     } else {
@@ -171,7 +186,7 @@ function ChildEnrolmentRow({ e, order, goldKey }: { e: Enrolment; order?: Order;
   ) });
   // Next session — title + start, when a future session exists.
   if (e.next_session_title) {
-    rows.push({ label: `${t('enrolCard.nextSession')} · ${prog}`, node: (
+    rows.push({ label: t('enrolCard.nextSession'), node: (
       <Text type="secondary">{`${e.next_session_title} · ${formatHkt(e.next_session_starts_at ?? '', locale)}`}</Text>
     ) });
   }
@@ -187,8 +202,10 @@ function ChildEnrolmentRow({ e, order, goldKey }: { e: Enrolment; order?: Order;
       >
         {rows.map((r, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 32 }}>
-            <span className="ds2-atom">{r.label}</span>
-            <span style={{ textAlign: 'right' }}>{r.node}</span>
+            {/* The label must be allowed to GROW: without a flex basis it collapses to min-content next to a
+                nowrap chip and wraps to four lines at 390px (caught in the built shot). */}
+            <span className="ds2-atom" style={{ flex: '1 1 auto', minWidth: 0 }}>{r.label}</span>
+            <span style={{ textAlign: 'right', flex: '0 1 auto', minWidth: 0 }}>{r.node}</span>
           </div>
         ))}
       </div>
@@ -206,8 +223,19 @@ export function MyChildren() {
   const locale = i18n.language as KaLocale;
   const res = useResource<{ data: Enrolment[] }>('/api/enrolments');
   const ord = useResource<{ data: Order[] }>('/api/orders');
+  // B9 — back to THREE reads. C6 got this to two by taking consent STATE off the enrolment read, and that
+  // stands: nothing here re-fetches state. What the enrolment read does not carry is the consent request's
+  // ID, and the block's [Sign] goes to the ceremony for a specific request. Matched on (student, programme),
+  // the same key the order already uses. The honest alternative is one field on the enrolment read
+  // (consent_request_id) which would take this back to two — a read card, flagged, not smuggled in here.
+  const con = useResource<{ data: ConsentRequestRow[] }>('/api/consent-requests');
 
   const orderBy = new Map((ord.data?.data ?? []).map((o) => [ckey(o.student_id, o.programme_id), o]));
+  // Open requests only: a signed/declined/expired request is not a ceremony target (the server refuses it),
+  // and the row that would use this id only renders when consent_status is sent|viewed anyway.
+  const consentIdBy = new Map((con.data?.data ?? [])
+    .filter((c) => ['sent', 'viewed'].includes(c.status))
+    .map((c) => [ckey(c.student_id, c.programme_id), c.id]));
 
   // group the guardian's children's enrolments by child (RLS already scopes to own children)
   const byChild = new Map<number, { name: string | null; enrolments: Enrolment[] }>();
@@ -226,7 +254,6 @@ export function MyChildren() {
         <DataBoundary loading={res.loading} error={res.error} empty={children.length === 0}>
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             {children.map(([studentId, { name, enrolments }]) => {
-              const goldKey = goldTarget(enrolments, orderBy); // ruling #2: ≤1 gold per child card
               // A child sits on one active school link (or none — a direct-to-academy student), so the school is a
               // per-child fact: take it off any enrolment. null → omit the line (never render "—").
               const school = schoolName(enrolments.find((e) => schoolName(e, locale)) ?? enrolments[0], locale);
@@ -253,18 +280,23 @@ export function MyChildren() {
                       child record. "View sessions" → /family/sessions — the guardian's ONLY entry since C1-SHELL
                       demoted the nav slot; FLAG: redundant once the scoped-space Sessions tab covers per-child
                       sessions — remove it then, not now. */}
-                  <Space size="middle">
-                    <Link to={`/my/children/${studentId}`}>{t('selfService.viewProfile')}</Link>
-                    <Link to={`/family/sessions?student=${studentId}`}>{t('selfService.viewSessions')}</Link>
-                  </Space>
                 </div>
+                {/* The two drills, on their OWN line. They used to sit beside the name and, at 390px, squeezed
+                    it to a three-line wrap ("Demo Stude / nt A1") — caught in the built shot. Both STAY: "View
+                    record" is this card's drill to the child hub (the block's whole-card click, in the shape
+                    a11y allows), and "View sessions" holds the guardian's only sessions entry until the scoped
+                    space's Sessions tab covers per-child sessions (C6 flag — remove it then, not now). */}
+                <Space size="middle" style={{ marginBottom: 14 }}>
+                  <Link to={`/my/children/${studentId}`}>{t('selfService.viewProfile')}</Link>
+                  <Link to={`/family/sessions?student=${studentId}`}>{t('selfService.viewSessions')}</Link>
+                </Space>
                 <ZoneStack>
                   {enrolments.map((e) => (
                     <ChildEnrolmentRow
                       key={e.id}
                       e={e}
                       order={orderBy.get(ckey(e.student_id, e.programme_id))}
-                      goldKey={goldKey}
+                      consentRequestId={consentIdBy.get(ckey(e.student_id, e.programme_id))}
                     />
                   ))}
                 </ZoneStack>

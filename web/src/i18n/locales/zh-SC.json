@@ -651,7 +651,8 @@
     "browseOpen": "浏览开放报名的课程",
     "termFrom": "{{start}} 起",
     "open": "开启 ›",
-    "filter": { "all": "全部", "open": "开放报名", "enrolled": "我的报名" },
+    "filter": {
+      "soon": "即将开放", "all": "全部", "open": "开放报名", "enrolled": "我的报名" },
     "title": "课程市集",
     "subtitle": "浏览开放中的课程并报名。",
     "enrol": "报名",
@@ -1039,7 +1040,8 @@
     "studentsSubtitle": "你校名册上的学生。",
     "noStudents": "名册上暂无学生。",
     "enrolments_other": "项报名",
-    "reviewSign": "查阅并签署",
+    "sign": "签署",
+    "pay": "付款",
     "viewRecord": "查看记录"
   },
   "guaChild": {
@@ -1063,6 +1065,9 @@
     "language": "语言",
     "roleStudent": "学生",
     "roleGuardian": "家长",
+    "roleGuardianLinked_other": "家长 · {{count}} 名已连结子女",
+    "myGuardians": "我的家长",
+    "link": { "active": "已连结", "pending_approval": "等待批核" },
     "linkChild": "链接另一名子女",
     "enterCode": "输入配对码",
     "codeLabel": "配对码",

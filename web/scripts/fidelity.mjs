@@ -130,7 +130,8 @@ const BUILT_SEL = {
   nav: '.ant-menu-item .ant-menu-title-content, .ka-tabbar a, .ka-tabbar button',
   card: '.ds2-glance__title, .ant-card-head-title, .ds2-rhdr__name, h1, h2, h3, .ant-typography h3, h4, h5',
   row: '.ds2-glance__lbl, .ds2-record__hl .ds2-hl__lbl',
-  chip: '.ant-tag, .ds2-uchip, .ka-tag',
+  chip: '.ant-tag, .ds2-uchip, .ds2-chip, .ka-tag',   // .ds2-chip = MetaChip/DatedBadge (B9: was missing, so
+                                                      // every MetaChip counted as zero and tables under-reported)
   button: '.ant-btn',
 };
 // Prototype vocabulary (broad — the prototype's own classes vary; anchor on structural roles).
@@ -177,7 +178,7 @@ async function main() {
   const viewport = args.viewport ?? 'desktop';
   const protoPath = process.env.FIDELITY_PROTO ?? PROTO_TRACKED; // override ONLY to test the gate
   if (!screen || !route || !role || !card) {
-    console.error('usage: node scripts/fidelity.mjs --screen <data-p> --route </path> --role <role> --card <ID> [--viewport desktop|mobile]');
+    console.error('usage: node scripts/fidelity.mjs --screen <name> --route </path> --role <role> --card <ID> [--viewport desktop|mobile] [--proto-sel <css>]');
     process.exit(1);
   }
   if (!ROLE_EMAIL[role]) { console.error(`unknown role '${role}'. known: ${Object.keys(ROLE_EMAIL).join(', ')}`); process.exit(1); }
@@ -212,20 +213,25 @@ async function main() {
 
   // ── PROTOTYPE: isolate the one screen by class-toggle, screenshot its block ──
   await page.goto(pathToFileURL(protoPath).href, { waitUntil: 'networkidle' });
-  const isolated = await page.evaluate((key) => {
+  // `[data-p]` is NOT the anchor for every screen (see HEADS UP above): family screens like gua-children,
+  // stu-me, gua-me and stu-explore carry `data-p` on their NAV BUTTONS and `id` on the section, so isolating
+  // by data-p photographs a 40px tab. `--proto-sel` overrides the selector for exactly those; omit it and the
+  // behaviour is byte-identical to before. B9 added it after hitting the case on all four of its screens.
+  const protoSel = args['proto-sel'] ?? `[data-p="${screen}"]`;
+  const isolated = await page.evaluate((sel) => {
     document.querySelectorAll('.app.on, .page.on').forEach((e) => e.classList.remove('on'));
-    const pg = document.querySelector(`[data-p="${key}"]`);
+    const pg = document.querySelector(sel);
     if (!pg) return false;
     const app = pg.closest('.app');
     if (app) app.classList.add('on');
     pg.classList.add('on');
     pg.scrollIntoView();
     return true;
-  }, screen);
-  if (!isolated) { console.error(`prototype screen [data-p="${screen}"] not found in ${protoPath}`); await browser.close(); process.exit(3); }
+  }, protoSel);
+  if (!isolated) { console.error(`prototype screen ${protoSel} not found in ${protoPath}`); await browser.close(); process.exit(3); }
   await page.waitForTimeout(200);
-  const protoStruct = await evalStruct(`[data-p="${screen}"]`, PROTO_SEL);
-  const el = await page.$(`[data-p="${screen}"]`);
+  const protoStruct = await evalStruct(protoSel, PROTO_SEL);
+  const el = await page.$(protoSel);
   await (el ?? page).screenshot({ path: protoPng });
 
   await browser.close();

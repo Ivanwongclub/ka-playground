@@ -651,7 +651,8 @@
     "browseOpen": "Browse open programmes",
     "termFrom": "From {{start}}",
     "open": "Open ›",
-    "filter": { "all": "All", "open": "Enrolment open", "enrolled": "My enrolled" },
+    "filter": {
+      "soon": "Coming soon", "all": "All", "open": "Enrolment open", "enrolled": "My enrolled" },
     "title": "Programme Marketplace",
     "subtitle": "Browse open programmes and enrol.",
     "enrol": "Enrol",
@@ -1042,7 +1043,8 @@
     "noStudents": "No students on your roll yet.",
     "enrolments_one": "enrolment",
     "enrolments_other": "enrolments",
-    "reviewSign": "Review & sign",
+    "sign": "Sign",
+    "pay": "Pay",
     "viewRecord": "View record"
   },
   "guaChild": {
@@ -1066,6 +1068,10 @@
     "language": "Language",
     "roleStudent": "Student",
     "roleGuardian": "Guardian",
+    "roleGuardianLinked_one": "Guardian · {{count}} linked child",
+    "roleGuardianLinked_other": "Guardian · {{count}} linked children",
+    "myGuardians": "My guardians",
+    "link": { "active": "Linked", "pending_approval": "Awaiting approval" },
     "linkChild": "Link another child",
     "enterCode": "Enter a pairing code",
     "codeLabel": "Pairing code",

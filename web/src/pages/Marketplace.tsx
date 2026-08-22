@@ -11,18 +11,24 @@
 // MarketplaceController::show returns the SAME payload as the list and About/Schedule/Venue are not modelled
 // at all — a detail page would be a hero plus five stage labels, duplicating the card just tapped.
 //
-// NO PRICE. The block bolds a fee on every card; `fee_items_read` has NO family and NO anonymous arm
-// (system OR academy_admin with finance|configuration|operations|audit_read), and the S02B policy comment
-// ties that to the unresolved S04A consumer clause. So a price here is MODEL-FORBIDS as the policy stands,
-// not a read-widen — the cards carry term · ages · state and no fee line. Never faked. FLAG (owner ruling).
+// PRICE — B9 consumes S-READ-3 item 2. The B7 note this replaces said MODEL-FORBIDS, and it was true then:
+// `fee_items_read` has no family and no anonymous arm. S-READ-3 did not widen that policy — it added
+// `fee_total_minor` + `currency` to the catalogue read, summed behind ONE registered elevation, and ONLY for
+// an AUTHENTICATED FAMILY caller. So the anonymous payload still carries no money field, which is what keeps
+// `payment_links.single_reader` true in fact and not merely green.
+// The field is ABSENT (not zero) when a programme has no fee items, or when its items span currencies. Absent
+// => NO line. A programme with no fee is not a free programme; rendering HK$0.00 would assert a price that was
+// never published. `fee_total_minor != null` is therefore the only condition — never `> 0`.
 //
 // NO DRILL for an un-enrolled card: with progdet deferred there is no family-facing programme-detail route
 // (main.tsx has none), so the block's "View ›" would point nowhere. It is omitted rather than rendered dead.
 // An ENROLLED card keeps its real drill — "Open ›" → /enrolments/{id}, the scoped space.
 //
-// "Coming soon" filter OMITTED: it needs `enrolment_opens_at`, which the read derives `status` from but does
-// not expose. The only proxy (current ∧ closed) also catches ENDED programmes, so the chip would mislabel
-// them as forthcoming. One-field RW; flagged, not approximated.
+// "Coming soon" — B9 consumes S-READ-3 item 3. B7 omitted this chip rather than approximate it: the only
+// proxy available then (current ∧ closed) also catches ENDED programmes and would have labelled them
+// forthcoming. `enrolment_opens_at` is now served FROM THE COLUMN — the same source the read derives `status`
+// from — so the chip and the status can never contradict each other. The predicate is the field itself:
+// opens_at in the FUTURE. A programme with a null opens_at has no announced opening and is never "soon".
 import { useState } from 'react';
 import { App, Button, Col, Modal, Row, Select, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
@@ -34,7 +40,8 @@ import { mutate } from '../api/mutate';
 import { Link } from 'react-router-dom';
 import { personName } from '../display/names';
 import { asset } from '../assets';
-import { formatHktDayMonth } from '../display/date';
+import { formatHktDayMonth, tsSort } from '../display/date';
+import { formatMoney } from '../display/money';
 import { StatusTag } from '../display/status';
 import { SubPanel, EmptyState, HeroBanner } from '@/ds2';
 
@@ -46,9 +53,16 @@ interface ProgrammeCard {
   phase: string; status: 'open' | 'closed'; brand_color: string; banner_url: string | null;
   tagline: Tri; category: Tri; age_range: Tri; duration: Tri;
   starts_on: string | null; enrolment_closes_on: string | null;
+  // S-READ-3 item 3 — public, unconditional, straight off the column.
+  enrolment_opens_at: string | null;
+  // S-READ-3 item 2 — AUTHENTICATED FAMILY ONLY, and absent (never 0) for a programme with no fee items or
+  // with items spanning currencies. Optional in the type because an anonymous browse legitimately lacks it.
+  fee_total_minor?: number | null; currency?: string | null;
 }
 interface EnrolRow { id: string; student_id: number; programme_id: number; status: string; student_name: string | null }
-type Filter = 'all' | 'open' | 'enrolled';
+// GET /my/children (S-READ-3 item 1). `name` is null for every non-active link, by ruling F-1.
+interface ChildLink { student_id: number; name: string | null; status: string }
+type Filter = 'all' | 'open' | 'soon' | 'enrolled';
 
 // "Any active record" (R-2) — a live enrolment (anything that is not a terminal exit).
 const TERMINAL = new Set(['withdrawn', 'released']);
@@ -69,15 +83,32 @@ export function Marketplace() {
 
   const catalogue = useResource<{ data: ProgrammeCard[] }>('/api/programmes');
   const enrolments = useResource<{ data: EnrolRow[] }>('/api/enrolments'); // the caller's OWN (R-2/R-4)
+  // B9 item 1 — the picker's roll comes from the LINK read, not from enrolment rows. Guardian-only: the
+  // route is role:guardian and a student calling it 403s, so the URL is null for everyone else and
+  // useResource stays idle rather than firing a request it knows will be refused.
+  const links = useResource<{ data: ChildLink[] }>(isGuardian ? '/api/my/children' : null);
   const [filter, setFilter] = useState<Filter>('all');
   const [enrolFor, setEnrolFor] = useState<ProgrammeCard | null>(null);
   const [pick, setPick] = useState<number | undefined>(undefined);
 
   const rows = enrolments.data?.data ?? [];
-  // Programme ids the caller (or their children) already hold a LIVE enrolment in.
-  const enrolled = new Set(rows.filter((e) => !TERMINAL.has(e.status)).map((e) => e.programme_id));
-  // A guardian's distinct children (from their own enrolments); used by the enrol picker.
-  const children = Array.from(new Map(rows.map((e) => [e.student_id, e.student_name])).entries()).map(([id, name]) => ({ id, name }));
+  // (RIDER 2 removed the `enrolled` programme-id Set: its only consumer was the picker's disabled-option
+  // condition, and the question is now per CHILD — see enrollableIn() — not per programme.)
+  /**
+   * B9 item 1 — the enrol picker's roll. It used to be derived from the guardian's ENROLMENT rows, which made
+   * the register→link→enrol path a dead end: a newly-linked child with no enrolment yet was invisible in the
+   * one picker that could give them their first one. GET /my/children is the link read, so a child appears
+   * because they are LINKED, not because they are already enrolled.
+   *
+   * ACTIVE LINKS ONLY. A pending link is a relationship the academy has not approved (OD-23/OD-27), and
+   * enrolling is an act of guardianship — so this guardian cannot yet perform it for that child. It is the
+   * same logic F-1 uses to withhold the NAME: the read returns `name: null` for a pending row, so a pending
+   * child could only ever render as "—" in a picker that would then 403 on submit. Filtered, not disabled:
+   * a disabled row would advertise the existence of a link the guardian has not been granted.
+   */
+  const children = (links.data?.data ?? [])
+    .filter((l) => l.status === 'active')
+    .map((l) => ({ id: l.student_id, name: l.name }));
 
   const submit = async () => {
     if (!enrolFor || pick === undefined) return;
@@ -91,6 +122,21 @@ export function Marketplace() {
   // The caller's live enrolments in a programme. A guardian can hold SEVERAL (one per child), which is why
   // the drill below is only offered when exactly one exists — "Open ›" must address one enrolment, not guess.
   const liveFor = (id: number) => rows.filter((e) => e.programme_id === id && !TERMINAL.has(e.status));
+
+  /**
+   * RIDER 2 — which ACTIVE-LINKED children can still be enrolled in THIS programme.
+   *
+   * The Enrol affordance used to key on `liveFor(programme).length === 0`, i.e. "this FAMILY holds no live
+   * enrolment here". That is the wrong subject: one child enrolled hid the button for every sibling, so a
+   * guardian with A7 and C1 unenrolled could not reach the picker on a programme another child was already
+   * in. The predicate is now per CHILD — some active-linked child has no live enrolment here — which is the
+   * question the button actually answers.
+   *
+   * Terminal enrolments do not count as live, so a withdrawn child becomes enrollable again, exactly as the
+   * server would allow.
+   */
+  const enrollableIn = (id: number) =>
+    children.filter((ch) => !rows.some((e) => e.student_id === ch.id && e.programme_id === id && !TERMINAL.has(e.status)));
 
   // The card's state chip: enrolled beats open/closed, because it is the caller's own fact.
   const chip = (c: ProgrammeCard) => {
@@ -109,19 +155,49 @@ export function Marketplace() {
     return <StatusTag domain="catalogueStatus" value={c.status} />;
   };
 
-  // The card's ONE affordance, right-aligned opposite the chip.
+  /**
+   * The card's affordances, right-aligned opposite the chip.
+   *
+   * RIDER 2 — the MIXED case (some children enrolled, some not) shows BOTH facts, because they are facts
+   * about DIFFERENT CHILDREN and neither may hide the other: the chip states that this family is enrolled
+   * here (chip() is unchanged), the drill opens the one enrolment that exists, and the button enrols the
+   * children who are not in it yet.
+   *
+   * GOLD, per-card ≤1. "Open ›" is the block's `.link-name`, GOLD text (L169), and it keeps that when it is
+   * the card's only affordance. When the Enrol button renders beside it the drill goes QUIET: the action
+   * outranks the drill, and a gold drill next to a quiet action inverts the hierarchy the rider states.
+   * The Enrol button itself stays quiet (B7's standing ruling — the surface's one gold is the hero, and a
+   * per-card gold would multiply across every open programme). So a mixed card carries ZERO action-golds,
+   * an enrolled-only card exactly one, and the surface's single gold remains the hero button.
+   */
   const action = (c: ProgrammeCard) => {
     const live = liveFor(c.id);
-    // Enrolled and unambiguous → the real drill, into the scoped space.
-    // the block's `.link-name` is GOLD text (L169), not antd's link blue. Styled from the token rather than
-    // a class name — there is no .ka-linkname in the codebase (checked; it would have rendered blue).
-    if (live.length === 1) return <Link to={`/enrolments/${live[0].id}`} style={{ color: 'var(--ka-gold)' }}>{t('marketplace.open')}</Link>;
-    if (live.length > 1) return null;                 // ambiguous target — Children is the entry, not this card
-    if (c.status === 'closed') return null;           // nothing to do on a closed programme; the chip says so
-    // NOT gold. The block gives the surface its ONE gold to the hero button (L588) and gives its cards a
-    // chip + `.link-name` text, no button at all. A per-card gold would also MULTIPLY — five open programmes,
-    // five golds — so the affordance stays, the gold does not (≤1 action-gold, standing rule).
-    if (isGuardian) return <Button size="small" onClick={() => { setEnrolFor(c); setPick(undefined); }}>{t('marketplace.enrol')}</Button>;
+    const enrollable = c.status === 'open' && isGuardian ? enrollableIn(c.id) : [];
+    // The drill must address ONE enrolment, so it renders only when exactly one exists — never a guess.
+    const drill = live.length === 1
+      ? (
+        <Link
+          to={`/enrolments/${live[0].id}`}
+          // QUIET is MUTED, not antd's default link blue — dropping the gold style entirely would hand the
+          // drill the exact blue B7 checked for and avoided. Gold when it is the card's only affordance.
+          style={{ color: enrollable.length > 0 ? 'var(--ka-muted-fg)' : 'var(--ka-gold)' }}
+        >
+          {t('marketplace.open')}
+        </Link>
+      )
+      : null;
+    const enrol = enrollable.length > 0
+      ? <Button size="small" onClick={() => { setEnrolFor(c); setPick(undefined); }}>{t('marketplace.enrol')}</Button>
+      : null;
+
+    if (drill && enrol) {
+      return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>{drill}{enrol}</span>;
+    }
+    if (drill) return drill;
+    if (enrol) return enrol;
+    // A guardian with nothing enrollable here (every active-linked child already live in it, or no active
+    // link at all) gets no button — an affordance that opens an empty picker is a dead one.
+    if (live.length > 0 || c.status === 'closed' || isGuardian) return null;
     // Student on an open, not-enrolled programme — honest, never a dead button (guardian-led enrolment).
     return <Text type="secondary" style={{ fontSize: 12 }}>{t('marketplace.guardianEnrols')}</Text>;
   };
@@ -135,10 +211,25 @@ export function Marketplace() {
     return [start ? t('marketplace.termFrom', { start }) : null, dur].filter(Boolean).join(' · ');
   };
 
+  // B9 item 5 — "soon" is the FIELD, not a proxy: enrolment has an announced opening and it has not arrived.
+  // A null opens_at is not "soon" (nothing was announced) and an already-open programme is not "soon" either.
+  //
+  // PARSE VIA tsSort, never `new Date(...)`. The API emits "2026-09-19 16:00:00+00" — a space separator and a
+  // BARE two-digit offset, which V8 returns Invalid Date for. The shared parser normalises both (`+00` →
+  // `+00:00`), which is why every other surface reads these timestamps correctly. A hand-rolled
+  // `.replace(' ','T')` here silently produced NaN, NaN > now() is false, and the filter rendered EMPTY —
+  // caught by shooting the filtered state, not by reading the code.
+  // tsSort maps null AND unparseable to +Infinity (nulls-last, for sorting), so the null guard must come
+  // first: without it a programme with no announced opening would sort as infinitely far in the future and
+  // read as "coming soon" forever.
+  const comingSoon = (c: ProgrammeCard): boolean =>
+    c.enrolment_opens_at != null && tsSort(c.enrolment_opens_at) > Date.now();
+
   const visible = (catalogue.data?.data ?? []).filter((c) =>
     filter === 'open' ? c.status === 'open' && liveFor(c.id).length === 0
-      : filter === 'enrolled' ? liveFor(c.id).length > 0
-        : true);
+      : filter === 'soon' ? comingSoon(c)
+        : filter === 'enrolled' ? liveFor(c.id).length > 0
+          : true);
 
   return (
     <div style={{ maxWidth: 1100 }} data-density="product">
@@ -159,10 +250,10 @@ export function Marketplace() {
       </HeroBanner>
       </div>
 
-      {/* Filter chips (L591). The ACTIVE chip is gold — a SELECTION state, not an action gold. "Coming soon"
-          is absent: see the header note (enrolment_opens_at is not served). */}
+      {/* Filter chips (L591) — all FOUR the block carries, "Coming soon" included since B9. The ACTIVE chip
+          is gold: a SELECTION state, not an action gold, so it does not count against the surface's one. */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', margin: '2px 0 16px' }} role="group" aria-label={t('marketplace.title')}>
-        {(['all', 'open', 'enrolled'] as Filter[]).map((f) => (
+        {(['all', 'open', 'soon', 'enrolled'] as Filter[]).map((f) => (
           <button
             key={f}
             type="button"
@@ -193,8 +284,15 @@ export function Marketplace() {
                   {c.banner_url && <img src={c.banner_url} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
                   <span style={{ position: 'relative', padding: '12px 16px', color: '#fff', fontWeight: 700, fontSize: 15.5, textShadow: '0 1px 6px rgba(0,0,0,.5)' }}>{progName(c, locale)}</span>
                 </div>
-                {/* term · ages. The block bolds a PRICE at the right of this row — omitted, not faked. */}
-                <Text type="secondary">{[term(c), triOf(c.age_range, locale)].filter(Boolean).join(' · ')}</Text>
+                {/* term · ages, with the block's BOLD price at the right of the same row (L599). The price is
+                    absent — not zero — whenever the read omitted it: anonymous browse, no fee items, or items
+                    spanning currencies. Absent => the row is just the meta line, as B7 shipped it. */}
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+                  <Text type="secondary">{[term(c), triOf(c.age_range, locale)].filter(Boolean).join(' · ')}</Text>
+                  {c.fee_total_minor != null && (
+                    <Text strong style={{ flex: '0 0 auto' }}>{formatMoney(c.fee_total_minor, c.currency ?? 'HKD', locale)}</Text>
+                  )}
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 10 }}>
                   {chip(c)}
                   {action(c)}
@@ -215,8 +313,14 @@ export function Marketplace() {
         onOk={() => void submit()}
         onCancel={() => { setEnrolFor(null); setPick(undefined); }}
       >
-        {enrolFor && (
-          children.length === 0
+        {/* RIDER 2 — the picker offers exactly the children who can still be enrolled in THIS programme.
+            It was already per-programme, but it DISABLED an already-enrolled child rather than removing them:
+            a greyed row states "your child is in this programme" in the one place that cannot say why, and it
+            is the enrol dialog's job to offer choices, not to report enrolment state. Filtered now, from the
+            same enrollableIn() the button's condition uses — so the button can never open an empty picker. */}
+        {enrolFor && (() => {
+          const options = enrollableIn(enrolFor.id);
+          return options.length === 0
             ? <EmptyState size="inline" message={t('marketplace.noChildren')} />
             : (
               <>
@@ -226,11 +330,11 @@ export function Marketplace() {
                   placeholder={t('marketplace.pickChild')}
                   value={pick}
                   onChange={setPick}
-                  options={children.map((ch) => ({ value: ch.id, label: personName(ch.name), disabled: enrolled.has(enrolFor.id) && rows.some((e) => e.student_id === ch.id && e.programme_id === enrolFor.id && !TERMINAL.has(e.status)) }))}
+                  options={options.map((ch) => ({ value: ch.id, label: personName(ch.name) }))}
                 />
               </>
-            )
-        )}
+            );
+        })()}
       </Modal>
     </div>
   );

@@ -651,7 +651,8 @@
     "browseOpen": "瀏覽開放報名的課程",
     "termFrom": "{{start}} 起",
     "open": "開啟 ›",
-    "filter": { "all": "全部", "open": "開放報名", "enrolled": "我的報名" },
+    "filter": {
+      "soon": "即將開放", "all": "全部", "open": "開放報名", "enrolled": "我的報名" },
     "title": "課程市集",
     "subtitle": "瀏覽開放中的課程並報名。",
     "enrol": "報名",
@@ -1039,7 +1040,8 @@
     "studentsSubtitle": "你校名冊上的學生。",
     "noStudents": "名冊上暫無學生。",
     "enrolments_other": "項報名",
-    "reviewSign": "檢閱並簽署",
+    "sign": "簽署",
+    "pay": "付款",
     "viewRecord": "查看紀錄"
   },
   "guaChild": {
@@ -1063,6 +1065,9 @@
     "language": "語言",
     "roleStudent": "學生",
     "roleGuardian": "家長",
+    "roleGuardianLinked_other": "家長 · {{count}} 名已連結子女",
+    "myGuardians": "我的家長",
+    "link": { "active": "已連結", "pending_approval": "等待批核" },
     "linkChild": "連結另一名子女",
     "enterCode": "輸入配對碼",
     "codeLabel": "配對碼",
