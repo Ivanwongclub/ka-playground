@@ -201,7 +201,16 @@ Row navigation to records (`go('ops-stu')` ×5, `go('sch-student')` ×4) · Appr
   > CORRECTED 21 Aug (DOC-FIX-2). This bullet and the vocabulary line above previously claimed a three-state "Partial · 50%" attendance control and raised an alignment item on it. Cause: the vocabulary was gathered by grepping labels across the whole file, which swept in **refund-window** strings — "Partial · 50%" is a refund BAND (L1845 refund row · L2025 the mWd modal's "Refund window in force"), never an attendance state.
 
 ## 9 · PROTOTYPE ELEMENTS ALREADY OVERRULED BY THE MODEL (D-7, carried from Doc 1)
-5-seg segbar (display fold ruled) · "· 5 members"/"Led by {name}" on the lobby wall · tracker now/locked + "Unlocks when…" + locked-gate requirement titles · "Edit roster" on confirmed team · mentor flag-off card · notify promises ("You'll be notified…") · review-semantics copy on direct-insert join. ⛔ harness: persona bar, Simulate release, demo-control cards.
+5-seg segbar (display fold ruled) · "· 5 members"/"Led by {name}" on the lobby wall · tracker now/locked + "Unlocks when…" + locked-gate requirement titles · "Edit roster" on confirmed team · mentor flag-off card · notify promises ("You'll be notified…") · review-semantics copy on direct-insert join · **"Start a pairing code" on gua-me (L917) names the wrong actor** — the STUDENT generates a code (`role:student`), the GUARDIAN redeems it, so the built control reads "Enter a pairing code" (B5). ⛔ harness: persona bar, Simulate release, demo-control cards.
+
+### 9A · AS-BUILT DELIBERATE DIVERGENCE — the prototype is RIGHT, we chose otherwise
+Kept separate from the D-7 list above on purpose: D-7 records where the **prototype is wrong**; these record where it is **right and we diverged anyway**, with the reason. Filing them together would misclass five deliberate rulings as prototype errors.
+
+- **Six guardian tabs in the scoped space** (block combines them) — the block's own mirror note promises the guardian sees what the child sees plus Fees and signing authority; the combined tab is a demo shortcut, so we compose what the note promises (B4, `83ff06c`).
+- **Consents as two headed registers** — "Awaiting your signature · {n}" + "History", where the block has one flat list. The headings, count badge and rail are build-added structure; "History" is a build-authored string. Ruled deliberate for mobile scanning (B8 · B9r3, `4cc6a29`); already recorded at AUDIT-3 §A.4 and repeated here so the two records cannot drift.
+- **Title-as-link drills wherever a card holds an inner action** — the blocks use whole-card `onclick` + `event.stopPropagation()` on the inner button. That nests interactives (invalid HTML, ambiguous in the a11y tree) and `stopPropagation` is mouse-only, so keyboard and screen-reader users get nothing. The drill becomes an explicit link (GUA-FIX/B3, `3409cca`).
+- **Pairing button actor corrected** — see the D-7 line above; the control is the same, the actor is not (B5, `b0375b6`).
+- **No placeholder deadlines** — where the block prints a countdown, an ABSENT expiry renders NOTHING, never an em dash and never a fabricated "Due today" (which is what a zero day-count would produce). Introduced at B2 when a NULL expiry was found being dressed as a deadline; held at B8/B9 (`04659da`, `f7e5d61`).
 
 ---
 
