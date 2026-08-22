@@ -283,7 +283,7 @@
     "whoSigned": "Signed {{date}} · v{{version}} · {{language}}",
     "whoSignedNoVersion": "Signed {{date}} · {{language}}",
     "outstandingHeading": "Awaiting your signature",
-    "historyHeading": "Signed and settled",
+    "historyHeading": "History",
     "open": "Open",
     "awaitingSignature": "Awaiting guardian signature",
     "loadError": "Could not load this document",

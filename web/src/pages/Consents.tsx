@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   Alert, App as AntApp, Button, Checkbox, Descriptions, Input, Modal,
-  Segmented, Space, Tag, Typography,
+  Segmented, Space, Typography,
 } from 'antd';
 import { CircleCheckBig, FileClock, FileSignature, FileX } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -67,11 +67,11 @@ interface SignedPayload {
   signed_at: string;
 }
 
-const statusColor: Record<string, string> = {
-  sent: 'gold', viewed: 'blue', signed: 'green',
-  declined: 'red', superseded: 'default', voided: 'default', expired: 'default',
-};
-
+// RIDER 3 — the local `statusColor` map is gone. StatusTag's `consentState` domain already carries all seven
+// states with their tones (ChildHub uses it), and this page was a second, DRIFTING copy of it: it rendered
+// `expired` as `default` — a neutral grey, the same weight as `superseded` — which reads as a tidy filing
+// state. An expired consent is not tidy: the signature never happened and the enrolment has no valid consent.
+// The domain calls it `error`, and the domain wins; minting a parallel tone here is what caused the drift.
 const LIVE = ['sent', 'viewed'];
 
 /**
@@ -175,7 +175,7 @@ export function ConsentList() {
   };
 
   const statePill = (row: RequestRow): ReactNode => (
-    <Tag color={statusColor[row.status]}>{t(`consent.status.${row.status}`)}</Tag>
+    <StatusTag domain="consentState" value={row.status} />
   );
 
   return (

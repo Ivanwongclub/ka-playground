@@ -283,7 +283,7 @@
     "whoSigned": "{{date}} 已签署 · v{{version}} · {{language}}",
     "whoSignedNoVersion": "{{date}} 已签署 · {{language}}",
     "outstandingHeading": "待您签署",
-    "historyHeading": "已签署及已结案",
+    "historyHeading": "记录",
     "open": "打开",
     "awaitingSignature": "等待家长签署",
     "loadError": "无法加载此文件",
