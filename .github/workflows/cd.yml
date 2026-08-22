@@ -217,10 +217,15 @@ jobs:
         # RLS-PROOF-FIXTURES=<guardianA>,<guardianB>,<childB> for the proof.
         run: |
           SHA=${{ github.sha }}
+          # CD-FIX-2 — APP_KEY. The seeder's registration chain runs the REAL public submission, whose
+          # form_nonce is Crypt::encryptString'd (DemoSeeder:491) and read back by RegistrationService:118,
+          # so the seed boots the encrypter and died at MissingAppKeyException without a key. It binds the
+          # SAME secret as the web + worker revisions (cloudrun-web.yaml:56, cloudrun-worker.yaml:67) —
+          # seeded ciphertext has to be readable by the app that serves it.
           gcloud run jobs deploy kap-seed \
             --image=$AR_REPO/kap-api:$SHA --region=$GCP_REGION \
             --set-cloudsql-instances=${{ vars.CLOUDSQL_INSTANCE }} \
-            --set-secrets=DB_PASSWORD=kap-migrate-password:latest,DEMO_SEED_PASSWORD=demo-seed-password:latest \
+            --set-secrets=DB_PASSWORD=kap-migrate-password:latest,DEMO_SEED_PASSWORD=demo-seed-password:latest,APP_KEY=kap-app-key:latest \
             --set-env-vars=APP_ENV=demo,DB_CONNECTION=pgsql,DB_USERNAME=kap_migrate,DB_HOST=/cloudsql/${{ vars.CLOUDSQL_INSTANCE }},DB_DATABASE=kap \
             --command=php --args=artisan,migrate:fresh,--seed,--seeder=DemoSeeder,--force --quiet
           OUT=$(gcloud run jobs execute kap-seed --region=$GCP_REGION --wait --format='value(status.latestCreatedExecution.name)')
