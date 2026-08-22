@@ -43,6 +43,11 @@ class ConsentEvidenceReportController extends Controller
         return response()->json([
             'coverage_by_version_and_language' => $coverage,
             'outstanding' => $byStatus(['sent', 'viewed']),
+            // S-TTL-1 RIDER — the fifth bucket, landing in the SAME commit as the sweeper that creates the
+            // state. Without it `consents:expire` would move a request out of `outstanding` and into no
+            // bucket at all: the sweeper would silently remove work from the only ops consent surface. A
+            // lapsed consent is not resolved, it is unresolved and out of time, so it must stay visible.
+            'expired' => $byStatus(['expired']),
             'declined' => $byStatus(['declined']),
             'superseded' => $byStatus(['superseded']),
             'voided' => $byStatus(['voided']),

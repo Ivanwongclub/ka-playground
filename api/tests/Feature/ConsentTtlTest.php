@@ -297,6 +297,63 @@ class ConsentTtlTest extends TestCase
         $this->artisan('consents:expire')->expectsOutputToContain('1 consent request(s) expired')->assertSuccessful();
     }
 
+    /**
+     * S-TTL-1 RIDER — the sweeper must never remove work from the ops surface.
+     *
+     * Before the fifth bucket existed, expiring a request moved it OUT of `outstanding` and into no bucket
+     * at all, so the sweeper silently deleted work from the only ops consent report. This pins the pair:
+     * the row leaves `outstanding` AND arrives in `expired`, in the same pass.
+     */
+    public function test_an_expired_request_moves_from_outstanding_to_the_expired_bucket(): void
+    {
+        $id = $this->overdue('sent');
+        $auditor = User::factory()->create(['role' => 'academy_admin']);
+        DB::table('admin_capabilities')->insert([
+            'id' => (string) Str::uuid7(), 'user_id' => $auditor->id, 'capability' => 'audit_read',
+            'granted_by' => $auditor->id, 'granted_at' => now(),
+        ]);
+
+        Sanctum::actingAs($auditor);
+        $before = $this->getJson('/api/reports/consent-evidence')->assertOk()->json();
+        $this->assertContains($id, collect($before['outstanding'])->pluck('id')->all(), 'precondition: it starts in outstanding');
+        $this->assertSame([], collect($before['expired'] ?? [])->pluck('id')->all());
+
+        $this->app['auth']->forgetGuards();
+        app(ConsentSigningService::class)->expireOverdue();
+
+        Sanctum::actingAs($auditor);
+        $after = $this->getJson('/api/reports/consent-evidence')->assertOk()->json();
+        $this->assertNotContains($id, collect($after['outstanding'])->pluck('id')->all(), 'it must leave outstanding');
+        $this->assertContains($id, collect($after['expired'])->pluck('id')->all(), 'and it must NOT vanish — ops keeps sight of it');
+    }
+
+    public function test_the_expired_bucket_has_the_same_shape_as_the_other_four(): void
+    {
+        $this->overdue('sent');
+        $this->app['auth']->forgetGuards();
+        app(ConsentSigningService::class)->expireOverdue();
+
+        $auditor = User::factory()->create(['role' => 'academy_admin']);
+        DB::table('admin_capabilities')->insert([
+            'id' => (string) Str::uuid7(), 'user_id' => $auditor->id, 'capability' => 'audit_read',
+            'granted_by' => $auditor->id, 'granted_at' => now(),
+        ]);
+        Sanctum::actingAs($auditor);
+        $report = $this->getJson('/api/reports/consent-evidence')->assertOk()->json();
+
+        foreach (['outstanding', 'expired', 'declined', 'superseded', 'voided'] as $bucket) {
+            $this->assertArrayHasKey($bucket, $report, "the report lost the `{$bucket}` bucket");
+        }
+        $row = $report['expired'][0];
+        $this->assertSame(
+            ['id', 'template_id', 'programme_id', 'student_id', 'signer_id', 'status', 'created_at',
+                'programme_name_en', 'programme_name_tc', 'programme_name_sc', 'student_name', 'signer_name'],
+            array_keys($row),
+            'the fifth bucket must be the SAME shape as the four — no new field, none missing',
+        );
+        $this->assertSame('expired', $row['status']);
+    }
+
     // ── PART B: the retired window fields ────────────────────────────────────────────────────────────
 
     public function test_update_rejects_the_enrolment_window_fields(): void
