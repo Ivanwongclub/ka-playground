@@ -2,10 +2,17 @@
 
 namespace App\Services\Consent;
 
+use App\Events\ConsentRequestVoided;
+use App\Jobs\EvaluateConsentGate;
+use App\Jobs\GenerateConsentDocument;
+use App\Jobs\ReissueConsentRequest;
 use App\Models\User;
 use App\Services\Audit\AuditService;
+use App\Services\Authz\PermissionResolver;
+use App\Services\Authz\ScopeContext;
 use App\Services\Uploads\UploadService;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -19,6 +26,18 @@ use Illuminate\Validation\ValidationException;
  */
 class ConsentSigningService
 {
+    /**
+     * S-TTL-1 — how long an issued consent request stays signable. 14 days matches the house TTL
+     * (InvitationService uses the same); held_links use 90. Deliberately NOT `programmes.hold_window_days`:
+     * that is OD-11's ENROLMENT SEAT timer, whose stated mechanism ("expiry releases the seat and runs the
+     * 2.18 waitlist promotion") was superseded by OD-34 under team-based capacity (OD-31) — seats allocate
+     * to teams at Team Formation, not to individuals at enrolment. hold_window_days is validated and
+     * snapshotted and read by NOTHING; reusing it would make one number mean two unrelated things. FLAG for
+     * the doc pass: record OD-11 as obsolete. A per-programme override belongs in the wizard's consent
+     * section once J-19 gives it a field — this constant is the floor, not a ceiling.
+     */
+    private const TTL_DAYS = 14;
+
     public function __construct(
         private readonly AuditService $audit,
         private readonly UploadService $uploads,
@@ -64,6 +83,28 @@ class ConsentSigningService
             }
         }
 
+        // ── S-TTL-1: the expiry clock. This is the ONE insert into consent_requests, and all four issuance
+        // paths reach it (IssueConsentRequests at enrolment · ReissueConsentRequest · the guardian-activation
+        // listener · ConsentTemplateService's OD-20a supersede fan-out), so every one of them re-arms the
+        // clock for free and no caller has to know the clock exists.
+        //
+        // CLAMPED to the programme start, because an unsigned consent is worthless once the programme has
+        // begun — the child cannot be teamed or attend on it. Without the clamp a consent issued a week
+        // before the start would advertise "14 days left" for a week AFTER the programme started: the same
+        // class of falsehood as the storefront advertising "Enrolment open" 82 days past its own closing
+        // date (SEED-CONTRACT-1). A deadline that outlives the thing it gates is not a deadline.
+        //
+        // The clamp applies ONLY to a start that is still in the future. A programme can legitimately be
+        // enrolled into after it starts (nothing enforces the enrolment window at enrolment time — mapped in
+        // SEED-CONTRACT-1), and clamping there would mint a consent that is already expired: unsignable by
+        // the family and swept on the sweeper's next pass. The family must still be able to sign. FLAG.
+        $issuedAt = now();
+        $expiresAt = $issuedAt->copy()->addDays(self::TTL_DAYS);
+        $startsAt = $programme->starts_at !== null ? Carbon::parse($programme->starts_at) : null;
+        if ($startsAt !== null && $startsAt->greaterThan($issuedAt) && $startsAt->lessThan($expiresAt)) {
+            $expiresAt = $startsAt;
+        }
+
         $guardianName = DB::table('users')->where('id', $signerId)->value('name');
         $feeMinor = (int) DB::table('fee_items')->where('programme_id', $programmeId)->sum('amount_minor');
         $id = (string) Str::uuid7();
@@ -79,14 +120,67 @@ class ConsentSigningService
                 'fee_total' => 'HKD '.number_format($feeMinor / 100, 2),
             ]),
             'event_sequence' => '[]',
-            'created_at' => now(), 'updated_at' => now(),
+            'expires_at' => $expiresAt,
+            'created_at' => $issuedAt, 'updated_at' => $issuedAt,
         ]);
         $this->audit->record('consent_request', $id, 'consent_request.issued',
             toState: 'sent', reason: $reason,
-            payloadAfter: ['student_id' => $studentId, 'signer_id' => $signerId, 'template_id' => $templateId],
+            payloadAfter: ['student_id' => $studentId, 'signer_id' => $signerId, 'template_id' => $templateId, 'expires_at' => $expiresAt->toIso8601String()],
             programmeId: $programmeId, actor: $actor);
 
         return $id;
+    }
+
+    /**
+     * S-TTL-1 — the nightly sweeper. `expired` was already a legal status in the consent_requests CHECK
+     * constraint and NOTHING wrote it: the one dead value in an otherwise live enum (`superseded` is written
+     * by the OD-20a fan-out). This is the writer.
+     *
+     * Modelled on LinkageService::expireHeldLinks — same shape, same audit discipline, same scheduling slot
+     * (daily, off-peak HKT, BEFORE reconcile so the assertion holds).
+     *
+     * ONLY `sent` and `viewed` move. A decided request — signed, declined, superseded, voided — is terminal
+     * and is never touched, whatever its expires_at says; the status filter is the guard, not the date. Rows
+     * with a NULL expires_at (issued before this card) are ignored rather than guessed at.
+     *
+     * WHAT IT DELIBERATELY DOES NOT DO:
+     *   · It never touches the ENROLMENT. An enrolment whose only consent expires is stranded at
+     *     pending_consent — the gate can no longer fire. That is intentional: BI-7 forbids any write to
+     *     Withdrawn outside the withdrawal workflow, and quietly releasing a child-safety relationship on a
+     *     timer is not something a sweeper should decide. It surfaces to ops instead (see the card report).
+     *   · It never re-issues. An expiry that re-arms itself forever is not an expiry, and re-consent is a
+     *     deliberate act with an audited actor (ReissueConsentRequest), not a side effect of a cron job.
+     *
+     * @return int the number of requests expired
+     */
+    public function expireOverdue(): int
+    {
+        $due = DB::table('consent_requests')
+            ->whereIn('status', ['sent', 'viewed'])
+            ->whereNotNull('expires_at')
+            ->where('expires_at', '<', now())
+            ->get(['id', 'status', 'programme_id', 'student_id', 'signer_id', 'expires_at']);
+
+        $expired = 0;
+        foreach ($due as $r) {
+            // Status re-checked in the UPDATE: a guardian signing in the same second must win, not be
+            // overwritten by the sweeper (the same CAS discipline expireHeldLinks uses).
+            $moved = DB::table('consent_requests')->where('id', $r->id)
+                ->whereIn('status', ['sent', 'viewed'])
+                ->update(['status' => 'expired', 'updated_at' => now()]);
+            if ($moved === 0) {
+                continue;
+            }
+            // BI-8: every status transition audits. No actor argument — the actor IS the system, exactly as
+            // the held-link sweeper records it.
+            $this->audit->record('consent_request', $r->id, 'consent_request.expired',
+                fromState: $r->status, toState: 'expired',
+                payloadAfter: ['student_id' => $r->student_id, 'signer_id' => $r->signer_id, 'expires_at' => $r->expires_at],
+                programmeId: (int) $r->programme_id);
+            $expired++;
+        }
+
+        return $expired;
     }
 
     /**
@@ -107,7 +201,7 @@ class ConsentSigningService
             abort(404);
         }
 
-        [$met, $requiresAll] = app(\App\Services\Authz\ScopeContext::class)->asSystem(
+        [$met, $requiresAll] = app(ScopeContext::class)->asSystem(
             'Derived consent status (S03): met/outstanding is an aggregate over ALL guardians\' requests, while RLS correctly hides co-guardians\' rows from each other. Returns booleans only; no row, timestamp or identity leaves the elevation.',
             function () use ($programmeId, $studentId): array {
                 $requiresAll = (bool) (json_decode((string) DB::table('wizard_sections')
@@ -150,7 +244,7 @@ class ConsentSigningService
             if ($reissue) {
                 // S04A STEP 1: INSERT is system-only — re-issuance rides the
                 // system-context job; the voiding operator stays the actor
-                \App\Jobs\ReissueConsentRequest::dispatch(
+                ReissueConsentRequest::dispatch(
                     $request->id, "re-issue after void of {$request->id}", (int) $actor->id,
                 )->afterCommit();
             }
@@ -160,9 +254,9 @@ class ConsentSigningService
                 payloadAfter: ['reissue_queued' => $reissue, 'notify_signer' => true],
                 programmeId: (int) $request->programme_id, actor: $actor);
             // S09's ladder tells the signer the document changed (card non-scope here)
-            \App\Events\ConsentRequestVoided::dispatch($request->id, (int) $request->signer_id, $reason, null);
+            ConsentRequestVoided::dispatch($request->id, (int) $request->signer_id, $reason, null);
             // S04A: a void can UN-satisfy consent — pull the enrolment back
-            \App\Jobs\EvaluateConsentGate::dispatch((int) $request->programme_id,
+            EvaluateConsentGate::dispatch((int) $request->programme_id,
                 (int) $request->student_id, (int) $actor->id, 'consent request voided')->afterCommit();
 
             return ['voided' => $request->id, 'reissue_queued' => $reissue];
@@ -230,7 +324,7 @@ class ConsentSigningService
      * language being signed, the affirmation is present, and a real capture
      * (strokes or typed name) is supplied.
      *
-     * @param array{affirmed?: bool, method?: string, strokes?: array, typed_name?: string, image_base64?: string} $input
+     * @param  array{affirmed?: bool, method?: string, strokes?: array, typed_name?: string, image_base64?: string}  $input
      */
     public function sign(object $request, array $input, User $signer, string $ip, string $userAgent): string
     {
@@ -240,7 +334,7 @@ class ConsentSigningService
         // S02A narrow-only link overrides: a guardian_link carrying
         // deny:[consent.sign] blocks signing FOR THAT STUDENT even though the
         // role matrix grants it (the route middleware only sees the matrix)
-        if (! app(\App\Services\Authz\PermissionResolver::class)->allowsFor($signer, 'consent.sign', (int) $request->student_id)) {
+        if (! app(PermissionResolver::class)->allowsFor($signer, 'consent.sign', (int) $request->student_id)) {
             $this->audit->record('consent_request', $request->id, 'permission.denied',
                 reason: 'guardian_link override denies consent.sign for this student',
                 programmeId: (int) $request->programme_id, actor: $signer);
@@ -344,9 +438,9 @@ class ConsentSigningService
                 programmeId: (int) $request->programme_id, actor: $signer);
 
             // FR038: the signed PDF + certificate generate after commit, as system
-            \App\Jobs\GenerateConsentDocument::dispatch($id)->afterCommit();
+            GenerateConsentDocument::dispatch($id)->afterCommit();
             // S04A: a landed signature may open the pool gate (OD-34/50a)
-            \App\Jobs\EvaluateConsentGate::dispatch((int) $request->programme_id,
+            EvaluateConsentGate::dispatch((int) $request->programme_id,
                 (int) $request->student_id, (int) $signer->id, 'signature landed')->afterCommit();
 
             return $id;
@@ -476,7 +570,7 @@ class ConsentSigningService
     {
         $mergeData = (array) json_decode($request->merge_data, true);
         $map = $mergeData + [
-            'today' => \Illuminate\Support\Carbon::parse($request->created_at)->timezone('Asia/Hong_Kong')->toDateString(),
+            'today' => Carbon::parse($request->created_at)->timezone('Asia/Hong_Kong')->toDateString(),
             'signer_name' => $mergeData['guardian_name'] ?? '',
         ];
         foreach ($map as $field => $value) {

@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schedule;
 
 // Nightly reconciliation suite (Spec P3 / SR010). 03:00 HKT, off-peak;
@@ -9,7 +10,7 @@ Schedule::command('reconcile:run')
     ->timezone('Asia/Hong_Kong')
     ->dailyAt('03:00')
     ->onFailure(function (): void {
-        \Illuminate\Support\Facades\Log::critical('Nightly reconciliation run failed or did not complete');
+        Log::critical('Nightly reconciliation run failed or did not complete');
     });
 
 // S05-3 formation-deadline machinery (OD-33/35). Daily, off-peak, HKT. Both are
@@ -52,6 +53,13 @@ Schedule::command('sessions:advance')
 Schedule::command('held-links:expire')
     ->timezone('Asia/Hong_Kong')
     ->dailyAt('02:10');
+
+// S-TTL-1 consent expiry. Daily, off-peak, HKT, and BEFORE reconcile so
+// consents.no_live_past_expiry holds. Same slot discipline as held-links:expire —
+// it expires the REQUEST only; the enrolment and any re-consent stay human decisions.
+Schedule::command('consents:expire')
+    ->timezone('Asia/Hong_Kong')
+    ->dailyAt('02:15');
 
 // S04C-4 onboarding-queue escalation (2.28 Q5). Daily, before reconcile so
 // queue.escalation_liveness holds — a queue item left too long is flagged.

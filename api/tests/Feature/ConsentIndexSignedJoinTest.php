@@ -149,8 +149,10 @@ class ConsentIndexSignedJoinTest extends TestCase
         Carbon::setTestNow(Carbon::parse(self::T0)->addMinutes(11));
         $this->sign($this->guardianB, $this->reqB1, 'en');
 
-        // issueRequest leaves expires_at NULL (the hold window is applied on the enrolment path); the
-        // outstanding row needs a real deadline for the surface's urgency to mean anything.
+        // S-TTL-1 UPDATE: issueRequest no longer leaves expires_at NULL — it now mints one at issue
+        // (14-day TTL, clamped to the programme start), so every row above carries T0+14d. This override
+        // stays: the outstanding row wants a NEARER deadline than the default so the surface's urgency
+        // ladder has something inside its window to render.
         Carbon::setTestNow(Carbon::parse(self::T0)->addMinutes(12));
         DB::table('consent_requests')->where('id', $this->reqA2)
             ->update(['expires_at' => Carbon::parse(self::T0)->addDays(6)]);
@@ -276,7 +278,11 @@ class ConsentIndexSignedJoinTest extends TestCase
     public function test_behaviour_sha_of_the_legacy_columns_is_unchanged_for_the_guardian(): void
     {
         $this->assertSame(
-            'f2ec85b81f52a75ec53a05bcd6b5ee605c9fa1075814fa1d29df9dc897135e62',
+            // RE-PINNED by S-TTL-1. The pin fired correctly: it hashes expires_at BY VALUE, and this card
+            // gives every issued request a real expiry where the read previously returned NULL. Shape, key
+            // order, row count and row order are all unchanged — only the value the card set out to change.
+            // Deterministic because the fixture freezes time (Carbon::setTestNow), verified over 3 runs.
+            '92029928c9ed2eea6e6b1b2b923c173eac641a1f2a41ab1ffe9bf5b304d9138a',
             $this->legacySha($this->guardianA),
             'the twelve pre-existing columns changed for the GUARDIAN — key set, key order, row count, row order or a value',
         );
@@ -285,7 +291,8 @@ class ConsentIndexSignedJoinTest extends TestCase
     public function test_behaviour_sha_of_the_legacy_columns_is_unchanged_for_ops(): void
     {
         $this->assertSame(
-            '39ea8fd18e0f531ea2799f41397046472d3b494d42ea0ee359e4990a50ee0e32',
+            // RE-PINNED by S-TTL-1 — same reason as the guardian pin above.
+            '8a5281447d9ffdf2ae3388cd399df8a5695a97e823b1e862a6e3507c893f4ac7',
             $this->legacySha($this->ops),
             'the twelve pre-existing columns changed for OPS — key set, key order, row count, row order or a value',
         );

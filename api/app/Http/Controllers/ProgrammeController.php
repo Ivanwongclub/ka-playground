@@ -162,9 +162,22 @@ class ProgrammeController extends Controller
             'name_tc' => ['required', 'string', 'max:255'],
             'name_sc' => ['required', 'string', 'max:255'],
             'jurisdiction' => ['required', 'in:HK,CN'], // OD-16
-            'enrolment_opens_at' => ['nullable', 'date'],
-            'enrolment_closes_at' => ['nullable', 'date', 'after:enrolment_opens_at'],
-            'hold_window_days' => ['sometimes', 'integer', 'min:1', 'max:60'], // OD-11
+            // S-TTL-1 PART B — RETIRED as writable. WizardService::syncBasicsDates is the SOLE writer of
+            // these two columns, mirroring basics.enrolment_opens_on / .enrolment_closes_on. Accepting them
+            // here made this a SECOND writer of the same window, so an admin write survived only until the
+            // next basics save silently mirrored over it — a write that looks like it took and did not,
+            // which is the precise defect that produced the storefront advertising "Enrolment open" 82 days
+            // past its own closing date. `prohibited` REJECTS with 422 rather than dropping quietly: a
+            // caller is told the wizard owns the timeline instead of being misled by a 200.
+            // The READ (overview(), above) and the programme_versions snapshot are untouched — the columns
+            // are still canonical, only this write path is gone.
+            'enrolment_opens_at' => ['prohibited'],
+            'enrolment_closes_at' => ['prohibited'],
+            // FLAG, not decided here: hold_window_days is OD-11's ENROLMENT SEAT timer, and OD-11's stated
+            // mechanism (release the seat, run the 2.18 waitlist promotion) was superseded by OD-34 under
+            // team-based capacity (OD-31). It is validated here, snapshotted into programme_versions, and
+            // read by NOTHING in app/. Same family of defect, separate decision — see the S-TTL-1 report.
+            'hold_window_days' => ['sometimes', 'integer', 'min:1', 'max:60'], // OD-11 (obsolete — see above)
             'payer_party' => ['sometimes', 'in:parent,student,school'], // E6
         ];
     }
