@@ -2,9 +2,8 @@
 // built/existing-RLS endpoints; the one write surfaced is the existing mint-payment-link (guardian's own
 // audited act — "get the payment link", NEVER "pay"; actual payment leaves via the /pay page). Refusals
 // shown-not-hidden. The teacher roster is the STEP-1 gated read /api/my/students (allowlist {id,name}).
-import { useState } from 'react';
 import type { MouseEvent, ReactNode } from 'react';
-import { App, Button, Card, Descriptions, List, Space, Typography } from 'antd';
+import { App, Button, Card, List, Space, Typography } from 'antd';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { KaLocale } from '../i18n';
@@ -12,11 +11,11 @@ import { useResource, DataBoundary } from '../api/useResource';
 import { mutate } from '../api/mutate';
 import { personName, schoolName } from '../display/names';
 import { formatMoney } from '../display/money';
-import { formatHkt, formatHktDayMonth } from '../display/date';
+import { formatHkt, formatHktDate, formatHktDayMonth } from '../display/date';
 import { StatusTag } from '../display/status';
 // DS2 (restyle rollout — anchor STEP 1 MyChildren; C3 MyPayments/MyStudents). ALLOWED adopter already
 // (import-guard, no change). C3 is container-framing only (List/Card→SubPanel); MyChildren is untouched.
-import { SubPanel, ZoneStack, StatChip, MetaChip, EmptyState, UrgencyChip, urgencyLevel, urgencyDays, urgencyLabel, URGENCY } from '@/ds2';
+import { SubPanel, ZoneStack, StatChip, MetaChip, ZebraTable, EmptyState, UrgencyChip, urgencyLevel, urgencyDays, urgencyLabel, URGENCY } from '@/ds2';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -43,57 +42,94 @@ function lineName(l: OrderLine, locale: KaLocale): string {
   return (locale === 'zh-TC' ? l.name_tc : locale === 'zh-SC' ? l.name_sc : l.name_en) || l.name_en;
 }
 
-// R1-G — an order's line items (the additive read /api/orders/{id}/lines; order_lines is INSERT-only, BI-5).
-// DISPLAY ONLY: the snapshotted trilingual line name (tri pattern) + amount (formatMoney). Lazy — the read
-// only fires when the row is expanded. Closes the Part-1 headline (order_line_items were rendered nowhere).
+// B10-GUA-PAY — the order's line items, INLINE and always (block L870-872: the table IS the card, not a
+// disclosure behind a toggle). Still the additive read /api/orders/{id}/lines; order_lines is INSERT-only
+// (BI-5). ZebraTable rather than a hand-rolled <table>: it forces the money column right by TYPE, which is
+// the one thing a fee breakdown must not get wrong. The BI-5 snapshot note is gone — the block carries no
+// such line and it would now repeat on every card (Kit: no instructional copy).
 function OrderLines({ orderId }: { orderId: string }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language as KaLocale;
   const res = useResource<{ data: OrderLine[] }>(`/api/orders/${orderId}/lines`);
+  const rows = res.data?.data ?? [];
   return (
-    <DataBoundary loading={res.loading} error={res.error} empty={(res.data?.data.length ?? 0) === 0}>
-      <Descriptions size="small" column={1} bordered style={{ marginTop: 8 }}>
-        {(res.data?.data ?? []).map((l) => (
-          <Descriptions.Item key={l.id} label={lineName(l, locale)}>
-            {formatMoney(l.amount_minor, l.currency, locale)}
-          </Descriptions.Item>
-        ))}
-      </Descriptions>
-      <div style={{ marginTop: 6 }}><Text type="secondary">{t('order.lines.snapshotNote')}</Text></div>
+    <DataBoundary loading={res.loading} error={res.error} empty={rows.length === 0} emptySize="inline">
+      <ZebraTable<OrderLine>
+        columns={[
+          { key: 'line', title: t('order.lines.line'), type: 'text', render: (l) => lineName(l, locale) },
+          { key: 'amount', title: t('order.lines.amount'), type: 'money', render: (l) => formatMoney(l.amount_minor, l.currency, locale) },
+        ]}
+        data={rows}
+        rowKey={(l) => l.id}
+      />
     </DataBoundary>
   );
 }
 
-// R1-G — one payable order row with an expandable line-items detail. The status tag + getLink action + the
-// urgency row treatment are BYTE-IDENTICAL to the pre-R1-G renderItem; only the expandable detail is added.
-function PayableOrderItem({ o, locale, onGetLink }: { o: Order; locale: KaLocale; onGetLink: (o: Order) => void }) {
+// ── B10-GUA-PAY — the payable card (block L869-878) ──────────────────────────────────────────────────
+// The block's unit is an ORDER CARD, not a list row: "child · programme" + a due chip, the line table, a
+// "Total {x}" line, then the action. It replaces the List.Item + "View items" disclosure, which was the
+// build's shape, not the block's.
+function PayableOrderCard({ o, locale, onPay }: { o: Order; locale: KaLocale; onPay: (o: Order) => void }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const lvl = o.status === 'issued' ? urgencyLevel(o.payment_due_at, URGENCY.payment) : 'none';
+  const lvl = urgencyLevel(o.payment_due_at, URGENCY.payment);
   return (
-    <List.Item className={lvl !== 'none' ? `ds2-urgent--${lvl}` : undefined} actions={[
-      <StatusTag key="st" domain="orderStatus" value={o.status} />,
-      o.status === 'issued'
-        ? <Button key="lnk" size="small" type="primary" className="ka-cta" onClick={() => onGetLink(o)}>{t('selfService.getLink')}</Button>
-        : <span key="lnk" />,
-    ]}>
-      <div style={{ width: '100%' }}>
-        {/* AD-4: name the child on the payable row — "Demo Student A6 · Summer STEM 2026". */}
-        <List.Item.Meta
-          title={o.student_name ? `${personName(o.student_name)} · ${progName(o, locale)}` : progName(o, locale)}
-          description={
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <Text type="secondary">{formatMoney(o.total_amount_minor, o.currency, locale)}{o.payment_due_at ? ` · ${t('selfService.due')} ${formatHkt(o.payment_due_at, locale)}` : ''}</Text>
-              {lvl !== 'none' && <UrgencyChip level={lvl} label={urgencyLabel(lvl, urgencyDays(o.payment_due_at), t)} />}
-            </span>
-          }
-        />
-        <Button type="link" size="small" style={{ paddingLeft: 0 }} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
-          {open ? t('order.lines.hide') : t('order.lines.show')}
-        </Button>
-        {open && <OrderLines orderId={o.id} />}
+    <SubPanel tone="neutral">
+      <div className={lvl !== 'none' ? `ds2-urgent--${lvl}` : undefined}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+          {/* AD-4: the child is NAMED on the payable card — a guardian pays for a person, not an order id. */}
+          <Title level={5} style={{ margin: 0, flex: '1 1 auto', minWidth: 0 }}>
+            {o.student_name ? `${personName(o.student_name)} · ${progName(o, locale)}` : progName(o, locale)}
+          </Title>
+          {/* The block's chip is the literal date ("Due 20 Aug"). DS2 owns the countdown wording, so an
+              urgent deadline speaks in the shared label and a distant one states the date — the same split
+              the Children fees row uses. A due-less order carries no chip: there is no deadline to state. */}
+          {lvl !== 'none'
+            ? <UrgencyChip level={lvl} label={urgencyLabel(lvl, urgencyDays(o.payment_due_at), t)} />
+            : o.payment_due_at
+              ? <MetaChip>{`${t('selfService.dueCap')} ${formatHktDayMonth(o.payment_due_at, locale)}`}</MetaChip>
+              : null}
+        </div>
+
+        <OrderLines orderId={o.id} />
+
+        {/* The block pairs "Total {x}" with a gold Reference on this row. The reference is OMITTED — it does
+            not exist until a payment link is minted, and no read serves it to the guardian (see the card's
+            FLAG). Total stands alone rather than beside a fabricated code. */}
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, margin: '10px 0 12px' }}>
+          <Text strong>{`${t('selfService.total')} ${formatMoney(o.total_amount_minor, o.currency, locale)}`}</Text>
+        </div>
+
+        {/* The card's ONE gold. The block's second button (Bank transfer / FPS → mFps) is OMITTED: D-6 is
+            unruled, and an offline-payment instruction sheet is a domain this platform has not built. */}
+        <Button type="primary" className="ka-cta" block onClick={() => onPay(o)}>{t('selfService.payOnline')}</Button>
       </div>
-    </List.Item>
+    </SubPanel>
+  );
+}
+
+// ── B10-GUA-PAY — the settled card (block L880-882) ──────────────────────────────────────────────────
+// One muted line: amount · receipt · date. The receipt is joined by order_id from the SAME /api/receipts
+// read the page already made — the block folds receipts into their order rather than listing them apart.
+function SettledOrderCard({ o, receipt, locale }: { o: Order; receipt?: Receipt; locale: KaLocale }) {
+  const { t } = useTranslation();
+  const facts = [
+    formatMoney(o.total_amount_minor, o.currency, locale),
+    receipt ? `${t('selfService.receipt')} #${receipt.receipt_number}` : null,
+    receipt ? formatHktDate(receipt.issued_at, locale) : null,
+  ].filter(Boolean).join(' · ');
+  return (
+    <SubPanel tone="neutral">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 6 }}>
+        <Title level={5} style={{ margin: 0, flex: '1 1 auto', minWidth: 0 }}>
+          {o.student_name ? `${personName(o.student_name)} · ${progName(o, locale)}` : progName(o, locale)}
+        </Title>
+        {/* The block says "Settled" for its one settled state; the real read has five. StatusTag names the
+            actual one — a refunded order is not a settled one, and the family should read which it is. */}
+        <StatusTag domain="orderStatus" value={o.status} />
+      </div>
+      <Text type="secondary">{facts}</Text>
+    </SubPanel>
   );
 }
 
@@ -327,14 +363,31 @@ export function MyPayments() {
 
   // Payments view shows the FAMILY-PAYABLE orders. School-payer orders are RLS-visible (familyRead keys on
   // student_id) but are the SCHOOL's to settle — excluded from the family's pay view by this display filter.
-  const payable = (orders.data?.data ?? []).filter((o) => o.payer_party === 'guardian' || o.payer_party === 'student');
+  const family = (orders.data?.data ?? []).filter((o) => o.payer_party === 'guardian' || o.payer_party === 'student');
+  // B10 — the block's two registers: a payable card carries the line table and the action; a settled one
+  // carries its receipt. `issued` is the only payable state (the mint refuses every other, PaymentLinkService).
+  const payable = family.filter((o) => o.status === 'issued');
+  const settled = family.filter((o) => o.status !== 'issued');
+  // The receipt belongs to its ORDER (block L882), so it is joined here rather than listed apart. Same
+  // /api/receipts read as before — the section is gone, the read is not.
+  const receiptBy = new Map((receipts.data?.data ?? []).map((r) => [r.order_id, r]));
 
-  const getLink = async (order: Order) => {
+  const pay = async (order: Order) => {
     const r = await mutate(`/api/my/orders/${order.id}/payment-link`);
     if (r.ok) {
       const url = (r.data as { url?: string } | undefined)?.url;
-      // "get the payment link" — never "paid". The guardian forwards this to whoever pays, via /pay.
-      modal.info({ title: t('selfService.linkReady'), content: <Text copyable>{url}</Text> });
+      // The button says "Pay online" (block L875) and this is what makes that true: the minted link opens
+      // the public /pay page. It stays copyable too — the guardian may be arranging for someone else to pay,
+      // which is the whole point of a forwardable link (OD-44). Never claims the money has moved.
+      modal.info({
+        title: t('selfService.linkReady'),
+        content: (
+          <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            {url && <a href={url} target="_blank" rel="noreferrer">{t('selfService.openPayPage')}</a>}
+            <Text copyable>{url}</Text>
+          </Space>
+        ),
+      });
     } else {
       // shown-not-hidden: the server's refusal (e.g. 422 "Order is {status} — nothing to pay")
       void message.error(r.message ?? t('mutate.failed'));
@@ -343,39 +396,23 @@ export function MyPayments() {
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
-      <div>
-        <Title level={3} style={{ marginBottom: 0 }}>{t('selfService.paymentsTitle')}</Title>
-        <Paragraph type="secondary">{t('selfService.paymentsSubtitle')}</Paragraph>
-      </div>
-      {/* AL-4: section boundary → inline empty (not a route-body page empty). */}
-      <DataBoundary loading={orders.loading} error={orders.error} empty={payable.length === 0} emptySize="inline">
-        <SubPanel tone="neutral">
-          <List<Order>
-            dataSource={payable}
-            renderItem={(o) => <PayableOrderItem key={o.id} o={o} locale={locale} onGetLink={(ord) => void getLink(ord)} />}
-          />
-        </SubPanel>
+      {/* The block is an h2 and nothing else — no subtitle. The removed one ("Your family's fees, receipts,
+          and payment links.") inventoried the page rather than telling the guardian anything. */}
+      <Title level={2} style={{ fontSize: 23, margin: 0 }}>{t('selfService.paymentsTitle')}</Title>
+      <DataBoundary
+        loading={orders.loading}
+        error={orders.error}
+        empty={family.length === 0}
+        emptySize="inline"
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          {payable.map((o) => <PayableOrderCard key={o.id} o={o} locale={locale} onPay={(ord) => void pay(ord)} />)}
+          {settled.map((o) => <SettledOrderCard key={o.id} o={o} receipt={receiptBy.get(o.id)} locale={locale} />)}
+        </Space>
       </DataBoundary>
-
-      {/* AL-3: "Receipts" is a section title (level 5) INSIDE its SubPanel (C6 idiom) — the header stays
-          even when empty, so the DataBoundary lives inside. AL-4: inline empty. AL-9: list size="small". */}
-      <SubPanel tone="neutral">
-        <Title level={5} style={{ margin: '0 0 8px' }}>{t('selfService.receiptsTitle')}</Title>
-        <DataBoundary loading={receipts.loading} error={receipts.error} empty={(receipts.data?.data.length ?? 0) === 0} emptySize="inline">
-          <List<Receipt>
-            size="small"
-            dataSource={receipts.data?.data ?? []}
-            renderItem={(r) => (
-              <List.Item key={r.id} actions={[<Text key="a" strong>{formatMoney(r.amount_minor, r.currency, locale)}</Text>]}>
-                <List.Item.Meta
-                  title={`${t('selfService.receipt')} #${r.receipt_number}`}
-                  description={<Text type="secondary">{formatHkt(r.issued_at, locale)}</Text>}
-                />
-              </List.Item>
-            )}
-          />
-        </DataBoundary>
-      </SubPanel>
+      {/* NO Refunds ghost card (block L883-886): the withdrawal domain is unbuilt for the family, and its
+          copy is a promise about a flow that does not exist. NO Outstanding total: the prototype sums family
+          money NOWHERE — see the card's note closing B2's flag. */}
     </Space>
   );
 }

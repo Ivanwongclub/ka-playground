@@ -685,9 +685,8 @@
   },
   "order": {
     "lines": {
-      "show": "View items",
-      "hide": "Hide items",
-      "snapshotNote": "Fees as recorded on the order — corrections are credit notes, never edits."
+      "line": "Line",
+      "amount": "Amount"
     }
   },
   "urgency": {
@@ -1031,8 +1030,11 @@
     "consentNeeded": "Your signature needed",
     "consentMet": "Consent complete",
     "consentPending": "Consent pending",
-    "paymentsTitle": "My Payments",
-    "paymentsSubtitle": "Your family's fees, receipts, and payment links.",
+    "paymentsTitle": "Payments",
+    "payOnline": "Pay online",
+    "openPayPage": "Open the payment page",
+    "total": "Total",
+    "dueCap": "Due",
     "getLink": "Get payment link",
     "due": "due",
     "receiptsTitle": "Receipts",

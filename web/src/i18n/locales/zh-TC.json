@@ -685,9 +685,8 @@
   },
   "order": {
     "lines": {
-      "show": "查看項目",
-      "hide": "收起項目",
-      "snapshotNote": "費用按訂單記錄顯示 — 更正以貸記單處理，絕不修改。"
+      "line": "項目",
+      "amount": "金額"
     }
   },
   "urgency": {
@@ -1029,8 +1028,11 @@
     "consentNeeded": "需要你簽署",
     "consentMet": "同意已完成",
     "consentPending": "同意待處理",
-    "paymentsTitle": "我的付款",
-    "paymentsSubtitle": "你家庭的費用、收據與付款連結。",
+    "paymentsTitle": "付款",
+    "payOnline": "網上付款",
+    "openPayPage": "開啟付款頁面",
+    "total": "總計",
+    "dueCap": "到期",
     "getLink": "取得付款連結",
     "due": "到期",
     "receiptsTitle": "收據",

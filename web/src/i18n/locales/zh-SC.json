@@ -685,9 +685,8 @@
   },
   "order": {
     "lines": {
-      "show": "查看项目",
-      "hide": "收起项目",
-      "snapshotNote": "费用按订单记录显示 — 更正以贷记单处理，绝不修改。"
+      "line": "项目",
+      "amount": "金额"
     }
   },
   "urgency": {
@@ -1029,8 +1028,11 @@
     "consentNeeded": "需要你签署",
     "consentMet": "同意已完成",
     "consentPending": "同意待处理",
-    "paymentsTitle": "我的付款",
-    "paymentsSubtitle": "你家庭的费用、收据与付款链接。",
+    "paymentsTitle": "付款",
+    "payOnline": "网上付款",
+    "openPayPage": "开启付款页面",
+    "total": "总计",
+    "dueCap": "到期",
     "getLink": "获取付款链接",
     "due": "到期",
     "receiptsTitle": "收据",
