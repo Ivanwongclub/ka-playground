@@ -70,7 +70,7 @@ Everything hangs off four spine objects: **users** (identity) → **enrolments**
 ### 2C · Programme & config (13 tables)
 | Table | Fields | Guards |
 |---|---|---|
-| **programmes** | status (draft→published, version-snapshotted) · enrolment_opens/closes_at · **starts_at** (written by `WizardService::syncBasicsDates`, mirrored from `basics.starts_on` at basics-save AND publish, HKT midnight → UTC; FIX-REFUND-SEED) · **ends_at** (exists, still writerless — no `basics.ends_on` anywhere; AUDIT-2 A-1) · banner_upload_id · **mentor_team_access bool** (S-MENTOR-1; ⚠ X-4 column-vs-override duality) · trilingual names | **NO RLS** — globally readable reference table (this is what made the P-HYGIENE-1 direct arm work and the category arm diverge) |
+| **programmes** | status (draft→published, version-snapshotted) · **enrolment_opens_at / enrolment_closes_at** (ALSO written by `WizardService::syncBasicsDates`, mirrored from `basics.enrolment_opens_on` / `basics.enrolment_closes_on`; closes mirrors to END of day, since "closes on the 31st" means the 31st is still open — SEED-CONTRACT-1. `ProgrammeController` now REJECTS both with **422 `prohibited`** (S-TTL-1 Part B): the wizard is the sole writer of the whole timeline. Before that mirror, `closes_on` lived in JSON while the storefront chip derived from the column, and the demo advertised "Enrolment open" 82 days past its own closing date) · **starts_at** (written by `WizardService::syncBasicsDates`, mirrored from `basics.starts_on` at basics-save AND publish, HKT midnight → UTC; FIX-REFUND-SEED) · **ends_at** (exists, still writerless — no `basics.ends_on` anywhere; AUDIT-2 A-1) · banner_upload_id · **mentor_team_access bool** (S-MENTOR-1; ⚠ X-4 column-vs-override duality) · trilingual names | **NO RLS** — globally readable reference table (this is what made the P-HYGIENE-1 direct arm work and the category arm diverge) |
 | **programme_versions / wizard_sections / pre_flight_results** | hub-and-spoke wizard: sections, readiness counts, publish preflight (consent template + fees required), locked-section audit | J-19 UI unbuilt |
 | **programme_capacity** | team-based capacity (OD-31) | **not family-readable**; consumed only at Formation's FOR UPDATE claim |
 | **fee_items** | trilingual, versioned at publish | snapshot into order_lines |
@@ -186,10 +186,31 @@ stateDiagram-v2
     sent --> viewed
     viewed --> signed: ceremony — scroll gate → affirmation → signature → dual-hash + PDF
     sent --> declined
-    sent --> expired: deadline (school chase escalation OD-50)
+    sent --> expired: TTL reached — the nightly sweeper
+    viewed --> expired: TTL reached — the nightly sweeper
     signed --> superseded: material change → re-consent fan-out (OD-52, blocks Formation)
     signed --> [*]
 ```
+
+**The expiry clock (S-TTL-1).** Written at ONE place — `ConsentSigningService::issueRequest`, the single
+insert into `consent_requests` — so all four issuance paths re-arm it for free: `IssueConsentRequests` (at
+enrolment) · `ReissueConsentRequest` · the guardian-activation listener · the OD-20a supersede fan-out.
+
+TTL = **14 days** (`ConsentSigningService::TTL_DAYS`, the house value — `InvitationService` uses the same),
+**CLAMPED to the programme start**: `min(issued_at + TTL, starts_at)`. An unsigned consent is worthless once
+the programme has begun, and without the clamp one issued a week before the start would advertise "14 days
+left" for a week after it started. The clamp applies **only to a start still in the future** — a family can
+legitimately enrol into a running programme (nothing enforces the enrolment window at enrolment time), and
+clamping to a PAST start would mint a consent that is already expired: unsignable, and swept on the next pass.
+
+Swept by **`consents:expire`** (`api/routes/console.php`, daily 02:15 HKT, before reconcile). It moves ONLY
+`sent`/`viewed` — a decided request is terminal and is never touched whatever its date says, so status is the
+guard, not the date. NULL expiries (issued before the card) are ignored, not guessed at. It **never touches
+the enrolment** (BI-7 — an expired consent strands its enrolment at `pending_consent`, and releasing a
+child-safety relationship on a timer is not a cron's decision) and **never re-issues** (an expiry that
+re-arms itself is not an expiry). Expired rows surface to ops in the `expired` bucket of
+`/reports/consent-evidence` — the fifth bucket, added in the SAME commit as the sweeper so the sweeper could
+never remove work from the only ops consent surface.
 
 ### 4.3 Guardian link
 ```mermaid
@@ -243,7 +264,7 @@ guardian requests 🔴UI → school endorses (pastoral, non-authoritative OD-26)
 
 **Money loop** ✅ CLOSED: order → payment (provider or BI-9 pair) → gapless receipt → nightly reconcile (60 assertions) → Financial Integrity surface → audit trail. Open edges: period_locks 🔴 (P-8, post-close mutation possible) · aging UI 🔴.
 
-**Consent loop** 🟡: template version → issue → ceremony → dual-hash evidence + PDF → audit certificate (aud-consent ✅) → material change → supersede → re-issue → re-sign → Formation gate re-checks. Open edges: D1 revocation (mRevoke drawn, unbuilt) · media-consent `kind` 🔴 · student's own read P-4 🔴.
+**Consent loop** 🟡: template version → issue → ceremony → dual-hash evidence + PDF → audit certificate (aud-consent ✅) → material change → supersede → re-issue → re-sign → Formation gate re-checks. **Expiry edge CLOSED by S-TTL-1** — it had been open in a way nobody had named: `expires_at` had no writer anywhere in `app/`, and `expired` was the one dead value in an otherwise live status enum. Now: written at issue, swept nightly, surfaced to ops. Open edges remaining: D1 revocation (mRevoke drawn, unbuilt) · media-consent `kind` 🔴 · student's own read P-4 🔴.
 
 **Formation loop** ✅ CLOSED at the transaction: consent gate → seat claim → status flip → money fire — all one transaction, twin-team race proven. Open edges: join-request grammar (B-4) upstream · formed-team change requests (C-1/C-2) downstream — both DU.
 
